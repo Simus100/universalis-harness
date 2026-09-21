@@ -8,12 +8,13 @@ aggiornare il repository.
 
 ## 1. Configurazione di accesso (una volta sola)
 
+Proprietario del repository: **`Simus100`** (https://github.com/Simus100).
 La configurazione di accesso sta in `/root/pi-harness/.github-access`, permessi `600`, **fuori dal
 versionamento** (è in `.gitignore`). Formato:
 
 ```
 GITHUB_TOKEN=<dato di accesso personale, con permesso di scrittura sui contenuti>
-GITHUB_OWNER=<utente o organizzazione proprietaria>      # opzionale
+GITHUB_OWNER=Simus100                                    # opzionale
 GITHUB_REPO=universalis-harness                          # opzionale (default)
 GITHUB_PRIVATE=true                                      # opzionale (default)
 ```
@@ -21,6 +22,21 @@ GITHUB_PRIVATE=true                                      # opzionale (default)
 Un solo valore su una riga sola è accettato come alternativa. Il valore viene letto dallo script
 solo al momento del push, non viene mai copiato nel repository, non viene stampato nei log e non
 viene salvato in `.git/config`.
+
+### Quale permesso serve
+
+| tipo di accesso | permessi | quando conviene |
+|---|---|---|
+| **classico** (https://github.com/settings/tokens/new) | scope **`repo`** | percorso più semplice: crea il repository privato **e** pubblica. Consigliato. |
+| **fine-grained** (https://github.com/settings/personal-access-tokens/new) | *Repository access*: **All repositories**; permessi **Administration: Read and write** (serve a `POST /user/repos`), **Contents: Read and write** (push), **Metadata: Read** (obbligatorio) | più restrittivo, ma con *Only select repositories* **non** può creare il repository |
+| **fine-grained senza creazione repo** | *Contents: Read and write* + *Metadata: Read* sul repository già esistente | se crei il repository a mano: lo script fa solo il push |
+
+Il permesso richiesto da GitHub per `POST /user/repos` è documentato come *«Administration»
+repository permissions (write)* per i token fine-grained e scope `repo` per i classici.
+
+Impostare una **scadenza** (90 giorni o 1 anno) è consigliato: alla scadenza il push smette di
+funzionare e il file va aggiornato. GitHub mostra il valore **una sola volta**, al momento della
+creazione.
 
 Verifica:
 
