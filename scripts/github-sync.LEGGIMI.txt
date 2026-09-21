@@ -1,0 +1,12 @@
+# Istanza di sincronizzazione GitHub (opzionale)
+#
+# Copia questi due file in /etc/systemd/system/ e attiva il timer solo se vuoi che
+# le modifiche al codice vengano registrate e pubblicate automaticamente ogni 6 ore.
+#
+#   sudo install -m 644 scripts/github-sync.service scripts/github-sync.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now github-sync.timer
+#   systemctl list-timers github-sync.timer
+#
+# Per fermarlo:   sudo systemctl disable --now github-sync.timer
+# Per provarlo:   sudo systemctl start github-sync.service && journalctl -u github-sync -n 30

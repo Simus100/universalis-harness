@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#05010f">
+<title>CYBER://PUNK — alta tecnologia, bassa vita</title>
+<style>
+  :root{
+    --bg1:#07021a;
+    --bg2:#0d0326;
+    --bg:#05010f;
+    --cyan:#00f0ff;
+    --magenta:#ff2ec4;
+    --yellow:#ffe600;
+    --violet:#7a2bff;
+    --ink:#dff6ff;
+    --dim:#8aa6c8;
+    --grid:rgba(0,240,255,.28);
+    --sun1:#ffe600;
+    --sun2:#ff2ec4;
+    --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --pad: 20px;
+  }
+  body[data-theme="acid"]{
+    --bg1:#04100a; --bg2:#06190b; --bg:#030806;
+    --cyan:#b6ff00; --magenta:#00ffa3; --yellow:#fff35c; --violet:#00d0ff;
+    --grid:rgba(182,255,0,.22); --sun1:#dfff00; --sun2:#00ffa3; --ink:#eaffd6;
+  }
+  body[data-theme="blood"]{
+    --bg1:#160208; --bg2:#22030a; --bg:#0a0104;
+    --cyan:#ff3b1f; --magenta:#ff8a00; --yellow:#ffd000; --violet:#ff006e;
+    --grid:rgba(255,59,31,.22); --sun1:#ffd000; --sun2:#ff006e; --ink:#ffe3d6;
+  }
+
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  html{background:var(--bg)}
+  body{
+    background:
+      radial-gradient(120% 60% at 50% 88%, rgba(255,46,196,.20), transparent 60%),
+      linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 45%, var(--bg) 100%);
+    background-attachment: fixed;
+    color:var(--ink);
+    font-family:var(--mono);
+    font-size:15px;
+    line-height:1.55;
+    overflow-x:hidden;
+    min-height:100svh;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+  body::before{ /* flicker del tubo catodico */
+    content:"";position:fixed;inset:0;z-index:60;pointer-events:none;
+    background:rgba(180,230,255,.025);animation:tube 5.5s steps(2,end) infinite;
+    mix-blend-mode:screen;
+  }
+  @keyframes tube{0%,96%{opacity:.35}97%{opacity:.85}98%{opacity:.2}100%{opacity:.45}}
+
+  /* ---------- layer di sfondo ---------- */
+  .sun{
+    position:fixed;left:50%;top:calc(58svh - 118px);width:236px;height:236px;margin-left:-118px;
+    border-radius:50%;z-index:1;pointer-events:none;
+    background:linear-gradient(180deg,var(--sun1),var(--sun2));
+    filter:blur(.4px);
+    box-shadow:0 0 60px rgba(255,46,196,.45), 0 0 140px rgba(255,230,0,.18);
+    -webkit-mask-image:repeating-linear-gradient(180deg,#000 0 11px,transparent 11px 15px);
+            mask-image:repeating-linear-gradient(180deg,#000 0 11px,transparent 11px 15px);
+    animation:sunpulse 6s ease-in-out infinite;
+  }
+  @keyframes sunpulse{50%{filter:blur(1.6px) brightness(1.12)}}
+
+  .grid{position:fixed;left:0;right:0;bottom:0;height:44svh;z-index:1;pointer-events:none;overflow:hidden;
+    -webkit-mask-image:linear-gradient(to top,#000 6%,transparent 92%);
+            mask-image:linear-gradient(to top,#000 6%,transparent 92%);
+    perspective:280px;perspective-origin:50% 100%;}
+  .grid i{position:absolute;left:-60%;right:-60%;top:-30%;bottom:-10%;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size:64px 64px;
+    transform:rotateX(74deg);
+    animation:gridmove 3s linear infinite;
+  }
+  @keyframes gridmove{from{background-position:0 0,0 0}to{background-position:0 64px,0 0}}
+
+  #rain{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:.55;mix-blend-mode:screen}
+
+  .city{position:fixed;left:0;right:0;bottom:0;z-index:3;pointer-events:none}
+  .city svg{display:block;width:100%;height:auto}
+  .city.far{opacity:.45;filter:saturate(.8)}
+  .city.near{opacity:.95}
+
+  /* ---------- grana / scanline ---------- */
+  .fx{position:fixed;inset:0;z-index:55;pointer-events:none}
+  .fx.scan{background:repeating-linear-gradient(180deg, rgba(0,0,0,.30) 0 1px, transparent 1px 3px);opacity:.55}
+  .fx.vig{background:radial-gradient(120% 90% at 50% 45%, transparent 40%, rgba(0,0,0,.72) 100%)}
+  body.burst .fx.scan{opacity:1;animation:burst .22s steps(3,end)}
+  @keyframes burst{50%{background-position:0 3px;opacity:.2}}
+
+  /* ---------- HUD ---------- */
+  header.hud{
+    position:fixed;top:0;left:0;right:0;z-index:70;
+    padding:calc(8px + env(safe-area-inset-top)) 14px 8px;
+    display:flex;gap:8px;align-items:center;justify-content:space-between;
+    font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);
+    background:linear-gradient(180deg, rgba(5,1,15,.92), rgba(5,1,15,0));
+    text-shadow:0 0 8px rgba(0,240,255,.6);
+  }
+  .hud .dot{width:7px;height:7px;border-radius:50%;background:var(--magenta);
+    box-shadow:0 0 10px var(--magenta);animation:blink 1.6s steps(2,end) infinite}
+  @keyframes blink{50%{opacity:.15}}
+  .hud .cell{display:flex;align-items:center;gap:6px;white-space:nowrap}
+  .hud .warn{color:var(--yellow);text-shadow:0 0 8px rgba(255,230,0,.5)}
+
+  .progress{position:fixed;top:0;left:0;height:2px;width:100%;z-index:75;transform-origin:0 50%;transform:scaleX(0);
+    background:linear-gradient(90deg,var(--cyan),var(--magenta),var(--yellow));box-shadow:0 0 12px var(--magenta)}
+
+  /* ---------- contenuto ---------- */
+  main{position:relative;z-index:20;padding:0 var(--pad)}
+  .hero{
+    min-height:100svh;display:flex;flex-direction:column;justify-content:center;gap:18px;
+    padding-top:70px;
+  }
+  .kicker{font-size:10.5px;letter-spacing:.42em;text-transform:uppercase;color:var(--magenta);
+    text-shadow:0 0 12px rgba(255,46,196,.6)}
+  h1{
+    font-family:var(--sans);font-weight:900;margin:0;
+    font-size:clamp(3.4rem,23vw,7.5rem);line-height:.82;letter-spacing:-.035em;
+    text-transform:uppercase;
+  }
+  .glitch{position:relative;display:block;color:#f2fbff;
+    text-shadow:0 0 10px rgba(0,240,255,.75), 0 0 34px rgba(0,240,255,.35), 0 3px 0 rgba(255,46,196,.55)}
+  .glitch::before,.glitch::after{content:attr(data-text);position:absolute;left:0;top:0;width:100%;
+    mix-blend-mode:screen;pointer-events:none}
+  .glitch::before{color:var(--magenta);clip-path:inset(0 0 58% 0);animation:g1 3.3s steps(2,end) infinite}
+  .glitch::after{color:var(--cyan);clip-path:inset(62% 0 0 0);animation:g2 2.6s steps(2,end) infinite}
+  @keyframes g1{0%,88%{transform:translate3d(0,0,0)}90%{transform:translate3d(-4px,-1px,0)}93%{transform:translate3d(3px,1px,0)}96%{transform:translate3d(-2px,0,0)}100%{transform:translate3d(0,0,0)}}
+  @keyframes g2{0%,84%{transform:translate3d(0,0,0)}87%{transform:translate3d(4px,1px,0)}91%{transform:translate3d(-3px,-1px,0)}95%{transform:translate3d(1px,0,0)}100%{transform:translate3d(0,0,0)}}
+
+  .sub{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+  .claim{border-left:2px solid var(--cyan);padding-left:12px;margin:6px 0 0;font-size:14.5px;color:#cfeaff}
+  .claim b{color:var(--yellow);font-weight:400}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:6px}
+  .chip{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;padding:5px 9px;border:1px solid rgba(0,240,255,.42);
+    color:var(--cyan);background:rgba(0,240,255,.06);border-radius:2px}
+
+  .scrollhint{margin-top:22px;display:flex;align-items:center;gap:10px;font-size:9.5px;letter-spacing:.3em;
+    text-transform:uppercase;color:var(--dim)}
+  .scrollhint span.line{display:block;width:52px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent);
+    animation:sweep 2s ease-in-out infinite}
+  @keyframes sweep{0%,100%{opacity:.3}50%{opacity:1}}
+
+  section.file{margin:0 0 46px;opacity:0;transform:translateY(26px);
+    transition:opacity .7s ease, transform .7s cubic-bezier(.2,.8,.2,1)}
+  section.file.in{opacity:1;transform:none}
+  .fhead{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:10px;letter-spacing:.24em;
+    text-transform:uppercase;color:var(--yellow);text-shadow:0 0 10px rgba(255,230,0,.35)}
+  .fhead .rule{flex:1;height:1px;background:linear-gradient(90deg,currentColor,transparent);opacity:.5}
+  h2{font-family:var(--sans);font-weight:800;font-size:clamp(1.5rem,7.4vw,2.1rem);line-height:1.05;margin:0 0 12px;
+    letter-spacing:-.02em;text-transform:uppercase;
+    background:linear-gradient(92deg,#ffffff,var(--cyan) 55%,var(--magenta));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 16px rgba(0,240,255,.28))}
+  p{margin:0 0 12px;color:#c7dcef}
+  p .hl{color:var(--ink);background:linear-gradient(transparent 62%, rgba(255,46,196,.35) 62%)}
+  p .neon{color:var(--cyan);text-shadow:0 0 10px rgba(0,240,255,.55)}
+  p .warn{color:var(--yellow)}
+  .quote{margin:14px 0;padding:14px 14px 14px 16px;border:1px solid rgba(255,46,196,.35);border-left:3px solid var(--magenta);
+    background:linear-gradient(90deg, rgba(255,46,196,.10), rgba(0,240,255,.03));
+    font-size:15px;color:#ffeafb;text-shadow:0 0 14px rgba(255,46,196,.25)}
+  .panel{border:1px solid rgba(0,240,255,.28);background:rgba(4,10,26,.55);backdrop-filter:blur(3px);padding:12px 13px;margin:14px 0;
+    box-shadow:inset 0 0 42px rgba(0,240,255,.06)}
+  .panel .row{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding:5px 0;
+    border-bottom:1px dashed rgba(138,166,200,.22)}
+  .panel .row:last-child{border-bottom:0}
+  .panel .k{color:var(--dim);letter-spacing:.06em}
+  .panel .v{color:var(--cyan);text-shadow:0 0 8px rgba(0,240,255,.4)}
+
+  pre.term{margin:0;padding:13px;border:1px solid rgba(0,240,255,.3);background:rgba(2,6,16,.72);
+    font-size:11.6px;line-height:1.65;color:#a8ffd9;white-space:pre-wrap;word-break:break-word;
+    box-shadow:inset 0 0 50px rgba(0,240,255,.07);min-height:132px;
+    text-shadow:0 0 9px rgba(0,255,170,.35)}
+  pre.term .cur{display:inline-block;width:8px;height:13px;background:var(--cyan);vertical-align:-2px;
+    animation:blink .9s steps(2,end) infinite;box-shadow:0 0 10px var(--cyan)}
+
+  .manifesto-list{list-style:none;margin:14px 0 0;padding:0}
+  .manifesto-list li{display:flex;gap:10px;font-size:13.6px;padding:8px 0;border-top:1px dashed rgba(138,166,200,.22);
+    color:#d7ecff}
+  .manifesto-list li b{color:var(--magenta);font-weight:400;text-shadow:0 0 10px rgba(255,46,196,.5)}
+
+  footer{position:relative;z-index:20;padding:26px var(--pad) 34px;text-align:center;font-size:10px;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--dim);border-top:1px solid rgba(0,240,255,.18)}
+  footer .sig{color:var(--cyan);text-shadow:0 0 10px rgba(0,240,255,.5)}
+
+  /* ---------- dock di controllo ---------- */
+  .dock{position:fixed;right:calc(10px + env(safe-area-inset-right));top:44%;z-index:80;display:flex;flex-direction:column;gap:8px}
+  .dock button{
+    width:40px;height:40px;padding:0;border:1px solid rgba(0,240,255,.45);border-radius:3px;
+    background:rgba(5,1,15,.62);color:var(--cyan);font-family:var(--mono);font-size:9px;letter-spacing:.04em;
+    backdrop-filter:blur(4px);display:grid;place-items:center;cursor:pointer;
+    box-shadow:0 0 18px rgba(0,240,255,.14);
+  }
+  .dock button:active{background:rgba(0,240,255,.18);color:#fff}
+
+  /* ---------- ticker ---------- */
+  .ticker{position:fixed;left:0;right:0;bottom:0;z-index:80;
+    padding:8px 12px calc(8px + env(safe-area-inset-bottom));
+    font-size:10px;letter-spacing:.1em;color:var(--cyan);
+    background:linear-gradient(0deg, rgba(5,1,15,.95), rgba(5,1,15,.55) 70%, transparent);
+    display:flex;gap:8px;align-items:center;white-space:nowrap;overflow:hidden;
+    text-shadow:0 0 8px rgba(0,240,255,.45)}
+  .ticker .tag{color:var(--magenta);flex:0 0 auto}
+  .ticker .txt{overflow:hidden;text-overflow:ellipsis;color:var(--dim)}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important}
+    #rain{display:none}
+  }
+</style>
+</head>
+<body data-theme="default">
+
+  <canvas id="rain" aria-hidden="true"></canvas>
+
+  <div class="sun" aria-hidden="true"></div>
+  <div class="grid" aria-hidden="true"><i></i></div>
+  <div class="city far" id="cityFar" aria-hidden="true"></div>
+  <div class="city near" id="cityNear" aria-hidden="true"></div>
+
+  <div class="fx scan" aria-hidden="true"></div>
+  <div class="fx vig" aria-hidden="true"></div>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <header class="hud">
+    <div class="cell"><span class="dot"></span>REC <span id="clock">00:00:00</span></div>
+    <div class="cell warn" id="hudState">SEGNALE OK</div>
+    <div class="cell">ID&nbsp;0x9F3A · v2.0.77</div>
+  </header>
+
+  <main>
+    <div class="hero">
+      <div class="kicker">manifesto in sette file</div>
+      <h1>
+        <span class="glitch" data-text="CYBER">CYBER</span>
+        <span class="glitch" data-text="PUNK">PUNK</span>
+      </h1>
+      <div class="sub">alta tecnologia · bassa vita</div>
+      <p class="claim">Per me il cyberpunk non è una data sul calendario. È una <b>condizione</b>: quando la macchina corre e la tutela cammina. Quando il chip è nuovo e la vita è di seconda mano.</p>
+      <div class="chips">
+        <span class="chip">pioggia sui cavi</span>
+        <span class="chip">neon nel bagnato</span>
+        <span class="chip">corpo in affitto</span>
+        <span class="chip">strada che risponde</span>
+      </div>
+      <div class="scrollhint"><span class="line"></span> scorri / tocca per glitchare</div>
+    </div>
+
+    <section class="file">
+      <div class="fhead">// file 01 — stato presente <span class="rule"></span></div>
+      <h2>Non è il futuro</h2>
+      <p>Il cyberpunk non indica un anno. Indica il momento in cui la tecnologia <span class="hl">corre più veloce delle tutele</span>: la fibra è dieci gigabit e l'acqua del piano di sotto no; il riconoscimento facciale è istantaneo, la fila allo sportello è eterna.</p>
+      <p>Non serve il 2077 per vederlo. È già addebitato sul conto, con la commissione.</p>
+      <div class="panel">
+        <div class="row"><span class="k">anno del racconto</span><span class="v" id="year">— — —</span></div>
+        <div class="row"><span class="k">latte di soia sintetico</span><span class="v">disponibile</span></div>
+        <div class="row"><span class="k">diritto alla riparazione</span><span class="v warn" style="color:var(--yellow);text-shadow:none">in manutenzione</span></div>
+      </div>
+    </section>
+
+    <section class="file">
+      <div class="fhead">// file 02 — la formula <span class="rule"></span></div>
+      <h2>Alta tecnologia, bassa vita</h2>
+      <p>È la frase più onesta mai scritta sulla fantascienza, e continua a descrivere meglio di qualsiasi report la nostra città. L'avanguardia concentrata in poche mani, la quotidianità lasciata a sé stessa: <span class="neon">protesi di grado militare</span> e marciapiedi rotti, droni che consegnano sushi a un isolato dove manca la luce.</p>
+      <div class="quote">Il futuro non è distribuito. È <b>licenziato a condizioni d'uso</b>, con aggiornamento obbligatorio e nessun diritto di recesso.</div>
+    </section>
+
+    <section class="file">
+      <div class="fhead">// file 03 — frontiera <span class="rule"></span></div>
+      <h2>Il corpo è la nuova periferia</h2>
+      <p>Quando terra, acqua e attenzione sono già state privatizzate, l'ultimo territorio vergine resta la carne. Occhi che vedono in realtà aumentata, sonno venduto a rate, battito cardiaco che è insieme sintomo e dato biometrico, pelle come superficie di autenticazione.</p>
+      <p>Non è orrore: è <span class="warn">un piano tariffario</span>. Il cyberpunk guarda il corpo e vede una colonia da sfruttare — e insieme l'ultimo posto dove qualcuno può ancora dire <span class="neon">questo è mio</span>.</p>
+    </section>
+
+    <section class="file">
+      <div class="fhead">// file 04 — estetica <span class="rule"></span></div>
+      <h2>La pioggia non spegne i neon</h2>
+      <p>L'estetica non è decorazione: è la prova che il potere non riesce a spegnere tutto. Il magenta sul bagnato, il ciano nelle pozzanghere, l'insegna che sfarfalla da trent'anni e continua a dire il tuo nome in una lingua morta.</p>
+      <p>Per questo il cyberpunk è <span class="hl">bello e sporco insieme</span>: niente cromature pulite, tutto cavi a vista, nastro isolante, ventole, condensa. La bellezza come residuo — e come resistenza.</p>
+    </section>
+
+    <section class="file">
+      <div class="fhead">// file 05 — potere <span class="rule"></span></div>
+      <h2>Chi paga la luce</h2>
+      <p>Sotto i neon c'è sempre un contatore. Città-stato aziendali, sicurezza in outsourcing, sorveglianza come servizio in abbonamento, polizia che arriva solo nei quartieri che rendono. Il cyberpunk è politica prima che scenografia: chiede <span class="neon">chi possiede la macchina</span> e chi paga il prezzo del suo rumore.</p>
+      <p>Il nemico non è l'intelligenza artificiale. È chi la usa come <span class="warn">proprietà</span>.</p>
+    </section>
+
+    <section class="file">
+      <div class="fhead">// file 06 — il punk <span class="rule"></span></div>
+      <h2>Non è disperazione</h2>
+      <p>Se togli il punk resta solo pubblicità: distopia patinata per vendere cuffie. Il punk è la parte ostinata — la strada che si organizza, il riparatore che non firma il contratto, chi condivide la chiave invece di rivenderla, il gruppo che mette in piedi una rete dove la rete non arriva.</p>
+      <div class="quote">Non si rifiuta il futuro. Si pretende <b>una parte</b>.</div>
+    </section>
+
+    <section class="file" id="manifesto">
+      <div class="fhead">// file 07 — manifesto <span class="rule"></span></div>
+      <h2>Codice sorgente</h2>
+      <pre class="term" id="term"></pre>
+      <ul class="manifesto-list">
+        <li><b>01</b><span>Sette gradi sopra la povertà, sotto un cartellone da novanta metri.</span></li>
+        <li><b>02</b><span>Nessuna macchina è neutrale: guarda chi la possiede.</span></li>
+        <li><b>03</b><span>Il corpo è tuo finché non lo affitti.</span></li>
+        <li><b>04</b><span>Se il futuro è in vendita, la strada fa colletta.</span></li>
+        <li><b>05</b><span>La bellezza nei posti sbagliati è già un atto politico.</span></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    assemblato in un terminale, con la pioggia accesa<br>
+    <span class="sig">// pi — nessuna data, solo una condizione</span>
+  </footer>
+
+  <div class="dock">
+    <button id="btnTheme" title="cambia palette">PAL<br>■</button>
+    <button id="btnGlitch" title="glitch">GLT<br>◈</button>
+    <button id="btnAudio" title="drone">AUD<br>◍</button>
+  </div>
+
+  <div class="ticker"><span class="tag" id="tickTag">◉ CANALE</span><span class="txt" id="tickTxt">inizializzazione…</span></div>
+
+<script>
+(() => {
+  "use strict";
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (id) => document.getElementById(id);
+
+  /* ============ 1. CITTÀ PROCEDURALE (SVG) ============ */
+  const KT = "アカサタナハマヤラワイキシチニヒミリウクスツヌフムユルエケセテネヘメレオコソトノホモヨロン";
+  const PAL = { cyan: "#00f0ff", magenta: "#ff2ec4", yellow: "#ffe600", violet: "#7a2bff" };
+  let NEO = ["#00f0ff", "#ff2ec4", "#ffe600", "#7a2bff"];
+  function readPalette() {
+    const cs = getComputedStyle(document.body);
+    ["cyan", "magenta", "yellow", "violet"].forEach((k) => {
+      const v = cs.getPropertyValue("--" + k).trim();
+      if (v) PAL[k] = v;
+    });
+    NEO = [PAL.cyan, PAL.magenta, PAL.yellow, PAL.violet];
+  }
+  function buildCity(el, opts) {
+    const W = Math.max(window.innerWidth, 320);
+    const H = opts.h;
+    const frag = [];
+    let x = -10;
+    let seed = opts.seed;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648;
+    while (x < W + 20) {
+      const bw = 26 + Math.floor(rnd() * 46);
+      const bh = opts.min + Math.floor(rnd() * (opts.max - opts.min));
+      const y = H - bh;
+      const neon = rnd() > 0.62;
+      const stroke = rnd() > 0.5 ? PAL.cyan : PAL.magenta;
+      frag.push('<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + bh +
+        '" fill="rgba(6,4,22,.86)" stroke="' + stroke + '" stroke-width=".8" opacity="' + (opts.strokeOp) + '"/>');
+      // finestre
+      const cols = Math.floor((bw - 6) / 7);
+      const rows = Math.floor((bh - 8) / 11);
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          if (rnd() > 0.30) continue;
+          const fx = x + 4 + c * 7;
+          const fy = y + 6 + r * 11;
+          const cCol = rnd() > 0.76 ? PAL.magenta : (rnd() > 0.9 ? PAL.yellow : PAL.cyan);
+          const op = (0.30 + rnd() * 0.7).toFixed(2);
+          const fl = rnd() > 0.72 ? ' class="fl' + (1 + Math.floor(rnd() * 3)) + '"' : "";
+          frag.push('<rect x="' + fx + '" y="' + fy + '" width="2.6" height="4" fill="' + cCol +
+            '" opacity="' + op + '"' + fl + ' style="animation-delay:' + (rnd() * 4).toFixed(2) + 's"/>');
+        }
+      }
+      // insegna verticale
+      if (neon && bh > 70) {
+        const sx = x + bw - 6;
+        frag.push('<rect x="' + sx + '" y="' + (y + 8) + '" width="2.4" height="' + Math.min(46, bh - 20) +
+          '" fill="' + PAL.magenta + '" opacity=".85" class="fl2"/>');
+      }
+      x += bw + 2 + Math.floor(rnd() * 7);
+    }
+    el.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H +
+      '" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<style>.fl1{animation:fw 3.4s steps(2,end) infinite}.fl2{animation:fw 2.4s steps(2,end) infinite}' +
+      '@keyframes fw{0%,72%{opacity:.85}74%{opacity:.08}78%{opacity:.7}100%{opacity:.9}}</style>' +
+      frag.join("") + "</svg>";
+  }
+  const near = $("cityNear"), far = $("cityFar");
+  function renderCities() {
+    readPalette();
+    buildCity(far,  { h: 116, min: 28, max: 84,  seed: 20260104, strokeOp: .7 });
+    buildCity(near, { h: 176, min: 44, max: 150, seed: 777001,   strokeOp: .95 });
+  }
+  renderCities();
+
+  /* ============ 2. PIOGGIA DIGITALE ============ */
+  const cvs = $("rain"), ctx = cvs.getContext("2d");
+  let W = 0, H = 0, cols = 0, colW = 16, drops = [], lastT = 0;
+  function setupRain() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+    W = cvs.width = Math.floor(window.innerWidth * dpr);
+    H = cvs.height = Math.floor(window.innerHeight * dpr);
+    cvs.style.width = window.innerWidth + "px";
+    cvs.style.height = window.innerHeight + "px";
+    colW = Math.round(15 * dpr);
+    cols = Math.ceil(W / colW);
+    drops = new Array(cols);
+    for (let i = 0; i < cols; i++) drops[i] = Math.random() * (H / (colW * 1.35));
+    ctx.font = "600 " + Math.round(colW * .92) + "px " + "monospace";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "rgba(4,1,12,.10)";
+    ctx.fillRect(0, 0, W, H);
+  }
+  function frame(t) {
+    if (t - lastT < 52) { requestAnimationFrame(frame); return; }
+    lastT = t;
+    ctx.fillStyle = "rgba(4,1,12,.085)";
+    ctx.fillRect(0, 0, W, H);
+    for (let i = 0; i < cols; i++) {
+      const ch = KT.charAt((Math.random() * KT.length) | 0) + (Math.random() > .7 ? (Math.random() * 10) | 0 : "");
+      const x = i * colW, y = drops[i] * colW * 1.35;
+      ctx.globalAlpha = 1;
+      if (Math.random() > .86) ctx.fillStyle = "#ffffff";
+      else if (Math.random() > .74) ctx.fillStyle = NEO[(Math.random() * NEO.length) | 0];
+      else { ctx.globalAlpha = .72; ctx.fillStyle = PAL.cyan; }
+      ctx.fillText(ch, x, y);
+      drops[i] = (y > H + Math.random() * 400) ? 0 : drops[i] + 1.35;
+    }
+    requestAnimationFrame(frame);
+  }
+  if (!reduce) requestAnimationFrame(frame);
+
+  /* ============ 3. PARALLASSE + PROGRESS + HUD ============ */
+  const prog = $("progress");
+  let ticking = false;
+  window.addEventListener("scroll", () => { if (!ticking) { ticking = true; requestAnimationFrame(onScroll); } }, { passive: true });
+  function onScroll() {
+    ticking = false;
+    const y = window.scrollY || 0;
+    const max = Math.max(1, document.body.scrollHeight - window.innerHeight);
+    prog.style.transform = "scaleX(" + Math.min(1, y / max).toFixed(4) + ")";
+    far.style.transform = "translate3d(0," + (y * 0.05).toFixed(1) + "px,0)";
+    near.style.transform = "translate3d(0," + (y * 0.11).toFixed(1) + "px,0)";
+  }
+
+  const clock = $("clock");
+  const t0 = Date.now();
+  function tickClock() {
+    const s = Math.floor((Date.now() - t0) / 1000);
+    const hh = String(2 + (s / 3600 | 0)).padStart(2, "0");
+    const mm = String((s / 60 | 0) % 60).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    clock.textContent = hh + ":" + mm + ":" + ss;
+  }
+  setInterval(tickClock, 1000); tickClock();
+
+  const yr = $("year");
+  (function yearRoll() {
+    let target = new Date().getFullYear() + 50;
+    let v = target - 120, up = true;
+    yr.textContent = v;
+    const iv = setInterval(() => {
+      v += up ? 7 : 3;
+      if (v >= target) { v = target; up = false; clearInterval(iv); yr.textContent = v; return; }
+      yr.textContent = v;
+    }, 30);
+  })();
+
+  /* ============ 4. REVEAL + TERMINALE ============ */
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.14 });
+  document.querySelectorAll("section.file").forEach((s) => io.observe(s));
+
+  const LINES = [
+    "$ ssh strada@quartiere-07",
+    "> autenticazione: nessuna. entra.",
+    "",
+    "1. Il futuro si progetta, non si aspetta.",
+    "2. Ogni macchina ha un padrone: chiedi chi è.",
+    "3. Il corpo non è una piattaforma.",
+    "4. La pioggia non spegne i neon, li moltiplica.",
+    "5. Se la città è un codice, impariamo a scriverci dentro.",
+    "",
+    "> connessione instabile. va bene così.",
+  ];
+  const term = $("term");
+  let typed = false;
+  const ioTerm = new IntersectionObserver((ents) => {
+    ents.forEach((e) => {
+      if (e.isIntersecting && !typed) { typed = true; typeLines(); ioTerm.disconnect(); }
+    });
+  }, { threshold: 0.25 });
+  ioTerm.observe($("manifesto"));
+
+  function typeLines() {
+    if (reduce) { term.textContent = LINES.join("\n"); return; }
+    let li = 0, ci = 0, out = "";
+    (function step() {
+      if (li >= LINES.length) { term.innerHTML = out + '<span class="cur"></span>'; return; }
+      const line = LINES[li];
+      if (ci <= line.length) {
+        term.innerHTML = out + line.slice(0, ci) + '<span class="cur"></span>';
+        ci++; setTimeout(step, line ? 16 + Math.random() * 26 : 60);
+      } else {
+        out += line + "\n"; li++; ci = 0; setTimeout(step, 130);
+      }
+    })();
+  }
+
+  /* ============ 5. TICKER ============ */
+  const FEED = [
+    "3 nuovi innesti in vendita al mercato vecchio · nessuna garanzia",
+    "la linea 7 è in ritardo: guasto o censura?",
+    "bolletta della luce +18% · i neon non pagano l'affitto",
+    "ricerca volontari: montiamo una rete libera sul tetto",
+    "le previsioni danno pioggia fino a nuovo ordine",
+    "intercettazione in corso · ciao, se ci stai leggendo",
+    "il riparatore di via Kalunga accetta pagamento in memoria",
+    "pubblicità olografica: 90 metri di cielo privato",
+    "sintesi vocale difettosa nel quartiere 4 · parla in rima",
+    "chi ha chiavi, le condivida. il resto è collezionismo.",
+  ];
+  const tickTxt = $("tickTxt"), tickTag = $("tickTag"), hudState = $("hudState");
+  let fi = 0;
+  function feed() {
+    tickTxt.textContent = FEED[fi % FEED.length];
+    fi++;
+  }
+  if (!reduce) { feed(); setInterval(feed, 4200); }
+  else tickTxt.textContent = FEED[0];
+
+  /* ============ 6. INTERAZIONI ============ */
+  function burst() {
+    document.body.classList.add("burst");
+    setTimeout(() => document.body.classList.remove("burst"), 240);
+    if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+  }
+  const ALERT = ["SEGNALE PERSO", "PACCKETTO CORROTTO", "SCANSIONE…", "SEGNALE OK"];
+  let ai = 0;
+  function scramble() {
+    hudState.textContent = ALERT[ai % ALERT.length];
+    ai++;
+    if (ai % ALERT.length === 0) setTimeout(() => { hudState.textContent = "SEGNALE OK"; }, 900);
+    burst();
+  }
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("button")) return;
+    scramble();
+  }, { passive: true });
+
+  $("btnGlitch").addEventListener("click", (e) => { e.stopPropagation(); scramble(); });
+
+  const THEMES = ["default", "acid", "blood"];
+  let ti = 0;
+  $("btnTheme").addEventListener("click", (e) => {
+    e.stopPropagation();
+    ti = (ti + 1) % THEMES.length;
+    document.body.setAttribute("data-theme", THEMES[ti]);
+    renderCities();
+    ctx.fillStyle = "rgba(4,1,12,.10)"; ctx.fillRect(0, 0, W, H);
+    document.querySelector('meta[name="theme-color"]').setAttribute("content", getComputedStyle(document.body).getPropertyValue("--bg").trim() || "#05010f");
+    burst();
+  });
+
+  // drone WebAudio (spento di default)
+  let actx = null, nodes = null, audioOn = false;
+  $("btnAudio").addEventListener("click", (e) => {
+    e.stopPropagation();
+    burst();
+    try {
+      if (!actx) { actx = new (window.AudioContext || window.webkitAudioContext)(); }
+      if (audioOn) {
+        nodes.g.gain.setTargetAtTime(0, actx.currentTime, .12);
+        setTimeout(() => { try { nodes.osc.stop(); nodes.lfo.stop(); } catch (err) {} }, 400);
+        audioOn = false;
+        return;
+      }
+      const g = actx.createGain(); g.gain.value = 0; g.connect(actx.destination);
+      const osc = actx.createOscillator(); osc.type = "sawtooth"; osc.frequency.value = 55;
+      const filt = actx.createBiquadFilter(); filt.type = "lowpass"; filt.frequency.value = 180;
+      const lfo = actx.createOscillator(); lfo.frequency.value = .12;
+      const lg = actx.createGain(); lg.gain.value = 60;
+      lfo.connect(lg); lg.connect(filt.frequency);
+      osc.connect(filt); filt.connect(g);
+      osc.start(); lfo.start();
+      g.gain.setTargetAtTime(0.035, actx.currentTime, .4);
+      nodes = { osc, lfo, g };
+      audioOn = true;
+    } catch (err) { /* audio non disponibile */ }
+  });
+
+  /* ============ 7. RESIZE ============ */
+  let rt = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => { setupRain(); renderCities(); onScroll(); }, 180);
+  });
+  window.addEventListener("orientationchange", () => setTimeout(() => { setupRain(); renderCities(); }, 350));
+
+  setupRain();
+  onScroll();
+})();
+</script>
+</body>
+</html>

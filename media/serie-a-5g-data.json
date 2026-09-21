@@ -1,0 +1,3652 @@
+{
+ "meta": {
+  "giornata": 5,
+  "stagione": "2026/27",
+  "periodo": "18-20 settembre 2026",
+  "generato": "19 settembre 2026, ore 16:30 (CEST)",
+  "prossima": "Dopo questa giornata: pausa di 3 settimane per la Nations League. La 6ª giornata si gioca il 10-11 ottobre 2026.",
+  "note_live": "Monza-Sassuolo si e' giocata venerdi' (2-1). Udinese-Cagliari e Bologna-Torino erano in campo alle 15:00 di sabato e sono state seguite in tempo reale."
+ },
+ "teams": {
+  "Roma": {
+   "pos": 1,
+   "pts": 12,
+   "g": 4,
+   "v": 4,
+   "n": 0,
+   "p": 0,
+   "gf": 12,
+   "ga": 1,
+   "gfh": 6,
+   "gah": 1,
+   "gfa": 6,
+   "gaa": 0,
+   "forma": "V V V V",
+   "logo": "ROM"
+  },
+  "Inter": {
+   "pos": 2,
+   "pts": 12,
+   "g": 4,
+   "v": 4,
+   "n": 0,
+   "p": 0,
+   "gf": 13,
+   "ga": 6,
+   "gfh": 12,
+   "gah": 6,
+   "gfa": 1,
+   "gaa": 0,
+   "forma": "V V V V",
+   "logo": "INT"
+  },
+  "Como": {
+   "pos": 3,
+   "pts": 10,
+   "g": 4,
+   "v": 3,
+   "n": 1,
+   "p": 0,
+   "gf": 9,
+   "ga": 4,
+   "gfh": 2,
+   "gah": 1,
+   "gfa": 7,
+   "gaa": 3,
+   "forma": "N V V V",
+   "logo": "COM"
+  },
+  "Lazio": {
+   "pos": 4,
+   "pts": 10,
+   "g": 4,
+   "v": 3,
+   "n": 1,
+   "p": 0,
+   "gf": 6,
+   "ga": 3,
+   "gfh": 3,
+   "gah": 2,
+   "gfa": 3,
+   "gaa": 1,
+   "forma": "V V V N",
+   "logo": "LAZ"
+  },
+  "Cagliari": {
+   "pos": 5,
+   "pts": 9,
+   "g": 4,
+   "v": 3,
+   "n": 0,
+   "p": 1,
+   "gf": 4,
+   "ga": 2,
+   "gfh": 1,
+   "gah": 1,
+   "gfa": 3,
+   "gaa": 1,
+   "forma": "V P V V",
+   "logo": "CAG"
+  },
+  "Milan": {
+   "pos": 6,
+   "pts": 8,
+   "g": 4,
+   "v": 2,
+   "n": 2,
+   "p": 0,
+   "gf": 7,
+   "ga": 4,
+   "gfh": 2,
+   "gah": 0,
+   "gfa": 5,
+   "gaa": 4,
+   "forma": "V V N N",
+   "logo": "MIL"
+  },
+  "Frosinone": {
+   "pos": 7,
+   "pts": 7,
+   "g": 4,
+   "v": 2,
+   "n": 1,
+   "p": 1,
+   "gf": 7,
+   "ga": 4,
+   "gfh": 3,
+   "gah": 3,
+   "gfa": 4,
+   "gaa": 1,
+   "forma": "P P V V",
+   "logo": "FRO"
+  },
+  "Juventus": {
+   "pos": 8,
+   "pts": 7,
+   "g": 4,
+   "v": 2,
+   "n": 1,
+   "p": 1,
+   "gf": 6,
+   "ga": 4,
+   "gfh": 3,
+   "gah": 1,
+   "gfa": 3,
+   "gaa": 3,
+   "forma": "V V N P",
+   "logo": "JUV"
+  },
+  "Sassuolo": {
+   "pos": 9,
+   "pts": 7,
+   "g": 4,
+   "v": 2,
+   "n": 1,
+   "p": 1,
+   "gf": 8,
+   "ga": 7,
+   "gfh": 5,
+   "gah": 3,
+   "gfa": 3,
+   "gaa": 4,
+   "forma": "N V V P",
+   "logo": "SAS"
+  },
+  "Napoli": {
+   "pos": 10,
+   "pts": 6,
+   "g": 4,
+   "v": 2,
+   "n": 0,
+   "p": 2,
+   "gf": 6,
+   "ga": 5,
+   "gfh": 2,
+   "gah": 2,
+   "gfa": 4,
+   "gaa": 3,
+   "forma": "P V P V",
+   "logo": "NAP"
+  },
+  "Atalanta": {
+   "pos": 11,
+   "pts": 6,
+   "g": 4,
+   "v": 2,
+   "n": 0,
+   "p": 2,
+   "gf": 5,
+   "ga": 5,
+   "gfh": 4,
+   "gah": 3,
+   "gfa": 1,
+   "gaa": 2,
+   "forma": "V V P P",
+   "logo": "ATA"
+  },
+  "Lecce": {
+   "pos": 12,
+   "pts": 6,
+   "g": 4,
+   "v": 2,
+   "n": 0,
+   "p": 2,
+   "gf": 5,
+   "ga": 7,
+   "gfh": 3,
+   "gah": 6,
+   "gfa": 2,
+   "gaa": 1,
+   "forma": "P V P V",
+   "logo": "LEC"
+  },
+  "Udinese": {
+   "pos": 13,
+   "pts": 4,
+   "g": 4,
+   "v": 1,
+   "n": 1,
+   "p": 2,
+   "gf": 8,
+   "ga": 10,
+   "gfh": 2,
+   "gah": 3,
+   "gfa": 6,
+   "gaa": 7,
+   "forma": "N P V P",
+   "logo": "UDI"
+  },
+  "Torino": {
+   "pos": 14,
+   "pts": 3,
+   "g": 4,
+   "v": 1,
+   "n": 0,
+   "p": 3,
+   "gf": 4,
+   "ga": 7,
+   "gfh": 1,
+   "gah": 4,
+   "gfa": 3,
+   "gaa": 3,
+   "forma": "P P V P",
+   "logo": "TOR"
+  },
+  "Fiorentina": {
+   "pos": 15,
+   "pts": 3,
+   "g": 4,
+   "v": 1,
+   "n": 0,
+   "p": 3,
+   "gf": 5,
+   "ga": 11,
+   "gfh": 1,
+   "gah": 5,
+   "gfa": 4,
+   "gaa": 6,
+   "forma": "P P P V",
+   "logo": "FIO"
+  },
+  "Bologna": {
+   "pos": 16,
+   "pts": 1,
+   "g": 4,
+   "v": 0,
+   "n": 1,
+   "p": 3,
+   "gf": 2,
+   "ga": 5,
+   "gfh": 2,
+   "gah": 3,
+   "gfa": 0,
+   "gaa": 2,
+   "forma": "P P N P",
+   "logo": "BOL"
+  },
+  "Parma": {
+   "pos": 17,
+   "pts": 1,
+   "g": 4,
+   "v": 0,
+   "n": 1,
+   "p": 3,
+   "gf": 2,
+   "ga": 6,
+   "gfh": 1,
+   "gah": 2,
+   "gfa": 1,
+   "gaa": 4,
+   "forma": "P N P P",
+   "logo": "PAR"
+  },
+  "Monza": {
+   "pos": 18,
+   "pts": 1,
+   "g": 4,
+   "v": 0,
+   "n": 1,
+   "p": 3,
+   "gf": 6,
+   "ga": 11,
+   "gfh": 2,
+   "gah": 3,
+   "gfa": 4,
+   "gaa": 8,
+   "forma": "P P P N",
+   "logo": "MON"
+  },
+  "Genoa": {
+   "pos": 19,
+   "pts": 1,
+   "g": 4,
+   "v": 0,
+   "n": 1,
+   "p": 3,
+   "gf": 2,
+   "ga": 8,
+   "gfh": 2,
+   "gah": 7,
+   "gfa": 0,
+   "gaa": 1,
+   "forma": "P P P N",
+   "logo": "GEN"
+  },
+  "Venezia": {
+   "pos": 20,
+   "pts": 0,
+   "g": 4,
+   "v": 0,
+   "n": 0,
+   "p": 4,
+   "gf": 4,
+   "ga": 11,
+   "gfh": 2,
+   "gah": 6,
+   "gfa": 2,
+   "gaa": 5,
+   "forma": "P P P P",
+   "logo": "VEN"
+  }
+ },
+ "matches": [
+  {
+   "id": "mon-sas",
+   "day": "ven",
+   "date": "18 settembre",
+   "time": "20:45",
+   "home": "Monza",
+   "away": "Sassuolo",
+   "venue": "U-Power Stadium, Monza",
+   "tv": "DAZN / Sky",
+   "status": "played",
+   "score": "2-1",
+   "scorers": "Varela 51' e 63' (rig.), Adzic 88'",
+   "quotes": {
+    "h": 2.8,
+    "d": 3.4,
+    "a": 2.5
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "real",
+    "a": "real"
+   },
+   "xg_ext": [
+    1.45,
+    1.25
+   ],
+   "ext_model": {
+    "h": 39,
+    "d": 27,
+    "a": 34
+   },
+   "xg_src": "1x2.expert (Poisson calibrato)",
+   "absences": {
+    "home": [
+     "Pessina",
+     "Ciurria",
+     "Ziolkovski"
+    ],
+    "away": [
+     "Walukiewicz",
+     "Koné",
+     "Boloca",
+     "Pieragnolo",
+     "Candé",
+     "Volpato",
+     "Idzes"
+    ]
+   },
+   "h2h": "Negli ultimi 4 incroci 2 successi per parte; Monza mai vittorioso in casa contro il Sassuolo in A prima di questa gara.",
+   "note": "Juric si gioca la panchina: Monza reduce da 1 punto in 4 gare. Sassuolo reduce dal 3-2 alla Juventus.",
+   "formNote": "Monza con 1 punto in 4 gare; Sassuolo reduce dal 3-2 alla Juventus.",
+   "pick": "1X (Monza o pari)",
+   "confidence": 1,
+   "lesson": "Il modello indicava Monza leggermente favorito (35-39%) e il mercato lo pagava 2,80, la quota piu' generosa dei tre esiti: la vittoria brianzola (2-1, doppietta di Varela) ha confermato la lettura.",
+   "extra": {},
+   "lambda_home": 1.519,
+   "lambda_away": 1.49,
+   "model_probs": {
+    "home": 0.3784,
+    "draw": 0.256,
+    "away": 0.3656,
+    "btts": 0.6117,
+    "over15": 0.8089,
+    "over25": 0.5788,
+    "over35": 0.3547
+   },
+   "model_cs": [
+    {
+     "p": 0.118383,
+     "s": "1-1"
+    },
+    {
+     "p": 0.084823,
+     "s": "2-1"
+    },
+    {
+     "p": 0.083191,
+     "s": "1-2"
+    },
+    {
+     "p": 0.068265,
+     "s": "1-0"
+    },
+    {
+     "p": 0.066823,
+     "s": "0-1"
+    }
+   ],
+   "market_probs": {
+    "home": 0.3399,
+    "draw": 0.2773,
+    "away": 0.3828
+   },
+   "final_probs": {
+    "home": 0.3515,
+    "draw": 0.2709,
+    "away": 0.3776
+   },
+   "markets": {
+    "1": {
+     "p": 0.3515,
+     "q": 2.8,
+     "ev": -0.0159,
+     "fair": 2.8452,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.2709,
+     "q": 3.4,
+     "ev": -0.0789,
+     "fair": 3.6912,
+     "qsrc": "real"
+    },
+    "2": {
+     "p": 0.3776,
+     "q": 2.5,
+     "ev": -0.056,
+     "fair": 2.6482,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.6224,
+     "q": null,
+     "ev": null,
+     "fair": 1.6067
+    },
+    "12": {
+     "p": 0.7291,
+     "q": null,
+     "ev": null,
+     "fair": 1.3716
+    },
+    "X2": {
+     "p": 0.6485,
+     "q": null,
+     "ev": null,
+     "fair": 1.5419
+    },
+    "GG": {
+     "p": 0.6117,
+     "q": null,
+     "ev": null,
+     "fair": 1.6348
+    },
+    "NG": {
+     "p": 0.3883,
+     "q": null,
+     "ev": null,
+     "fair": 2.5753
+    },
+    "O1.5": {
+     "p": 0.8089,
+     "q": null,
+     "ev": null,
+     "fair": 1.2363
+    },
+    "U1.5": {
+     "p": 0.1911,
+     "q": null,
+     "ev": null,
+     "fair": 5.2318
+    },
+    "O2.5": {
+     "p": 0.5788,
+     "q": null,
+     "ev": null,
+     "fair": 1.7278
+    },
+    "U2.5": {
+     "p": 0.4212,
+     "q": null,
+     "ev": null,
+     "fair": 2.374
+    },
+    "O3.5": {
+     "p": 0.3547,
+     "q": null,
+     "ev": null,
+     "fair": 2.819
+    },
+    "U3.5": {
+     "p": 0.6453,
+     "q": null,
+     "ev": null,
+     "fair": 1.5497
+    }
+   },
+   "overround": 0.0513,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.056053
+    },
+    {
+     "s": "0-1",
+     "p": 0.066823
+    },
+    {
+     "s": "0-2",
+     "p": 0.054767
+    },
+    {
+     "s": "0-3",
+     "p": 0.027197
+    },
+    {
+     "s": "0-4",
+     "p": 0.010129
+    },
+    {
+     "s": "1-0",
+     "p": 0.068265
+    },
+    {
+     "s": "1-1",
+     "p": 0.118383
+    },
+    {
+     "s": "1-2",
+     "p": 0.083191
+    },
+    {
+     "s": "1-3",
+     "p": 0.041312
+    },
+    {
+     "s": "1-4",
+     "p": 0.015386
+    },
+    {
+     "s": "2-0",
+     "p": 0.056936
+    },
+    {
+     "s": "2-1",
+     "p": 0.084823
+    },
+    {
+     "s": "2-2",
+     "p": 0.063184
+    },
+    {
+     "s": "2-3",
+     "p": 0.031376
+    },
+    {
+     "s": "2-4",
+     "p": 0.011686
+    },
+    {
+     "s": "3-0",
+     "p": 0.028829
+    },
+    {
+     "s": "3-1",
+     "p": 0.042949
+    },
+    {
+     "s": "3-2",
+     "p": 0.031992
+    },
+    {
+     "s": "3-3",
+     "p": 0.015887
+    },
+    {
+     "s": "3-4",
+     "p": 0.005917
+    },
+    {
+     "s": "4-0",
+     "p": 0.010948
+    },
+    {
+     "s": "4-1",
+     "p": 0.01631
+    },
+    {
+     "s": "4-2",
+     "p": 0.012149
+    },
+    {
+     "s": "4-3",
+     "p": 0.006033
+    },
+    {
+     "s": "4-4",
+     "p": 0.002247
+    }
+   ],
+   "book_margin_k": 1.048,
+   "best_value": {
+    "sel": "1",
+    "ev": -0.0159,
+    "p": 0.3515,
+    "q": 2.8
+   },
+   "model_lean": "2",
+   "model_lean_p": 0.3776,
+   "expected_goals": 3.01
+  },
+  {
+   "id": "udi-cag",
+   "day": "sab",
+   "date": "19 settembre",
+   "time": "15:00",
+   "home": "Udinese",
+   "away": "Cagliari",
+   "venue": "Bluenergy Stadium, Udine",
+   "tv": "DAZN",
+   "status": "live",
+   "score": "0-1 (57')",
+   "scorers": "Maldini 54'",
+   "quotes": {
+    "h": 2.3,
+    "d": 3.35,
+    "a": 3.25
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "stima",
+    "a": "real"
+   },
+   "xg_ext": [
+    1.18,
+    1.05
+   ],
+   "ext_model": {
+    "h": 37,
+    "d": 29,
+    "a": 35
+   },
+   "xg_src": "1x2.expert + dati tiri/PPDA",
+   "absences": {
+    "home": [
+     "Piotrowski",
+     "Solet",
+     "Arizala",
+     "Palma"
+    ],
+    "away": [
+     "Nzola",
+     "Felici",
+     "Idrissi",
+     "Trepy"
+    ]
+   },
+   "h2h": "Udinese imbattuta in 13 delle ultime 14 sfide di A contro il Cagliari (9V, 4N); solo il 10% di sconfitte interne friulane (3/30).",
+   "note": "Cagliari con 9 punti: miglior difesa su azione del campionato (1 gol subito su azione). Udinese con 4.5 gol di media a partita (fatti+subiti).",
+   "formNote": "Udinese con 2 sconfitte di fila (Lazio, Inter) e 4,5 gol di media a partita; Cagliari con 3 vittorie in 4 gare e 1 solo gol su azione subito.",
+   "pick": "GG + Over 1.5 (partita da gol)",
+   "confidence": 1,
+   "lesson": "Match in corso: Maldini ha firmato il terzo centro consecutivo, esattamente il trend segnalato in analisi. Il Cagliari sta replicando il suo spartito: difesa corta e ripartenze.",
+   "extra": {},
+   "lambda_home": 1.179,
+   "lambda_away": 1.145,
+   "model_probs": {
+    "home": 0.3596,
+    "draw": 0.2977,
+    "away": 0.3427,
+    "btts": 0.4801,
+    "over15": 0.6827,
+    "over25": 0.4105,
+    "over35": 0.2057
+   },
+   "model_cs": [
+    {
+     "p": 0.14005,
+     "s": "1-1"
+    },
+    {
+     "p": 0.107441,
+     "s": "1-0"
+    },
+    {
+     "p": 0.105744,
+     "s": "0-0"
+    },
+    {
+     "p": 0.104094,
+     "s": "0-1"
+    },
+    {
+     "p": 0.077916,
+     "s": "2-1"
+    }
+   ],
+   "market_probs": {
+    "home": 0.421,
+    "draw": 0.2849,
+    "away": 0.294
+   },
+   "final_probs": {
+    "home": 0.4026,
+    "draw": 0.2888,
+    "away": 0.3086
+   },
+   "markets": {
+    "1": {
+     "p": 0.4026,
+     "q": 2.3,
+     "ev": -0.074,
+     "fair": 2.4838,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.2888,
+     "q": 3.35,
+     "ev": -0.0327,
+     "fair": 3.4631,
+     "qsrc": "stima"
+    },
+    "2": {
+     "p": 0.3086,
+     "q": 3.25,
+     "ev": 0.0031,
+     "fair": 3.24,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.6914,
+     "q": null,
+     "ev": null,
+     "fair": 1.4464
+    },
+    "12": {
+     "p": 0.7112,
+     "q": null,
+     "ev": null,
+     "fair": 1.406
+    },
+    "X2": {
+     "p": 0.5974,
+     "q": null,
+     "ev": null,
+     "fair": 1.6739
+    },
+    "GG": {
+     "p": 0.4801,
+     "q": null,
+     "ev": null,
+     "fair": 2.0827
+    },
+    "NG": {
+     "p": 0.5199,
+     "q": null,
+     "ev": null,
+     "fair": 1.9236
+    },
+    "O1.5": {
+     "p": 0.6827,
+     "q": null,
+     "ev": null,
+     "fair": 1.4647
+    },
+    "U1.5": {
+     "p": 0.3173,
+     "q": null,
+     "ev": null,
+     "fair": 3.1518
+    },
+    "O2.5": {
+     "p": 0.4105,
+     "q": null,
+     "ev": null,
+     "fair": 2.4361
+    },
+    "U2.5": {
+     "p": 0.5895,
+     "q": null,
+     "ev": null,
+     "fair": 1.6963
+    },
+    "O3.5": {
+     "p": 0.2057,
+     "q": null,
+     "ev": null,
+     "fair": 4.8618
+    },
+    "U3.5": {
+     "p": 0.7943,
+     "q": null,
+     "ev": null,
+     "fair": 1.2589
+    }
+   },
+   "overround": 0.041,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.105744
+    },
+    {
+     "s": "0-1",
+     "p": 0.104094
+    },
+    {
+     "s": "0-2",
+     "p": 0.064145
+    },
+    {
+     "s": "0-3",
+     "p": 0.024487
+    },
+    {
+     "s": "0-4",
+     "p": 0.007011
+    },
+    {
+     "s": "1-0",
+     "p": 0.107441
+    },
+    {
+     "s": "1-1",
+     "p": 0.14005
+    },
+    {
+     "s": "1-2",
+     "p": 0.075655
+    },
+    {
+     "s": "1-3",
+     "p": 0.028881
+    },
+    {
+     "s": "1-4",
+     "p": 0.008269
+    },
+    {
+     "s": "2-0",
+     "p": 0.068035
+    },
+    {
+     "s": "2-1",
+     "p": 0.077916
+    },
+    {
+     "s": "2-2",
+     "p": 0.044615
+    },
+    {
+     "s": "2-3",
+     "p": 0.017031
+    },
+    {
+     "s": "2-4",
+     "p": 0.004876
+    },
+    {
+     "s": "3-0",
+     "p": 0.026748
+    },
+    {
+     "s": "3-1",
+     "p": 0.030632
+    },
+    {
+     "s": "3-2",
+     "p": 0.01754
+    },
+    {
+     "s": "3-3",
+     "p": 0.006696
+    },
+    {
+     "s": "3-4",
+     "p": 0.001917
+    },
+    {
+     "s": "4-0",
+     "p": 0.007887
+    },
+    {
+     "s": "4-1",
+     "p": 0.009032
+    },
+    {
+     "s": "4-2",
+     "p": 0.005172
+    },
+    {
+     "s": "4-3",
+     "p": 0.001974
+    },
+    {
+     "s": "4-4",
+     "p": 0.000565
+    }
+   ],
+   "book_margin_k": 1.039,
+   "best_value": {
+    "sel": "1",
+    "ev": -0.074,
+    "p": 0.4026,
+    "q": 2.3
+   },
+   "model_lean": "1",
+   "model_lean_p": 0.4026,
+   "expected_goals": 2.32
+  },
+  {
+   "id": "bol-tor",
+   "day": "sab",
+   "date": "19 settembre",
+   "time": "15:00",
+   "home": "Bologna",
+   "away": "Torino",
+   "venue": "Renato Dall'Ara, Bologna",
+   "tv": "DAZN",
+   "status": "live",
+   "score": "1-0",
+   "scorers": "Bernardeschi",
+   "quotes": {
+    "h": 1.95,
+    "d": 3.5,
+    "a": 4.0
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "stima",
+    "a": "real"
+   },
+   "xg_ext": [
+    1.28,
+    0.88
+   ],
+   "ext_model": {
+    "h": 39,
+    "d": 29,
+    "a": 32
+   },
+   "xg_src": "1x2.expert + H2H casalingo Bologna",
+   "absences": {
+    "home": [],
+    "away": [
+     "Adams"
+    ]
+   },
+   "h2h": "Bologna imbattuto da 10 gare casalinghe contro il Torino in Serie A (4V, 6N).",
+   "note": "Esordio di Raffaele Palladino sulla panchina rossoblù (esonero di Tedesco). Torino senza il suo riferimento offensivo Adams.",
+   "formNote": "Bologna con 1 punto e cambio di panchina (Palladino per Tedesco); Torino con 3 punti e un solo successo.",
+   "pick": "Under 3.5 + 1X",
+   "confidence": 1,
+   "lesson": "Match in corso: il Bologna sblocca con Bernardeschi, confermando il rialzo emotivo del cambio di panchina. H2H casalingo e assenza di Adams pesavano.",
+   "extra": {},
+   "lambda_home": 1.24,
+   "lambda_away": 0.9,
+   "model_probs": {
+    "home": 0.4328,
+    "draw": 0.3062,
+    "away": 0.2609,
+    "btts": 0.4297,
+    "over15": 0.6385,
+    "over25": 0.3613,
+    "over35": 0.169
+   },
+   "model_cs": [
+    {
+     "p": 0.139192,
+     "s": "1-1"
+    },
+    {
+     "p": 0.137948,
+     "s": "1-0"
+    },
+    {
+     "p": 0.125492,
+     "s": "0-0"
+    },
+    {
+     "p": 0.098029,
+     "s": "0-1"
+    },
+    {
+     "p": 0.090404,
+     "s": "2-0"
+    }
+   ],
+   "market_probs": {
+    "home": 0.4968,
+    "draw": 0.2692,
+    "away": 0.234
+   },
+   "final_probs": {
+    "home": 0.4776,
+    "draw": 0.2803,
+    "away": 0.2421
+   },
+   "markets": {
+    "1": {
+     "p": 0.4776,
+     "q": 1.95,
+     "ev": -0.0687,
+     "fair": 2.0938,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.2803,
+     "q": 3.5,
+     "ev": -0.019,
+     "fair": 3.5677,
+     "qsrc": "stima"
+    },
+    "2": {
+     "p": 0.2421,
+     "q": 4.0,
+     "ev": -0.0316,
+     "fair": 4.1303,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.7579,
+     "q": null,
+     "ev": null,
+     "fair": 1.3195
+    },
+    "12": {
+     "p": 0.7197,
+     "q": null,
+     "ev": null,
+     "fair": 1.3894
+    },
+    "X2": {
+     "p": 0.5224,
+     "q": null,
+     "ev": null,
+     "fair": 1.9142
+    },
+    "GG": {
+     "p": 0.4297,
+     "q": null,
+     "ev": null,
+     "fair": 2.3272
+    },
+    "NG": {
+     "p": 0.5703,
+     "q": null,
+     "ev": null,
+     "fair": 1.7534
+    },
+    "O1.5": {
+     "p": 0.6385,
+     "q": null,
+     "ev": null,
+     "fair": 1.5661
+    },
+    "U1.5": {
+     "p": 0.3615,
+     "q": null,
+     "ev": null,
+     "fair": 2.7665
+    },
+    "O2.5": {
+     "p": 0.3613,
+     "q": null,
+     "ev": null,
+     "fair": 2.7682
+    },
+    "U2.5": {
+     "p": 0.6387,
+     "q": null,
+     "ev": null,
+     "fair": 1.5656
+    },
+    "O3.5": {
+     "p": 0.169,
+     "q": null,
+     "ev": null,
+     "fair": 5.9155
+    },
+    "U3.5": {
+     "p": 0.831,
+     "q": null,
+     "ev": null,
+     "fair": 1.2034
+    }
+   },
+   "overround": 0.0485,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.125492
+    },
+    {
+     "s": "0-1",
+     "p": 0.098029
+    },
+    {
+     "s": "0-2",
+     "p": 0.047684
+    },
+    {
+     "s": "0-3",
+     "p": 0.014313
+    },
+    {
+     "s": "0-4",
+     "p": 0.003222
+    },
+    {
+     "s": "1-0",
+     "p": 0.137948
+    },
+    {
+     "s": "1-1",
+     "p": 0.139192
+    },
+    {
+     "s": "1-2",
+     "p": 0.059122
+    },
+    {
+     "s": "1-3",
+     "p": 0.017746
+    },
+    {
+     "s": "1-4",
+     "p": 0.003995
+    },
+    {
+     "s": "2-0",
+     "p": 0.090404
+    },
+    {
+     "s": "2-1",
+     "p": 0.081406
+    },
+    {
+     "s": "2-2",
+     "p": 0.036652
+    },
+    {
+     "s": "2-3",
+     "p": 0.011001
+    },
+    {
+     "s": "2-4",
+     "p": 0.002477
+    },
+    {
+     "s": "3-0",
+     "p": 0.037363
+    },
+    {
+     "s": "3-1",
+     "p": 0.033644
+    },
+    {
+     "s": "3-2",
+     "p": 0.015148
+    },
+    {
+     "s": "3-3",
+     "p": 0.004547
+    },
+    {
+     "s": "3-4",
+     "p": 0.001024
+    },
+    {
+     "s": "4-0",
+     "p": 0.011581
+    },
+    {
+     "s": "4-1",
+     "p": 0.010429
+    },
+    {
+     "s": "4-2",
+     "p": 0.004695
+    },
+    {
+     "s": "4-3",
+     "p": 0.001409
+    },
+    {
+     "s": "4-4",
+     "p": 0.000317
+    }
+   ],
+   "book_margin_k": 1.048,
+   "best_value": {
+    "sel": "1",
+    "ev": -0.0687,
+    "p": 0.4776,
+    "q": 1.95
+   },
+   "model_lean": "1",
+   "model_lean_p": 0.4776,
+   "expected_goals": 2.14
+  },
+  {
+   "id": "rom-int",
+   "day": "sab",
+   "date": "19 settembre",
+   "time": "18:00",
+   "home": "Roma",
+   "away": "Inter",
+   "venue": "Stadio Olimpico, Roma",
+   "tv": "DAZN",
+   "status": "upcoming",
+   "score": null,
+   "scorers": null,
+   "quotes": {
+    "h": 2.7,
+    "d": 3.4,
+    "a": 2.6
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "real",
+    "a": "real"
+   },
+   "market_consensus": {
+    "h": 36,
+    "d": 27,
+    "a": 37
+   },
+   "xg_ext": [
+    1.44,
+    1.42
+   ],
+   "ext_model": {
+    "h": 33,
+    "d": 29,
+    "a": 38
+   },
+   "xg_src": "1x2.expert + consenso 4 bookmaker",
+   "absences": {
+    "home": [],
+    "away": [
+     "Calhanoglu",
+     "Stones"
+    ]
+   },
+   "h2h": "Miglior difesa (Roma, 1 gol subito, 3 clean sheet) contro miglior attacco (Inter, 13 gol). L'Inter non perde all'Olimpico da ottobre 2016: 5 vittorie consecutive, 11-2 complessivo. Negli ultimi 10 incroci 8 vittorie nerazzurre.",
+   "note": "Scontro diretto fra le due uniche squadre a punteggio pieno. Roma senza indisponibili, Inter senza il regista Calhanoglu e con Stones out 3-4 settimane.",
+   "formNote": "Roma 4 vittorie su 4 con 12 gol fatti e 1 subito (3 clean sheet); Inter 4 su 4 con 13 gol fatti e 6 subiti (12 dei quali in casa).",
+   "pick": "GG + 2 (Inter non perde)",
+   "confidence": 1,
+   "lesson": null,
+   "extra": {
+    "dc1x": 1.5,
+    "dc12": 1.33,
+    "dcx2": 1.44,
+    "gg": 1.5,
+    "o25": 1.67
+   },
+   "lambda_home": 1.674,
+   "lambda_away": 1.3,
+   "model_probs": {
+    "home": 0.4556,
+    "draw": 0.253,
+    "away": 0.2914,
+    "btts": 0.5976,
+    "over15": 0.8035,
+    "over25": 0.5708,
+    "over35": 0.3468
+   },
+   "model_cs": [
+    {
+     "p": 0.117895,
+     "s": "1-1"
+    },
+    {
+     "p": 0.093076,
+     "s": "2-1"
+    },
+    {
+     "p": 0.078901,
+     "s": "1-0"
+    },
+    {
+     "p": 0.072278,
+     "s": "1-2"
+    },
+    {
+     "p": 0.071612,
+     "s": "2-0"
+    }
+   ],
+   "market_probs": {
+    "home": 0.36,
+    "draw": 0.27,
+    "away": 0.37
+   },
+   "final_probs": {
+    "home": 0.3887,
+    "draw": 0.2649,
+    "away": 0.3464
+   },
+   "markets": {
+    "1": {
+     "p": 0.3887,
+     "q": 2.7,
+     "ev": 0.0495,
+     "fair": 2.5727,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.2649,
+     "q": 3.4,
+     "ev": -0.0994,
+     "fair": 3.7751,
+     "qsrc": "real"
+    },
+    "2": {
+     "p": 0.3464,
+     "q": 2.6,
+     "ev": -0.0993,
+     "fair": 2.8867,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.6536,
+     "q": 1.5,
+     "ev": -0.0196,
+     "fair": 1.53,
+     "qsrc": "real"
+    },
+    "12": {
+     "p": 0.7351,
+     "q": 1.33,
+     "ev": -0.0223,
+     "fair": 1.3603,
+     "qsrc": "real"
+    },
+    "X2": {
+     "p": 0.6113,
+     "q": 1.44,
+     "ev": -0.1197,
+     "fair": 1.6358,
+     "qsrc": "real"
+    },
+    "GG": {
+     "p": 0.5976,
+     "q": 1.5,
+     "ev": -0.1035,
+     "fair": 1.6733,
+     "qsrc": "real"
+    },
+    "NG": {
+     "p": 0.4024,
+     "q": null,
+     "ev": null,
+     "fair": 2.4853
+    },
+    "O1.5": {
+     "p": 0.8035,
+     "q": null,
+     "ev": null,
+     "fair": 1.2445
+    },
+    "U1.5": {
+     "p": 0.1965,
+     "q": null,
+     "ev": null,
+     "fair": 5.0895
+    },
+    "O2.5": {
+     "p": 0.5708,
+     "q": 1.67,
+     "ev": -0.0467,
+     "fair": 1.7519,
+     "qsrc": "real"
+    },
+    "U2.5": {
+     "p": 0.4292,
+     "q": null,
+     "ev": null,
+     "fair": 2.33
+    },
+    "O3.5": {
+     "p": 0.3468,
+     "q": null,
+     "ev": null,
+     "fair": 2.8834
+    },
+    "U3.5": {
+     "p": 0.6532,
+     "q": null,
+     "ev": null,
+     "fair": 1.5309
+    }
+   },
+   "overround": 0.0491,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.057802
+    },
+    {
+     "s": "0-1",
+     "p": 0.05978
+    },
+    {
+     "s": "0-2",
+     "p": 0.043185
+    },
+    {
+     "s": "0-3",
+     "p": 0.018709
+    },
+    {
+     "s": "0-4",
+     "p": 0.006079
+    },
+    {
+     "s": "1-0",
+     "p": 0.078901
+    },
+    {
+     "s": "1-1",
+     "p": 0.117895
+    },
+    {
+     "s": "1-2",
+     "p": 0.072278
+    },
+    {
+     "s": "1-3",
+     "p": 0.031314
+    },
+    {
+     "s": "1-4",
+     "p": 0.010175
+    },
+    {
+     "s": "2-0",
+     "p": 0.071612
+    },
+    {
+     "s": "2-1",
+     "p": 0.093076
+    },
+    {
+     "s": "2-2",
+     "p": 0.060486
+    },
+    {
+     "s": "2-3",
+     "p": 0.026205
+    },
+    {
+     "s": "2-4",
+     "p": 0.008515
+    },
+    {
+     "s": "3-0",
+     "p": 0.039952
+    },
+    {
+     "s": "3-1",
+     "p": 0.051927
+    },
+    {
+     "s": "3-2",
+     "p": 0.033745
+    },
+    {
+     "s": "3-3",
+     "p": 0.01462
+    },
+    {
+     "s": "3-4",
+     "p": 0.00475
+    },
+    {
+     "s": "4-0",
+     "p": 0.016717
+    },
+    {
+     "s": "4-1",
+     "p": 0.021727
+    },
+    {
+     "s": "4-2",
+     "p": 0.01412
+    },
+    {
+     "s": "4-3",
+     "p": 0.006117
+    },
+    {
+     "s": "4-4",
+     "p": 0.001988
+    }
+   ],
+   "book_margin_k": 1.046,
+   "best_value": {
+    "sel": "1",
+    "ev": 0.0495,
+    "p": 0.3887,
+    "q": 2.7
+   },
+   "model_lean": "1",
+   "model_lean_p": 0.3887,
+   "expected_goals": 2.97
+  },
+  {
+   "id": "ven-laz",
+   "day": "sab",
+   "date": "19 settembre",
+   "time": "20:45",
+   "home": "Venezia",
+   "away": "Lazio",
+   "venue": "Stadio Penzo, Venezia",
+   "tv": "DAZN / Sky",
+   "status": "upcoming",
+   "score": null,
+   "scorers": null,
+   "quotes": {
+    "h": 6.0,
+    "d": 3.6,
+    "a": 1.95
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "stima",
+    "a": "real"
+   },
+   "xg_ext": [
+    0.88,
+    1.32
+   ],
+   "ext_model": {
+    "h": 35,
+    "d": 29,
+    "a": 35
+   },
+   "xg_src": "stima modello interno (att/def + 0 punti Venezia)",
+   "absences": {
+    "home": [
+     "Busio",
+     "Sverko",
+     "Adorante",
+     "Franjic",
+     "Bella-Kotchap",
+     "Dagasso"
+    ],
+    "away": [
+     "Marusic",
+     "Rovella"
+    ]
+   },
+   "h2h": "Venezia ancora a 0 punti (unica squadra); 4 gol segnati dai lagunari nelle ultime 2 partite, ma 11 subiti in 4 gare.",
+   "note": "Stroppa con la panchina in bilico: in caso di ko cambio probabile durante la sosta. La Lazio ha dilapidato un 2-0 con il Milan ed è reduce da 10 punti in 4 gare.",
+   "formNote": "Venezia a 0 punti con 11 gol subiti; Lazio con 10 punti in 4 gare ma reduce dal 2-2 col Milan dopo essere stata sul 2-0.",
+   "pick": "GG + X2 (Lazio non perde)",
+   "confidence": 2,
+   "lesson": null,
+   "extra": {
+    "gg": 1.63
+   },
+   "lambda_home": 0.905,
+   "lambda_away": 1.464,
+   "model_probs": {
+    "home": 0.2255,
+    "draw": 0.28,
+    "away": 0.4945,
+    "btts": 0.4652,
+    "over15": 0.6923,
+    "over25": 0.4223,
+    "over35": 0.2149
+   },
+   "model_cs": [
+    {
+     "p": 0.131401,
+     "s": "1-1"
+    },
+    {
+     "p": 0.129542,
+     "s": "0-1"
+    },
+    {
+     "p": 0.100979,
+     "s": "0-0"
+    },
+    {
+     "p": 0.100295,
+     "s": "0-2"
+    },
+    {
+     "p": 0.090764,
+     "s": "1-2"
+    }
+   ],
+   "market_probs": {
+    "home": 0.1796,
+    "draw": 0.293,
+    "away": 0.5273
+   },
+   "final_probs": {
+    "home": 0.1934,
+    "draw": 0.2891,
+    "away": 0.5175
+   },
+   "markets": {
+    "1": {
+     "p": 0.1934,
+     "q": 6.0,
+     "ev": 0.1602,
+     "fair": 5.1714,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.2891,
+     "q": 3.6,
+     "ev": 0.0409,
+     "fair": 3.4585,
+     "qsrc": "stima"
+    },
+    "2": {
+     "p": 0.5175,
+     "q": 1.95,
+     "ev": 0.0091,
+     "fair": 1.9324,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.4825,
+     "q": null,
+     "ev": null,
+     "fair": 2.0725
+    },
+    "12": {
+     "p": 0.7109,
+     "q": null,
+     "ev": null,
+     "fair": 1.4067
+    },
+    "X2": {
+     "p": 0.8066,
+     "q": null,
+     "ev": null,
+     "fair": 1.2397
+    },
+    "GG": {
+     "p": 0.4652,
+     "q": 1.63,
+     "ev": -0.2417,
+     "fair": 2.1496,
+     "qsrc": "real"
+    },
+    "NG": {
+     "p": 0.5348,
+     "q": null,
+     "ev": null,
+     "fair": 1.8699
+    },
+    "O1.5": {
+     "p": 0.6923,
+     "q": null,
+     "ev": null,
+     "fair": 1.4445
+    },
+    "U1.5": {
+     "p": 0.3077,
+     "q": null,
+     "ev": null,
+     "fair": 3.2495
+    },
+    "O2.5": {
+     "p": 0.4223,
+     "q": null,
+     "ev": null,
+     "fair": 2.3682
+    },
+    "U2.5": {
+     "p": 0.5777,
+     "q": null,
+     "ev": null,
+     "fair": 1.7309
+    },
+    "O3.5": {
+     "p": 0.2149,
+     "q": null,
+     "ev": null,
+     "fair": 4.6534
+    },
+    "U3.5": {
+     "p": 0.7851,
+     "q": null,
+     "ev": null,
+     "fair": 1.2737
+    }
+   },
+   "overround": -0.0427,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.100979
+    },
+    {
+     "s": "0-1",
+     "p": 0.129542
+    },
+    {
+     "s": "0-2",
+     "p": 0.100295
+    },
+    {
+     "s": "0-3",
+     "p": 0.048956
+    },
+    {
+     "s": "0-4",
+     "p": 0.017923
+    },
+    {
+     "s": "1-0",
+     "p": 0.077215
+    },
+    {
+     "s": "1-1",
+     "p": 0.131401
+    },
+    {
+     "s": "1-2",
+     "p": 0.090764
+    },
+    {
+     "s": "1-3",
+     "p": 0.044304
+    },
+    {
+     "s": "1-4",
+     "p": 0.01622
+    },
+    {
+     "s": "2-0",
+     "p": 0.038304
+    },
+    {
+     "s": "2-1",
+     "p": 0.056092
+    },
+    {
+     "s": "2-2",
+     "p": 0.04107
+    },
+    {
+     "s": "2-3",
+     "p": 0.020047
+    },
+    {
+     "s": "2-4",
+     "p": 0.007339
+    },
+    {
+     "s": "3-0",
+     "p": 0.011555
+    },
+    {
+     "s": "3-1",
+     "p": 0.016921
+    },
+    {
+     "s": "3-2",
+     "p": 0.012389
+    },
+    {
+     "s": "3-3",
+     "p": 0.006047
+    },
+    {
+     "s": "3-4",
+     "p": 0.002214
+    },
+    {
+     "s": "4-0",
+     "p": 0.002614
+    },
+    {
+     "s": "4-1",
+     "p": 0.003828
+    },
+    {
+     "s": "4-2",
+     "p": 0.002803
+    },
+    {
+     "s": "4-3",
+     "p": 0.001368
+    },
+    {
+     "s": "4-4",
+     "p": 0.000501
+    }
+   ],
+   "book_margin_k": 0.958,
+   "best_value": {
+    "sel": "2",
+    "ev": 0.0091,
+    "p": 0.5175,
+    "q": 1.95
+   },
+   "model_lean": "2",
+   "model_lean_p": 0.5175,
+   "expected_goals": 2.37
+  },
+  {
+   "id": "fio-nap",
+   "day": "dom",
+   "date": "20 settembre",
+   "time": "12:30",
+   "home": "Fiorentina",
+   "away": "Napoli",
+   "venue": "Stadio Franchi, Firenze",
+   "tv": "DAZN",
+   "status": "upcoming",
+   "score": null,
+   "scorers": null,
+   "quotes": {
+    "h": 3.5,
+    "d": 3.5,
+    "a": 2.25
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "real",
+    "a": "real"
+   },
+   "xg_ext": [
+    0.82,
+    1.32
+   ],
+   "ext_model": {
+    "h": 27,
+    "d": 29,
+    "a": 44
+   },
+   "xg_src": "1x2.expert + 6 indisponibili Napoli",
+   "absences": {
+    "home": [
+     "Parisi"
+    ],
+    "away": [
+     "Buongiorno",
+     "Marianucci",
+     "Meret",
+     "McTominay",
+     "Giovane",
+     "Alisson Santos"
+    ]
+   },
+   "h2h": "Napoli vittorioso nelle ultime 4 sfide di A con 10-3 complessivo; la Fiorentina ha vinto solo 1 delle ultime 17 gare casalinghe contro i partenopei. Allegri ha perso 1 sola delle ultime 12 contro i viola (9V, 2N).",
+   "note": "Vanoli-bis dopo l'esonero di Grosso: 4-2 a Venezia al debutto. Napoli con emergenza infortuni ma reduce dall'1-0 sul Bologna (Lobotka).",
+   "formNote": "Fiorentina con 3 sconfitte su 4 e 11 gol subiti, rilanciata dal 4-2 a Venezia con Vanoli; Napoli con 6 punti e 4 gol subiti nelle ultime due.",
+   "pick": "X2 + Under 3.5",
+   "confidence": 1,
+   "lesson": null,
+   "extra": {
+    "dcx2": 1.3
+   },
+   "lambda_home": 0.921,
+   "lambda_away": 1.391,
+   "model_probs": {
+    "home": 0.2411,
+    "draw": 0.2881,
+    "away": 0.4708,
+    "btts": 0.4596,
+    "over15": 0.6795,
+    "over25": 0.4071,
+    "over35": 0.2031
+   },
+   "model_cs": [
+    {
+     "p": 0.134515,
+     "s": "1-1"
+    },
+    {
+     "p": 0.130227,
+     "s": "0-1"
+    },
+    {
+     "p": 0.106698,
+     "s": "0-0"
+    },
+    {
+     "p": 0.095879,
+     "s": "0-2"
+    },
+    {
+     "p": 0.08827,
+     "s": "1-2"
+    }
+   ],
+   "market_probs": {
+    "home": 0.2804,
+    "draw": 0.2804,
+    "away": 0.4391
+   },
+   "final_probs": {
+    "home": 0.2686,
+    "draw": 0.2827,
+    "away": 0.4486
+   },
+   "markets": {
+    "1": {
+     "p": 0.2686,
+     "q": 3.5,
+     "ev": -0.0597,
+     "fair": 3.7223,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.2827,
+     "q": 3.5,
+     "ev": -0.0104,
+     "fair": 3.5368,
+     "qsrc": "real"
+    },
+    "2": {
+     "p": 0.4486,
+     "q": 2.25,
+     "ev": 0.0094,
+     "fair": 2.2291,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.5514,
+     "q": null,
+     "ev": null,
+     "fair": 1.8136
+    },
+    "12": {
+     "p": 0.7173,
+     "q": null,
+     "ev": null,
+     "fair": 1.3942
+    },
+    "X2": {
+     "p": 0.7314,
+     "q": 1.3,
+     "ev": -0.0492,
+     "fair": 1.3673,
+     "qsrc": "real"
+    },
+    "GG": {
+     "p": 0.4596,
+     "q": null,
+     "ev": null,
+     "fair": 2.1756
+    },
+    "NG": {
+     "p": 0.5404,
+     "q": null,
+     "ev": null,
+     "fair": 1.8506
+    },
+    "O1.5": {
+     "p": 0.6795,
+     "q": null,
+     "ev": null,
+     "fair": 1.4717
+    },
+    "U1.5": {
+     "p": 0.3205,
+     "q": null,
+     "ev": null,
+     "fair": 3.1198
+    },
+    "O2.5": {
+     "p": 0.4071,
+     "q": null,
+     "ev": null,
+     "fair": 2.4565
+    },
+    "U2.5": {
+     "p": 0.5929,
+     "q": null,
+     "ev": null,
+     "fair": 1.6866
+    },
+    "O3.5": {
+     "p": 0.2031,
+     "q": null,
+     "ev": null,
+     "fair": 4.9248
+    },
+    "U3.5": {
+     "p": 0.7969,
+     "q": null,
+     "ev": null,
+     "fair": 1.2548
+    }
+   },
+   "overround": 0.0159,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.106698
+    },
+    {
+     "s": "0-1",
+     "p": 0.130227
+    },
+    {
+     "s": "0-2",
+     "p": 0.095879
+    },
+    {
+     "s": "0-3",
+     "p": 0.044461
+    },
+    {
+     "s": "0-4",
+     "p": 0.015463
+    },
+    {
+     "s": "1-0",
+     "p": 0.083606
+    },
+    {
+     "s": "1-1",
+     "p": 0.134515
+    },
+    {
+     "s": "1-2",
+     "p": 0.08827
+    },
+    {
+     "s": "1-3",
+     "p": 0.040932
+    },
+    {
+     "s": "1-4",
+     "p": 0.014236
+    },
+    {
+     "s": "2-0",
+     "p": 0.04199
+    },
+    {
+     "s": "2-1",
+     "p": 0.058414
+    },
+    {
+     "s": "2-2",
+     "p": 0.040632
+    },
+    {
+     "s": "2-3",
+     "p": 0.018842
+    },
+    {
+     "s": "2-4",
+     "p": 0.006553
+    },
+    {
+     "s": "3-0",
+     "p": 0.012886
+    },
+    {
+     "s": "3-1",
+     "p": 0.017926
+    },
+    {
+     "s": "3-2",
+     "p": 0.012469
+    },
+    {
+     "s": "3-3",
+     "p": 0.005782
+    },
+    {
+     "s": "3-4",
+     "p": 0.002011
+    },
+    {
+     "s": "4-0",
+     "p": 0.002966
+    },
+    {
+     "s": "4-1",
+     "p": 0.004126
+    },
+    {
+     "s": "4-2",
+     "p": 0.00287
+    },
+    {
+     "s": "4-3",
+     "p": 0.001331
+    },
+    {
+     "s": "4-4",
+     "p": 0.000463
+    }
+   ],
+   "book_margin_k": 1.015,
+   "best_value": {
+    "sel": "2",
+    "ev": 0.0094,
+    "p": 0.4486,
+    "q": 2.25
+   },
+   "model_lean": "2",
+   "model_lean_p": 0.4486,
+   "expected_goals": 2.31
+  },
+  {
+   "id": "fro-com",
+   "day": "dom",
+   "date": "20 settembre",
+   "time": "15:00",
+   "home": "Frosinone",
+   "away": "Como",
+   "venue": "Stadio Stirpe, Frosinone",
+   "tv": "DAZN",
+   "status": "upcoming",
+   "score": null,
+   "scorers": null,
+   "quotes": {
+    "h": 6.0,
+    "d": 4.2,
+    "a": 1.5
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "real",
+    "a": "real"
+   },
+   "xg_ext": [
+    0.95,
+    1.5
+   ],
+   "ext_model": {
+    "h": 20,
+    "d": 27,
+    "a": 53
+   },
+   "xg_src": "stima modello interno (differenziale rosa/Champions)",
+   "absences": {
+    "home": [
+     "Grillitsch"
+    ],
+    "away": [
+     "Addai"
+    ]
+   },
+   "h2h": "Primo incrocio in assoluto in Serie A fra le due squadre.",
+   "note": "Frosinone sorpresa con 7 punti (7 gol fatti) e imbattuto da 3 gare; Como con 3 vittorie di fila, successo a Napoli e vittoria in Champions sul Lipsia.",
+   "formNote": "Frosinone con 7 punti, 7 gol fatti e 3 gare senza sconfitta; Como con 3 vittorie consecutive (Udinese, Napoli, Lipsia in Champions).",
+   "pick": "2 (Como) + Over 1.5",
+   "confidence": 1,
+   "lesson": null,
+   "extra": {},
+   "lambda_home": 1.047,
+   "lambda_away": 1.483,
+   "model_probs": {
+    "home": 0.2598,
+    "draw": 0.2753,
+    "away": 0.4649,
+    "btts": 0.5093,
+    "over15": 0.7264,
+    "over25": 0.4641,
+    "over35": 0.2491
+   },
+   "model_cs": [
+    {
+     "p": 0.131085,
+     "s": "1-1"
+    },
+    {
+     "p": 0.110644,
+     "s": "0-1"
+    },
+    {
+     "p": 0.091727,
+     "s": "1-2"
+    },
+    {
+     "p": 0.087573,
+     "s": "0-2"
+    },
+    {
+     "p": 0.087006,
+     "s": "0-0"
+    }
+   ],
+   "market_probs": {
+    "home": 0.1438,
+    "draw": 0.2115,
+    "away": 0.6447
+   },
+   "final_probs": {
+    "home": 0.1761,
+    "draw": 0.2275,
+    "away": 0.5964
+   },
+   "markets": {
+    "1": {
+     "p": 0.1761,
+     "q": 6.0,
+     "ev": 0.0568,
+     "fair": 5.6777,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.2275,
+     "q": 4.2,
+     "ev": -0.0446,
+     "fair": 4.3963,
+     "qsrc": "real"
+    },
+    "2": {
+     "p": 0.5964,
+     "q": 1.5,
+     "ev": -0.1054,
+     "fair": 1.6767,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.4036,
+     "q": null,
+     "ev": null,
+     "fair": 2.4777
+    },
+    "12": {
+     "p": 0.7725,
+     "q": null,
+     "ev": null,
+     "fair": 1.2944
+    },
+    "X2": {
+     "p": 0.8239,
+     "q": null,
+     "ev": null,
+     "fair": 1.2138
+    },
+    "GG": {
+     "p": 0.5093,
+     "q": null,
+     "ev": null,
+     "fair": 1.9634
+    },
+    "NG": {
+     "p": 0.4907,
+     "q": null,
+     "ev": null,
+     "fair": 2.038
+    },
+    "O1.5": {
+     "p": 0.7264,
+     "q": null,
+     "ev": null,
+     "fair": 1.3766
+    },
+    "U1.5": {
+     "p": 0.2736,
+     "q": null,
+     "ev": null,
+     "fair": 3.6551
+    },
+    "O2.5": {
+     "p": 0.4641,
+     "q": null,
+     "ev": null,
+     "fair": 2.1548
+    },
+    "U2.5": {
+     "p": 0.5359,
+     "q": null,
+     "ev": null,
+     "fair": 1.866
+    },
+    "O3.5": {
+     "p": 0.2491,
+     "q": null,
+     "ev": null,
+     "fair": 4.0152
+    },
+    "U3.5": {
+     "p": 0.7509,
+     "q": null,
+     "ev": null,
+     "fair": 1.3316
+    }
+   },
+   "overround": 0.0714,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.087006
+    },
+    {
+     "s": "0-1",
+     "p": 0.110644
+    },
+    {
+     "s": "0-2",
+     "p": 0.087573
+    },
+    {
+     "s": "0-3",
+     "p": 0.043304
+    },
+    {
+     "s": "0-4",
+     "p": 0.01606
+    },
+    {
+     "s": "1-0",
+     "p": 0.075942
+    },
+    {
+     "s": "1-1",
+     "p": 0.131085
+    },
+    {
+     "s": "1-2",
+     "p": 0.091727
+    },
+    {
+     "s": "1-3",
+     "p": 0.045358
+    },
+    {
+     "s": "1-4",
+     "p": 0.016822
+    },
+    {
+     "s": "2-0",
+     "p": 0.043658
+    },
+    {
+     "s": "2-1",
+     "p": 0.064766
+    },
+    {
+     "s": "2-2",
+     "p": 0.048039
+    },
+    {
+     "s": "2-3",
+     "p": 0.023755
+    },
+    {
+     "s": "2-4",
+     "p": 0.00881
+    },
+    {
+     "s": "3-0",
+     "p": 0.015243
+    },
+    {
+     "s": "3-1",
+     "p": 0.022613
+    },
+    {
+     "s": "3-2",
+     "p": 0.016773
+    },
+    {
+     "s": "3-3",
+     "p": 0.008294
+    },
+    {
+     "s": "3-4",
+     "p": 0.003076
+    },
+    {
+     "s": "4-0",
+     "p": 0.003992
+    },
+    {
+     "s": "4-1",
+     "p": 0.005921
+    },
+    {
+     "s": "4-2",
+     "p": 0.004392
+    },
+    {
+     "s": "4-3",
+     "p": 0.002172
+    },
+    {
+     "s": "4-4",
+     "p": 0.000805
+    }
+   ],
+   "book_margin_k": 1.083,
+   "best_value": {
+    "sel": "2",
+    "ev": -0.1054,
+    "p": 0.5964,
+    "q": 1.5
+   },
+   "model_lean": "2",
+   "model_lean_p": 0.5964,
+   "expected_goals": 2.53
+  },
+  {
+   "id": "par-gen",
+   "day": "dom",
+   "date": "20 settembre",
+   "time": "15:00",
+   "home": "Parma",
+   "away": "Genoa",
+   "venue": "Stadio Tardini, Parma",
+   "tv": "DAZN",
+   "status": "upcoming",
+   "score": null,
+   "scorers": null,
+   "quotes": {
+    "h": 3.1,
+    "d": 3.0,
+    "a": 2.5
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "real",
+    "a": "real"
+   },
+   "xg_ext": [
+    0.98,
+    1.12
+   ],
+   "ext_model": {
+    "h": 30,
+    "d": 29,
+    "a": 41
+   },
+   "xg_src": "1x2.expert + squalifica Vasquez (Genoa)",
+   "absences": {
+    "home": [
+     "Nicolussi Caviglia"
+    ],
+    "away": [
+     "Vásquez (squal.)",
+     "Venturino",
+     "Havel"
+    ]
+   },
+   "h2h": "Elo praticamente pari (Parma 1659 vs Genoa 1651). Sfida salvezza: entrambe con 1 punto in 4 gare.",
+   "note": "Il Genoa perde per squalifica Vásquez, protagonista (gol + espulsione) con il Frosinone: reparto arretrato da ricostruire. Parma con il peggior attacco del torneo insieme al Bologna (2 gol).",
+   "formNote": "Parma con 2 gol fatti in 4 gare e nessuna vittoria; Genoa con 2 gol fatti, 8 subiti e 1 punto.",
+   "pick": "Under 2.5 + X2",
+   "confidence": 1,
+   "lesson": null,
+   "extra": {},
+   "lambda_home": 1.04,
+   "lambda_away": 1.017,
+   "model_probs": {
+    "home": 0.346,
+    "draw": 0.3195,
+    "away": 0.3345,
+    "btts": 0.4209,
+    "over15": 0.6174,
+    "over25": 0.3388,
+    "over35": 0.1534
+   },
+   "model_cs": [
+    {
+     "p": 0.143323,
+     "s": "1-1"
+    },
+    {
+     "p": 0.135907,
+     "s": "0-0"
+    },
+    {
+     "p": 0.124772,
+     "s": "1-0"
+    },
+    {
+     "p": 0.121918,
+     "s": "0-1"
+    },
+    {
+     "p": 0.070298,
+     "s": "2-1"
+    }
+   ],
+   "market_probs": {
+    "home": 0.304,
+    "draw": 0.3147,
+    "away": 0.3813
+   },
+   "final_probs": {
+    "home": 0.3166,
+    "draw": 0.3161,
+    "away": 0.3672
+   },
+   "markets": {
+    "1": {
+     "p": 0.3166,
+     "q": 3.1,
+     "ev": -0.0184,
+     "fair": 3.1582,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.3161,
+     "q": 3.0,
+     "ev": -0.0516,
+     "fair": 3.1632,
+     "qsrc": "real"
+    },
+    "2": {
+     "p": 0.3672,
+     "q": 2.5,
+     "ev": -0.0819,
+     "fair": 2.7231,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.6328,
+     "q": null,
+     "ev": null,
+     "fair": 1.5803
+    },
+    "12": {
+     "p": 0.6839,
+     "q": null,
+     "ev": null,
+     "fair": 1.4623
+    },
+    "X2": {
+     "p": 0.6834,
+     "q": null,
+     "ev": null,
+     "fair": 1.4633
+    },
+    "GG": {
+     "p": 0.4209,
+     "q": null,
+     "ev": null,
+     "fair": 2.3759
+    },
+    "NG": {
+     "p": 0.5791,
+     "q": null,
+     "ev": null,
+     "fair": 1.7268
+    },
+    "O1.5": {
+     "p": 0.6174,
+     "q": null,
+     "ev": null,
+     "fair": 1.6197
+    },
+    "U1.5": {
+     "p": 0.3826,
+     "q": null,
+     "ev": null,
+     "fair": 2.6137
+    },
+    "O2.5": {
+     "p": 0.3388,
+     "q": null,
+     "ev": null,
+     "fair": 2.9513
+    },
+    "U2.5": {
+     "p": 0.6612,
+     "q": null,
+     "ev": null,
+     "fair": 1.5125
+    },
+    "O3.5": {
+     "p": 0.1534,
+     "q": null,
+     "ev": null,
+     "fair": 6.5203
+    },
+    "U3.5": {
+     "p": 0.8466,
+     "q": null,
+     "ev": null,
+     "fair": 1.1811
+    }
+   },
+   "overround": 0.0559,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.135907
+    },
+    {
+     "s": "0-1",
+     "p": 0.121918
+    },
+    {
+     "s": "0-2",
+     "p": 0.066153
+    },
+    {
+     "s": "0-3",
+     "p": 0.022437
+    },
+    {
+     "s": "0-4",
+     "p": 0.005707
+    },
+    {
+     "s": "1-0",
+     "p": 0.124772
+    },
+    {
+     "s": "1-1",
+     "p": 0.143323
+    },
+    {
+     "s": "1-2",
+     "p": 0.068788
+    },
+    {
+     "s": "1-3",
+     "p": 0.023331
+    },
+    {
+     "s": "1-4",
+     "p": 0.005935
+    },
+    {
+     "s": "2-0",
+     "p": 0.069089
+    },
+    {
+     "s": "2-1",
+     "p": 0.070298
+    },
+    {
+     "s": "2-2",
+     "p": 0.035764
+    },
+    {
+     "s": "2-3",
+     "p": 0.01213
+    },
+    {
+     "s": "2-4",
+     "p": 0.003086
+    },
+    {
+     "s": "3-0",
+     "p": 0.023947
+    },
+    {
+     "s": "3-1",
+     "p": 0.024366
+    },
+    {
+     "s": "3-2",
+     "p": 0.012396
+    },
+    {
+     "s": "3-3",
+     "p": 0.004204
+    },
+    {
+     "s": "3-4",
+     "p": 0.001069
+    },
+    {
+     "s": "4-0",
+     "p": 0.006225
+    },
+    {
+     "s": "4-1",
+     "p": 0.006334
+    },
+    {
+     "s": "4-2",
+     "p": 0.003222
+    },
+    {
+     "s": "4-3",
+     "p": 0.001093
+    },
+    {
+     "s": "4-4",
+     "p": 0.000278
+    }
+   ],
+   "book_margin_k": 1.052,
+   "best_value": {
+    "sel": "2",
+    "ev": -0.0819,
+    "p": 0.3672,
+    "q": 2.5
+   },
+   "model_lean": "2",
+   "model_lean_p": 0.3672,
+   "expected_goals": 2.06
+  },
+  {
+   "id": "juv-ata",
+   "day": "dom",
+   "date": "20 settembre",
+   "time": "18:00",
+   "home": "Juventus",
+   "away": "Atalanta",
+   "venue": "Allianz Stadium, Torino",
+   "tv": "DAZN / Sky",
+   "status": "upcoming",
+   "score": null,
+   "scorers": null,
+   "quotes": {
+    "h": 1.7,
+    "d": 3.75,
+    "a": 5.0
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "real",
+    "a": "real"
+   },
+   "xg_ext": [
+    1.52,
+    1.0
+   ],
+   "ext_model": {
+    "h": 47,
+    "d": 27,
+    "a": 26
+   },
+   "xg_src": "ProfeGol/SharpSoccer + 7 assenze Juve",
+   "absences": {
+    "home": [
+     "Yildiz",
+     "Ekhator",
+     "Cabal",
+     "Thuram",
+     "Locatelli",
+     "Boga",
+     "Cambiaso"
+    ],
+    "away": [
+     "Kossounou",
+     "Hien",
+     "Sulemana"
+    ]
+   },
+   "h2h": "Dal 2017 la Juventus ha pareggiato 12 delle 19 sfide di A con l'Atalanta (4V, 3P). L'Atalanta è imbattuta nelle ultime 8 trasferte a Torino (2V, 6N) e ha segnato nel primo tempo in 7 di quelle 8.",
+   "note": "Juve reduce dal 3-2 subito a Reggio Emilia (gol al 94') e dal 5-0 al NEC in Europa League giovedì: turn over e fatica europea da monitorare. Atalanta reduce da 2 ko (Roma, Cagliari) e con produzione offensiva ai minimi stagionali per xG.",
+   "formNote": "Juventus con 6 gol fatti e 4 subiti, ko al 94' a Reggio Emilia e 5-0 al NEC in Europa League; Atalanta con 5 gol fatti e 2 sconfitte di fila.",
+   "pick": "GG + 1X",
+   "confidence": 1,
+   "lesson": null,
+   "extra": {
+    "gg": 1.75
+   },
+   "lambda_home": 1.555,
+   "lambda_away": 0.967,
+   "model_probs": {
+    "home": 0.5031,
+    "draw": 0.2692,
+    "away": 0.2277,
+    "btts": 0.496,
+    "over15": 0.7244,
+    "over25": 0.4618,
+    "over35": 0.2471
+   },
+   "model_cs": [
+    {
+     "p": 0.127977,
+     "s": "1-1"
+    },
+    {
+     "p": 0.117664,
+     "s": "1-0"
+    },
+    {
+     "p": 0.09713,
+     "s": "2-0"
+    },
+    {
+     "p": 0.093883,
+     "s": "2-1"
+    },
+    {
+     "p": 0.087559,
+     "s": "0-0"
+    }
+   ],
+   "market_probs": {
+    "home": 0.5705,
+    "draw": 0.2471,
+    "away": 0.1823
+   },
+   "final_probs": {
+    "home": 0.5503,
+    "draw": 0.2538,
+    "away": 0.1959
+   },
+   "markets": {
+    "1": {
+     "p": 0.5503,
+     "q": 1.7,
+     "ev": -0.0645,
+     "fair": 1.8172,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.2538,
+     "q": 3.75,
+     "ev": -0.0484,
+     "fair": 3.9406,
+     "qsrc": "real"
+    },
+    "2": {
+     "p": 0.1959,
+     "q": 5.0,
+     "ev": -0.0204,
+     "fair": 5.1039,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.8041,
+     "q": null,
+     "ev": null,
+     "fair": 1.2437
+    },
+    "12": {
+     "p": 0.7462,
+     "q": null,
+     "ev": null,
+     "fair": 1.3401
+    },
+    "X2": {
+     "p": 0.4497,
+     "q": null,
+     "ev": null,
+     "fair": 2.2237
+    },
+    "GG": {
+     "p": 0.496,
+     "q": 1.75,
+     "ev": -0.1319,
+     "fair": 2.016,
+     "qsrc": "real"
+    },
+    "NG": {
+     "p": 0.504,
+     "q": null,
+     "ev": null,
+     "fair": 1.9843
+    },
+    "O1.5": {
+     "p": 0.7244,
+     "q": null,
+     "ev": null,
+     "fair": 1.3805
+    },
+    "U1.5": {
+     "p": 0.2756,
+     "q": null,
+     "ev": null,
+     "fair": 3.6283
+    },
+    "O2.5": {
+     "p": 0.4618,
+     "q": null,
+     "ev": null,
+     "fair": 2.1656
+    },
+    "U2.5": {
+     "p": 0.5382,
+     "q": null,
+     "ev": null,
+     "fair": 1.8579
+    },
+    "O3.5": {
+     "p": 0.2471,
+     "q": null,
+     "ev": null,
+     "fair": 4.047
+    },
+    "U3.5": {
+     "p": 0.7529,
+     "q": null,
+     "ev": null,
+     "fair": 1.3282
+    }
+   },
+   "overround": 0.0549,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.087559
+    },
+    {
+     "s": "0-1",
+     "p": 0.070387
+    },
+    {
+     "s": "0-2",
+     "p": 0.037518
+    },
+    {
+     "s": "0-3",
+     "p": 0.012088
+    },
+    {
+     "s": "0-4",
+     "p": 0.002921
+    },
+    {
+     "s": "1-0",
+     "p": 0.117664
+    },
+    {
+     "s": "1-1",
+     "p": 0.127977
+    },
+    {
+     "s": "1-2",
+     "p": 0.058349
+    },
+    {
+     "s": "1-3",
+     "p": 0.0188
+    },
+    {
+     "s": "1-4",
+     "p": 0.004543
+    },
+    {
+     "s": "2-0",
+     "p": 0.09713
+    },
+    {
+     "s": "2-1",
+     "p": 0.093883
+    },
+    {
+     "s": "2-2",
+     "p": 0.045373
+    },
+    {
+     "s": "2-3",
+     "p": 0.014619
+    },
+    {
+     "s": "2-4",
+     "p": 0.003533
+    },
+    {
+     "s": "3-0",
+     "p": 0.050353
+    },
+    {
+     "s": "3-1",
+     "p": 0.04867
+    },
+    {
+     "s": "3-2",
+     "p": 0.023522
+    },
+    {
+     "s": "3-3",
+     "p": 0.007578
+    },
+    {
+     "s": "3-4",
+     "p": 0.001831
+    },
+    {
+     "s": "4-0",
+     "p": 0.019577
+    },
+    {
+     "s": "4-1",
+     "p": 0.018923
+    },
+    {
+     "s": "4-2",
+     "p": 0.009145
+    },
+    {
+     "s": "4-3",
+     "p": 0.002947
+    },
+    {
+     "s": "4-4",
+     "p": 0.000712
+    }
+   ],
+   "book_margin_k": 1.058,
+   "best_value": {
+    "sel": "1",
+    "ev": -0.0645,
+    "p": 0.5503,
+    "q": 1.7
+   },
+   "model_lean": "1",
+   "model_lean_p": 0.5503,
+   "expected_goals": 2.52
+  },
+  {
+   "id": "mil-lec",
+   "day": "dom",
+   "date": "20 settembre",
+   "time": "20:45",
+   "home": "Milan",
+   "away": "Lecce",
+   "venue": "Stadio Meazza, Milano",
+   "tv": "DAZN",
+   "status": "upcoming",
+   "score": null,
+   "scorers": null,
+   "quotes": {
+    "h": 1.27,
+    "d": 5.5,
+    "a": 13.0
+   },
+   "qsrc": {
+    "h": "real",
+    "d": "real",
+    "a": "real"
+   },
+   "xg_ext": [
+    1.8,
+    0.72
+   ],
+   "ext_model": {
+    "h": 68,
+    "d": 21,
+    "a": 11
+   },
+   "xg_src": "stima modello interno + H2H (16 gare imbattuto)",
+   "absences": {
+    "home": [],
+    "away": [
+     "Geubbels"
+    ]
+   },
+   "h2h": "Milan vittorioso nelle ultime 5 sfide di A contro il Lecce (12-2) e imbattuto da 16 partite contro i salentini. Lecce con 6 punti, vittorioso 3-2 sul Monza.",
+   "note": "Curiosità statistica pesante: tutti i 7 gol del Milan in campionato sono arrivati nell'ultima mezz'ora. Amorim ha recuperato tutti gli effettivi; Milan reduce dal 2-2 in rimonta a Roma con la Lazio e dal ko in Champions con il Benfica.",
+   "formNote": "Milan imbattuto con 7 gol fatti (tutti nell'ultima mezz'ora) e 2 pareggi di fila; Lecce con 6 punti e 3 gol nel primo tempo contro il Monza.",
+   "pick": "1 + Milan segna nel 2° tempo",
+   "confidence": 2,
+   "lesson": null,
+   "extra": {},
+   "lambda_home": 1.835,
+   "lambda_away": 0.772,
+   "model_probs": {
+    "home": 0.6199,
+    "draw": 0.2342,
+    "away": 0.1459,
+    "btts": 0.4585,
+    "over15": 0.7403,
+    "over25": 0.4834,
+    "over35": 0.2656
+   },
+   "model_cs": [
+    {
+     "p": 0.129021,
+     "s": "1-0"
+    },
+    {
+     "p": 0.124115,
+     "s": "2-0"
+    },
+    {
+     "p": 0.110779,
+     "s": "1-1"
+    },
+    {
+     "p": 0.095875,
+     "s": "2-1"
+    },
+    {
+     "p": 0.080008,
+     "s": "0-0"
+    }
+   ],
+   "market_probs": {
+    "home": 0.7743,
+    "draw": 0.1614,
+    "away": 0.0643
+   },
+   "final_probs": {
+    "home": 0.7297,
+    "draw": 0.1821,
+    "away": 0.0882
+   },
+   "markets": {
+    "1": {
+     "p": 0.7297,
+     "q": 1.27,
+     "ev": -0.0732,
+     "fair": 1.3704,
+     "qsrc": "real"
+    },
+    "X": {
+     "p": 0.1821,
+     "q": 5.5,
+     "ev": 0.0014,
+     "fair": 5.4925,
+     "qsrc": "real"
+    },
+    "2": {
+     "p": 0.0882,
+     "q": 13.0,
+     "ev": 0.1467,
+     "fair": 11.337,
+     "qsrc": "real"
+    },
+    "1X": {
+     "p": 0.9118,
+     "q": null,
+     "ev": null,
+     "fair": 1.0967
+    },
+    "12": {
+     "p": 0.8179,
+     "q": null,
+     "ev": null,
+     "fair": 1.2226
+    },
+    "X2": {
+     "p": 0.2703,
+     "q": null,
+     "ev": null,
+     "fair": 3.6999
+    },
+    "GG": {
+     "p": 0.4585,
+     "q": null,
+     "ev": null,
+     "fair": 2.1811
+    },
+    "NG": {
+     "p": 0.5415,
+     "q": null,
+     "ev": null,
+     "fair": 1.8467
+    },
+    "O1.5": {
+     "p": 0.7403,
+     "q": null,
+     "ev": null,
+     "fair": 1.3508
+    },
+    "U1.5": {
+     "p": 0.2597,
+     "q": null,
+     "ev": null,
+     "fair": 3.8503
+    },
+    "O2.5": {
+     "p": 0.4834,
+     "q": null,
+     "ev": null,
+     "fair": 2.0687
+    },
+    "U2.5": {
+     "p": 0.5166,
+     "q": null,
+     "ev": null,
+     "fair": 1.9357
+    },
+    "O3.5": {
+     "p": 0.2656,
+     "q": null,
+     "ev": null,
+     "fair": 3.7654
+    },
+    "U3.5": {
+     "p": 0.7344,
+     "q": null,
+     "ev": null,
+     "fair": 1.3616
+    }
+   },
+   "overround": 0.0461,
+   "heat": [
+    {
+     "s": "0-0",
+     "p": 0.080008
+    },
+    {
+     "s": "0-1",
+     "p": 0.050689
+    },
+    {
+     "s": "0-2",
+     "p": 0.022
+    },
+    {
+     "s": "0-3",
+     "p": 0.005665
+    },
+    {
+     "s": "0-4",
+     "p": 0.001094
+    },
+    {
+     "s": "1-0",
+     "p": 0.129021
+    },
+    {
+     "s": "1-1",
+     "p": 0.110779
+    },
+    {
+     "s": "1-2",
+     "p": 0.040365
+    },
+    {
+     "s": "1-3",
+     "p": 0.010394
+    },
+    {
+     "s": "1-4",
+     "p": 0.002007
+    },
+    {
+     "s": "2-0",
+     "p": 0.124115
+    },
+    {
+     "s": "2-1",
+     "p": 0.095875
+    },
+    {
+     "s": "2-2",
+     "p": 0.037031
+    },
+    {
+     "s": "2-3",
+     "p": 0.009535
+    },
+    {
+     "s": "2-4",
+     "p": 0.001841
+    },
+    {
+     "s": "3-0",
+     "p": 0.075908
+    },
+    {
+     "s": "3-1",
+     "p": 0.058637
+    },
+    {
+     "s": "3-2",
+     "p": 0.022648
+    },
+    {
+     "s": "3-3",
+     "p": 0.005832
+    },
+    {
+     "s": "3-4",
+     "p": 0.001126
+    },
+    {
+     "s": "4-0",
+     "p": 0.034819
+    },
+    {
+     "s": "4-1",
+     "p": 0.026896
+    },
+    {
+     "s": "4-2",
+     "p": 0.010388
+    },
+    {
+     "s": "4-3",
+     "p": 0.002675
+    },
+    {
+     "s": "4-4",
+     "p": 0.000517
+    }
+   ],
+   "book_margin_k": 1.07,
+   "best_value": {
+    "sel": "1",
+    "ev": -0.0732,
+    "p": 0.7297,
+    "q": 1.27
+   },
+   "model_lean": "1",
+   "model_lean_p": 0.7297,
+   "expected_goals": 2.61
+  }
+ ],
+ "schedine": [
+  {
+   "code": "A",
+   "nome": "Schedina A - Prudente (2 selezioni)",
+   "tag": "bassa varianza",
+   "dettaglio": [
+    {
+     "mid": "rom-int",
+     "partita": "Roma-Inter",
+     "sel": "12",
+     "p": 0.7351,
+     "q": 1.33,
+     "ev": -0.0223,
+     "ora": "19 settembre 18:00"
+    },
+    {
+     "mid": "fio-nap",
+     "partita": "Fiorentina-Napoli",
+     "sel": "X2",
+     "p": 0.7314,
+     "q": 1.3,
+     "ev": -0.0492,
+     "ora": "20 settembre 12:30"
+    }
+   ],
+   "quota": 1.73,
+   "prob": 0.5377,
+   "ev": -0.0704,
+   "stake": "3 unita' su 10",
+   "kelly": 0.0,
+   "perdita_attesa": -0.0704,
+   "note": "Il margine del banco sulle multiple si moltiplica: puntare poco e con selezioni ad alta probabilita'."
+  },
+  {
+   "code": "B",
+   "nome": "Schedina B - Bilanciata (3 selezioni)",
+   "tag": "equilibrata",
+   "dettaglio": [
+    {
+     "mid": "rom-int",
+     "partita": "Roma-Inter",
+     "sel": "1X",
+     "p": 0.6536,
+     "q": 1.5,
+     "ev": -0.0196,
+     "ora": "19 settembre 18:00"
+    },
+    {
+     "mid": "ven-laz",
+     "partita": "Venezia-Lazio",
+     "sel": "2",
+     "p": 0.5175,
+     "q": 1.95,
+     "ev": 0.0091,
+     "ora": "19 settembre 20:45"
+    },
+    {
+     "mid": "fio-nap",
+     "partita": "Fiorentina-Napoli",
+     "sel": "X2",
+     "p": 0.7314,
+     "q": 1.3,
+     "ev": -0.0492,
+     "ora": "20 settembre 12:30"
+    }
+   ],
+   "quota": 3.8,
+   "prob": 0.2474,
+   "ev": -0.0593,
+   "stake": "2 unita' su 10",
+   "kelly": 0.0,
+   "perdita_attesa": -0.0593,
+   "note": "Il margine del banco sulle multiple si moltiplica: puntare poco e con selezioni ad alta probabilita'."
+  },
+  {
+   "code": "C",
+   "nome": "Schedina C - Aggressiva (4 selezioni)",
+   "tag": "alta varianza",
+   "dettaglio": [
+    {
+     "mid": "rom-int",
+     "partita": "Roma-Inter",
+     "sel": "1",
+     "p": 0.3887,
+     "q": 2.7,
+     "ev": 0.0495,
+     "ora": "19 settembre 18:00"
+    },
+    {
+     "mid": "ven-laz",
+     "partita": "Venezia-Lazio",
+     "sel": "2",
+     "p": 0.5175,
+     "q": 1.95,
+     "ev": 0.0091,
+     "ora": "19 settembre 20:45"
+    },
+    {
+     "mid": "fio-nap",
+     "partita": "Fiorentina-Napoli",
+     "sel": "X2",
+     "p": 0.7314,
+     "q": 1.3,
+     "ev": -0.0492,
+     "ora": "20 settembre 12:30"
+    },
+    {
+     "mid": "juv-ata",
+     "partita": "Juventus-Atalanta",
+     "sel": "1",
+     "p": 0.5503,
+     "q": 1.7,
+     "ev": -0.0645,
+     "ora": "20 settembre 18:00"
+    }
+   ],
+   "quota": 11.64,
+   "prob": 0.081,
+   "ev": -0.058,
+   "stake": "1 unita' su 10",
+   "kelly": 0.0,
+   "perdita_attesa": -0.058,
+   "note": "Il margine del banco sulle multiple si moltiplica: puntare poco e con selezioni ad alta probabilita'."
+  },
+  {
+   "code": "D",
+   "nome": "Schedina D - La giocata singola del turno",
+   "tag": "value",
+   "dettaglio": [
+    {
+     "mid": "rom-int",
+     "partita": "Roma-Inter",
+     "sel": "1",
+     "p": 0.3887,
+     "q": 2.7,
+     "ev": 0.0495,
+     "ora": "19 settembre 18:00"
+    }
+   ],
+   "quota": 2.7,
+   "prob": 0.3887,
+   "ev": 0.0495,
+   "stake": "2 unita' su 10",
+   "kelly": 0.0073,
+   "perdita_attesa": 0.0495,
+   "note": "Una sola giocata, la migliore del turno: e' cosi' che si riduce l'impatto del margine del banco."
+  }
+ ],
+ "value_top": [
+  {
+   "mid": "rom-int",
+   "partita": "Roma-Inter",
+   "sel": "1",
+   "p": 0.3887,
+   "q": 2.7,
+   "ev": 0.0495,
+   "fair": 2.57,
+   "ora": "19 settembre 18:00",
+   "kelly": 0.0073
+  },
+  {
+   "mid": "fio-nap",
+   "partita": "Fiorentina-Napoli",
+   "sel": "2",
+   "p": 0.4486,
+   "q": 2.25,
+   "ev": 0.0094,
+   "fair": 2.23,
+   "ora": "20 settembre 12:30",
+   "kelly": 0.0019
+  },
+  {
+   "mid": "ven-laz",
+   "partita": "Venezia-Lazio",
+   "sel": "2",
+   "p": 0.5175,
+   "q": 1.95,
+   "ev": 0.0091,
+   "fair": 1.93,
+   "ora": "19 settembre 20:45",
+   "kelly": 0.0024
+  },
+  {
+   "mid": "fio-nap",
+   "partita": "Fiorentina-Napoli",
+   "sel": "X",
+   "p": 0.2827,
+   "q": 3.5,
+   "ev": -0.0104,
+   "fair": 3.54,
+   "ora": "20 settembre 12:30",
+   "kelly": 0.0
+  },
+  {
+   "mid": "par-gen",
+   "partita": "Parma-Genoa",
+   "sel": "1",
+   "p": 0.3166,
+   "q": 3.1,
+   "ev": -0.0184,
+   "fair": 3.16,
+   "ora": "20 settembre 15:00",
+   "kelly": 0.0
+  },
+  {
+   "mid": "rom-int",
+   "partita": "Roma-Inter",
+   "sel": "1X",
+   "p": 0.6536,
+   "q": 1.5,
+   "ev": -0.0196,
+   "fair": 1.53,
+   "ora": "19 settembre 18:00",
+   "kelly": 0.0
+  },
+  {
+   "mid": "rom-int",
+   "partita": "Roma-Inter",
+   "sel": "12",
+   "p": 0.7351,
+   "q": 1.33,
+   "ev": -0.0223,
+   "fair": 1.36,
+   "ora": "19 settembre 18:00",
+   "kelly": 0.0
+  },
+  {
+   "mid": "rom-int",
+   "partita": "Roma-Inter",
+   "sel": "O2.5",
+   "p": 0.5708,
+   "q": 1.67,
+   "ev": -0.0467,
+   "fair": 1.75,
+   "ora": "19 settembre 18:00",
+   "kelly": 0.0
+  }
+ ],
+ "avoid": [
+  {
+   "mid": "ven-laz",
+   "partita": "Venezia-Lazio",
+   "sel": "GG",
+   "p": 0.4652,
+   "q": 1.63,
+   "ev": -0.2417,
+   "fair": 2.15,
+   "ora": "19 settembre 20:45",
+   "kelly": 0.0
+  },
+  {
+   "mid": "juv-ata",
+   "partita": "Juventus-Atalanta",
+   "sel": "GG",
+   "p": 0.496,
+   "q": 1.75,
+   "ev": -0.1319,
+   "fair": 2.02,
+   "ora": "20 settembre 18:00",
+   "kelly": 0.0
+  },
+  {
+   "mid": "rom-int",
+   "partita": "Roma-Inter",
+   "sel": "X2",
+   "p": 0.6113,
+   "q": 1.44,
+   "ev": -0.1197,
+   "fair": 1.64,
+   "ora": "19 settembre 18:00",
+   "kelly": 0.0
+  },
+  {
+   "mid": "fro-com",
+   "partita": "Frosinone-Como",
+   "sel": "2",
+   "p": 0.5964,
+   "q": 1.5,
+   "ev": -0.1054,
+   "fair": 1.68,
+   "ora": "20 settembre 15:00",
+   "kelly": 0.0
+  },
+  {
+   "mid": "rom-int",
+   "partita": "Roma-Inter",
+   "sel": "GG",
+   "p": 0.5976,
+   "q": 1.5,
+   "ev": -0.1035,
+   "fair": 1.67,
+   "ora": "19 settembre 18:00",
+   "kelly": 0.0
+  }
+ ],
+ "leaders": [
+  {
+   "nome": "Donyell Malen",
+   "squadra": "Roma",
+   "gol": 6,
+   "nota": "capocannoniere; quota 2,25 per la 7ª rete contro l'Inter"
+  },
+  {
+   "nome": "Lautaro Martinez",
+   "squadra": "Inter",
+   "gol": 2,
+   "nota": "re dei bomber del 2026; 2,75 per il terzo centro in campionato"
+  },
+  {
+   "nome": "Antonio Raimondo",
+   "squadra": "Frosinone",
+   "gol": 4,
+   "nota": "rivelazione del Frosinone con 7 punti"
+  },
+  {
+   "nome": "Franco Mastantuono",
+   "squadra": "Fiorentina",
+   "gol": 3,
+   "nota": "doppietta in 60 secondi a Venezia"
+  },
+  {
+   "nome": "Daniel Maldini",
+   "squadra": "Cagliari",
+   "gol": 2,
+   "nota": "2 gol in 2 gare, ha aperto il 3° centro consecutivo a Udine"
+  },
+  {
+   "nome": "Davide Frattesi",
+   "squadra": "Lazio",
+   "gol": 3,
+   "nota": "miglior marcatore biancoceleste"
+  }
+ ]
+}

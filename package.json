@@ -1,0 +1,9 @@
+{
+  "name": "pi-harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "harness": "node harness.mjs",
+    "dashboard": "node dashboard.mjs"
+  }
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Sincronizzazione periodica dell'harness con GitHub (ogni 6 ore)
+
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=6h
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,46 @@
+== smoke test post-riavvio ==
+quando: 2026-09-19 18:11:49 CEST
+servizio : active  ·  avviato: Sat 2026-09-19 18:11:20 CEST
+risposta : /api/health → 401  (dopo 1 tentativi)
+versione : dashboard-2026-09-19.2
+pid      : 236667 · node v26.8.2
+  ok  auth-bruteforce-limit
+  ok  abort
+  ok  messages-edit
+  ok  messages-regenerate
+  ok  sessions-search
+  ok  sessions-export
+  ok  files-search
+  ok  pwa-assets
+  ok  backup-timer
+  ok  goals-planning
+  ok  scheduler-cron
+  ok  slash-commands
+  ok  skills
+  ok  stream-replay
+  ok  stream-snapshot
+  ok  stream-segments
+pagina   : 242785 byte
+  ok   class="pill feat-btn"
+  ok   id="compactBtn"
+  ok   id="connTxt"
+  ok   resilienza: stream_snapshot
+  ok   resilienza: connTxt
+  ok   resilienza: e.data === undefined
+  ok   tool nel messaggio: function appendToolCard
+  ok   tool nel messaggio: function renderStreamSegments
+  ok   tool nel messaggio: Array.isArray(d.segments)
+  ok   tool nel messaggio: cur.wrap.appendChild(card)
+  ok   /events assegna id: (replay attivo, 1 eventi numerati)
+  ok   la password non compare nei log del servizio
+senza credenziali: 401  (atteso 401)
+manifest : Universalis Harness
+favicon  : 200 1702B
+-- ultime righe del servizio:
+   Sep 19 18:11:22 vmi3171743 node[236667]: file root: /root
+   Sep 19 18:11:22 vmi3171743 node[236667]: media (file generati): /root/pi-harness/media
+   Sep 19 18:11:22 vmi3171743 node[236667]: sessioni: /root/pi-harness/sessions
+   Sep 19 18:11:22 vmi3171743 node[236667]: fuso orario (pianificazioni): Europe/Rome — ora locale: 19/09/2026, 18:11:22
+   Sep 19 18:11:22 vmi3171743 node[236667]: subagent: disponibile (OFF di default, max 3 per richiesta)
+   Sep 19 18:11:22 vmi3171743 node[236667]: auth -> utente: pi  password: ***
+== fine ==

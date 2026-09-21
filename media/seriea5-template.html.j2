@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serie A 2026/27 · 5ª Giornata — Report analitico e pronostici</title>
+<style>
+:root{
+  --bg:#070b14; --bg2:#0c1322; --card:#101a2e; --card2:#142139;
+  --line:#1f2f4d; --txt:#e8eefc; --dim:#93a4c4; --dim2:#6d7f9f;
+  --green:#22e3a4; --green2:#0f9e74; --blue:#5b8cff; --yellow:#ffd166;
+  --red:#ff5d73; --purple:#a78bfa; --orange:#ff9f45;
+  --grad:linear-gradient(135deg,#22e3a4 0%,#5b8cff 55%,#a78bfa 100%);
+  --shadow:0 18px 50px -20px rgba(0,0,0,.85);
+  --r:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:
+    radial-gradient(1100px 600px at 12% -8%, rgba(34,227,164,.14), transparent 60%),
+    radial-gradient(900px 520px at 88% 0%, rgba(91,140,255,.16), transparent 60%),
+    radial-gradient(700px 700px at 50% 120%, rgba(167,139,250,.10), transparent 60%),
+    var(--bg);
+  color:var(--txt); font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 90px}
+
+/* ---------- HERO ---------- */
+header.hero{position:relative;padding:46px 0 26px;overflow:hidden}
+.hero-badge{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--green);border:1px solid rgba(34,227,164,.35);
+  background:rgba(34,227,164,.08);padding:6px 14px;border-radius:999px;font-weight:700}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(34,227,164,.7);animation:pulse 2.2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(34,227,164,0)}100%{box-shadow:0 0 0 0 rgba(34,227,164,0)}}
+h1{font-size:clamp(30px,5vw,56px);line-height:1.05;margin:16px 0 10px;letter-spacing:-.02em;font-weight:800}
+h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--dim);font-size:16.5px;max-width:820px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.chip{background:rgba(255,255,255,.045);border:1px solid var(--line);padding:7px 13px;border-radius:999px;font-size:13px;color:var(--dim)}
+.chip b{color:var(--txt)}
+
+/* ---------- NAV ---------- */
+nav.sticky{position:sticky;top:0;z-index:60;backdrop-filter:blur(14px);
+  background:rgba(7,11,20,.82);border-bottom:1px solid var(--line);margin-bottom:26px}
+nav.sticky .inner{max-width:1280px;margin:0 auto;padding:10px 20px;display:flex;gap:8px;overflow-x:auto;align-items:center}
+nav.sticky a{font-size:13.5px;color:var(--dim);padding:7px 12px;border-radius:10px;white-space:nowrap;border:1px solid transparent}
+nav.sticky a:hover{color:var(--txt);background:rgba(255,255,255,.05);border-color:var(--line)}
+.nav-actions{margin-left:auto;display:flex;gap:8px}
+.btn{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--txt);
+  padding:8px 13px;border-radius:11px;font-size:13px;font-weight:600;transition:.18s;font-family:inherit}
+.btn:hover{background:rgba(255,255,255,.1);transform:translateY(-1px)}
+.btn.acc{background:var(--grad);color:#04121a;border:none}
+.btn.ghost{background:transparent}
+
+/* ---------- SECTIONS ---------- */
+section{margin:52px 0;scroll-margin-top:74px}
+.s-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.s-head h2{font-size:clamp(21px,2.6vw,30px);margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:11px}
+.s-head h2 .num{font-size:13px;color:var(--green);border:1px solid rgba(34,227,164,.35);border-radius:8px;padding:2px 8px;font-weight:800}
+.s-head p{margin:4px 0 0;color:var(--dim);font-size:14px;max-width:760px}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.kpi{background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.015));
+  border:1px solid var(--line);border-radius:var(--r);padding:17px 18px;position:relative;overflow:hidden}
+.kpi:before{content:'';position:absolute;inset:0 0 auto 0;height:2px;background:var(--grad);opacity:.85}
+.kpi .lbl{font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim2);font-weight:700}
+.kpi .val{font-size:29px;font-weight:800;letter-spacing:-.02em;margin-top:6px}
+.kpi .sub2{font-size:12.5px;color:var(--dim);margin-top:3px}
+
+/* ---------- CARDS ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+
+/* ---------- TABLE ---------- */
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px;min-width:820px}
+th,td{padding:10px 12px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05)}
+th{background:rgba(255,255,255,.045);color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;cursor:pointer;user-select:none;position:sticky;top:0;z-index:2;white-space:nowrap}
+th:hover{color:var(--txt)}
+th.sorted:after{content:' ▼';color:var(--green);font-size:10px}
+th.sorted.asc:after{content:' ▲'}
+td.team{text-align:left;font-weight:600;white-space:nowrap}
+tr:hover td{background:rgba(91,140,255,.06)}
+.pill{display:inline-block;padding:2px 8px;border-radius:7px;font-size:11.5px;font-weight:700}
+.pill.pos{background:rgba(34,227,164,.14);color:var(--green)}
+.pill.eu{background:rgba(91,140,255,.16);color:#9dbaff}
+.pill.releg{background:rgba(255,93,115,.14);color:#ff9aa8}
+.form{display:inline-flex;gap:3px}
+.form i{width:17px;height:17px;border-radius:5px;font-style:normal;font-size:10.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.f-V{background:rgba(34,227,164,.2);color:var(--green)}
+.f-N{background:rgba(255,209,102,.18);color:var(--yellow)}
+.f-P{background:rgba(255,93,115,.18);color:var(--red)}
+.bar{height:6px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;min-width:52px}
+.bar>span{display:block;height:100%;border-radius:99px;background:var(--grad)}
+
+/* ---------- MATCH CARDS ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.fbtn{cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--dim);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;font-family:inherit;transition:.18s}
+.fbtn:hover{color:var(--txt);border-color:#2c4066}
+.fbtn.on{background:var(--grad);color:#04121a;border-color:transparent}
+.mcards{display:grid;gap:14px}
+.mcard{background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:.2s}
+.mcard:hover{border-color:#2b4067;transform:translateY(-2px)}
+.mcard .top{padding:16px 18px;cursor:pointer}
+.mcard .row1{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.daytag{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:8px;background:rgba(91,140,255,.15);color:#a9c2ff}
+.status{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:8px}
+.st-upcoming{background:rgba(34,227,164,.14);color:var(--green)}
+.st-live{background:rgba(255,93,115,.16);color:#ff9aa8}
+.st-played{background:rgba(255,255,255,.08);color:var(--dim)}
+.teams-row{display:flex;align-items:center;gap:14px;margin-top:9px;flex-wrap:wrap}
+.tname{font-size:20px;font-weight:800;letter-spacing:-.01em}
+.scorebox{font-size:19px;font-weight:800;color:var(--green);background:rgba(34,227,164,.1);border:1px solid rgba(34,227,164,.3);padding:3px 12px;border-radius:10px}
+.vs{color:var(--dim2);font-weight:700;font-size:13px}
+.mt-meta{color:var(--dim);font-size:13px;margin-left:auto;text-align:right}
+.stars{letter-spacing:2px;color:var(--yellow);font-size:13px}
+.probs3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.pbox{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px}
+.pbox .lbl{font-size:11px;color:var(--dim2);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.pbox .big{font-size:20px;font-weight:800}
+.pbox .mini{font-size:11.5px;color:var(--dim)}
+.pbar{height:7px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:7px}
+.pbar>span{display:block;height:100%;background:linear-gradient(90deg,#22e3a4,#5b8cff);border-radius:99px;transition:width .8s cubic-bezier(.2,.9,.2,1)}
+.pbar.mkt>span{background:linear-gradient(90deg,#3b4c6b,#54688c)}
+.details{padding:0 18px 18px;display:none;border-top:1px solid rgba(255,255,255,.06)}
+.mcard.open .details{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-top:16px}
+.block h4{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--green)}
+.block p,.block li{font-size:13.5px;color:#c6d2ea;margin:5px 0}
+.block ul{margin:0;padding-left:18px}
+.mini-tbl{width:100%;font-size:12.5px;min-width:0}
+.mini-tbl td{padding:5px 7px;text-align:left;border-bottom:1px solid rgba(255,255,255,.05)}
+.mini-tbl td:last-child{text-align:right;font-weight:700}
+.ev-pos{color:var(--green)}.ev-neg{color:var(--red)}.ev-neu{color:var(--yellow)}
+.taglist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tg{font-size:11.5px;padding:3px 8px;border-radius:7px;background:rgba(255,93,115,.12);color:#ffb0bb;border:1px solid rgba(255,93,115,.22)}
+.heat{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;max-width:300px}
+.heat div{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#04121a;font-weight:700;cursor:help}
+.heat-hdr{font-size:11px;color:var(--dim2);margin-bottom:6px}
+
+/* ---------- SIMULATOR ---------- */
+.slip{position:relative}
+.sim-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.sim-row .nm{min-width:210px;font-weight:700;font-size:14px}
+.selbtn{cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--dim)}
+.selbtn:hover{border-color:#31486f;color:var(--txt)}
+.selbtn.on{background:var(--grad);color:#04121a;border-color:transparent}
+.selbtn .q{opacity:.8;font-weight:600;margin-left:5px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px}
+.sumbox{background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:14px;padding:13px}
+.sumbox .lbl{font-size:11px;color:var(--dim2);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.sumbox .v{font-size:23px;font-weight:800;margin-top:3px}
+input[type=range]{width:100%;accent-color:#22e3a4}
+input[type=number]{background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 10px;font-family:inherit;width:130px}
+
+/* ---------- SCHEDINE ---------- */
+.sched{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.scard{background:linear-gradient(165deg,rgba(255,255,255,.06),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column}
+.scard h3{margin:0 0 4px;font-size:17px}
+.scard .tg2{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--green);font-weight:800}
+.scard ul{list-style:none;margin:12px 0;padding:0}
+.scard li{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:7px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.scard .foot{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scard .foot div{background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:11px;padding:9px}
+.scard .foot .lbl{font-size:10.5px;color:var(--dim2);text-transform:uppercase;font-weight:700;letter-spacing:.07em}
+.scard .foot .v{font-size:17px;font-weight:800}
+.note{font-size:12.5px;color:var(--dim);margin-top:10px}
+.warn{background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.28);border-radius:14px;padding:14px 16px;font-size:13.5px;color:#ffe6ad}
+
+/* ---------- CHARTS ---------- */
+svg{max-width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:10px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px}
+
+/* ---------- MISC ---------- */
+.split{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+@media(max-width:900px){.split{grid-template-columns:1fr}}
+.method li{margin:7px 0;font-size:14px;color:#c6d2ea}
+.method b{color:var(--txt)}
+footer{border-top:1px solid var(--line);margin-top:60px;padding:26px 0;color:var(--dim2);font-size:12.5px}
+.small{font-size:12.5px;color:var(--dim)}
+.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:rgba(255,255,255,.07);padding:1px 6px;border-radius:6px;font-size:12px}
+details.src{margin-top:10px;font-size:13px;color:var(--dim)}
+details.src summary{cursor:pointer;color:var(--blue)}
+@media print{nav.sticky,.nav-actions{display:none}.details{display:block!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="hero-badge"><span class="dot"></span>Report generato il 19 settembre 2026 · ore 16:30 CEST</span>
+  <h1>Serie A 2026/27 — <span class="grad">5ª Giornata</span><br>Analisi, probabilità e schede scommessa</h1>
+  <p class="sub">Dati, statistiche e modelli su tutte le 10 partite del turno: forma, xG, precedenti, indisponibili, quote reali,
+  modello Poisson bivariato (Dixon-Coles) ancorato al mercato, value bet, gestione del bankroll e quattro schede pronte da giocare
+  (o da evitare).</p>
+  <div class="hero-meta" id="heroMeta"></div>
+</header>
+
+<nav class="sticky">
+  <div class="inner">
+    <a href="#sintesi">Sintesi</a>
+    <a href="#metodo">Metodo</a>
+    <a href="#classifica">Classifica</a>
+    <a href="#partite">Partite</a>
+    <a href="#simulatore">Simulatore schedina</a>
+    <a href="#schedine">Schede pronte</a>
+    <a href="#value">Value &amp; Avoid</a>
+    <a href="#grafici">Grafici</a>
+    <a href="#fonti">Fonti</a>
+    <div class="nav-actions">
+      <button class="btn ghost" onclick="toggleAll()">Apri/chiudi tutte</button>
+      <button class="btn acc" onclick="window.print()">Stampa / PDF</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ SINTESI ============ -->
+<section id="sintesi">
+  <div class="s-head">
+    <div><h2><span class="num">01</span> Sintesi della giornata</h2>
+    <p>Le 10 gare del quinto turno, il contesto di classifica e le indicazioni principali emerse dal modello.</p></div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:17px">Il quadro del turno</h3>
+      <ul class="method" id="sintesiList"></ul>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:17px">La giocata del turno</h3>
+      <div id="topPick"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3 style="margin:0 0 10px;font-size:17px">Scenari di vetta (effetto della 5ª giornata sulla classifica)</h3>
+    <div id="scenari"></div>
+  </div>
+  <div class="warn" style="margin-top:16px">
+    <b>Nota di trasparenza.</b> Le probabilità pubblicate in questo report sono stime e non previsioni certe: il calcio è un sistema
+    a bassa predicibilità. Tutti i confronti con le quote sono fatti su quote reali raccolte il 18-19 settembre 2026 e sono riportati
+    a fini informativi/statistici. Il margine del banco (5-8% per mercato) rende la maggior parte delle giocate a valore atteso
+    negativo: le schede sono costruite per ridurne l'impatto, non per eliminarlo.
+  </div>
+</section>
+
+<!-- ============ METODO ============ -->
+<section id="metodo">
+  <div class="s-head">
+    <div><h2><span class="num">02</span> Come nasce questo report</h2>
+    <p>Il modello in quattro passaggi, senza scatole nere: ogni numero è ricalcolabile.</p></div>
+  </div>
+  <div class="split">
+    <div class="card">
+      <ol class="method">
+        <li><b>Forza offensiva e difensiva.</b> Per ogni squadra calcolo gol fatti/subiti per partita rispetto alla media del
+        campionato (1,51 gol per squadra) e applico uno <i>shrinkage</i> del 40%: con sole 4 giornate i dati individuali sono
+        rumorosi, quindi li avvicino alla media di lega.</li>
+        <li><b>Gol attesi (λ).</b> Combino il modello attacco/difesa (con fattore campo +10% in casa) con gli xG previsti dalle fonti
+        esterne, peso 35%/65%, e applico correzioni qualitative documentate: infortuni pesanti, squalifiche, fatica europea.</li>
+        <li><b>Poisson bivariato (Dixon-Coles).</b> Dalla coppia di gol attesi genero la matrice di tutti i risultati (0-0 … 10-10)
+        con correzione per i punteggi bassi (ρ = −0,06). Da qui escono 1X2, GG/NG, Over/Under e i risultati esatti.</li>
+        <li><b>Ancoraggio al mercato.</b> Converto le quote reali in probabilità con il <i>power method</i> (rimozione del margine) e
+        fondo il 70% mercato + 30% modello, imponendo che nessun esito possa divergere dal mercato per più di <b>4 punti
+        percentuali</b>. È il vincolo che evita "value bet" illusorie: le nostre probabilità restano prudenti.</li>
+      </ol>
+      <details class="src">
+        <summary>Dettagli tecnici (clicca per aprire)</summary>
+        <p class="small">Poisson: P(k) = e<sup>−λ</sup>λ<sup>k</sup>/k!. Correzione Dixon-Coles: τ(0,0)=1−λμρ, τ(0,1)=1+λρ,
+        τ(1,0)=1+μρ, τ(1,1)=1−ρ. Rimozione margine: p<sub>i</sub> ∝ o<sub>i</sub><sup>k</sup> con k tale che Σp<sub>i</sub>=1.
+        Value atteso: EV = p·quota − 1. Stake: Kelly frazionato f* = ¼·(p·q−1)/(q−1).</p>
+      </details>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 12px;font-size:17px">Cosa guarda il modello</h3>
+      <table class="mini-tbl" id="methodTbl"></table>
+      <div class="note">Le probabilità finali pubblicate nelle schede partita sono quelle ancorate al mercato.
+      I dati di forma, xG e indisponibili provengono dalle fonti elencate in fondo al report.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLASSIFICA ============ -->
+<section id="classifica">
+  <div class="s-head">
+    <div><h2><span class="num">03</span> Classifica dopo 4 giornate</h2>
+    <p>Clicca sulle intestazioni per ordinare. Le squadre impegnate nella 5ª giornata sono evidenziate.</p></div>
+    <div class="filters">
+      <input type="text" id="q" placeholder="Filtra squadra…" style="width:200px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 10px;font-family:inherit">
+      <label class="small"><input type="checkbox" id="onlyField" checked> solo squadre in campo</label>
+    </div>
+  </div>
+  <div class="tbl-wrap"><table id="cls"><thead></thead><tbody></tbody></table></div>
+  <p class="small" style="margin-top:10px">Legenda: <span class="pill pos">1-4</span> Champions League ·
+  <span class="pill eu">5-6</span> Europa/Conference · <span class="pill releg">17-20</span> zona retrocessione.
+  Cagliari a 9 punti con la miglior difesa su azione del torneo (1 gol su azione subito).</p>
+</section>
+
+<!-- ============ PARTITE ============ -->
+<section id="partite">
+  <div class="s-head">
+    <div><h2><span class="num">04</span> Le 10 partite, una per una</h2>
+    <p>Probabilità (modello ancorato al mercato), quote reali, gol attesi, precedenti, indisponibili e giocata consigliata.
+    Clicca su una partita per aprire l'analisi completa.</p></div>
+  </div>
+  <div class="tbl-wrap" style="margin-bottom:18px">
+    <table id="overview"><thead></thead><tbody></tbody></table>
+  </div>
+  <p class="small" style="margin:-6px 0 18px">Riepilogo del turno: probabilità del modello ancorate al mercato, esito più probabile,
+  confidenza e miglior quota disponibile. Clicca una riga per aprire la scheda completa della partita.</p>
+  <div class="filters" id="filters"></div>
+  <div class="mcards" id="matchList"></div>
+</section>
+
+<!-- ============ SIMULATORE ============ -->
+<section id="simulatore">
+  <div class="s-head">
+    <div><h2><span class="num">05</span> Simulatore: costruisci la tua schedina</h2>
+    <p>Seleziona un esito per ogni partita ancora da giocare: quota totale, probabilità combinata, valore atteso e stake
+    suggerito (¼ Kelly) sono calcolati in tempo reale.</p></div>
+  </div>
+  <div class="card slip">
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+      <div><span class="small">Bankroll (€)</span><br><input type="number" id="bank" value="500" min="10" step="10"></div>
+      <div style="flex:1;min-width:180px">
+        <span class="small">Frazione di Kelly: <b id="kfLbl">¼</b></span>
+        <input type="range" id="kf" min="5" max="100" value="25" step="5">
+      </div>
+      <button class="btn ghost" onclick="clearSlip()">Svuota</button>
+      <button class="btn" onclick="loadSlip('A')">Carica schedina A</button>
+      <button class="btn" onclick="loadSlip('B')">Carica B</button>
+      <button class="btn" onclick="loadSlip('C')">Carica C</button>
+      <button class="btn" onclick="loadSlip('D')">Carica D</button>
+    </div>
+    <div id="simRows"></div>
+    <div class="summary" id="simSummary"></div>
+    <p class="small" id="simMsg" style="margin-top:12px"></p>
+  </div>
+</section>
+
+<!-- ============ SCHEDINE ============ -->
+<section id="schedine">
+  <div class="s-head">
+    <div><h2><span class="num">06</span> Quattro schede pronte</h2>
+    <p>Costruite per obiettivi di rischio diversi. Le prime due privilegiano la probabilità, la C accetta varianza alta,
+    la D è la giocata singola con il miglior valore atteso del turno.</p></div>
+  </div>
+  <div class="sched" id="schedineBox"></div>
+  <div class="warn" style="margin-top:16px">
+    <b>Regola d'oro sulle multiple.</b> Se ogni selezione ha un valore atteso di −6%, una multipla da 4 eventi ha un valore atteso
+    di circa −22%: il margine si moltiplica, non si diluisce. Per questo la schedina A ha solo 2 eventi, la D è una giocata singola,
+    e nessuna scheda supera le 4 selezioni. Le probabilità combinate assumono indipendenza fra le partite (approssimazione standard).
+  </div>
+</section>
+
+<!-- ============ VALUE ============ -->
+<section id="value">
+  <div class="s-head">
+    <div><h2><span class="num">07</span> Value &amp; Avoid: dove sta il valore</h2>
+    <p>A sinistra le selezioni con il miglior valore atteso secondo il modello (probabilità ≥ 25%). A destra i favoriti popolari
+    che <i>non</i> ripagano il rischio.</p></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:16px;color:var(--green)">Top value del turno</h3>
+      <table class="mini-tbl" id="valueTbl"></table>
+      <p class="small">EV positivo = la quota offerta è superiore alla nostra stima di probabilità. In questo turno solo una
+      selezione ha un valore atteso chiaramente positivo (Roma-Inter, segno 1): le altre sono sostanzialmente neutre.
+      <b>Attenzione:</b> gli EV più alti tendono a concentrarsi su esiti improbabili (pareggi e sfavorite), che sono anche i più
+      sensibili a un errore di stima. Meglio un EV del +5% su un esito al 39% che un +15% su un esito al 19%. Resta un margine di errore:
+      puntare a frazioni ridotte di bankroll (¼ Kelly).</p>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:16px;color:var(--red)">Da evitare</h3>
+      <table class="mini-tbl" id="avoidTbl"></table>
+      <p class="small">Favoriti "scontati" dal mercato: la probabilità è alta ma la quota non ripaga il rischio.
+      Sono le giocate che erodono il bankroll nel lungo periodo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GRAFICI ============ -->
+<section id="grafici">
+  <div class="s-head">
+    <div><h2><span class="num">08</span> I grafici che contano</h2>
+    <p>Identità delle squadre (attacco vs difesa), gol attesi per partita e mappa dei risultati più probabili.</p></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 4px;font-size:16px">Attacco vs difesa (dopo 4 giornate)</h3>
+      <p class="small">Asse X: gol fatti a partita. Asse Y: gol subiti a partita (più in alto = difesa migliore). Passa il mouse sui punti.</p>
+      <div id="scatter"></div>
+      <div class="legend"><span><i style="background:#22e3a4"></i>in campo nella 5ª</span><span><i style="background:#54688c"></i>altre</span></div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 4px;font-size:16px">Gol attesi del modello (λ casa – λ ospite)</h3>
+      <p class="small">Barre impilate: più lunga la barra, più gol attesi nel match.</p>
+      <div id="xgBars"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3 style="margin:0 0 4px;font-size:16px">Mappa dei risultati esatti più probabili</h3>
+    <p class="small">Colore più intenso = risultato più probabile secondo il modello. Passa il mouse per i dettagli.</p>
+    <div class="grid3" id="heatmaps"></div>
+  </div>
+</section>
+
+<!-- ============ FONTI ============ -->
+<section id="fonti">
+  <div class="s-head"><div><h2><span class="num">09</span> Fonti e note</h2>
+  <p>Dati raccolti su web il 19 settembre 2026 fra le 15:00 e le 16:30 CEST.</p></div></div>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:16px">Fonti dati</h3>
+      <ul class="method small">
+        <li>Risultati, marcatori e tabellini delle prime 4 giornate: Lega Serie A, sportflash24, tuttomercatoweb, Eurosport.</li>
+        <li>Classifica e split casa/trasferta: datasport.it, virgilio sport (confronto incrociato).</li>
+        <li>Quote 1X2 e mercati: Snai (via Agipronews), consenso 4 bookmaker ADM e 9 operatori (1x2.expert), GoldBet/bet365 via diretta.it.</li>
+        <li>xG / λ previsti: 1x2.expert (Poisson calibrato su 329 partite di archivio), SharpSoccerModels, ProfeGol, xG Lab.</li>
+        <li>Probabili formazioni e indisponibili: Sky Sport, Gianluca Di Marzio, Eurosport, Gazzetta.</li>
+        <li>Statistiche di contesto (tiri, PPDA, clean sheet): virgilio sport, pianetatalanta, StatMuse.</li>
+      </ul>
+      <details class="src">
+        <summary>Stato delle partite al momento della pubblicazione</summary>
+        <p class="small">Monza-Sassuolo si è giocata venerdì 18 (2-1, doppietta di Varela). Udinese-Cagliari e Bologna-Torino erano
+        in campo dalle 15:00 di sabato e sono state seguite in tempo reale: i punteggi indicati sono aggiornati al momento di
+        generazione e non vanno considerati definitivi. Roma-Inter, Venezia-Lazio e le cinque gare di domenica erano ancora da giocare.</p>
+      </details>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:16px">Gioco responsabile</h3>
+      <p class="small">Questo report è materiale informativo e statistico. Non è un servizio di consulenza finanziaria né un invito al gioco.
+      Il gioco con vincita in denaro è vietato ai minori di 18 anni e può causare dipendenza patologica: consulta il numero verde
+      <b>800 558 822</b> (Giocatori Anonimi) o il servizio del Ministero della Salute. Non puntare mai più di quanto puoi permetterti di perdere:
+      anche il miglior modello statistico resta in perdita se aumenta lo stake dopo una sconfitta.</p>
+      <h3 style="margin:16px 0 8px;font-size:16px">Come leggere le stelle di confidenza</h3>
+      <p class="small">★ satu… ★★★★★ combinano la probabilità dell'esito principale con il valore atteso. 1-2 stelle = fascia incerta,
+      3 stelle = solida, 4-5 stelle = la lettura più robusta del turno. Nessun esito è "certo": una stima all'80% sbaglia una volta su cinque.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Report generato automaticamente con modello Poisson bivariato (Dixon-Coles) · ancoraggio al mercato ±4 p.p. · dati aggiornati al
+  19/09/2026 ore 16:30 CEST · file: <span class="kbd">report-serie-a-5-giornata-2026-27.html</span>
+</footer>
+</div>
+
+<script>
+const DATA = {{ data_json|safe }};
+const T = DATA.teams;
+const M = DATA.matches;
+
+/* ---------------- utility ---------------- */
+const pct = (x,d=1) => (x*100).toFixed(d)+'%';
+const q2 = x => (x==null?'—':x.toFixed(2).replace('.',','));
+const evfmt = x => (x==null?'—':(x>=0?'+':'')+(x*100).toFixed(1)+'%');
+const evClass = x => x==null?'ev-neu':(x>=0.02?'ev-pos':(x>-0.02?'ev-neu':'ev-neg'));
+const stars = n => '★'.repeat(n)+'☆'.repeat(5-n);
+const fieldTeams = [...new Set(M.flatMap(m=>[m.home,m.away]))];
+const marketOrder = ['1','X','2','1X','12','X2','GG','NG','O1.5','U1.5','O2.5','U2.5','O3.5','U3.5'];
+const selLabel = s => ({'1':'1 (casa)','X':'X (pari)','2':'2 (ospite)','1X':'1X (casa o pari)','12':'12 (no pari)',
+  'X2':'X2 (pari o ospite)','GG':'GG (entrambe segnano)','NG':'NG (no gol entrambe)','O1.5':'Over 1.5','U1.5':'Under 1.5',
+  'O2.5':'Over 2.5','U2.5':'Under 2.5','O3.5':'Over 3.5','U3.5':'Under 3.5'}[s]||s);
+const dayName = d => ({ven:'Venerdì 18',sab:'Sabato 19',dom:'Domenica 20'}[d]);
+const statusLabel = s => ({upcoming:'da giocare',live:'in corso',played:'conclusa'}[s]);
+const scorersM = m => m.scorers || '—';
+
+/* ---------------- HERO ---------------- */
+document.getElementById('heroMeta').innerHTML = `
+  <span class="chip">📅 <b>${DATA.meta.periodo}</b></span>
+  <span class="chip">⚽ <b>10</b> partite · 20 squadre</span>
+  <span class="chip">🧮 modello: <b>Dixon-Coles + mercato</b></span>
+  <span class="chip">💰 <b>${DATA.value_top.length}</b> selezioni con valore</span>
+  <span class="chip">📌 ${DATA.meta.prossima}</span>`;
+
+/* ---------------- KPI ---------------- */
+(function(){
+  const upcoming = M.filter(m=>m.status==='upcoming').length;
+  const best = DATA.value_top[0];
+  const top = DATA.schedine.find(s=>s.code==='D');
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="lbl">Partite da giocare</div><div class="val">${upcoming}<span style="font-size:15px;color:var(--dim)">/10</span></div>
+      <div class="sub2">${M.filter(m=>m.status==='live').length} in corso · ${M.filter(m=>m.status==='played').length} conclusa</div></div>
+    <div class="kpi"><div class="lbl">Miglior valore atteso</div><div class="val ev-pos">${evfmt(best.ev)}</div>
+      <div class="sub2">${best.partita} · ${selLabel(best.sel)} a ${q2(best.q)}</div></div>
+    <div class="kpi"><div class="lbl">Schedina D (singola)</div><div class="val">${q2(top.quota)}</div>
+      <div class="sub2">probabilità ${pct(top.prob)} · stake ¼ Kelly ${(top.kelly*100).toFixed(2)}% del bankroll</div></div>
+    <div class="kpi"><div class="lbl">Difesa migliore</div><div class="val">Roma</div><div class="sub2">1 gol subito in 4 gare, 3 clean sheet</div></div>
+    <div class="kpi"><div class="lbl">Attacco migliore</div><div class="val">Inter</div><div class="sub2">13 gol in 4 gare (3,25 di media)</div></div>`;
+})();
+
+/* ---------------- SINTESI ---------------- */
+(function(){
+  const li = [
+    `Scontro al vertice: <b>Roma-Inter</b> mette di fronte le uniche due squadre a punteggio pieno (12 punti). Il modello assegna
+     ${pct(M[3].final_probs.home,0)} alla Roma, ${pct(M[3].final_probs.draw,0)} al pareggio e ${pct(M[3].final_probs.away,0)} all'Inter,
+     con ${M[3].expected_goals} gol attesi: la partita più equilibrata del turno (e la più aperta tatticamente).`,
+    `La capolista <b>Roma</b> ha la miglior difesa del campionato (1 gol subito) e non perde in casa da 14 gare, ma l'Inter non vince
+     all'Olimpico dal 2016 e ha vinto 5 trasferte consecutive in casa giallorossa con 11-2 complessivo: la statistica più pesante del turno.`,
+    `<b>Juventus-Atalanta</b>: 12 pareggi su 19 incroci dal 2017 e Atalanta imbattuta da 8 trasferte a Torino. La Juve ha 7 indisponibili
+     e arriva dal 5-0 al NEC in Europa League: il modello vede il <b>GG</b> (${pct(M[8].markets.GG.p,0)}), non il segno 1 a tutti i costi.`,
+    `<b>Cagliari</b> e <b>Como</b> sono le sorprese: i sardi hanno la difesa più efficace su azione (1 gol) e sono in corsa per il record
+     delle prime tre trasferte vinte; i lariani hanno 10 punti con una partita in meno e hanno vinto a Napoli e col Lipsia.`,
+    `In coda <b>Venezia</b> (0 punti) e <b>Bologna</b> (1 punto, cambio di panchina con Palladino) sono le situazioni più fragili:
+     a Firenze e Genova si giocano già partite-salvezza.`,
+    `<b>Milan</b> favoritissimo sul Lecce (${pct(M[9].final_probs.home,0)}), ma attenzione: tutti i 7 gol rossoneri in campionato sono
+     arrivati nell'ultima mezz'ora, un dato che sposta il focus sui mercati "tempo" più che sul 1X2.`
+  ];
+  const tot = M.filter(m=>m.status==='upcoming').reduce((a,m)=>a+m.expected_goals,0);
+  const avg = tot/M.filter(m=>m.status==='upcoming').length;
+  li.push(`<b>Gol attesi complessivi</b> nelle 7 gare ancora da giocare: <b>${tot.toFixed(1)}</b> (${avg.toFixed(2)} per partita,
+    contro una media di campionato di 3,02). È un turno "magro": molte squadre arrivano con attacchi in difficoltà
+    (Parma, Genoa, Bologna, Torino, Atalanta, Fiorentina) e difese solide. Le partite più prolifiche secondo il modello
+    sono Roma-Inter (${M[3].expected_goals}) e Milan-Lecce (${M[9].expected_goals}).`);
+  document.getElementById('sintesiList').innerHTML = li.map(t=>`<li>${t}</li>`).join('');
+  const t = DATA.schedine.find(s=>s.code==='D');
+  const row = t.dettaglio[0];
+  const tMatch = M.find(x=>x.id===row.mid);
+  const bestMkt = row.sel==='1'?tMatch.market_probs.home:(row.sel==='2'?tMatch.market_probs.away:
+    (row.sel==='X'?tMatch.market_probs.draw:(row.sel==='1X'?tMatch.market_probs.home+tMatch.market_probs.draw:
+    (row.sel==='X2'?tMatch.market_probs.away+tMatch.market_probs.draw:tMatch.market_probs.home+tMatch.market_probs.away))));
+  document.getElementById('topPick').innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <div style="font-size:22px;font-weight:800">${row.partita}</div>
+      <span class="pill pos">${selLabel(row.sel)}</span>
+      <span class="pill eu">${row.ora}</span>
+    </div>
+    <div class="summary" style="margin-top:14px">
+      <div class="sumbox"><div class="lbl">Quota</div><div class="v">${q2(row.q)}</div></div>
+      <div class="sumbox"><div class="lbl">Probabilità modello</div><div class="v">${pct(row.p)}</div></div>
+      <div class="sumbox"><div class="lbl">Probabilità mercato</div><div class="v" style="color:var(--dim)">${pct(bestMkt)}</div></div>
+      <div class="sumbox"><div class="lbl">Valore atteso</div><div class="v ev-pos">${evfmt(row.ev)}</div></div>
+    </div>
+    <p class="small" style="margin-top:12px">Il modello stima la Roma vincente al ${pct(row.p)} contro un mercato che la prezza
+    intorno al ${pct(bestMkt)}: nasce un valore atteso positivo del ${evfmt(row.ev)}. È la sola giocata singola che il modello
+    promuove fra le 7 partite ancora da giocare — tutte le altre hanno valore atteso nullo o negativo.</p>`;
+})();
+
+/* ---------------- SCENARI DI VETTA ---------------- */
+(function(){
+  const rom=T['Roma'].pts, inter=T['Inter'].pts, como=T['Como'].pts, laz=T['Lazio'].pts;
+  const rows = [
+    {esito:'Vittoria Roma (39%)', r:rom+3, i:inter, nota:`La Roma sale a ${rom+3} e si porta a +3 sull'Inter: Como e Lazio (a ${como} e ${laz}) possono al massimo restare a -2.`},
+    {esito:'Pareggio (27%)', r:rom+1, i:inter+1, nota:`Roma e Inter restano appaiate a ${rom+1}; Como e Lazio, con una vittoria, le raggiungono a quota ${como+3}: la classifica si comprime.`},
+    {esito:'Vittoria Inter (35%)', r:rom, i:inter+3, nota:`L'Inter sale a ${inter+3} e allunga a +3 sulla Roma, che resta a ${rom}; per i nerazzurri sarebbe la sesta vittoria consecutiva all'Olimpico e il primo vero strappo stagionale.`},
+  ];
+  document.getElementById('scenari').innerHTML = rows.map(r=>`
+    <div style="display:grid;grid-template-columns:190px 1fr;gap:12px;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,.08)">
+      <div><b>${r.esito}</b><br><span class="small">Roma ${r.r} pt · Inter ${r.i} pt</span></div>
+      <div class="small" style="color:#c6d2ea">${r.nota}</div>
+    </div>`).join('') +
+    `<p class="small" style="margin-top:12px">Nota: le percentuali sono quelle del modello ancorate al mercato. La 5ª giornata
+     è l'ultima prima della sosta per la Nations League: chi sbaglia ha tre settimane per rimuginarci sopra.</p>`;
+})();
+
+/* ---------------- METODO mini table ---------------- */
+(function(){
+  const rows = [
+    ['Forma (ultime 4)', 'sequenza V/N/P dal campionato'],
+    ['Gol fatti / subiti', 'per partita e per split casa-trasferta'],
+    ['xG previsti (λ)', 'modello interno + fonti esterne'],
+    ['Precedenti (H2H)', 'ultimi 4-10 incroci e serie attive'],
+    ['Indisponibili', 'infortunati e squalificati verificati'],
+    ['Quote reali', '1X2 Snai/ADM + mercati derivati'],
+    ['Contesto', 'coppe europee, cambi di panchina, pausa']
+  ];
+  document.getElementById('methodTbl').innerHTML = rows.map(r=>
+    `<tr><td><b>${r[0]}</b></td><td style="text-align:right;color:var(--dim)">${r[1]}</td></tr>`).join('');
+})();
+
+/* ---------------- CLASSIFICA ---------------- */
+(function(){
+  const cols = [
+    {k:'pos',t:'#',w:'34px'},{k:'team',t:'Squadra',al:'left'},{k:'pts',t:'Pt'},{k:'g',t:'G'},
+    {k:'v',t:'V'},{k:'n',t:'N'},{k:'p',t:'P'},{k:'gf',t:'GF'},{k:'ga',t:'GS'},{k:'gd',t:'DR'},
+    {k:'ppg',t:'PPG'},{k:'gpm',t:'GF/g'},{k:'gapm',t:'GS/g'},{k:'form',t:'Forma'},{k:'bar',t:'Rendimento'}
+  ];
+  const rows = Object.entries(T).map(([name,t])=>({team:name,...t,gd:t.gf-t.ga,ppg:t.pts/t.g,
+    gpm:t.gf/t.g,gapm:t.ga/t.g}));
+  let sortKey='pts', asc=false, filter='', onlyField=true;
+  const maxPts = Math.max(...rows.map(r=>r.pts));
+  function render(){
+    const head = document.querySelector('#cls thead');
+    const body = document.querySelector('#cls tbody');
+    head.innerHTML = '<tr>'+cols.map(c=>`<th data-k="${c.k}" class="${sortKey===c.k?'sorted'+(asc?' asc':''):''}"
+      style="text-align:${c.al||'center'}">${c.t}</th>`).join('')+'</tr>';
+    let list = rows.filter(r=>!filter || r.team.toLowerCase().includes(filter));
+    if(onlyField) list = list.filter(r=>fieldTeams.includes(r.team));
+    list.sort((a,b)=> (typeof a[sortKey]==='string') ? (asc? a[sortKey].localeCompare(b[sortKey]) : b[sortKey].localeCompare(a[sortKey]))
+                                                   : (asc? a[sortKey]-b[sortKey] : b[sortKey]-a[sortKey]));
+    body.innerHTML = list.map(r=>{
+      const zone = r.pos<=4?'pos':(r.pos<=6?'eu':(r.pos>=17?'releg':''));
+      const inField = fieldTeams.includes(r.team);
+      return `<tr style="${inField?'background:rgba(34,227,164,.045)':''}">
+        <td><span class="pill ${zone}">${r.pos}</span></td>
+        <td class="team">${r.team} ${inField?'<span class="small" style="color:var(--green)">●</span>':''}</td>
+        <td><b>${r.pts}</b></td><td>${r.g}</td><td>${r.v}</td><td>${r.n}</td><td>${r.p}</td>
+        <td>${r.gf}</td><td>${r.ga}</td><td>${r.gd>0?'+':''}${r.gd}</td>
+        <td>${r.ppg.toFixed(2).replace('.',',')}</td>
+        <td>${r.gpm.toFixed(2).replace('.',',')}</td>
+        <td>${r.gapm.toFixed(2).replace('.',',')}</td>
+        <td><span class="form">${r.forma.split(' ').map(f=>`<i class="f-${f}">${f}</i>`).join('')}</span></td>
+        <td><div class="bar"><span style="width:${(r.pts/12*100).toFixed(0)}%"></span></div></td>
+      </tr>`;
+    }).join('');
+    head.querySelectorAll('th').forEach(th=>th.onclick=()=>{
+      const k=th.dataset.k; if(k===sortKey) asc=!asc; else {sortKey=k;asc=false;} render();
+    });
+  }
+  document.getElementById('q').oninput = e => { filter = e.target.value.toLowerCase().trim(); render(); };
+  document.getElementById('onlyField').onchange = e => { onlyField = e.target.checked; render(); };
+  render();
+})();
+
+/* ---------------- MATCH CARDS ---------------- */
+(function(){
+  const filters = [['all','Tutte'],['ven','Venerdì 18'],['sab','Sabato 19'],['dom','Domenica 20'],
+                   ['upcoming','Da giocare'],['live','In corso'],['played','Conclusa'],['value','Con valore atteso > 0']];
+  let cur='all';
+  const fbox = document.getElementById('filters');
+  fbox.innerHTML = filters.map(f=>`<button class="fbtn${f[0]==='all'?' on':''}" data-f="${f[0]}">${f[1]}</button>`).join('');
+  fbox.querySelectorAll('.fbtn').forEach(b=>b.onclick=()=>{
+    cur=b.dataset.f; fbox.querySelectorAll('.fbtn').forEach(x=>x.classList.toggle('on',x===b)); render();
+  });
+
+  function bar(label, p, mkt, tag){
+    return `<div class="pbox" title="${tag||''}">
+      <div class="lbl">${label}</div>
+      <div class="big">${pct(p)}</div>
+      <div class="pbar"><span style="width:${(p*100).toFixed(1)}%"></span></div>
+      <div class="mini" style="margin-top:6px">mercato ${pct(mkt)}</div>
+      <div class="pbar mkt"><span style="width:${(mkt*100).toFixed(1)}%"></span></div>
+    </div>`;
+  }
+
+  function marketsTable(m){
+    return `<table class="mini-tbl">` +
+      marketOrder.filter(s=>m.markets[s]).map(s=>{
+        const v=m.markets[s];
+        if(!v.q && v.p<0.08) return '';
+        return `<tr><td>${selLabel(s)}</td>
+          <td style="text-align:right">${pct(v.p,1)}</td>
+          <td style="text-align:right;color:var(--dim)">${v.q?(v.qsrc==='stima'?'≈':'' )+q2(v.q):'≈'+q2(v.fair)}</td>
+          <td style="text-align:right" class="${v.ev==null?'ev-neu':evClass(v.ev)}">${v.ev==null?'—':evfmt(v.ev)}</td></tr>`;
+      }).join('') + `</table><p class="small">Quota con “≈” = quota equa stimata (1/probabilità), non rilevata sul mercato.</p>`;
+  }
+
+  function heat(m){
+    const max = m.model_cs[0].p;
+    let h = '<div class="heat-hdr">righe = gol ' + m.home + ' · colonne = gol ' + m.away + '</div><div class="heat">';
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++){
+      const cell = m.heat.find(c=>c.s===`${x}-${y}`) || {p:0};
+      const a = Math.min(1, cell.p/(max||1));
+      h += `<div style="background:rgba(34,227,164,${(a*0.95).toFixed(2)});color:${a>0.5?'#04121a':'#cfe8ff'}"
+        title="${x}-${y}: ${pct(cell.p,2)}">${cell.p>=0.03?(cell.p*100).toFixed(0):''}</div>`;
+    }
+    return h+'</div>';
+  }
+
+  function render(){
+    let list = M.filter(m=>{
+      if(cur==='all') return true;
+      if(['ven','sab','dom'].includes(cur)) return m.day===cur;
+      if(cur==='value') return m.best_value && m.best_value.ev>0;
+      return m.status===cur;
+    });
+    document.getElementById('matchList').innerHTML = list.map(m=>{
+      const fp=m.final_probs, mk=m.market_probs, mo=m.model_probs;
+      const tagm = m.status==='upcoming'?`<span class="status st-upcoming">da giocare</span>`:
+        (m.status==='live'?`<span class="status st-live">● in corso</span>`:`<span class="status st-played">conclusa</span>`);
+      return `<div class="mcard" id="card-${m.id}">
+        <div class="top" onclick="this.parentNode.classList.toggle('open')">
+          <div class="row1">
+            <span class="daytag">${dayName(m.day)} · ${m.time}</span>
+            ${tagm}
+            ${m.status!=='upcoming'?`<span class="scorebox">${m.score}</span>`:''}
+            <span class="mt-meta">${m.venue}<br>${m.tv}</span>
+          </div>
+          <div class="teams-row">
+            <span class="tname">${m.home}</span>
+            <span class="vs">vs</span>
+            <span class="tname">${m.away}</span>
+            <span class="stars" title="confidenza ${m.confidence}/5">${stars(m.confidence)}</span>
+            <span class="small" style="margin-left:auto">${m.expected_goals} gol attesi · lean <b>${m.model_lean}</b> (${pct(m.model_lean_p,0)})</span>
+          </div>
+          <div class="probs3">
+            ${bar('1 · '+m.home, fp.home, mk.home, 'probabilità modello finale vs mercato')}
+            ${bar('X · pareggio', fp.draw, mk.draw)}
+            ${bar('2 · '+m.away, fp.away, mk.away)}
+          </div>
+        </div>
+        <div class="details">
+          <div class="dgrid">
+            <div class="block">
+              <h4>Lettura della partita</h4>
+              <p><b>Momento:</b> ${m.formNote || ''}</p>
+              <p><b>Precedenti:</b> ${m.h2h}</p>
+              <p><b>Contesto:</b> ${m.note}</p>
+              ${m.lesson?`<p style="color:var(--green)"><b>Verifica:</b> ${m.lesson}</p>`:''}
+            </div>
+            <div class="block">
+              <h4>Indisponibili</h4>
+              <p><b>${m.home}:</b> ${m.absences.home.length?m.absences.home.join(', '):'nessuno'}</p>
+              <div class="taglist">${m.absences.home.map(a=>`<span class="tg">${a}</span>`).join('')}</div>
+              <p style="margin-top:10px"><b>${m.away}:</b> ${m.absences.away.length?m.absences.away.join(', '):'nessuno'}</p>
+              <div class="taglist">${m.absences.away.map(a=>`<span class="tg">${a}</span>`).join('')}</div>
+              <h4 style="margin-top:14px">Gol attesi (λ)</h4>
+              <p>${m.home} ${m.lambda_home} — ${m.away} ${m.lambda_away} <span class="small">(fonte: ${m.xg_src})</span></p>
+              <p class="small">Overround del mercato: ${(m.overround*100).toFixed(1)}% — margine del banco sul 1X2.</p>
+            </div>
+            <div class="block">
+              <h4>Mercati e valore</h4>
+              ${marketsTable(m)}
+            </div>
+            <div class="block">
+              <h4>Risultati esatti del modello</h4>
+              <table class="mini-tbl">${m.model_cs.slice(0,5).map(c=>`<tr><td>${c.s}</td><td>${pct(c.p,1)}</td></tr>`).join('')}</table>
+              <h4 style="margin-top:14px">Giocata consigliata</h4>
+              <p><b>${m.pick}</b></p>
+              ${m.best_value?`<p class="small">Miglior valore statistico: <b>${selLabel(m.best_value.sel)}</b>
+                ${m.best_value.q?'a '+q2(m.best_value.q):''} · p ${pct(m.best_value.p)} · EV
+                <span class="${evClass(m.best_value.ev)}">${evfmt(m.best_value.ev)}</span></p>`:''}
+              ${m.scorers?`<p class="small">Marcatori: ${m.scorers}</p>`:''}
+            </div>
+            <div class="block">
+              <h4>Mappa risultato</h4>
+              ${heat(m)}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  window.__renderMatches = render;
+  render();
+})();
+
+/* ---------------- TABELLA RIEPILOGO ---------------- */
+(function(){
+  const thead = document.querySelector('#overview thead');
+  const tb = document.querySelector('#overview tbody');
+  thead.innerHTML = `<tr><th style="text-align:left">Partita</th><th>Quando</th><th>1</th><th>X</th><th>2</th>
+    <th>Gol attesi</th><th>Esito più probabile</th><th>Miglior quota</th><th>Confidenza</th><th>Stato</th></tr>`;
+  tb.innerHTML = M.map(m=>{
+    const f=m.final_probs;
+    const bv=m.best_value;
+    return `<tr style="cursor:pointer" onclick="openCard('${m.id}')">
+      <td class="team">${m.home} – ${m.away}</td>
+      <td>${dayName(m.day).split(' ')[0].slice(0,3)} ${m.time}</td>
+      <td${f.home>f.draw&&f.home>f.away?' style="color:var(--green);font-weight:700"':''}>${pct(f.home,0)}</td>
+      <td${f.draw>f.home&&f.draw>f.away?' style="color:var(--green);font-weight:700"':''}>${pct(f.draw,0)}</td>
+      <td${f.away>f.draw&&f.away>f.home?' style="color:var(--green);font-weight:700"':''}>${pct(f.away,0)}</td>
+      <td>${m.expected_goals}</td>
+      <td><span class="pill eu">${selLabel2(m.model_lean,m)}</span></td>
+      <td>${bv?selLabel2(bv.sel,m)+' <b>'+q2(bv.q)+'</b>':'—'}
+        ${bv&&bv.ev>0?'<span class="small ev-pos">'+evfmt(bv.ev)+'</span>':''}</td>
+      <td class="stars">${stars(m.confidence)}</td>
+      <td><span class="status st-${m.status==='live'?'live':(m.status==='played'?'played':'upcoming')}">${statusLabel(m.status)}</span></td>
+    </tr>`;
+  }).join('');
+})();
+function selLabel2(sel, m){
+  if(sel==='1') return m.home;
+  if(sel==='2') return m.away;
+  if(sel==='X') return 'pareggio';
+  return selLabel(sel);
+}
+function openCard(id){
+  const c=document.getElementById('card-'+id);
+  if(!c) return;
+  c.classList.add('open');
+  if(c.scrollIntoView) c.scrollIntoView({behavior:'smooth',block:'center'});
+}
+window.openCard=openCard;
+window.toggleAll = () => {
+  const cards=[...document.querySelectorAll('.mcard')];
+  const anyClosed = cards.some(c=>!c.classList.contains('open'));
+  cards.forEach(c=>c.classList.toggle('open', anyClosed));
+};
+
+/* ---------------- SIMULATORE ---------------- */
+const slip = new Map();
+function renderSim(){
+  const playable = M.filter(m=>m.status==='upcoming');
+  document.getElementById('simRows').innerHTML = playable.map(m=>{
+    const opts = marketOrder.filter(s=>m.markets[s] && m.markets[s].q && m.markets[s].qsrc==='real');
+    return `<div class="sim-row">
+      <span class="nm">${m.home} – ${m.away}<br><span class="small">${m.date} ${m.time}</span></span>
+      ${opts.map(s=>{
+        const v=m.markets[s], on = slip.get(m.id)===s;
+        return `<button class="selbtn${on?' on':''}" onclick="pick('${m.id}','${s}')">${s}<span class="q">${q2(v.q)}</span></button>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+  updateSim();
+}
+function pick(mid, sel){ if(slip.get(mid)===sel) slip.delete(mid); else slip.set(mid, sel); renderSim(); }
+function clearSlip(){ slip.clear(); renderSim(); }
+window.pick=pick; window.clearSlip=clearSlip;
+function loadSlip(code){
+  clearSlip();
+  const s = DATA.schedine.find(x=>x.code===code);
+  s.dettaglio.forEach(d=>slip.set(d.mid, d.sel));
+  renderSim();
+  document.getElementById('simMsg').innerHTML = `<b>Schedina ${code} caricata</b>: ${s.nome}. ${s.note||''}`;
+}
+window.loadSlip=loadSlip;
+function updateSim(){
+  let q=1,p=1,n=0;
+  slip.forEach((sel,mid)=>{
+    const m=M.find(x=>x.id===mid); const v=m.markets[sel];
+    if(v&&v.q){q*=v.q;p*=v.p;n++;}
+  });
+  const kf = document.getElementById('kf').value/100;
+  const bank = parseFloat(document.getElementById('bank').value)||0;
+  const ev = n? p*q-1 : null;
+  const stake = (n && ev>0) ? bank * kf * ev/(q-1) : 0;
+  document.getElementById('simSummary').innerHTML = `
+    <div class="sumbox"><div class="lbl">Selezioni</div><div class="v">${n}</div></div>
+    <div class="sumbox"><div class="lbl">Quota totale</div><div class="v">${n?q2(q):'—'}</div></div>
+    <div class="sumbox"><div class="lbl">Probabilità combinata</div><div class="v">${n?pct(p):'—'}</div></div>
+    <div class="sumbox"><div class="lbl">Valore atteso</div><div class="v ${evClass(ev)}">${evfmt(ev)}</div></div>
+    <div class="sumbox"><div class="lbl">Stake suggerito (¼ Kelly)</div><div class="v">${stake>0?stake.toFixed(2)+' €':'0 €'}</div>
+      <div class="small">${stake>0?(stake/bank*100).toFixed(2)+'% del bankroll':'EV non positivo: non giocare'}</div></div>
+    <div class="sumbox"><div class="lbl">Ritorno potenziale</div><div class="v">${n?(bank&&stake>0?(stake*q).toFixed(2)+' €':'—'):'—'}</div>
+      <div class="small">sullo stake suggerito</div></div>`;
+  document.getElementById('simMsg').innerHTML = n===0
+    ? 'Seleziona un esito per partita. Le quote combinate assumono l\'indipendenza fra le partite.'
+    : (n===1 ? 'Una sola selezione: è la forma di puntata con il minor impatto del margine bancario.'
+             : `${n} selezioni: il margine del banco si moltiplica. Valuta se le prime ${n-1} selezioni sono davvero solide.`);
+}
+['kf','bank'].forEach(id=>document.addEventListener('input',e=>{
+  if(e.target.id===id){
+    if(id==='kf'){const v=+e.target.value; document.getElementById('kfLbl').textContent=
+      v===25?'¼':(v===50?'½':(v===100?'pieno':v/100));}
+    updateSim();
+  }
+}));
+renderSim();
+
+/* ---------------- SCHEDINE ---------------- */
+(function(){
+  document.getElementById('schedineBox').innerHTML = DATA.schedine.map(s=>{
+    const rows = s.dettaglio.map(d=>`<li><span>${d.partita} <span class="small" style="color:var(--dim)">${d.ora}</span></span>
+      <span><span class="pill eu">${d.sel}</span> <b>${q2(d.q)}</b> <span class="small ${evClass(d.ev)}">${evfmt(d.ev)}</span></span></li>`).join('');
+    return `<div class="scard">
+      <span class="tg2">${s.tag}</span>
+      <h3>${s.nome}</h3>
+      <ul>${rows}</ul>
+      <div class="foot">
+        <div><div class="lbl">Quota</div><div class="v">${q2(s.quota)}</div></div>
+        <div><div class="lbl">Probabilità</div><div class="v">${pct(s.prob)}</div></div>
+        <div><div class="lbl">Valore atteso</div><div class="v ${evClass(s.ev)}">${evfmt(s.ev)}</div></div>
+        <div><div class="lbl">Stake</div><div class="v" style="font-size:14px">${s.stake}</div></div>
+      </div>
+      <p class="note">${s.note||''}</p>
+      <p class="note"><b>Simulazione su 100 ipotetiche giocate:</b> vinte ${(s.prob*100).toFixed(0)},
+        perse ${(100-s.prob*100).toFixed(0)}. Ritorno teorico ${((s.prob*s.quota)*100).toFixed(0)} € su 100 € giocati.</p>
+    </div>`;
+  }).join('');
+})();
+
+/* ---------------- VALUE / AVOID ---------------- */
+(function(){
+  const row = (r,cls)=>`<tr><td>${r.partita}<br><span class="small" style="color:var(--dim)">${selLabel(r.sel)} · ${r.ora}</span></td>
+    <td style="text-align:right">${pct(r.p)}</td>
+    <td style="text-align:right">${q2(r.q)}</td>
+    <td style="text-align:right" class="${cls}">${evfmt(r.ev)}</td>
+    <td style="text-align:right">${r.kelly?(r.kelly*100).toFixed(2)+'%':'—'}</td></tr>`;
+  document.getElementById('valueTbl').innerHTML =
+    `<tr><td><b>Partita / esito</b></td><td style="text-align:right"><b>Prob.</b></td><td style="text-align:right"><b>Quota</b></td>
+     <td style="text-align:right"><b>EV</b></td><td style="text-align:right"><b>¼ Kelly</b></td></tr>` +
+    DATA.value_top.map(r=>row(r,evClass(r.ev))).join('');
+  document.getElementById('avoidTbl').innerHTML =
+    `<tr><td><b>Partita / esito</b></td><td style="text-align:right"><b>Prob.</b></td><td style="text-align:right"><b>Quota</b></td>
+     <td style="text-align:right"><b>EV</b></td><td style="text-align:right"><b>¼ Kelly</b></td></tr>` +
+    DATA.avoid.map(r=>row(r,'ev-neg')).join('');
+})();
+
+/* ---------------- GRAFICI ---------------- */
+(function(){
+  // scatter attacco vs difesa
+  const W=560,H=360,pad=48;
+  const teams = Object.entries(T).map(([n,t])=>({n,gf:t.gf/t.g,ga:t.ga/t.g,field:fieldTeams.includes(n)}));
+  const maxX = Math.max(...teams.map(t=>t.gf))*1.12, maxY = Math.max(...teams.map(t=>t.ga))*1.12;
+  const X = v => pad + (v/maxX)*(W-pad-24);
+  const Y = v => H-pad - (1 - v/maxY)*(H-pad-24);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter attacco difesa">
+    <rect x="0" y="0" width="${W}" height="${H}" fill="none"/>
+    <g stroke="rgba(255,255,255,.09)">`;
+  for(let i=0;i<=4;i++){
+    const xx=pad+i*(W-pad-24)/4, yy=pad+i*(H-pad-24)/4;
+    svg += `<line x1="${xx}" y1="${pad}" x2="${xx}" y2="${H-pad}"/><line x1="${pad}" y1="${yy}" x2="${W-24}" y2="${yy}"/>`;
+  }
+  svg += `</g><text x="${W/2}" y="${H-8}" fill="#93a4c4" font-size="11" text-anchor="middle">gol fatti a partita →</text>
+    <text x="14" y="${H/2}" fill="#93a4c4" font-size="11" transform="rotate(-90 14 ${H/2})" text-anchor="middle">← gol subiti a partita (più in alto = difesa migliore)</text>`;
+  teams.forEach(t=>{
+    svg += `<g><circle cx="${X(t.gf).toFixed(1)}" cy="${Y(t.ga).toFixed(1)}" r="${t.field?7:5}"
+      fill="${t.field?'#22e3a4':'#54688c'}" opacity="${t.field?.95:.6}">
+      <title>${t.n}: ${t.gf.toFixed(2)} gol fatti, ${t.ga.toFixed(2)} subiti a partita</title></circle>
+      <text x="${(X(t.gf)+10).toFixed(1)}" y="${(Y(t.ga)+4).toFixed(1)}" font-size="10.5"
+      fill="${t.field?'#e8eefc':'#93a4c4'}">${t.n}</text></g>`;
+  });
+  document.getElementById('scatter').innerHTML = svg+'</svg>';
+
+  // barre gol attesi
+  const rows = M.map(m=>({m, tot:m.lambda_home+m.lambda_away}));
+  const Wb = 560, rowh = 26, Hb = rows.length*rowh+30;
+  const maxT = Math.max(...rows.map(r=>r.tot))*1.1;
+  let svg2 = `<svg viewBox="0 0 ${Wb} ${Hb}">`;
+  rows.forEach((r,i)=>{
+    const y = i*rowh+12;
+    const wH = (r.m.lambda_home/maxT)*(Wb-190);
+    const wA = (r.m.lambda_away/maxT)*(Wb-190);
+    svg2 += `<text x="0" y="${y+11}" font-size="11" fill="#c6d2ea">${r.m.home}–${r.m.away}</text>
+      <rect x="150" y="${y}" width="${wH.toFixed(1)}" height="15" rx="4" fill="#22e3a4" opacity=".9">
+        <title>${r.m.home}: ${r.m.lambda_home} gol attesi</title></rect>
+      <rect x="${150+wH.toFixed(1)}" y="${y}" width="${wA.toFixed(1)}" height="15" rx="4" fill="#5b8cff" opacity=".9">
+        <title>${r.m.away}: ${r.m.lambda_away} gol attesi</title></rect>
+      <text x="${(150+wH+wA+8).toFixed(1)}" y="${y+11}" font-size="10.5" fill="#93a4c4">${r.tot.toFixed(2)}</text>`;
+  });
+  document.getElementById('xgBars').innerHTML = svg2+'</svg>';
+
+  // heatmaps
+  document.getElementById('heatmaps').innerHTML = M.map(m=>`
+    <div><div style="font-weight:700;font-size:13.5px;margin-bottom:6px">${m.home} – ${m.away}</div>
+    <div class="heat">${(()=>{
+      const max=m.model_cs[0].p; let h='';
+      for(let x=0;x<5;x++) for(let y=0;y<5;y++){
+        const c=m.heat.find(z=>z.s===`${x}-${y}`)||{p:0};
+        const a=Math.min(1,c.p/(max||1));
+        h+=`<div style="background:rgba(34,227,164,${(a*.95).toFixed(2)});color:${a>.5?'#04121a':'#cfe8ff'}"
+          title="${x}-${y}: ${pct(c.p,2)}">${c.p>=0.035?(c.p*100).toFixed(0):''}</div>`;
+      }
+      return h;})()}</div></div>`).join('');
+})();
+</script>
+</body>
+</html>

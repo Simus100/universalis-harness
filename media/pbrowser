@@ -1,0 +1,43 @@
+#!/bin/sh
+# Wrapper del browser per l'agente: profilo Chrome PERSISTENTE, uno per sessione.
+#
+# Perché un profilo persistente: di default agent-browser crea un profilo temporaneo in
+# /tmp/agent-browser-chrome-<uuid>, quindi un login (YouTube, un sito, un'area riservata)
+# si perde alla chiusura del daemon. Con AGENT_BROWSER_PROFILE cookie, IndexedDB,
+# service worker e cache sopravvivono tra un avvio e l'altro.
+#
+# Perché UNO PER SESSIONE: Chrome non permette due istanze sullo stesso profilo
+# ("Failed to create .../SingletonLock: File exists ... Aborting now to avoid profile
+# corruption"). Se tutte le sessioni condividessero il profilo, aprire una seconda
+# sessione mentre la principale è attiva fallirebbe. Quindi:
+#   • sessione "default"  -> profilo principale (dove stanno i login dell'utente)
+#   • altre sessioni      -> profili separati (es. profile-gui, profile-test)
+#
+# Va eseguito come utente dedicato (i percorsi sono nella sua home):
+#   sudo -u pi-browser -H /usr/local/bin/pbrowser open https://example.com
+#   sudo -u pi-browser -H /usr/local/bin/pbrowser --session gui open http://127.0.0.1/
+#
+# Il marcatore PBROWSER-PROFILE è usato dagli script di verifica: non rimuoverlo.
+BASE="${PBROWSER_PROFILE_BASE:-/home/pi-browser/.agent-browser}"
+
+# ricava la sessione dal flag --session <nome> (default: "default")
+SESSION=default
+prev=""
+for a in "$@"; do
+  if [ "$prev" = "--session" ]; then
+    SESSION="$a"
+    break
+  fi
+  prev="$a"
+done
+
+if [ "$SESSION" = "default" ]; then
+  : "${AGENT_BROWSER_PROFILE:=$BASE/profile}"
+else
+  # nome sessione ripulito: niente slash o caratteri strani nei percorsi
+  CLEAN=$(printf '%s' "$SESSION" | tr -c 'A-Za-z0-9_-' '-')
+  AGENT_BROWSER_PROFILE="$BASE/profile-$CLEAN"
+fi
+export AGENT_BROWSER_PROFILE
+
+exec /usr/bin/agent-browser "$@"

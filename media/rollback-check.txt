@@ -1,0 +1,6 @@
+== riavvio post-rollback 2026-09-18 19:11:43 ==
+servizio: active · health: 200 (dopo 3 tentativi)
+version: dashboard-2026-09-17.2 · pid 70472
+pagina: 200 121918B
+elementi: feat-btn=7 · uiDlg=0
+errori nel log (ultimo minuto): 0

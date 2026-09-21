@@ -1,0 +1,34 @@
+Universalis Harness — pacchetto favicon "U"
+forma: U con angoli tagliati a 45°, gradiente #5b9dff -> #8b5cff (135°)
+
+file                               larghezza    altezza      byte
+png-trasparente/u-16.png           16           16           390
+png-fondo-scuro/u-16.png           16           16           357
+png-trasparente/u-24.png           24           24           592
+png-fondo-scuro/u-24.png           24           24           448
+png-trasparente/u-32.png           32           32           718
+png-fondo-scuro/u-32.png           32           32           588
+png-trasparente/u-48.png           48           48           1059
+png-fondo-scuro/u-48.png           48           48           703
+png-trasparente/u-64.png           64           64           1181
+png-fondo-scuro/u-64.png           64           64           815
+png-trasparente/u-96.png           96           96           1908
+png-fondo-scuro/u-96.png           96           96           1215
+png-trasparente/u-128.png          128          128          2222
+png-fondo-scuro/u-128.png          128          128          1185
+png-trasparente/u-180.png          180          180          3033
+png-fondo-scuro/u-180.png          180          180          1631
+png-trasparente/u-192.png          192          192          3262
+png-fondo-scuro/u-192.png          192          192          1722
+png-trasparente/u-256.png          256          256          4016
+png-fondo-scuro/u-256.png          256          256          1932
+png-trasparente/u-512.png          512          512          11277
+png-fondo-scuro/u-512.png          512          512          4887
+png-trasparente/u-1024.png         1024         1024         34700
+png-fondo-scuro/u-1024.png         1024         1024         15035
+svg/u-logo.svg                     vettoriale   qualsiasi    584
+ico/favicon.ico                    16+32+48     16x16        1702
+apple/apple-touch-icon.png         180          180          1631
+
+anteprima.png: tutte le misure a dimensione reale, su fondo scuro e chiaro.
+Nota: nel .ico le immagini sono PNG a 32bpp; il fondo e' #0a0e15.

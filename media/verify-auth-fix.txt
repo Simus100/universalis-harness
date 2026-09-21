@@ -1,0 +1,36 @@
+== verifica del fix di accesso — 2026-09-21T22:02:14+02:00 ==
+atteso: versione dashboard-2026-09-21.2  ·  pid che cambia
+versione servita: dashboard-2026-09-21.2 (dopo 1 tentativi)
+  OK   il servizio in esecuzione ha il codice nuovo (dashboard-2026-09-21.2)
+
+== 1. il form di accesso c'è, sempre ==
+  OK   GET /login → 200 (200)
+  OK   il form ha il campo utente
+  OK   il form ha il campo password
+  OK   il marchio "beta" è accanto al nome
+  OK   il copyright di Universalis Produzioni è presente
+  OK   la navigazione senza credenziali rimanda al form (302)
+  OK     il redirect punta a /login (/login)
+  OK   le API senza credenziali rispondono 401 JSON (non una pagina) (401)
+  OK   nessun WWW-Authenticate (era quello a bloccare le fetch) ()
+
+== 2. accesso dalla pagina (cookie di sessione) ==
+  OK   POST /login → 303 (303)
+  OK     il cookie apre /api/state (200)
+  OK     il cookie apre la dashboard (200)
+  OK     cookie manomesso → 401 (401)
+  OK     Basic (script/curl) continua a funzionare (200)
+
+== 3. un caricamento della pagina NON è più un tentativo fallito ==
+  OK   dopo 12 richieste anonime l'IP NON è bloccato (200)
+  OK   nessun blocco registrato (0)
+
+== 4. blocco progressivo: il primo gradino è corto, poi cresce ==
+  OK   primo blocco = primo gradino (15s, non 900s) (15)
+  OK   la pagina bloccata mostra il conto alla rovescia
+  OK   i campi sono disabilitati durante l'attesa
+  OK   il POST del form durante il blocco → 429 (429)
+  OK   secondo blocco: l'attesa è salita (30s) (30)
+  OK   un altro IP non è toccato (200)
+
+RISULTATO: 23 ok, 0 falliti

@@ -1,0 +1,119 @@
+[
+  {
+    "id": "49e4a88cb566149b",
+    "title": "Domande e questionari interattivi in chat (tool ask_user)",
+    "description": "",
+    "status": "active",
+    "steps": [
+      {
+        "id": "s1",
+        "title": "Backup ripristinabile della versione funzionante (media/backup-completo.sh + sha256)",
+        "done": true,
+        "order": 0
+      },
+      {
+        "id": "s2",
+        "title": "Ricerca online delle best practice e documento in media/ricerca-domande-interattive-2026-09-20.md",
+        "done": true,
+        "order": 1
+      },
+      {
+        "id": "s3",
+        "title": "Broker delle domande (stati, timeout, validazione, segreti, log) in media/ask-broker.mjs",
+        "done": true,
+        "order": 2
+      },
+      {
+        "id": "s4",
+        "title": "Tool ask_user con la soglia su quando chiedere (media/ask-tool.mjs + system prompt)",
+        "done": true,
+        "order": 3
+      },
+      {
+        "id": "s5",
+        "title": "Card interattiva in chat: opzioni, Altro, Salta, invio, conto alla rovescia, esiti",
+        "done": true,
+        "order": 4
+      },
+      {
+        "id": "s6",
+        "title": "Endpoint /api/ask e /api/ask/respond, eventi SSE, annullamento su stop",
+        "done": true,
+        "order": 5
+      },
+      {
+        "id": "s7",
+        "title": "Riallineamento a reload/riconnessione senza card duplicate",
+        "done": true,
+        "order": 6
+      },
+      {
+        "id": "s8",
+        "title": "Test: unitario (74), interruttore (23), end-to-end col modello (33), browser vero (43), terminale (15)",
+        "done": true,
+        "order": 7
+      },
+      {
+        "id": "s9",
+        "title": "Suite completa senza regressioni (718+ controlli verdi) e deploy in produzione",
+        "done": true,
+        "order": 8
+      },
+      {
+        "id": "s10",
+        "title": "Interruttore in dashboard (pulsante + /ask, persistito) e clone tester_01 allineato",
+        "done": true,
+        "order": 9
+      }
+    ],
+    "checklist": [
+      {
+        "id": "c1",
+        "text": "Il backup pre-modifica e verificato (sha256)",
+        "done": true
+      },
+      {
+        "id": "c2",
+        "text": "Le domande compaiono nel punto giusto del messaggio, non in fondo alla chat",
+        "done": true
+      },
+      {
+        "id": "c3",
+        "text": "Si risponde con un clic o a parole proprie, e si puo saltare",
+        "done": true
+      },
+      {
+        "id": "c4",
+        "text": "Nessuna attesa infinita: timeout, stop e riavvio chiudono le domande",
+        "done": true
+      },
+      {
+        "id": "c5",
+        "text": "Credenziali mai chieste in chat: la richiesta viene rifiutata con spiegazione",
+        "done": true
+      },
+      {
+        "id": "c6",
+        "text": "Dopo un reload domanda e risposta restano visibili e rispondibili",
+        "done": true
+      },
+      {
+        "id": "c7",
+        "text": "Test statici e suite completa passano",
+        "done": true
+      },
+      {
+        "id": "c8",
+        "text": "Dashboard di produzione aggiornata e verificata (ask_user attivo; interruttore attivato dal riavvio programmato)",
+        "done": true
+      },
+      {
+        "id": "c9",
+        "text": "Test dal vivo nella chat di produzione: domanda posta e risposta ricevuta come dato",
+        "done": true
+      }
+    ],
+    "createdAt": 1789897936943,
+    "updatedAt": 1789899553884
+  }
+]

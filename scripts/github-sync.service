@@ -1,0 +1,11 @@
+[Unit]
+Description=Sincronizza il codice dell'harness con il repository GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/pi-harness
+ExecStart=/bin/bash /root/pi-harness/scripts/github-sync.sh --messaggio "sync automatico %H:%M"
+User=root
+Nice=10

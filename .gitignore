@@ -1,0 +1,27 @@
+# ---- dati riservati: mai nel repository ----
+.env
+.session-secret
+.github-access
+.github-remote
+.git-credentials
+*credentials*
+*password*
+
+# ---- dati e stato delle istanze ----
+sessions/
+backups/
+node_modules/
+download/
+media/uploads/
+media/schedule-logs/
+*.log
+
+# ---- pacchetto di export locale (contiene copie e .env) ----
+backup_export/
+
+# ---- temporanei ----
+*.tmp
+.tail-fix.tmp
+nuovo_file.txt
+tre.txt
+piccolo.bin

@@ -1,0 +1,9 @@
+# pi dashboard — reverse proxy con HTTPS automatico
+pi.universalisproduzioni.it {
+	reverse_proxy 127.0.0.1:8420
+}
+
+# fallback (continua a funzionare)
+89-117-59-173.sslip.io {
+	reverse_proxy 127.0.0.1:8420
+}

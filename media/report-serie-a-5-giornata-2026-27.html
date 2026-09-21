@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Serie A 2026/27 · 5ª Giornata — Report analitico e pronostici</title>
+<style>
+:root{
+  --bg:#070b14; --bg2:#0c1322; --card:#101a2e; --card2:#142139;
+  --line:#1f2f4d; --txt:#e8eefc; --dim:#93a4c4; --dim2:#6d7f9f;
+  --green:#22e3a4; --green2:#0f9e74; --blue:#5b8cff; --yellow:#ffd166;
+  --red:#ff5d73; --purple:#a78bfa; --orange:#ff9f45;
+  --grad:linear-gradient(135deg,#22e3a4 0%,#5b8cff 55%,#a78bfa 100%);
+  --shadow:0 18px 50px -20px rgba(0,0,0,.85);
+  --r:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:
+    radial-gradient(1100px 600px at 12% -8%, rgba(34,227,164,.14), transparent 60%),
+    radial-gradient(900px 520px at 88% 0%, rgba(91,140,255,.16), transparent 60%),
+    radial-gradient(700px 700px at 50% 120%, rgba(167,139,250,.10), transparent 60%),
+    var(--bg);
+  color:var(--txt); font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+a{color:var(--blue);text-decoration:none}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px 90px}
+
+/* ---------- HERO ---------- */
+header.hero{position:relative;padding:46px 0 26px;overflow:hidden}
+.hero-badge{display:inline-flex;align-items:center;gap:9px;font-size:12.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--green);border:1px solid rgba(34,227,164,.35);
+  background:rgba(34,227,164,.08);padding:6px 14px;border-radius:999px;font-weight:700}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(34,227,164,.7);animation:pulse 2.2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(34,227,164,0)}100%{box-shadow:0 0 0 0 rgba(34,227,164,0)}}
+h1{font-size:clamp(30px,5vw,56px);line-height:1.05;margin:16px 0 10px;letter-spacing:-.02em;font-weight:800}
+h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--dim);font-size:16.5px;max-width:820px}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.chip{background:rgba(255,255,255,.045);border:1px solid var(--line);padding:7px 13px;border-radius:999px;font-size:13px;color:var(--dim)}
+.chip b{color:var(--txt)}
+
+/* ---------- NAV ---------- */
+nav.sticky{position:sticky;top:0;z-index:60;backdrop-filter:blur(14px);
+  background:rgba(7,11,20,.82);border-bottom:1px solid var(--line);margin-bottom:26px}
+nav.sticky .inner{max-width:1280px;margin:0 auto;padding:10px 20px;display:flex;gap:8px;overflow-x:auto;align-items:center}
+nav.sticky a{font-size:13.5px;color:var(--dim);padding:7px 12px;border-radius:10px;white-space:nowrap;border:1px solid transparent}
+nav.sticky a:hover{color:var(--txt);background:rgba(255,255,255,.05);border-color:var(--line)}
+.nav-actions{margin-left:auto;display:flex;gap:8px}
+.btn{cursor:pointer;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--txt);
+  padding:8px 13px;border-radius:11px;font-size:13px;font-weight:600;transition:.18s;font-family:inherit}
+.btn:hover{background:rgba(255,255,255,.1);transform:translateY(-1px)}
+.btn.acc{background:var(--grad);color:#04121a;border:none}
+.btn.ghost{background:transparent}
+
+/* ---------- SECTIONS ---------- */
+section{margin:52px 0;scroll-margin-top:74px}
+.s-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:20px}
+.s-head h2{font-size:clamp(21px,2.6vw,30px);margin:0;letter-spacing:-.01em;display:flex;align-items:center;gap:11px}
+.s-head h2 .num{font-size:13px;color:var(--green);border:1px solid rgba(34,227,164,.35);border-radius:8px;padding:2px 8px;font-weight:800}
+.s-head p{margin:4px 0 0;color:var(--dim);font-size:14px;max-width:760px}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.kpi{background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.015));
+  border:1px solid var(--line);border-radius:var(--r);padding:17px 18px;position:relative;overflow:hidden}
+.kpi:before{content:'';position:absolute;inset:0 0 auto 0;height:2px;background:var(--grad);opacity:.85}
+.kpi .lbl{font-size:11.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--dim2);font-weight:700}
+.kpi .val{font-size:29px;font-weight:800;letter-spacing:-.02em;margin-top:6px}
+.kpi .sub2{font-size:12.5px;color:var(--dim);margin-top:3px}
+
+/* ---------- CARDS ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+
+/* ---------- TABLE ---------- */
+.tbl-wrap{overflow:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--card)}
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px;min-width:820px}
+th,td{padding:10px 12px;text-align:center;border-bottom:1px solid rgba(255,255,255,.05)}
+th{background:rgba(255,255,255,.045);color:var(--dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;cursor:pointer;user-select:none;position:sticky;top:0;z-index:2;white-space:nowrap}
+th:hover{color:var(--txt)}
+th.sorted:after{content:' ▼';color:var(--green);font-size:10px}
+th.sorted.asc:after{content:' ▲'}
+td.team{text-align:left;font-weight:600;white-space:nowrap}
+tr:hover td{background:rgba(91,140,255,.06)}
+.pill{display:inline-block;padding:2px 8px;border-radius:7px;font-size:11.5px;font-weight:700}
+.pill.pos{background:rgba(34,227,164,.14);color:var(--green)}
+.pill.eu{background:rgba(91,140,255,.16);color:#9dbaff}
+.pill.releg{background:rgba(255,93,115,.14);color:#ff9aa8}
+.form{display:inline-flex;gap:3px}
+.form i{width:17px;height:17px;border-radius:5px;font-style:normal;font-size:10.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center}
+.f-V{background:rgba(34,227,164,.2);color:var(--green)}
+.f-N{background:rgba(255,209,102,.18);color:var(--yellow)}
+.f-P{background:rgba(255,93,115,.18);color:var(--red)}
+.bar{height:6px;border-radius:99px;background:rgba(255,255,255,.09);overflow:hidden;min-width:52px}
+.bar>span{display:block;height:100%;border-radius:99px;background:var(--grad)}
+
+/* ---------- MATCH CARDS ---------- */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.fbtn{cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--dim);padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;font-family:inherit;transition:.18s}
+.fbtn:hover{color:var(--txt);border-color:#2c4066}
+.fbtn.on{background:var(--grad);color:#04121a;border-color:transparent}
+.mcards{display:grid;gap:14px}
+.mcard{background:linear-gradient(165deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:var(--r);overflow:hidden;transition:.2s}
+.mcard:hover{border-color:#2b4067;transform:translateY(-2px)}
+.mcard .top{padding:16px 18px;cursor:pointer}
+.mcard .row1{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.daytag{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:8px;background:rgba(91,140,255,.15);color:#a9c2ff}
+.status{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 9px;border-radius:8px}
+.st-upcoming{background:rgba(34,227,164,.14);color:var(--green)}
+.st-live{background:rgba(255,93,115,.16);color:#ff9aa8}
+.st-played{background:rgba(255,255,255,.08);color:var(--dim)}
+.teams-row{display:flex;align-items:center;gap:14px;margin-top:9px;flex-wrap:wrap}
+.tname{font-size:20px;font-weight:800;letter-spacing:-.01em}
+.scorebox{font-size:19px;font-weight:800;color:var(--green);background:rgba(34,227,164,.1);border:1px solid rgba(34,227,164,.3);padding:3px 12px;border-radius:10px}
+.vs{color:var(--dim2);font-weight:700;font-size:13px}
+.mt-meta{color:var(--dim);font-size:13px;margin-left:auto;text-align:right}
+.stars{letter-spacing:2px;color:var(--yellow);font-size:13px}
+.probs3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.pbox{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px}
+.pbox .lbl{font-size:11px;color:var(--dim2);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.pbox .big{font-size:20px;font-weight:800}
+.pbox .mini{font-size:11.5px;color:var(--dim)}
+.pbar{height:7px;background:rgba(255,255,255,.08);border-radius:99px;overflow:hidden;margin-top:7px}
+.pbar>span{display:block;height:100%;background:linear-gradient(90deg,#22e3a4,#5b8cff);border-radius:99px;transition:width .8s cubic-bezier(.2,.9,.2,1)}
+.pbar.mkt>span{background:linear-gradient(90deg,#3b4c6b,#54688c)}
+.details{padding:0 18px 18px;display:none;border-top:1px solid rgba(255,255,255,.06)}
+.mcard.open .details{display:block;animation:fade .3s ease}
+@keyframes fade{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-top:16px}
+.block h4{margin:0 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--green)}
+.block p,.block li{font-size:13.5px;color:#c6d2ea;margin:5px 0}
+.block ul{margin:0;padding-left:18px}
+.mini-tbl{width:100%;font-size:12.5px;min-width:0}
+.mini-tbl td{padding:5px 7px;text-align:left;border-bottom:1px solid rgba(255,255,255,.05)}
+.mini-tbl td:last-child{text-align:right;font-weight:700}
+.ev-pos{color:var(--green)}.ev-neg{color:var(--red)}.ev-neu{color:var(--yellow)}
+.taglist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tg{font-size:11.5px;padding:3px 8px;border-radius:7px;background:rgba(255,93,115,.12);color:#ffb0bb;border:1px solid rgba(255,93,115,.22)}
+.heat{display:grid;grid-template-columns:repeat(6,1fr);gap:3px;max-width:300px}
+.heat div{aspect-ratio:1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10.5px;color:#04121a;font-weight:700;cursor:help}
+.heat-hdr{font-size:11px;color:var(--dim2);margin-bottom:6px}
+
+/* ---------- SIMULATOR ---------- */
+.slip{position:relative}
+.sim-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.sim-row .nm{min-width:210px;font-weight:700;font-size:14px}
+.selbtn{cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:700;padding:6px 11px;border-radius:9px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--dim)}
+.selbtn:hover{border-color:#31486f;color:var(--txt)}
+.selbtn.on{background:var(--grad);color:#04121a;border-color:transparent}
+.selbtn .q{opacity:.8;font-weight:600;margin-left:5px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:16px}
+.sumbox{background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:14px;padding:13px}
+.sumbox .lbl{font-size:11px;color:var(--dim2);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.sumbox .v{font-size:23px;font-weight:800;margin-top:3px}
+input[type=range]{width:100%;accent-color:#22e3a4}
+input[type=number]{background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 10px;font-family:inherit;width:130px}
+
+/* ---------- SCHEDINE ---------- */
+.sched{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.scard{background:linear-gradient(165deg,rgba(255,255,255,.06),rgba(255,255,255,.01));border:1px solid var(--line);border-radius:var(--r);padding:18px;display:flex;flex-direction:column}
+.scard h3{margin:0 0 4px;font-size:17px}
+.scard .tg2{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--green);font-weight:800}
+.scard ul{list-style:none;margin:12px 0;padding:0}
+.scard li{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:7px 0;border-bottom:1px dashed rgba(255,255,255,.08)}
+.scard .foot{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.scard .foot div{background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:11px;padding:9px}
+.scard .foot .lbl{font-size:10.5px;color:var(--dim2);text-transform:uppercase;font-weight:700;letter-spacing:.07em}
+.scard .foot .v{font-size:17px;font-weight:800}
+.note{font-size:12.5px;color:var(--dim);margin-top:10px}
+.warn{background:rgba(255,209,102,.07);border:1px solid rgba(255,209,102,.28);border-radius:14px;padding:14px 16px;font-size:13.5px;color:#ffe6ad}
+
+/* ---------- CHARTS ---------- */
+svg{max-width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin-top:10px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px}
+
+/* ---------- MISC ---------- */
+.split{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}
+@media(max-width:900px){.split{grid-template-columns:1fr}}
+.method li{margin:7px 0;font-size:14px;color:#c6d2ea}
+.method b{color:var(--txt)}
+footer{border-top:1px solid var(--line);margin-top:60px;padding:26px 0;color:var(--dim2);font-size:12.5px}
+.small{font-size:12.5px;color:var(--dim)}
+.kbd{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:rgba(255,255,255,.07);padding:1px 6px;border-radius:6px;font-size:12px}
+details.src{margin-top:10px;font-size:13px;color:var(--dim)}
+details.src summary{cursor:pointer;color:var(--blue)}
+@media print{nav.sticky,.nav-actions{display:none}.details{display:block!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="hero-badge"><span class="dot"></span>Report generato il 19 settembre 2026 · ore 16:30 CEST</span>
+  <h1>Serie A 2026/27 — <span class="grad">5ª Giornata</span><br>Analisi, probabilità e schede scommessa</h1>
+  <p class="sub">Dati, statistiche e modelli su tutte le 10 partite del turno: forma, xG, precedenti, indisponibili, quote reali,
+  modello Poisson bivariato (Dixon-Coles) ancorato al mercato, value bet, gestione del bankroll e quattro schede pronte da giocare
+  (o da evitare).</p>
+  <div class="hero-meta" id="heroMeta"></div>
+</header>
+
+<nav class="sticky">
+  <div class="inner">
+    <a href="#sintesi">Sintesi</a>
+    <a href="#metodo">Metodo</a>
+    <a href="#classifica">Classifica</a>
+    <a href="#partite">Partite</a>
+    <a href="#simulatore">Simulatore schedina</a>
+    <a href="#schedine">Schede pronte</a>
+    <a href="#value">Value &amp; Avoid</a>
+    <a href="#grafici">Grafici</a>
+    <a href="#fonti">Fonti</a>
+    <div class="nav-actions">
+      <button class="btn ghost" onclick="toggleAll()">Apri/chiudi tutte</button>
+      <button class="btn acc" onclick="window.print()">Stampa / PDF</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ SINTESI ============ -->
+<section id="sintesi">
+  <div class="s-head">
+    <div><h2><span class="num">01</span> Sintesi della giornata</h2>
+    <p>Le 10 gare del quinto turno, il contesto di classifica e le indicazioni principali emerse dal modello.</p></div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid2" style="margin-top:16px">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:17px">Il quadro del turno</h3>
+      <ul class="method" id="sintesiList"></ul>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:17px">La giocata del turno</h3>
+      <div id="topPick"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3 style="margin:0 0 10px;font-size:17px">Scenari di vetta (effetto della 5ª giornata sulla classifica)</h3>
+    <div id="scenari"></div>
+  </div>
+  <div class="warn" style="margin-top:16px">
+    <b>Nota di trasparenza.</b> Le probabilità pubblicate in questo report sono stime e non previsioni certe: il calcio è un sistema
+    a bassa predicibilità. Tutti i confronti con le quote sono fatti su quote reali raccolte il 18-19 settembre 2026 e sono riportati
+    a fini informativi/statistici. Il margine del banco (5-8% per mercato) rende la maggior parte delle giocate a valore atteso
+    negativo: le schede sono costruite per ridurne l'impatto, non per eliminarlo.
+  </div>
+</section>
+
+<!-- ============ METODO ============ -->
+<section id="metodo">
+  <div class="s-head">
+    <div><h2><span class="num">02</span> Come nasce questo report</h2>
+    <p>Il modello in quattro passaggi, senza scatole nere: ogni numero è ricalcolabile.</p></div>
+  </div>
+  <div class="split">
+    <div class="card">
+      <ol class="method">
+        <li><b>Forza offensiva e difensiva.</b> Per ogni squadra calcolo gol fatti/subiti per partita rispetto alla media del
+        campionato (1,51 gol per squadra) e applico uno <i>shrinkage</i> del 40%: con sole 4 giornate i dati individuali sono
+        rumorosi, quindi li avvicino alla media di lega.</li>
+        <li><b>Gol attesi (λ).</b> Combino il modello attacco/difesa (con fattore campo +10% in casa) con gli xG previsti dalle fonti
+        esterne, peso 35%/65%, e applico correzioni qualitative documentate: infortuni pesanti, squalifiche, fatica europea.</li>
+        <li><b>Poisson bivariato (Dixon-Coles).</b> Dalla coppia di gol attesi genero la matrice di tutti i risultati (0-0 … 10-10)
+        con correzione per i punteggi bassi (ρ = −0,06). Da qui escono 1X2, GG/NG, Over/Under e i risultati esatti.</li>
+        <li><b>Ancoraggio al mercato.</b> Converto le quote reali in probabilità con il <i>power method</i> (rimozione del margine) e
+        fondo il 70% mercato + 30% modello, imponendo che nessun esito possa divergere dal mercato per più di <b>4 punti
+        percentuali</b>. È il vincolo che evita "value bet" illusorie: le nostre probabilità restano prudenti.</li>
+      </ol>
+      <details class="src">
+        <summary>Dettagli tecnici (clicca per aprire)</summary>
+        <p class="small">Poisson: P(k) = e<sup>−λ</sup>λ<sup>k</sup>/k!. Correzione Dixon-Coles: τ(0,0)=1−λμρ, τ(0,1)=1+λρ,
+        τ(1,0)=1+μρ, τ(1,1)=1−ρ. Rimozione margine: p<sub>i</sub> ∝ o<sub>i</sub><sup>k</sup> con k tale che Σp<sub>i</sub>=1.
+        Value atteso: EV = p·quota − 1. Stake: Kelly frazionato f* = ¼·(p·q−1)/(q−1).</p>
+      </details>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 12px;font-size:17px">Cosa guarda il modello</h3>
+      <table class="mini-tbl" id="methodTbl"></table>
+      <div class="note">Le probabilità finali pubblicate nelle schede partita sono quelle ancorate al mercato.
+      I dati di forma, xG e indisponibili provengono dalle fonti elencate in fondo al report.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLASSIFICA ============ -->
+<section id="classifica">
+  <div class="s-head">
+    <div><h2><span class="num">03</span> Classifica dopo 4 giornate</h2>
+    <p>Clicca sulle intestazioni per ordinare. Le squadre impegnate nella 5ª giornata sono evidenziate.</p></div>
+    <div class="filters">
+      <input type="text" id="q" placeholder="Filtra squadra…" style="width:200px;background:rgba(255,255,255,.05);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 10px;font-family:inherit">
+      <label class="small"><input type="checkbox" id="onlyField" checked> solo squadre in campo</label>
+    </div>
+  </div>
+  <div class="tbl-wrap"><table id="cls"><thead></thead><tbody></tbody></table></div>
+  <p class="small" style="margin-top:10px">Legenda: <span class="pill pos">1-4</span> Champions League ·
+  <span class="pill eu">5-6</span> Europa/Conference · <span class="pill releg">17-20</span> zona retrocessione.
+  Cagliari a 9 punti con la miglior difesa su azione del torneo (1 gol su azione subito).</p>
+</section>
+
+<!-- ============ PARTITE ============ -->
+<section id="partite">
+  <div class="s-head">
+    <div><h2><span class="num">04</span> Le 10 partite, una per una</h2>
+    <p>Probabilità (modello ancorato al mercato), quote reali, gol attesi, precedenti, indisponibili e giocata consigliata.
+    Clicca su una partita per aprire l'analisi completa.</p></div>
+  </div>
+  <div class="tbl-wrap" style="margin-bottom:18px">
+    <table id="overview"><thead></thead><tbody></tbody></table>
+  </div>
+  <p class="small" style="margin:-6px 0 18px">Riepilogo del turno: probabilità del modello ancorate al mercato, esito più probabile,
+  confidenza e miglior quota disponibile. Clicca una riga per aprire la scheda completa della partita.</p>
+  <div class="filters" id="filters"></div>
+  <div class="mcards" id="matchList"></div>
+</section>
+
+<!-- ============ SIMULATORE ============ -->
+<section id="simulatore">
+  <div class="s-head">
+    <div><h2><span class="num">05</span> Simulatore: costruisci la tua schedina</h2>
+    <p>Seleziona un esito per ogni partita ancora da giocare: quota totale, probabilità combinata, valore atteso e stake
+    suggerito (¼ Kelly) sono calcolati in tempo reale.</p></div>
+  </div>
+  <div class="card slip">
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+      <div><span class="small">Bankroll (€)</span><br><input type="number" id="bank" value="500" min="10" step="10"></div>
+      <div style="flex:1;min-width:180px">
+        <span class="small">Frazione di Kelly: <b id="kfLbl">¼</b></span>
+        <input type="range" id="kf" min="5" max="100" value="25" step="5">
+      </div>
+      <button class="btn ghost" onclick="clearSlip()">Svuota</button>
+      <button class="btn" onclick="loadSlip('A')">Carica schedina A</button>
+      <button class="btn" onclick="loadSlip('B')">Carica B</button>
+      <button class="btn" onclick="loadSlip('C')">Carica C</button>
+      <button class="btn" onclick="loadSlip('D')">Carica D</button>
+    </div>
+    <div id="simRows"></div>
+    <div class="summary" id="simSummary"></div>
+    <p class="small" id="simMsg" style="margin-top:12px"></p>
+  </div>
+</section>
+
+<!-- ============ SCHEDINE ============ -->
+<section id="schedine">
+  <div class="s-head">
+    <div><h2><span class="num">06</span> Quattro schede pronte</h2>
+    <p>Costruite per obiettivi di rischio diversi. Le prime due privilegiano la probabilità, la C accetta varianza alta,
+    la D è la giocata singola con il miglior valore atteso del turno.</p></div>
+  </div>
+  <div class="sched" id="schedineBox"></div>
+  <div class="warn" style="margin-top:16px">
+    <b>Regola d'oro sulle multiple.</b> Se ogni selezione ha un valore atteso di −6%, una multipla da 4 eventi ha un valore atteso
+    di circa −22%: il margine si moltiplica, non si diluisce. Per questo la schedina A ha solo 2 eventi, la D è una giocata singola,
+    e nessuna scheda supera le 4 selezioni. Le probabilità combinate assumono indipendenza fra le partite (approssimazione standard).
+  </div>
+</section>
+
+<!-- ============ VALUE ============ -->
+<section id="value">
+  <div class="s-head">
+    <div><h2><span class="num">07</span> Value &amp; Avoid: dove sta il valore</h2>
+    <p>A sinistra le selezioni con il miglior valore atteso secondo il modello (probabilità ≥ 25%). A destra i favoriti popolari
+    che <i>non</i> ripagano il rischio.</p></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:16px;color:var(--green)">Top value del turno</h3>
+      <table class="mini-tbl" id="valueTbl"></table>
+      <p class="small">EV positivo = la quota offerta è superiore alla nostra stima di probabilità. In questo turno solo una
+      selezione ha un valore atteso chiaramente positivo (Roma-Inter, segno 1): le altre sono sostanzialmente neutre.
+      <b>Attenzione:</b> gli EV più alti tendono a concentrarsi su esiti improbabili (pareggi e sfavorite), che sono anche i più
+      sensibili a un errore di stima. Meglio un EV del +5% su un esito al 39% che un +15% su un esito al 19%. Resta un margine di errore:
+      puntare a frazioni ridotte di bankroll (¼ Kelly).</p>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:16px;color:var(--red)">Da evitare</h3>
+      <table class="mini-tbl" id="avoidTbl"></table>
+      <p class="small">Favoriti "scontati" dal mercato: la probabilità è alta ma la quota non ripaga il rischio.
+      Sono le giocate che erodono il bankroll nel lungo periodo.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GRAFICI ============ -->
+<section id="grafici">
+  <div class="s-head">
+    <div><h2><span class="num">08</span> I grafici che contano</h2>
+    <p>Identità delle squadre (attacco vs difesa), gol attesi per partita e mappa dei risultati più probabili.</p></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 4px;font-size:16px">Attacco vs difesa (dopo 4 giornate)</h3>
+      <p class="small">Asse X: gol fatti a partita. Asse Y: gol subiti a partita (più in alto = difesa migliore). Passa il mouse sui punti.</p>
+      <div id="scatter"></div>
+      <div class="legend"><span><i style="background:#22e3a4"></i>in campo nella 5ª</span><span><i style="background:#54688c"></i>altre</span></div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 4px;font-size:16px">Gol attesi del modello (λ casa – λ ospite)</h3>
+      <p class="small">Barre impilate: più lunga la barra, più gol attesi nel match.</p>
+      <div id="xgBars"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3 style="margin:0 0 4px;font-size:16px">Mappa dei risultati esatti più probabili</h3>
+    <p class="small">Colore più intenso = risultato più probabile secondo il modello. Passa il mouse per i dettagli.</p>
+    <div class="grid3" id="heatmaps"></div>
+  </div>
+</section>
+
+<!-- ============ FONTI ============ -->
+<section id="fonti">
+  <div class="s-head"><div><h2><span class="num">09</span> Fonti e note</h2>
+  <p>Dati raccolti su web il 19 settembre 2026 fra le 15:00 e le 16:30 CEST.</p></div></div>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:16px">Fonti dati</h3>
+      <ul class="method small">
+        <li>Risultati, marcatori e tabellini delle prime 4 giornate: Lega Serie A, sportflash24, tuttomercatoweb, Eurosport.</li>
+        <li>Classifica e split casa/trasferta: datasport.it, virgilio sport (confronto incrociato).</li>
+        <li>Quote 1X2 e mercati: Snai (via Agipronews), consenso 4 bookmaker ADM e 9 operatori (1x2.expert), GoldBet/bet365 via diretta.it.</li>
+        <li>xG / λ previsti: 1x2.expert (Poisson calibrato su 329 partite di archivio), SharpSoccerModels, ProfeGol, xG Lab.</li>
+        <li>Probabili formazioni e indisponibili: Sky Sport, Gianluca Di Marzio, Eurosport, Gazzetta.</li>
+        <li>Statistiche di contesto (tiri, PPDA, clean sheet): virgilio sport, pianetatalanta, StatMuse.</li>
+      </ul>
+      <details class="src">
+        <summary>Stato delle partite al momento della pubblicazione</summary>
+        <p class="small">Monza-Sassuolo si è giocata venerdì 18 (2-1, doppietta di Varela). Udinese-Cagliari e Bologna-Torino erano
+        in campo dalle 15:00 di sabato e sono state seguite in tempo reale: i punteggi indicati sono aggiornati al momento di
+        generazione e non vanno considerati definitivi. Roma-Inter, Venezia-Lazio e le cinque gare di domenica erano ancora da giocare.</p>
+      </details>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 10px;font-size:16px">Gioco responsabile</h3>
+      <p class="small">Questo report è materiale informativo e statistico. Non è un servizio di consulenza finanziaria né un invito al gioco.
+      Il gioco con vincita in denaro è vietato ai minori di 18 anni e può causare dipendenza patologica: consulta il numero verde
+      <b>800 558 822</b> (Giocatori Anonimi) o il servizio del Ministero della Salute. Non puntare mai più di quanto puoi permetterti di perdere:
+      anche il miglior modello statistico resta in perdita se aumenta lo stake dopo una sconfitta.</p>
+      <h3 style="margin:16px 0 8px;font-size:16px">Come leggere le stelle di confidenza</h3>
+      <p class="small">★ satu… ★★★★★ combinano la probabilità dell'esito principale con il valore atteso. 1-2 stelle = fascia incerta,
+      3 stelle = solida, 4-5 stelle = la lettura più robusta del turno. Nessun esito è "certo": una stima all'80% sbaglia una volta su cinque.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Report generato automaticamente con modello Poisson bivariato (Dixon-Coles) · ancoraggio al mercato ±4 p.p. · dati aggiornati al
+  19/09/2026 ore 16:30 CEST · file: <span class="kbd">report-serie-a-5-giornata-2026-27.html</span>
+</footer>
+</div>
+
+<script>
+const DATA = {"meta": {"giornata": 5, "stagione": "2026/27", "periodo": "18-20 settembre 2026", "generato": "19 settembre 2026, ore 16:30 (CEST)", "prossima": "Dopo questa giornata: pausa di 3 settimane per la Nations League. La 6ª giornata si gioca il 10-11 ottobre 2026.", "note_live": "Monza-Sassuolo si e' giocata venerdi' (2-1). Udinese-Cagliari e Bologna-Torino erano in campo alle 15:00 di sabato e sono state seguite in tempo reale."}, "teams": {"Roma": {"pos": 1, "pts": 12, "g": 4, "v": 4, "n": 0, "p": 0, "gf": 12, "ga": 1, "gfh": 6, "gah": 1, "gfa": 6, "gaa": 0, "forma": "V V V V", "logo": "ROM"}, "Inter": {"pos": 2, "pts": 12, "g": 4, "v": 4, "n": 0, "p": 0, "gf": 13, "ga": 6, "gfh": 12, "gah": 6, "gfa": 1, "gaa": 0, "forma": "V V V V", "logo": "INT"}, "Como": {"pos": 3, "pts": 10, "g": 4, "v": 3, "n": 1, "p": 0, "gf": 9, "ga": 4, "gfh": 2, "gah": 1, "gfa": 7, "gaa": 3, "forma": "N V V V", "logo": "COM"}, "Lazio": {"pos": 4, "pts": 10, "g": 4, "v": 3, "n": 1, "p": 0, "gf": 6, "ga": 3, "gfh": 3, "gah": 2, "gfa": 3, "gaa": 1, "forma": "V V V N", "logo": "LAZ"}, "Cagliari": {"pos": 5, "pts": 9, "g": 4, "v": 3, "n": 0, "p": 1, "gf": 4, "ga": 2, "gfh": 1, "gah": 1, "gfa": 3, "gaa": 1, "forma": "V P V V", "logo": "CAG"}, "Milan": {"pos": 6, "pts": 8, "g": 4, "v": 2, "n": 2, "p": 0, "gf": 7, "ga": 4, "gfh": 2, "gah": 0, "gfa": 5, "gaa": 4, "forma": "V V N N", "logo": "MIL"}, "Frosinone": {"pos": 7, "pts": 7, "g": 4, "v": 2, "n": 1, "p": 1, "gf": 7, "ga": 4, "gfh": 3, "gah": 3, "gfa": 4, "gaa": 1, "forma": "P P V V", "logo": "FRO"}, "Juventus": {"pos": 8, "pts": 7, "g": 4, "v": 2, "n": 1, "p": 1, "gf": 6, "ga": 4, "gfh": 3, "gah": 1, "gfa": 3, "gaa": 3, "forma": "V V N P", "logo": "JUV"}, "Sassuolo": {"pos": 9, "pts": 7, "g": 4, "v": 2, "n": 1, "p": 1, "gf": 8, "ga": 7, "gfh": 5, "gah": 3, "gfa": 3, "gaa": 4, "forma": "N V V P", "logo": "SAS"}, "Napoli": {"pos": 10, "pts": 6, "g": 4, "v": 2, "n": 0, "p": 2, "gf": 6, "ga": 5, "gfh": 2, "gah": 2, "gfa": 4, "gaa": 3, "forma": "P V P V", "logo": "NAP"}, "Atalanta": {"pos": 11, "pts": 6, "g": 4, "v": 2, "n": 0, "p": 2, "gf": 5, "ga": 5, "gfh": 4, "gah": 3, "gfa": 1, "gaa": 2, "forma": "V V P P", "logo": "ATA"}, "Lecce": {"pos": 12, "pts": 6, "g": 4, "v": 2, "n": 0, "p": 2, "gf": 5, "ga": 7, "gfh": 3, "gah": 6, "gfa": 2, "gaa": 1, "forma": "P V P V", "logo": "LEC"}, "Udinese": {"pos": 13, "pts": 4, "g": 4, "v": 1, "n": 1, "p": 2, "gf": 8, "ga": 10, "gfh": 2, "gah": 3, "gfa": 6, "gaa": 7, "forma": "N P V P", "logo": "UDI"}, "Torino": {"pos": 14, "pts": 3, "g": 4, "v": 1, "n": 0, "p": 3, "gf": 4, "ga": 7, "gfh": 1, "gah": 4, "gfa": 3, "gaa": 3, "forma": "P P V P", "logo": "TOR"}, "Fiorentina": {"pos": 15, "pts": 3, "g": 4, "v": 1, "n": 0, "p": 3, "gf": 5, "ga": 11, "gfh": 1, "gah": 5, "gfa": 4, "gaa": 6, "forma": "P P P V", "logo": "FIO"}, "Bologna": {"pos": 16, "pts": 1, "g": 4, "v": 0, "n": 1, "p": 3, "gf": 2, "ga": 5, "gfh": 2, "gah": 3, "gfa": 0, "gaa": 2, "forma": "P P N P", "logo": "BOL"}, "Parma": {"pos": 17, "pts": 1, "g": 4, "v": 0, "n": 1, "p": 3, "gf": 2, "ga": 6, "gfh": 1, "gah": 2, "gfa": 1, "gaa": 4, "forma": "P N P P", "logo": "PAR"}, "Monza": {"pos": 18, "pts": 1, "g": 4, "v": 0, "n": 1, "p": 3, "gf": 6, "ga": 11, "gfh": 2, "gah": 3, "gfa": 4, "gaa": 8, "forma": "P P P N", "logo": "MON"}, "Genoa": {"pos": 19, "pts": 1, "g": 4, "v": 0, "n": 1, "p": 3, "gf": 2, "ga": 8, "gfh": 2, "gah": 7, "gfa": 0, "gaa": 1, "forma": "P P P N", "logo": "GEN"}, "Venezia": {"pos": 20, "pts": 0, "g": 4, "v": 0, "n": 0, "p": 4, "gf": 4, "ga": 11, "gfh": 2, "gah": 6, "gfa": 2, "gaa": 5, "forma": "P P P P", "logo": "VEN"}}, "matches": [{"id": "mon-sas", "day": "ven", "date": "18 settembre", "time": "20:45", "home": "Monza", "away": "Sassuolo", "venue": "U-Power Stadium, Monza", "tv": "DAZN / Sky", "status": "played", "score": "2-1", "scorers": "Varela 51' e 63' (rig.), Adzic 88'", "quotes": {"h": 2.8, "d": 3.4, "a": 2.5}, "qsrc": {"h": "real", "d": "real", "a": "real"}, "xg_ext": [1.45, 1.25], "ext_model": {"h": 39, "d": 27, "a": 34}, "xg_src": "1x2.expert (Poisson calibrato)", "absences": {"home": ["Pessina", "Ciurria", "Ziolkovski"], "away": ["Walukiewicz", "Koné", "Boloca", "Pieragnolo", "Candé", "Volpato", "Idzes"]}, "h2h": "Negli ultimi 4 incroci 2 successi per parte; Monza mai vittorioso in casa contro il Sassuolo in A prima di questa gara.", "note": "Juric si gioca la panchina: Monza reduce da 1 punto in 4 gare. Sassuolo reduce dal 3-2 alla Juventus.", "formNote": "Monza con 1 punto in 4 gare; Sassuolo reduce dal 3-2 alla Juventus.", "pick": "1X (Monza o pari)", "confidence": 1, "lesson": "Il modello indicava Monza leggermente favorito (35-39%) e il mercato lo pagava 2,80, la quota piu' generosa dei tre esiti: la vittoria brianzola (2-1, doppietta di Varela) ha confermato la lettura.", "extra": {}, "lambda_home": 1.519, "lambda_away": 1.49, "model_probs": {"home": 0.3784, "draw": 0.256, "away": 0.3656, "btts": 0.6117, "over15": 0.8089, "over25": 0.5788, "over35": 0.3547}, "model_cs": [{"p": 0.118383, "s": "1-1"}, {"p": 0.084823, "s": "2-1"}, {"p": 0.083191, "s": "1-2"}, {"p": 0.068265, "s": "1-0"}, {"p": 0.066823, "s": "0-1"}], "market_probs": {"home": 0.3399, "draw": 0.2773, "away": 0.3828}, "final_probs": {"home": 0.3515, "draw": 0.2709, "away": 0.3776}, "markets": {"1": {"p": 0.3515, "q": 2.8, "ev": -0.0159, "fair": 2.8452, "qsrc": "real"}, "X": {"p": 0.2709, "q": 3.4, "ev": -0.0789, "fair": 3.6912, "qsrc": "real"}, "2": {"p": 0.3776, "q": 2.5, "ev": -0.056, "fair": 2.6482, "qsrc": "real"}, "1X": {"p": 0.6224, "q": null, "ev": null, "fair": 1.6067}, "12": {"p": 0.7291, "q": null, "ev": null, "fair": 1.3716}, "X2": {"p": 0.6485, "q": null, "ev": null, "fair": 1.5419}, "GG": {"p": 0.6117, "q": null, "ev": null, "fair": 1.6348}, "NG": {"p": 0.3883, "q": null, "ev": null, "fair": 2.5753}, "O1.5": {"p": 0.8089, "q": null, "ev": null, "fair": 1.2363}, "U1.5": {"p": 0.1911, "q": null, "ev": null, "fair": 5.2318}, "O2.5": {"p": 0.5788, "q": null, "ev": null, "fair": 1.7278}, "U2.5": {"p": 0.4212, "q": null, "ev": null, "fair": 2.374}, "O3.5": {"p": 0.3547, "q": null, "ev": null, "fair": 2.819}, "U3.5": {"p": 0.6453, "q": null, "ev": null, "fair": 1.5497}}, "overround": 0.0513, "heat": [{"s": "0-0", "p": 0.056053}, {"s": "0-1", "p": 0.066823}, {"s": "0-2", "p": 0.054767}, {"s": "0-3", "p": 0.027197}, {"s": "0-4", "p": 0.010129}, {"s": "1-0", "p": 0.068265}, {"s": "1-1", "p": 0.118383}, {"s": "1-2", "p": 0.083191}, {"s": "1-3", "p": 0.041312}, {"s": "1-4", "p": 0.015386}, {"s": "2-0", "p": 0.056936}, {"s": "2-1", "p": 0.084823}, {"s": "2-2", "p": 0.063184}, {"s": "2-3", "p": 0.031376}, {"s": "2-4", "p": 0.011686}, {"s": "3-0", "p": 0.028829}, {"s": "3-1", "p": 0.042949}, {"s": "3-2", "p": 0.031992}, {"s": "3-3", "p": 0.015887}, {"s": "3-4", "p": 0.005917}, {"s": "4-0", "p": 0.010948}, {"s": "4-1", "p": 0.01631}, {"s": "4-2", "p": 0.012149}, {"s": "4-3", "p": 0.006033}, {"s": "4-4", "p": 0.002247}], "book_margin_k": 1.048, "best_value": {"sel": "1", "ev": -0.0159, "p": 0.3515, "q": 2.8}, "model_lean": "2", "model_lean_p": 0.3776, "expected_goals": 3.01}, {"id": "udi-cag", "day": "sab", "date": "19 settembre", "time": "15:00", "home": "Udinese", "away": "Cagliari", "venue": "Bluenergy Stadium, Udine", "tv": "DAZN", "status": "live", "score": "0-1 (57')", "scorers": "Maldini 54'", "quotes": {"h": 2.3, "d": 3.35, "a": 3.25}, "qsrc": {"h": "real", "d": "stima", "a": "real"}, "xg_ext": [1.18, 1.05], "ext_model": {"h": 37, "d": 29, "a": 35}, "xg_src": "1x2.expert + dati tiri/PPDA", "absences": {"home": ["Piotrowski", "Solet", "Arizala", "Palma"], "away": ["Nzola", "Felici", "Idrissi", "Trepy"]}, "h2h": "Udinese imbattuta in 13 delle ultime 14 sfide di A contro il Cagliari (9V, 4N); solo il 10% di sconfitte interne friulane (3/30).", "note": "Cagliari con 9 punti: miglior difesa su azione del campionato (1 gol subito su azione). Udinese con 4.5 gol di media a partita (fatti+subiti).", "formNote": "Udinese con 2 sconfitte di fila (Lazio, Inter) e 4,5 gol di media a partita; Cagliari con 3 vittorie in 4 gare e 1 solo gol su azione subito.", "pick": "GG + Over 1.5 (partita da gol)", "confidence": 1, "lesson": "Match in corso: Maldini ha firmato il terzo centro consecutivo, esattamente il trend segnalato in analisi. Il Cagliari sta replicando il suo spartito: difesa corta e ripartenze.", "extra": {}, "lambda_home": 1.179, "lambda_away": 1.145, "model_probs": {"home": 0.3596, "draw": 0.2977, "away": 0.3427, "btts": 0.4801, "over15": 0.6827, "over25": 0.4105, "over35": 0.2057}, "model_cs": [{"p": 0.14005, "s": "1-1"}, {"p": 0.107441, "s": "1-0"}, {"p": 0.105744, "s": "0-0"}, {"p": 0.104094, "s": "0-1"}, {"p": 0.077916, "s": "2-1"}], "market_probs": {"home": 0.421, "draw": 0.2849, "away": 0.294}, "final_probs": {"home": 0.4026, "draw": 0.2888, "away": 0.3086}, "markets": {"1": {"p": 0.4026, "q": 2.3, "ev": -0.074, "fair": 2.4838, "qsrc": "real"}, "X": {"p": 0.2888, "q": 3.35, "ev": -0.0327, "fair": 3.4631, "qsrc": "stima"}, "2": {"p": 0.3086, "q": 3.25, "ev": 0.0031, "fair": 3.24, "qsrc": "real"}, "1X": {"p": 0.6914, "q": null, "ev": null, "fair": 1.4464}, "12": {"p": 0.7112, "q": null, "ev": null, "fair": 1.406}, "X2": {"p": 0.5974, "q": null, "ev": null, "fair": 1.6739}, "GG": {"p": 0.4801, "q": null, "ev": null, "fair": 2.0827}, "NG": {"p": 0.5199, "q": null, "ev": null, "fair": 1.9236}, "O1.5": {"p": 0.6827, "q": null, "ev": null, "fair": 1.4647}, "U1.5": {"p": 0.3173, "q": null, "ev": null, "fair": 3.1518}, "O2.5": {"p": 0.4105, "q": null, "ev": null, "fair": 2.4361}, "U2.5": {"p": 0.5895, "q": null, "ev": null, "fair": 1.6963}, "O3.5": {"p": 0.2057, "q": null, "ev": null, "fair": 4.8618}, "U3.5": {"p": 0.7943, "q": null, "ev": null, "fair": 1.2589}}, "overround": 0.041, "heat": [{"s": "0-0", "p": 0.105744}, {"s": "0-1", "p": 0.104094}, {"s": "0-2", "p": 0.064145}, {"s": "0-3", "p": 0.024487}, {"s": "0-4", "p": 0.007011}, {"s": "1-0", "p": 0.107441}, {"s": "1-1", "p": 0.14005}, {"s": "1-2", "p": 0.075655}, {"s": "1-3", "p": 0.028881}, {"s": "1-4", "p": 0.008269}, {"s": "2-0", "p": 0.068035}, {"s": "2-1", "p": 0.077916}, {"s": "2-2", "p": 0.044615}, {"s": "2-3", "p": 0.017031}, {"s": "2-4", "p": 0.004876}, {"s": "3-0", "p": 0.026748}, {"s": "3-1", "p": 0.030632}, {"s": "3-2", "p": 0.01754}, {"s": "3-3", "p": 0.006696}, {"s": "3-4", "p": 0.001917}, {"s": "4-0", "p": 0.007887}, {"s": "4-1", "p": 0.009032}, {"s": "4-2", "p": 0.005172}, {"s": "4-3", "p": 0.001974}, {"s": "4-4", "p": 0.000565}], "book_margin_k": 1.039, "best_value": {"sel": "1", "ev": -0.074, "p": 0.4026, "q": 2.3}, "model_lean": "1", "model_lean_p": 0.4026, "expected_goals": 2.32}, {"id": "bol-tor", "day": "sab", "date": "19 settembre", "time": "15:00", "home": "Bologna", "away": "Torino", "venue": "Renato Dall'Ara, Bologna", "tv": "DAZN", "status": "live", "score": "1-0", "scorers": "Bernardeschi", "quotes": {"h": 1.95, "d": 3.5, "a": 4.0}, "qsrc": {"h": "real", "d": "stima", "a": "real"}, "xg_ext": [1.28, 0.88], "ext_model": {"h": 39, "d": 29, "a": 32}, "xg_src": "1x2.expert + H2H casalingo Bologna", "absences": {"home": [], "away": ["Adams"]}, "h2h": "Bologna imbattuto da 10 gare casalinghe contro il Torino in Serie A (4V, 6N).", "note": "Esordio di Raffaele Palladino sulla panchina rossoblù (esonero di Tedesco). Torino senza il suo riferimento offensivo Adams.", "formNote": "Bologna con 1 punto e cambio di panchina (Palladino per Tedesco); Torino con 3 punti e un solo successo.", "pick": "Under 3.5 + 1X", "confidence": 1, "lesson": "Match in corso: il Bologna sblocca con Bernardeschi, confermando il rialzo emotivo del cambio di panchina. H2H casalingo e assenza di Adams pesavano.", "extra": {}, "lambda_home": 1.24, "lambda_away": 0.9, "model_probs": {"home": 0.4328, "draw": 0.3062, "away": 0.2609, "btts": 0.4297, "over15": 0.6385, "over25": 0.3613, "over35": 0.169}, "model_cs": [{"p": 0.139192, "s": "1-1"}, {"p": 0.137948, "s": "1-0"}, {"p": 0.125492, "s": "0-0"}, {"p": 0.098029, "s": "0-1"}, {"p": 0.090404, "s": "2-0"}], "market_probs": {"home": 0.4968, "draw": 0.2692, "away": 0.234}, "final_probs": {"home": 0.4776, "draw": 0.2803, "away": 0.2421}, "markets": {"1": {"p": 0.4776, "q": 1.95, "ev": -0.0687, "fair": 2.0938, "qsrc": "real"}, "X": {"p": 0.2803, "q": 3.5, "ev": -0.019, "fair": 3.5677, "qsrc": "stima"}, "2": {"p": 0.2421, "q": 4.0, "ev": -0.0316, "fair": 4.1303, "qsrc": "real"}, "1X": {"p": 0.7579, "q": null, "ev": null, "fair": 1.3195}, "12": {"p": 0.7197, "q": null, "ev": null, "fair": 1.3894}, "X2": {"p": 0.5224, "q": null, "ev": null, "fair": 1.9142}, "GG": {"p": 0.4297, "q": null, "ev": null, "fair": 2.3272}, "NG": {"p": 0.5703, "q": null, "ev": null, "fair": 1.7534}, "O1.5": {"p": 0.6385, "q": null, "ev": null, "fair": 1.5661}, "U1.5": {"p": 0.3615, "q": null, "ev": null, "fair": 2.7665}, "O2.5": {"p": 0.3613, "q": null, "ev": null, "fair": 2.7682}, "U2.5": {"p": 0.6387, "q": null, "ev": null, "fair": 1.5656}, "O3.5": {"p": 0.169, "q": null, "ev": null, "fair": 5.9155}, "U3.5": {"p": 0.831, "q": null, "ev": null, "fair": 1.2034}}, "overround": 0.0485, "heat": [{"s": "0-0", "p": 0.125492}, {"s": "0-1", "p": 0.098029}, {"s": "0-2", "p": 0.047684}, {"s": "0-3", "p": 0.014313}, {"s": "0-4", "p": 0.003222}, {"s": "1-0", "p": 0.137948}, {"s": "1-1", "p": 0.139192}, {"s": "1-2", "p": 0.059122}, {"s": "1-3", "p": 0.017746}, {"s": "1-4", "p": 0.003995}, {"s": "2-0", "p": 0.090404}, {"s": "2-1", "p": 0.081406}, {"s": "2-2", "p": 0.036652}, {"s": "2-3", "p": 0.011001}, {"s": "2-4", "p": 0.002477}, {"s": "3-0", "p": 0.037363}, {"s": "3-1", "p": 0.033644}, {"s": "3-2", "p": 0.015148}, {"s": "3-3", "p": 0.004547}, {"s": "3-4", "p": 0.001024}, {"s": "4-0", "p": 0.011581}, {"s": "4-1", "p": 0.010429}, {"s": "4-2", "p": 0.004695}, {"s": "4-3", "p": 0.001409}, {"s": "4-4", "p": 0.000317}], "book_margin_k": 1.048, "best_value": {"sel": "1", "ev": -0.0687, "p": 0.4776, "q": 1.95}, "model_lean": "1", "model_lean_p": 0.4776, "expected_goals": 2.14}, {"id": "rom-int", "day": "sab", "date": "19 settembre", "time": "18:00", "home": "Roma", "away": "Inter", "venue": "Stadio Olimpico, Roma", "tv": "DAZN", "status": "upcoming", "score": null, "scorers": null, "quotes": {"h": 2.7, "d": 3.4, "a": 2.6}, "qsrc": {"h": "real", "d": "real", "a": "real"}, "market_consensus": {"h": 36, "d": 27, "a": 37}, "xg_ext": [1.44, 1.42], "ext_model": {"h": 33, "d": 29, "a": 38}, "xg_src": "1x2.expert + consenso 4 bookmaker", "absences": {"home": [], "away": ["Calhanoglu", "Stones"]}, "h2h": "Miglior difesa (Roma, 1 gol subito, 3 clean sheet) contro miglior attacco (Inter, 13 gol). L'Inter non perde all'Olimpico da ottobre 2016: 5 vittorie consecutive, 11-2 complessivo. Negli ultimi 10 incroci 8 vittorie nerazzurre.", "note": "Scontro diretto fra le due uniche squadre a punteggio pieno. Roma senza indisponibili, Inter senza il regista Calhanoglu e con Stones out 3-4 settimane.", "formNote": "Roma 4 vittorie su 4 con 12 gol fatti e 1 subito (3 clean sheet); Inter 4 su 4 con 13 gol fatti e 6 subiti (12 dei quali in casa).", "pick": "GG + 2 (Inter non perde)", "confidence": 1, "lesson": null, "extra": {"dc1x": 1.5, "dc12": 1.33, "dcx2": 1.44, "gg": 1.5, "o25": 1.67}, "lambda_home": 1.674, "lambda_away": 1.3, "model_probs": {"home": 0.4556, "draw": 0.253, "away": 0.2914, "btts": 0.5976, "over15": 0.8035, "over25": 0.5708, "over35": 0.3468}, "model_cs": [{"p": 0.117895, "s": "1-1"}, {"p": 0.093076, "s": "2-1"}, {"p": 0.078901, "s": "1-0"}, {"p": 0.072278, "s": "1-2"}, {"p": 0.071612, "s": "2-0"}], "market_probs": {"home": 0.36, "draw": 0.27, "away": 0.37}, "final_probs": {"home": 0.3887, "draw": 0.2649, "away": 0.3464}, "markets": {"1": {"p": 0.3887, "q": 2.7, "ev": 0.0495, "fair": 2.5727, "qsrc": "real"}, "X": {"p": 0.2649, "q": 3.4, "ev": -0.0994, "fair": 3.7751, "qsrc": "real"}, "2": {"p": 0.3464, "q": 2.6, "ev": -0.0993, "fair": 2.8867, "qsrc": "real"}, "1X": {"p": 0.6536, "q": 1.5, "ev": -0.0196, "fair": 1.53, "qsrc": "real"}, "12": {"p": 0.7351, "q": 1.33, "ev": -0.0223, "fair": 1.3603, "qsrc": "real"}, "X2": {"p": 0.6113, "q": 1.44, "ev": -0.1197, "fair": 1.6358, "qsrc": "real"}, "GG": {"p": 0.5976, "q": 1.5, "ev": -0.1035, "fair": 1.6733, "qsrc": "real"}, "NG": {"p": 0.4024, "q": null, "ev": null, "fair": 2.4853}, "O1.5": {"p": 0.8035, "q": null, "ev": null, "fair": 1.2445}, "U1.5": {"p": 0.1965, "q": null, "ev": null, "fair": 5.0895}, "O2.5": {"p": 0.5708, "q": 1.67, "ev": -0.0467, "fair": 1.7519, "qsrc": "real"}, "U2.5": {"p": 0.4292, "q": null, "ev": null, "fair": 2.33}, "O3.5": {"p": 0.3468, "q": null, "ev": null, "fair": 2.8834}, "U3.5": {"p": 0.6532, "q": null, "ev": null, "fair": 1.5309}}, "overround": 0.0491, "heat": [{"s": "0-0", "p": 0.057802}, {"s": "0-1", "p": 0.05978}, {"s": "0-2", "p": 0.043185}, {"s": "0-3", "p": 0.018709}, {"s": "0-4", "p": 0.006079}, {"s": "1-0", "p": 0.078901}, {"s": "1-1", "p": 0.117895}, {"s": "1-2", "p": 0.072278}, {"s": "1-3", "p": 0.031314}, {"s": "1-4", "p": 0.010175}, {"s": "2-0", "p": 0.071612}, {"s": "2-1", "p": 0.093076}, {"s": "2-2", "p": 0.060486}, {"s": "2-3", "p": 0.026205}, {"s": "2-4", "p": 0.008515}, {"s": "3-0", "p": 0.039952}, {"s": "3-1", "p": 0.051927}, {"s": "3-2", "p": 0.033745}, {"s": "3-3", "p": 0.01462}, {"s": "3-4", "p": 0.00475}, {"s": "4-0", "p": 0.016717}, {"s": "4-1", "p": 0.021727}, {"s": "4-2", "p": 0.01412}, {"s": "4-3", "p": 0.006117}, {"s": "4-4", "p": 0.001988}], "book_margin_k": 1.046, "best_value": {"sel": "1", "ev": 0.0495, "p": 0.3887, "q": 2.7}, "model_lean": "1", "model_lean_p": 0.3887, "expected_goals": 2.97}, {"id": "ven-laz", "day": "sab", "date": "19 settembre", "time": "20:45", "home": "Venezia", "away": "Lazio", "venue": "Stadio Penzo, Venezia", "tv": "DAZN / Sky", "status": "upcoming", "score": null, "scorers": null, "quotes": {"h": 6.0, "d": 3.6, "a": 1.95}, "qsrc": {"h": "real", "d": "stima", "a": "real"}, "xg_ext": [0.88, 1.32], "ext_model": {"h": 35, "d": 29, "a": 35}, "xg_src": "stima modello interno (att/def + 0 punti Venezia)", "absences": {"home": ["Busio", "Sverko", "Adorante", "Franjic", "Bella-Kotchap", "Dagasso"], "away": ["Marusic", "Rovella"]}, "h2h": "Venezia ancora a 0 punti (unica squadra); 4 gol segnati dai lagunari nelle ultime 2 partite, ma 11 subiti in 4 gare.", "note": "Stroppa con la panchina in bilico: in caso di ko cambio probabile durante la sosta. La Lazio ha dilapidato un 2-0 con il Milan ed è reduce da 10 punti in 4 gare.", "formNote": "Venezia a 0 punti con 11 gol subiti; Lazio con 10 punti in 4 gare ma reduce dal 2-2 col Milan dopo essere stata sul 2-0.", "pick": "GG + X2 (Lazio non perde)", "confidence": 2, "lesson": null, "extra": {"gg": 1.63}, "lambda_home": 0.905, "lambda_away": 1.464, "model_probs": {"home": 0.2255, "draw": 0.28, "away": 0.4945, "btts": 0.4652, "over15": 0.6923, "over25": 0.4223, "over35": 0.2149}, "model_cs": [{"p": 0.131401, "s": "1-1"}, {"p": 0.129542, "s": "0-1"}, {"p": 0.100979, "s": "0-0"}, {"p": 0.100295, "s": "0-2"}, {"p": 0.090764, "s": "1-2"}], "market_probs": {"home": 0.1796, "draw": 0.293, "away": 0.5273}, "final_probs": {"home": 0.1934, "draw": 0.2891, "away": 0.5175}, "markets": {"1": {"p": 0.1934, "q": 6.0, "ev": 0.1602, "fair": 5.1714, "qsrc": "real"}, "X": {"p": 0.2891, "q": 3.6, "ev": 0.0409, "fair": 3.4585, "qsrc": "stima"}, "2": {"p": 0.5175, "q": 1.95, "ev": 0.0091, "fair": 1.9324, "qsrc": "real"}, "1X": {"p": 0.4825, "q": null, "ev": null, "fair": 2.0725}, "12": {"p": 0.7109, "q": null, "ev": null, "fair": 1.4067}, "X2": {"p": 0.8066, "q": null, "ev": null, "fair": 1.2397}, "GG": {"p": 0.4652, "q": 1.63, "ev": -0.2417, "fair": 2.1496, "qsrc": "real"}, "NG": {"p": 0.5348, "q": null, "ev": null, "fair": 1.8699}, "O1.5": {"p": 0.6923, "q": null, "ev": null, "fair": 1.4445}, "U1.5": {"p": 0.3077, "q": null, "ev": null, "fair": 3.2495}, "O2.5": {"p": 0.4223, "q": null, "ev": null, "fair": 2.3682}, "U2.5": {"p": 0.5777, "q": null, "ev": null, "fair": 1.7309}, "O3.5": {"p": 0.2149, "q": null, "ev": null, "fair": 4.6534}, "U3.5": {"p": 0.7851, "q": null, "ev": null, "fair": 1.2737}}, "overround": -0.0427, "heat": [{"s": "0-0", "p": 0.100979}, {"s": "0-1", "p": 0.129542}, {"s": "0-2", "p": 0.100295}, {"s": "0-3", "p": 0.048956}, {"s": "0-4", "p": 0.017923}, {"s": "1-0", "p": 0.077215}, {"s": "1-1", "p": 0.131401}, {"s": "1-2", "p": 0.090764}, {"s": "1-3", "p": 0.044304}, {"s": "1-4", "p": 0.01622}, {"s": "2-0", "p": 0.038304}, {"s": "2-1", "p": 0.056092}, {"s": "2-2", "p": 0.04107}, {"s": "2-3", "p": 0.020047}, {"s": "2-4", "p": 0.007339}, {"s": "3-0", "p": 0.011555}, {"s": "3-1", "p": 0.016921}, {"s": "3-2", "p": 0.012389}, {"s": "3-3", "p": 0.006047}, {"s": "3-4", "p": 0.002214}, {"s": "4-0", "p": 0.002614}, {"s": "4-1", "p": 0.003828}, {"s": "4-2", "p": 0.002803}, {"s": "4-3", "p": 0.001368}, {"s": "4-4", "p": 0.000501}], "book_margin_k": 0.958, "best_value": {"sel": "2", "ev": 0.0091, "p": 0.5175, "q": 1.95}, "model_lean": "2", "model_lean_p": 0.5175, "expected_goals": 2.37}, {"id": "fio-nap", "day": "dom", "date": "20 settembre", "time": "12:30", "home": "Fiorentina", "away": "Napoli", "venue": "Stadio Franchi, Firenze", "tv": "DAZN", "status": "upcoming", "score": null, "scorers": null, "quotes": {"h": 3.5, "d": 3.5, "a": 2.25}, "qsrc": {"h": "real", "d": "real", "a": "real"}, "xg_ext": [0.82, 1.32], "ext_model": {"h": 27, "d": 29, "a": 44}, "xg_src": "1x2.expert + 6 indisponibili Napoli", "absences": {"home": ["Parisi"], "away": ["Buongiorno", "Marianucci", "Meret", "McTominay", "Giovane", "Alisson Santos"]}, "h2h": "Napoli vittorioso nelle ultime 4 sfide di A con 10-3 complessivo; la Fiorentina ha vinto solo 1 delle ultime 17 gare casalinghe contro i partenopei. Allegri ha perso 1 sola delle ultime 12 contro i viola (9V, 2N).", "note": "Vanoli-bis dopo l'esonero di Grosso: 4-2 a Venezia al debutto. Napoli con emergenza infortuni ma reduce dall'1-0 sul Bologna (Lobotka).", "formNote": "Fiorentina con 3 sconfitte su 4 e 11 gol subiti, rilanciata dal 4-2 a Venezia con Vanoli; Napoli con 6 punti e 4 gol subiti nelle ultime due.", "pick": "X2 + Under 3.5", "confidence": 1, "lesson": null, "extra": {"dcx2": 1.3}, "lambda_home": 0.921, "lambda_away": 1.391, "model_probs": {"home": 0.2411, "draw": 0.2881, "away": 0.4708, "btts": 0.4596, "over15": 0.6795, "over25": 0.4071, "over35": 0.2031}, "model_cs": [{"p": 0.134515, "s": "1-1"}, {"p": 0.130227, "s": "0-1"}, {"p": 0.106698, "s": "0-0"}, {"p": 0.095879, "s": "0-2"}, {"p": 0.08827, "s": "1-2"}], "market_probs": {"home": 0.2804, "draw": 0.2804, "away": 0.4391}, "final_probs": {"home": 0.2686, "draw": 0.2827, "away": 0.4486}, "markets": {"1": {"p": 0.2686, "q": 3.5, "ev": -0.0597, "fair": 3.7223, "qsrc": "real"}, "X": {"p": 0.2827, "q": 3.5, "ev": -0.0104, "fair": 3.5368, "qsrc": "real"}, "2": {"p": 0.4486, "q": 2.25, "ev": 0.0094, "fair": 2.2291, "qsrc": "real"}, "1X": {"p": 0.5514, "q": null, "ev": null, "fair": 1.8136}, "12": {"p": 0.7173, "q": null, "ev": null, "fair": 1.3942}, "X2": {"p": 0.7314, "q": 1.3, "ev": -0.0492, "fair": 1.3673, "qsrc": "real"}, "GG": {"p": 0.4596, "q": null, "ev": null, "fair": 2.1756}, "NG": {"p": 0.5404, "q": null, "ev": null, "fair": 1.8506}, "O1.5": {"p": 0.6795, "q": null, "ev": null, "fair": 1.4717}, "U1.5": {"p": 0.3205, "q": null, "ev": null, "fair": 3.1198}, "O2.5": {"p": 0.4071, "q": null, "ev": null, "fair": 2.4565}, "U2.5": {"p": 0.5929, "q": null, "ev": null, "fair": 1.6866}, "O3.5": {"p": 0.2031, "q": null, "ev": null, "fair": 4.9248}, "U3.5": {"p": 0.7969, "q": null, "ev": null, "fair": 1.2548}}, "overround": 0.0159, "heat": [{"s": "0-0", "p": 0.106698}, {"s": "0-1", "p": 0.130227}, {"s": "0-2", "p": 0.095879}, {"s": "0-3", "p": 0.044461}, {"s": "0-4", "p": 0.015463}, {"s": "1-0", "p": 0.083606}, {"s": "1-1", "p": 0.134515}, {"s": "1-2", "p": 0.08827}, {"s": "1-3", "p": 0.040932}, {"s": "1-4", "p": 0.014236}, {"s": "2-0", "p": 0.04199}, {"s": "2-1", "p": 0.058414}, {"s": "2-2", "p": 0.040632}, {"s": "2-3", "p": 0.018842}, {"s": "2-4", "p": 0.006553}, {"s": "3-0", "p": 0.012886}, {"s": "3-1", "p": 0.017926}, {"s": "3-2", "p": 0.012469}, {"s": "3-3", "p": 0.005782}, {"s": "3-4", "p": 0.002011}, {"s": "4-0", "p": 0.002966}, {"s": "4-1", "p": 0.004126}, {"s": "4-2", "p": 0.00287}, {"s": "4-3", "p": 0.001331}, {"s": "4-4", "p": 0.000463}], "book_margin_k": 1.015, "best_value": {"sel": "2", "ev": 0.0094, "p": 0.4486, "q": 2.25}, "model_lean": "2", "model_lean_p": 0.4486, "expected_goals": 2.31}, {"id": "fro-com", "day": "dom", "date": "20 settembre", "time": "15:00", "home": "Frosinone", "away": "Como", "venue": "Stadio Stirpe, Frosinone", "tv": "DAZN", "status": "upcoming", "score": null, "scorers": null, "quotes": {"h": 6.0, "d": 4.2, "a": 1.5}, "qsrc": {"h": "real", "d": "real", "a": "real"}, "xg_ext": [0.95, 1.5], "ext_model": {"h": 20, "d": 27, "a": 53}, "xg_src": "stima modello interno (differenziale rosa/Champions)", "absences": {"home": ["Grillitsch"], "away": ["Addai"]}, "h2h": "Primo incrocio in assoluto in Serie A fra le due squadre.", "note": "Frosinone sorpresa con 7 punti (7 gol fatti) e imbattuto da 3 gare; Como con 3 vittorie di fila, successo a Napoli e vittoria in Champions sul Lipsia.", "formNote": "Frosinone con 7 punti, 7 gol fatti e 3 gare senza sconfitta; Como con 3 vittorie consecutive (Udinese, Napoli, Lipsia in Champions).", "pick": "2 (Como) + Over 1.5", "confidence": 1, "lesson": null, "extra": {}, "lambda_home": 1.047, "lambda_away": 1.483, "model_probs": {"home": 0.2598, "draw": 0.2753, "away": 0.4649, "btts": 0.5093, "over15": 0.7264, "over25": 0.4641, "over35": 0.2491}, "model_cs": [{"p": 0.131085, "s": "1-1"}, {"p": 0.110644, "s": "0-1"}, {"p": 0.091727, "s": "1-2"}, {"p": 0.087573, "s": "0-2"}, {"p": 0.087006, "s": "0-0"}], "market_probs": {"home": 0.1438, "draw": 0.2115, "away": 0.6447}, "final_probs": {"home": 0.1761, "draw": 0.2275, "away": 0.5964}, "markets": {"1": {"p": 0.1761, "q": 6.0, "ev": 0.0568, "fair": 5.6777, "qsrc": "real"}, "X": {"p": 0.2275, "q": 4.2, "ev": -0.0446, "fair": 4.3963, "qsrc": "real"}, "2": {"p": 0.5964, "q": 1.5, "ev": -0.1054, "fair": 1.6767, "qsrc": "real"}, "1X": {"p": 0.4036, "q": null, "ev": null, "fair": 2.4777}, "12": {"p": 0.7725, "q": null, "ev": null, "fair": 1.2944}, "X2": {"p": 0.8239, "q": null, "ev": null, "fair": 1.2138}, "GG": {"p": 0.5093, "q": null, "ev": null, "fair": 1.9634}, "NG": {"p": 0.4907, "q": null, "ev": null, "fair": 2.038}, "O1.5": {"p": 0.7264, "q": null, "ev": null, "fair": 1.3766}, "U1.5": {"p": 0.2736, "q": null, "ev": null, "fair": 3.6551}, "O2.5": {"p": 0.4641, "q": null, "ev": null, "fair": 2.1548}, "U2.5": {"p": 0.5359, "q": null, "ev": null, "fair": 1.866}, "O3.5": {"p": 0.2491, "q": null, "ev": null, "fair": 4.0152}, "U3.5": {"p": 0.7509, "q": null, "ev": null, "fair": 1.3316}}, "overround": 0.0714, "heat": [{"s": "0-0", "p": 0.087006}, {"s": "0-1", "p": 0.110644}, {"s": "0-2", "p": 0.087573}, {"s": "0-3", "p": 0.043304}, {"s": "0-4", "p": 0.01606}, {"s": "1-0", "p": 0.075942}, {"s": "1-1", "p": 0.131085}, {"s": "1-2", "p": 0.091727}, {"s": "1-3", "p": 0.045358}, {"s": "1-4", "p": 0.016822}, {"s": "2-0", "p": 0.043658}, {"s": "2-1", "p": 0.064766}, {"s": "2-2", "p": 0.048039}, {"s": "2-3", "p": 0.023755}, {"s": "2-4", "p": 0.00881}, {"s": "3-0", "p": 0.015243}, {"s": "3-1", "p": 0.022613}, {"s": "3-2", "p": 0.016773}, {"s": "3-3", "p": 0.008294}, {"s": "3-4", "p": 0.003076}, {"s": "4-0", "p": 0.003992}, {"s": "4-1", "p": 0.005921}, {"s": "4-2", "p": 0.004392}, {"s": "4-3", "p": 0.002172}, {"s": "4-4", "p": 0.000805}], "book_margin_k": 1.083, "best_value": {"sel": "2", "ev": -0.1054, "p": 0.5964, "q": 1.5}, "model_lean": "2", "model_lean_p": 0.5964, "expected_goals": 2.53}, {"id": "par-gen", "day": "dom", "date": "20 settembre", "time": "15:00", "home": "Parma", "away": "Genoa", "venue": "Stadio Tardini, Parma", "tv": "DAZN", "status": "upcoming", "score": null, "scorers": null, "quotes": {"h": 3.1, "d": 3.0, "a": 2.5}, "qsrc": {"h": "real", "d": "real", "a": "real"}, "xg_ext": [0.98, 1.12], "ext_model": {"h": 30, "d": 29, "a": 41}, "xg_src": "1x2.expert + squalifica Vasquez (Genoa)", "absences": {"home": ["Nicolussi Caviglia"], "away": ["Vásquez (squal.)", "Venturino", "Havel"]}, "h2h": "Elo praticamente pari (Parma 1659 vs Genoa 1651). Sfida salvezza: entrambe con 1 punto in 4 gare.", "note": "Il Genoa perde per squalifica Vásquez, protagonista (gol + espulsione) con il Frosinone: reparto arretrato da ricostruire. Parma con il peggior attacco del torneo insieme al Bologna (2 gol).", "formNote": "Parma con 2 gol fatti in 4 gare e nessuna vittoria; Genoa con 2 gol fatti, 8 subiti e 1 punto.", "pick": "Under 2.5 + X2", "confidence": 1, "lesson": null, "extra": {}, "lambda_home": 1.04, "lambda_away": 1.017, "model_probs": {"home": 0.346, "draw": 0.3195, "away": 0.3345, "btts": 0.4209, "over15": 0.6174, "over25": 0.3388, "over35": 0.1534}, "model_cs": [{"p": 0.143323, "s": "1-1"}, {"p": 0.135907, "s": "0-0"}, {"p": 0.124772, "s": "1-0"}, {"p": 0.121918, "s": "0-1"}, {"p": 0.070298, "s": "2-1"}], "market_probs": {"home": 0.304, "draw": 0.3147, "away": 0.3813}, "final_probs": {"home": 0.3166, "draw": 0.3161, "away": 0.3672}, "markets": {"1": {"p": 0.3166, "q": 3.1, "ev": -0.0184, "fair": 3.1582, "qsrc": "real"}, "X": {"p": 0.3161, "q": 3.0, "ev": -0.0516, "fair": 3.1632, "qsrc": "real"}, "2": {"p": 0.3672, "q": 2.5, "ev": -0.0819, "fair": 2.7231, "qsrc": "real"}, "1X": {"p": 0.6328, "q": null, "ev": null, "fair": 1.5803}, "12": {"p": 0.6839, "q": null, "ev": null, "fair": 1.4623}, "X2": {"p": 0.6834, "q": null, "ev": null, "fair": 1.4633}, "GG": {"p": 0.4209, "q": null, "ev": null, "fair": 2.3759}, "NG": {"p": 0.5791, "q": null, "ev": null, "fair": 1.7268}, "O1.5": {"p": 0.6174, "q": null, "ev": null, "fair": 1.6197}, "U1.5": {"p": 0.3826, "q": null, "ev": null, "fair": 2.6137}, "O2.5": {"p": 0.3388, "q": null, "ev": null, "fair": 2.9513}, "U2.5": {"p": 0.6612, "q": null, "ev": null, "fair": 1.5125}, "O3.5": {"p": 0.1534, "q": null, "ev": null, "fair": 6.5203}, "U3.5": {"p": 0.8466, "q": null, "ev": null, "fair": 1.1811}}, "overround": 0.0559, "heat": [{"s": "0-0", "p": 0.135907}, {"s": "0-1", "p": 0.121918}, {"s": "0-2", "p": 0.066153}, {"s": "0-3", "p": 0.022437}, {"s": "0-4", "p": 0.005707}, {"s": "1-0", "p": 0.124772}, {"s": "1-1", "p": 0.143323}, {"s": "1-2", "p": 0.068788}, {"s": "1-3", "p": 0.023331}, {"s": "1-4", "p": 0.005935}, {"s": "2-0", "p": 0.069089}, {"s": "2-1", "p": 0.070298}, {"s": "2-2", "p": 0.035764}, {"s": "2-3", "p": 0.01213}, {"s": "2-4", "p": 0.003086}, {"s": "3-0", "p": 0.023947}, {"s": "3-1", "p": 0.024366}, {"s": "3-2", "p": 0.012396}, {"s": "3-3", "p": 0.004204}, {"s": "3-4", "p": 0.001069}, {"s": "4-0", "p": 0.006225}, {"s": "4-1", "p": 0.006334}, {"s": "4-2", "p": 0.003222}, {"s": "4-3", "p": 0.001093}, {"s": "4-4", "p": 0.000278}], "book_margin_k": 1.052, "best_value": {"sel": "2", "ev": -0.0819, "p": 0.3672, "q": 2.5}, "model_lean": "2", "model_lean_p": 0.3672, "expected_goals": 2.06}, {"id": "juv-ata", "day": "dom", "date": "20 settembre", "time": "18:00", "home": "Juventus", "away": "Atalanta", "venue": "Allianz Stadium, Torino", "tv": "DAZN / Sky", "status": "upcoming", "score": null, "scorers": null, "quotes": {"h": 1.7, "d": 3.75, "a": 5.0}, "qsrc": {"h": "real", "d": "real", "a": "real"}, "xg_ext": [1.52, 1.0], "ext_model": {"h": 47, "d": 27, "a": 26}, "xg_src": "ProfeGol/SharpSoccer + 7 assenze Juve", "absences": {"home": ["Yildiz", "Ekhator", "Cabal", "Thuram", "Locatelli", "Boga", "Cambiaso"], "away": ["Kossounou", "Hien", "Sulemana"]}, "h2h": "Dal 2017 la Juventus ha pareggiato 12 delle 19 sfide di A con l'Atalanta (4V, 3P). L'Atalanta è imbattuta nelle ultime 8 trasferte a Torino (2V, 6N) e ha segnato nel primo tempo in 7 di quelle 8.", "note": "Juve reduce dal 3-2 subito a Reggio Emilia (gol al 94') e dal 5-0 al NEC in Europa League giovedì: turn over e fatica europea da monitorare. Atalanta reduce da 2 ko (Roma, Cagliari) e con produzione offensiva ai minimi stagionali per xG.", "formNote": "Juventus con 6 gol fatti e 4 subiti, ko al 94' a Reggio Emilia e 5-0 al NEC in Europa League; Atalanta con 5 gol fatti e 2 sconfitte di fila.", "pick": "GG + 1X", "confidence": 1, "lesson": null, "extra": {"gg": 1.75}, "lambda_home": 1.555, "lambda_away": 0.967, "model_probs": {"home": 0.5031, "draw": 0.2692, "away": 0.2277, "btts": 0.496, "over15": 0.7244, "over25": 0.4618, "over35": 0.2471}, "model_cs": [{"p": 0.127977, "s": "1-1"}, {"p": 0.117664, "s": "1-0"}, {"p": 0.09713, "s": "2-0"}, {"p": 0.093883, "s": "2-1"}, {"p": 0.087559, "s": "0-0"}], "market_probs": {"home": 0.5705, "draw": 0.2471, "away": 0.1823}, "final_probs": {"home": 0.5503, "draw": 0.2538, "away": 0.1959}, "markets": {"1": {"p": 0.5503, "q": 1.7, "ev": -0.0645, "fair": 1.8172, "qsrc": "real"}, "X": {"p": 0.2538, "q": 3.75, "ev": -0.0484, "fair": 3.9406, "qsrc": "real"}, "2": {"p": 0.1959, "q": 5.0, "ev": -0.0204, "fair": 5.1039, "qsrc": "real"}, "1X": {"p": 0.8041, "q": null, "ev": null, "fair": 1.2437}, "12": {"p": 0.7462, "q": null, "ev": null, "fair": 1.3401}, "X2": {"p": 0.4497, "q": null, "ev": null, "fair": 2.2237}, "GG": {"p": 0.496, "q": 1.75, "ev": -0.1319, "fair": 2.016, "qsrc": "real"}, "NG": {"p": 0.504, "q": null, "ev": null, "fair": 1.9843}, "O1.5": {"p": 0.7244, "q": null, "ev": null, "fair": 1.3805}, "U1.5": {"p": 0.2756, "q": null, "ev": null, "fair": 3.6283}, "O2.5": {"p": 0.4618, "q": null, "ev": null, "fair": 2.1656}, "U2.5": {"p": 0.5382, "q": null, "ev": null, "fair": 1.8579}, "O3.5": {"p": 0.2471, "q": null, "ev": null, "fair": 4.047}, "U3.5": {"p": 0.7529, "q": null, "ev": null, "fair": 1.3282}}, "overround": 0.0549, "heat": [{"s": "0-0", "p": 0.087559}, {"s": "0-1", "p": 0.070387}, {"s": "0-2", "p": 0.037518}, {"s": "0-3", "p": 0.012088}, {"s": "0-4", "p": 0.002921}, {"s": "1-0", "p": 0.117664}, {"s": "1-1", "p": 0.127977}, {"s": "1-2", "p": 0.058349}, {"s": "1-3", "p": 0.0188}, {"s": "1-4", "p": 0.004543}, {"s": "2-0", "p": 0.09713}, {"s": "2-1", "p": 0.093883}, {"s": "2-2", "p": 0.045373}, {"s": "2-3", "p": 0.014619}, {"s": "2-4", "p": 0.003533}, {"s": "3-0", "p": 0.050353}, {"s": "3-1", "p": 0.04867}, {"s": "3-2", "p": 0.023522}, {"s": "3-3", "p": 0.007578}, {"s": "3-4", "p": 0.001831}, {"s": "4-0", "p": 0.019577}, {"s": "4-1", "p": 0.018923}, {"s": "4-2", "p": 0.009145}, {"s": "4-3", "p": 0.002947}, {"s": "4-4", "p": 0.000712}], "book_margin_k": 1.058, "best_value": {"sel": "1", "ev": -0.0645, "p": 0.5503, "q": 1.7}, "model_lean": "1", "model_lean_p": 0.5503, "expected_goals": 2.52}, {"id": "mil-lec", "day": "dom", "date": "20 settembre", "time": "20:45", "home": "Milan", "away": "Lecce", "venue": "Stadio Meazza, Milano", "tv": "DAZN", "status": "upcoming", "score": null, "scorers": null, "quotes": {"h": 1.27, "d": 5.5, "a": 13.0}, "qsrc": {"h": "real", "d": "real", "a": "real"}, "xg_ext": [1.8, 0.72], "ext_model": {"h": 68, "d": 21, "a": 11}, "xg_src": "stima modello interno + H2H (16 gare imbattuto)", "absences": {"home": [], "away": ["Geubbels"]}, "h2h": "Milan vittorioso nelle ultime 5 sfide di A contro il Lecce (12-2) e imbattuto da 16 partite contro i salentini. Lecce con 6 punti, vittorioso 3-2 sul Monza.", "note": "Curiosità statistica pesante: tutti i 7 gol del Milan in campionato sono arrivati nell'ultima mezz'ora. Amorim ha recuperato tutti gli effettivi; Milan reduce dal 2-2 in rimonta a Roma con la Lazio e dal ko in Champions con il Benfica.", "formNote": "Milan imbattuto con 7 gol fatti (tutti nell'ultima mezz'ora) e 2 pareggi di fila; Lecce con 6 punti e 3 gol nel primo tempo contro il Monza.", "pick": "1 + Milan segna nel 2° tempo", "confidence": 2, "lesson": null, "extra": {}, "lambda_home": 1.835, "lambda_away": 0.772, "model_probs": {"home": 0.6199, "draw": 0.2342, "away": 0.1459, "btts": 0.4585, "over15": 0.7403, "over25": 0.4834, "over35": 0.2656}, "model_cs": [{"p": 0.129021, "s": "1-0"}, {"p": 0.124115, "s": "2-0"}, {"p": 0.110779, "s": "1-1"}, {"p": 0.095875, "s": "2-1"}, {"p": 0.080008, "s": "0-0"}], "market_probs": {"home": 0.7743, "draw": 0.1614, "away": 0.0643}, "final_probs": {"home": 0.7297, "draw": 0.1821, "away": 0.0882}, "markets": {"1": {"p": 0.7297, "q": 1.27, "ev": -0.0732, "fair": 1.3704, "qsrc": "real"}, "X": {"p": 0.1821, "q": 5.5, "ev": 0.0014, "fair": 5.4925, "qsrc": "real"}, "2": {"p": 0.0882, "q": 13.0, "ev": 0.1467, "fair": 11.337, "qsrc": "real"}, "1X": {"p": 0.9118, "q": null, "ev": null, "fair": 1.0967}, "12": {"p": 0.8179, "q": null, "ev": null, "fair": 1.2226}, "X2": {"p": 0.2703, "q": null, "ev": null, "fair": 3.6999}, "GG": {"p": 0.4585, "q": null, "ev": null, "fair": 2.1811}, "NG": {"p": 0.5415, "q": null, "ev": null, "fair": 1.8467}, "O1.5": {"p": 0.7403, "q": null, "ev": null, "fair": 1.3508}, "U1.5": {"p": 0.2597, "q": null, "ev": null, "fair": 3.8503}, "O2.5": {"p": 0.4834, "q": null, "ev": null, "fair": 2.0687}, "U2.5": {"p": 0.5166, "q": null, "ev": null, "fair": 1.9357}, "O3.5": {"p": 0.2656, "q": null, "ev": null, "fair": 3.7654}, "U3.5": {"p": 0.7344, "q": null, "ev": null, "fair": 1.3616}}, "overround": 0.0461, "heat": [{"s": "0-0", "p": 0.080008}, {"s": "0-1", "p": 0.050689}, {"s": "0-2", "p": 0.022}, {"s": "0-3", "p": 0.005665}, {"s": "0-4", "p": 0.001094}, {"s": "1-0", "p": 0.129021}, {"s": "1-1", "p": 0.110779}, {"s": "1-2", "p": 0.040365}, {"s": "1-3", "p": 0.010394}, {"s": "1-4", "p": 0.002007}, {"s": "2-0", "p": 0.124115}, {"s": "2-1", "p": 0.095875}, {"s": "2-2", "p": 0.037031}, {"s": "2-3", "p": 0.009535}, {"s": "2-4", "p": 0.001841}, {"s": "3-0", "p": 0.075908}, {"s": "3-1", "p": 0.058637}, {"s": "3-2", "p": 0.022648}, {"s": "3-3", "p": 0.005832}, {"s": "3-4", "p": 0.001126}, {"s": "4-0", "p": 0.034819}, {"s": "4-1", "p": 0.026896}, {"s": "4-2", "p": 0.010388}, {"s": "4-3", "p": 0.002675}, {"s": "4-4", "p": 0.000517}], "book_margin_k": 1.07, "best_value": {"sel": "1", "ev": -0.0732, "p": 0.7297, "q": 1.27}, "model_lean": "1", "model_lean_p": 0.7297, "expected_goals": 2.61}], "schedine": [{"code": "A", "nome": "Schedina A - Prudente (2 selezioni)", "tag": "bassa varianza", "dettaglio": [{"mid": "rom-int", "partita": "Roma-Inter", "sel": "12", "p": 0.7351, "q": 1.33, "ev": -0.0223, "ora": "19 settembre 18:00"}, {"mid": "fio-nap", "partita": "Fiorentina-Napoli", "sel": "X2", "p": 0.7314, "q": 1.3, "ev": -0.0492, "ora": "20 settembre 12:30"}], "quota": 1.73, "prob": 0.5377, "ev": -0.0704, "stake": "3 unita' su 10", "kelly": 0.0, "perdita_attesa": -0.0704, "note": "Il margine del banco sulle multiple si moltiplica: puntare poco e con selezioni ad alta probabilita'."}, {"code": "B", "nome": "Schedina B - Bilanciata (3 selezioni)", "tag": "equilibrata", "dettaglio": [{"mid": "rom-int", "partita": "Roma-Inter", "sel": "1X", "p": 0.6536, "q": 1.5, "ev": -0.0196, "ora": "19 settembre 18:00"}, {"mid": "ven-laz", "partita": "Venezia-Lazio", "sel": "2", "p": 0.5175, "q": 1.95, "ev": 0.0091, "ora": "19 settembre 20:45"}, {"mid": "fio-nap", "partita": "Fiorentina-Napoli", "sel": "X2", "p": 0.7314, "q": 1.3, "ev": -0.0492, "ora": "20 settembre 12:30"}], "quota": 3.8, "prob": 0.2474, "ev": -0.0593, "stake": "2 unita' su 10", "kelly": 0.0, "perdita_attesa": -0.0593, "note": "Il margine del banco sulle multiple si moltiplica: puntare poco e con selezioni ad alta probabilita'."}, {"code": "C", "nome": "Schedina C - Aggressiva (4 selezioni)", "tag": "alta varianza", "dettaglio": [{"mid": "rom-int", "partita": "Roma-Inter", "sel": "1", "p": 0.3887, "q": 2.7, "ev": 0.0495, "ora": "19 settembre 18:00"}, {"mid": "ven-laz", "partita": "Venezia-Lazio", "sel": "2", "p": 0.5175, "q": 1.95, "ev": 0.0091, "ora": "19 settembre 20:45"}, {"mid": "fio-nap", "partita": "Fiorentina-Napoli", "sel": "X2", "p": 0.7314, "q": 1.3, "ev": -0.0492, "ora": "20 settembre 12:30"}, {"mid": "juv-ata", "partita": "Juventus-Atalanta", "sel": "1", "p": 0.5503, "q": 1.7, "ev": -0.0645, "ora": "20 settembre 18:00"}], "quota": 11.64, "prob": 0.081, "ev": -0.058, "stake": "1 unita' su 10", "kelly": 0.0, "perdita_attesa": -0.058, "note": "Il margine del banco sulle multiple si moltiplica: puntare poco e con selezioni ad alta probabilita'."}, {"code": "D", "nome": "Schedina D - La giocata singola del turno", "tag": "value", "dettaglio": [{"mid": "rom-int", "partita": "Roma-Inter", "sel": "1", "p": 0.3887, "q": 2.7, "ev": 0.0495, "ora": "19 settembre 18:00"}], "quota": 2.7, "prob": 0.3887, "ev": 0.0495, "stake": "2 unita' su 10", "kelly": 0.0073, "perdita_attesa": 0.0495, "note": "Una sola giocata, la migliore del turno: e' cosi' che si riduce l'impatto del margine del banco."}], "value_top": [{"mid": "rom-int", "partita": "Roma-Inter", "sel": "1", "p": 0.3887, "q": 2.7, "ev": 0.0495, "fair": 2.57, "ora": "19 settembre 18:00", "kelly": 0.0073}, {"mid": "fio-nap", "partita": "Fiorentina-Napoli", "sel": "2", "p": 0.4486, "q": 2.25, "ev": 0.0094, "fair": 2.23, "ora": "20 settembre 12:30", "kelly": 0.0019}, {"mid": "ven-laz", "partita": "Venezia-Lazio", "sel": "2", "p": 0.5175, "q": 1.95, "ev": 0.0091, "fair": 1.93, "ora": "19 settembre 20:45", "kelly": 0.0024}, {"mid": "fio-nap", "partita": "Fiorentina-Napoli", "sel": "X", "p": 0.2827, "q": 3.5, "ev": -0.0104, "fair": 3.54, "ora": "20 settembre 12:30", "kelly": 0.0}, {"mid": "par-gen", "partita": "Parma-Genoa", "sel": "1", "p": 0.3166, "q": 3.1, "ev": -0.0184, "fair": 3.16, "ora": "20 settembre 15:00", "kelly": 0.0}, {"mid": "rom-int", "partita": "Roma-Inter", "sel": "1X", "p": 0.6536, "q": 1.5, "ev": -0.0196, "fair": 1.53, "ora": "19 settembre 18:00", "kelly": 0.0}, {"mid": "rom-int", "partita": "Roma-Inter", "sel": "12", "p": 0.7351, "q": 1.33, "ev": -0.0223, "fair": 1.36, "ora": "19 settembre 18:00", "kelly": 0.0}, {"mid": "rom-int", "partita": "Roma-Inter", "sel": "O2.5", "p": 0.5708, "q": 1.67, "ev": -0.0467, "fair": 1.75, "ora": "19 settembre 18:00", "kelly": 0.0}], "avoid": [{"mid": "ven-laz", "partita": "Venezia-Lazio", "sel": "GG", "p": 0.4652, "q": 1.63, "ev": -0.2417, "fair": 2.15, "ora": "19 settembre 20:45", "kelly": 0.0}, {"mid": "juv-ata", "partita": "Juventus-Atalanta", "sel": "GG", "p": 0.496, "q": 1.75, "ev": -0.1319, "fair": 2.02, "ora": "20 settembre 18:00", "kelly": 0.0}, {"mid": "rom-int", "partita": "Roma-Inter", "sel": "X2", "p": 0.6113, "q": 1.44, "ev": -0.1197, "fair": 1.64, "ora": "19 settembre 18:00", "kelly": 0.0}, {"mid": "fro-com", "partita": "Frosinone-Como", "sel": "2", "p": 0.5964, "q": 1.5, "ev": -0.1054, "fair": 1.68, "ora": "20 settembre 15:00", "kelly": 0.0}, {"mid": "rom-int", "partita": "Roma-Inter", "sel": "GG", "p": 0.5976, "q": 1.5, "ev": -0.1035, "fair": 1.67, "ora": "19 settembre 18:00", "kelly": 0.0}], "leaders": [{"nome": "Donyell Malen", "squadra": "Roma", "gol": 6, "nota": "capocannoniere; quota 2,25 per la 7ª rete contro l'Inter"}, {"nome": "Lautaro Martinez", "squadra": "Inter", "gol": 2, "nota": "re dei bomber del 2026; 2,75 per il terzo centro in campionato"}, {"nome": "Antonio Raimondo", "squadra": "Frosinone", "gol": 4, "nota": "rivelazione del Frosinone con 7 punti"}, {"nome": "Franco Mastantuono", "squadra": "Fiorentina", "gol": 3, "nota": "doppietta in 60 secondi a Venezia"}, {"nome": "Daniel Maldini", "squadra": "Cagliari", "gol": 2, "nota": "2 gol in 2 gare, ha aperto il 3° centro consecutivo a Udine"}, {"nome": "Davide Frattesi", "squadra": "Lazio", "gol": 3, "nota": "miglior marcatore biancoceleste"}]};
+const T = DATA.teams;
+const M = DATA.matches;
+
+/* ---------------- utility ---------------- */
+const pct = (x,d=1) => (x*100).toFixed(d)+'%';
+const q2 = x => (x==null?'—':x.toFixed(2).replace('.',','));
+const evfmt = x => (x==null?'—':(x>=0?'+':'')+(x*100).toFixed(1)+'%');
+const evClass = x => x==null?'ev-neu':(x>=0.02?'ev-pos':(x>-0.02?'ev-neu':'ev-neg'));
+const stars = n => '★'.repeat(n)+'☆'.repeat(5-n);
+const fieldTeams = [...new Set(M.flatMap(m=>[m.home,m.away]))];
+const marketOrder = ['1','X','2','1X','12','X2','GG','NG','O1.5','U1.5','O2.5','U2.5','O3.5','U3.5'];
+const selLabel = s => ({'1':'1 (casa)','X':'X (pari)','2':'2 (ospite)','1X':'1X (casa o pari)','12':'12 (no pari)',
+  'X2':'X2 (pari o ospite)','GG':'GG (entrambe segnano)','NG':'NG (no gol entrambe)','O1.5':'Over 1.5','U1.5':'Under 1.5',
+  'O2.5':'Over 2.5','U2.5':'Under 2.5','O3.5':'Over 3.5','U3.5':'Under 3.5'}[s]||s);
+const dayName = d => ({ven:'Venerdì 18',sab:'Sabato 19',dom:'Domenica 20'}[d]);
+const statusLabel = s => ({upcoming:'da giocare',live:'in corso',played:'conclusa'}[s]);
+const scorersM = m => m.scorers || '—';
+
+/* ---------------- HERO ---------------- */
+document.getElementById('heroMeta').innerHTML = `
+  <span class="chip">📅 <b>${DATA.meta.periodo}</b></span>
+  <span class="chip">⚽ <b>10</b> partite · 20 squadre</span>
+  <span class="chip">🧮 modello: <b>Dixon-Coles + mercato</b></span>
+  <span class="chip">💰 <b>${DATA.value_top.length}</b> selezioni con valore</span>
+  <span class="chip">📌 ${DATA.meta.prossima}</span>`;
+
+/* ---------------- KPI ---------------- */
+(function(){
+  const upcoming = M.filter(m=>m.status==='upcoming').length;
+  const best = DATA.value_top[0];
+  const top = DATA.schedine.find(s=>s.code==='D');
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="lbl">Partite da giocare</div><div class="val">${upcoming}<span style="font-size:15px;color:var(--dim)">/10</span></div>
+      <div class="sub2">${M.filter(m=>m.status==='live').length} in corso · ${M.filter(m=>m.status==='played').length} conclusa</div></div>
+    <div class="kpi"><div class="lbl">Miglior valore atteso</div><div class="val ev-pos">${evfmt(best.ev)}</div>
+      <div class="sub2">${best.partita} · ${selLabel(best.sel)} a ${q2(best.q)}</div></div>
+    <div class="kpi"><div class="lbl">Schedina D (singola)</div><div class="val">${q2(top.quota)}</div>
+      <div class="sub2">probabilità ${pct(top.prob)} · stake ¼ Kelly ${(top.kelly*100).toFixed(2)}% del bankroll</div></div>
+    <div class="kpi"><div class="lbl">Difesa migliore</div><div class="val">Roma</div><div class="sub2">1 gol subito in 4 gare, 3 clean sheet</div></div>
+    <div class="kpi"><div class="lbl">Attacco migliore</div><div class="val">Inter</div><div class="sub2">13 gol in 4 gare (3,25 di media)</div></div>`;
+})();
+
+/* ---------------- SINTESI ---------------- */
+(function(){
+  const li = [
+    `Scontro al vertice: <b>Roma-Inter</b> mette di fronte le uniche due squadre a punteggio pieno (12 punti). Il modello assegna
+     ${pct(M[3].final_probs.home,0)} alla Roma, ${pct(M[3].final_probs.draw,0)} al pareggio e ${pct(M[3].final_probs.away,0)} all'Inter,
+     con ${M[3].expected_goals} gol attesi: la partita più equilibrata del turno (e la più aperta tatticamente).`,
+    `La capolista <b>Roma</b> ha la miglior difesa del campionato (1 gol subito) e non perde in casa da 14 gare, ma l'Inter non vince
+     all'Olimpico dal 2016 e ha vinto 5 trasferte consecutive in casa giallorossa con 11-2 complessivo: la statistica più pesante del turno.`,
+    `<b>Juventus-Atalanta</b>: 12 pareggi su 19 incroci dal 2017 e Atalanta imbattuta da 8 trasferte a Torino. La Juve ha 7 indisponibili
+     e arriva dal 5-0 al NEC in Europa League: il modello vede il <b>GG</b> (${pct(M[8].markets.GG.p,0)}), non il segno 1 a tutti i costi.`,
+    `<b>Cagliari</b> e <b>Como</b> sono le sorprese: i sardi hanno la difesa più efficace su azione (1 gol) e sono in corsa per il record
+     delle prime tre trasferte vinte; i lariani hanno 10 punti con una partita in meno e hanno vinto a Napoli e col Lipsia.`,
+    `In coda <b>Venezia</b> (0 punti) e <b>Bologna</b> (1 punto, cambio di panchina con Palladino) sono le situazioni più fragili:
+     a Firenze e Genova si giocano già partite-salvezza.`,
+    `<b>Milan</b> favoritissimo sul Lecce (${pct(M[9].final_probs.home,0)}), ma attenzione: tutti i 7 gol rossoneri in campionato sono
+     arrivati nell'ultima mezz'ora, un dato che sposta il focus sui mercati "tempo" più che sul 1X2.`
+  ];
+  const tot = M.filter(m=>m.status==='upcoming').reduce((a,m)=>a+m.expected_goals,0);
+  const avg = tot/M.filter(m=>m.status==='upcoming').length;
+  li.push(`<b>Gol attesi complessivi</b> nelle 7 gare ancora da giocare: <b>${tot.toFixed(1)}</b> (${avg.toFixed(2)} per partita,
+    contro una media di campionato di 3,02). È un turno "magro": molte squadre arrivano con attacchi in difficoltà
+    (Parma, Genoa, Bologna, Torino, Atalanta, Fiorentina) e difese solide. Le partite più prolifiche secondo il modello
+    sono Roma-Inter (${M[3].expected_goals}) e Milan-Lecce (${M[9].expected_goals}).`);
+  document.getElementById('sintesiList').innerHTML = li.map(t=>`<li>${t}</li>`).join('');
+  const t = DATA.schedine.find(s=>s.code==='D');
+  const row = t.dettaglio[0];
+  const tMatch = M.find(x=>x.id===row.mid);
+  const bestMkt = row.sel==='1'?tMatch.market_probs.home:(row.sel==='2'?tMatch.market_probs.away:
+    (row.sel==='X'?tMatch.market_probs.draw:(row.sel==='1X'?tMatch.market_probs.home+tMatch.market_probs.draw:
+    (row.sel==='X2'?tMatch.market_probs.away+tMatch.market_probs.draw:tMatch.market_probs.home+tMatch.market_probs.away))));
+  document.getElementById('topPick').innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <div style="font-size:22px;font-weight:800">${row.partita}</div>
+      <span class="pill pos">${selLabel(row.sel)}</span>
+      <span class="pill eu">${row.ora}</span>
+    </div>
+    <div class="summary" style="margin-top:14px">
+      <div class="sumbox"><div class="lbl">Quota</div><div class="v">${q2(row.q)}</div></div>
+      <div class="sumbox"><div class="lbl">Probabilità modello</div><div class="v">${pct(row.p)}</div></div>
+      <div class="sumbox"><div class="lbl">Probabilità mercato</div><div class="v" style="color:var(--dim)">${pct(bestMkt)}</div></div>
+      <div class="sumbox"><div class="lbl">Valore atteso</div><div class="v ev-pos">${evfmt(row.ev)}</div></div>
+    </div>
+    <p class="small" style="margin-top:12px">Il modello stima la Roma vincente al ${pct(row.p)} contro un mercato che la prezza
+    intorno al ${pct(bestMkt)}: nasce un valore atteso positivo del ${evfmt(row.ev)}. È la sola giocata singola che il modello
+    promuove fra le 7 partite ancora da giocare — tutte le altre hanno valore atteso nullo o negativo.</p>`;
+})();
+
+/* ---------------- SCENARI DI VETTA ---------------- */
+(function(){
+  const rom=T['Roma'].pts, inter=T['Inter'].pts, como=T['Como'].pts, laz=T['Lazio'].pts;
+  const rows = [
+    {esito:'Vittoria Roma (39%)', r:rom+3, i:inter, nota:`La Roma sale a ${rom+3} e si porta a +3 sull'Inter: Como e Lazio (a ${como} e ${laz}) possono al massimo restare a -2.`},
+    {esito:'Pareggio (27%)', r:rom+1, i:inter+1, nota:`Roma e Inter restano appaiate a ${rom+1}; Como e Lazio, con una vittoria, le raggiungono a quota ${como+3}: la classifica si comprime.`},
+    {esito:'Vittoria Inter (35%)', r:rom, i:inter+3, nota:`L'Inter sale a ${inter+3} e allunga a +3 sulla Roma, che resta a ${rom}; per i nerazzurri sarebbe la sesta vittoria consecutiva all'Olimpico e il primo vero strappo stagionale.`},
+  ];
+  document.getElementById('scenari').innerHTML = rows.map(r=>`
+    <div style="display:grid;grid-template-columns:190px 1fr;gap:12px;padding:10px 0;border-bottom:1px dashed rgba(255,255,255,.08)">
+      <div><b>${r.esito}</b><br><span class="small">Roma ${r.r} pt · Inter ${r.i} pt</span></div>
+      <div class="small" style="color:#c6d2ea">${r.nota}</div>
+    </div>`).join('') +
+    `<p class="small" style="margin-top:12px">Nota: le percentuali sono quelle del modello ancorate al mercato. La 5ª giornata
+     è l'ultima prima della sosta per la Nations League: chi sbaglia ha tre settimane per rimuginarci sopra.</p>`;
+})();
+
+/* ---------------- METODO mini table ---------------- */
+(function(){
+  const rows = [
+    ['Forma (ultime 4)', 'sequenza V/N/P dal campionato'],
+    ['Gol fatti / subiti', 'per partita e per split casa-trasferta'],
+    ['xG previsti (λ)', 'modello interno + fonti esterne'],
+    ['Precedenti (H2H)', 'ultimi 4-10 incroci e serie attive'],
+    ['Indisponibili', 'infortunati e squalificati verificati'],
+    ['Quote reali', '1X2 Snai/ADM + mercati derivati'],
+    ['Contesto', 'coppe europee, cambi di panchina, pausa']
+  ];
+  document.getElementById('methodTbl').innerHTML = rows.map(r=>
+    `<tr><td><b>${r[0]}</b></td><td style="text-align:right;color:var(--dim)">${r[1]}</td></tr>`).join('');
+})();
+
+/* ---------------- CLASSIFICA ---------------- */
+(function(){
+  const cols = [
+    {k:'pos',t:'#',w:'34px'},{k:'team',t:'Squadra',al:'left'},{k:'pts',t:'Pt'},{k:'g',t:'G'},
+    {k:'v',t:'V'},{k:'n',t:'N'},{k:'p',t:'P'},{k:'gf',t:'GF'},{k:'ga',t:'GS'},{k:'gd',t:'DR'},
+    {k:'ppg',t:'PPG'},{k:'gpm',t:'GF/g'},{k:'gapm',t:'GS/g'},{k:'form',t:'Forma'},{k:'bar',t:'Rendimento'}
+  ];
+  const rows = Object.entries(T).map(([name,t])=>({team:name,...t,gd:t.gf-t.ga,ppg:t.pts/t.g,
+    gpm:t.gf/t.g,gapm:t.ga/t.g}));
+  let sortKey='pts', asc=false, filter='', onlyField=true;
+  const maxPts = Math.max(...rows.map(r=>r.pts));
+  function render(){
+    const head = document.querySelector('#cls thead');
+    const body = document.querySelector('#cls tbody');
+    head.innerHTML = '<tr>'+cols.map(c=>`<th data-k="${c.k}" class="${sortKey===c.k?'sorted'+(asc?' asc':''):''}"
+      style="text-align:${c.al||'center'}">${c.t}</th>`).join('')+'</tr>';
+    let list = rows.filter(r=>!filter || r.team.toLowerCase().includes(filter));
+    if(onlyField) list = list.filter(r=>fieldTeams.includes(r.team));
+    list.sort((a,b)=> (typeof a[sortKey]==='string') ? (asc? a[sortKey].localeCompare(b[sortKey]) : b[sortKey].localeCompare(a[sortKey]))
+                                                   : (asc? a[sortKey]-b[sortKey] : b[sortKey]-a[sortKey]));
+    body.innerHTML = list.map(r=>{
+      const zone = r.pos<=4?'pos':(r.pos<=6?'eu':(r.pos>=17?'releg':''));
+      const inField = fieldTeams.includes(r.team);
+      return `<tr style="${inField?'background:rgba(34,227,164,.045)':''}">
+        <td><span class="pill ${zone}">${r.pos}</span></td>
+        <td class="team">${r.team} ${inField?'<span class="small" style="color:var(--green)">●</span>':''}</td>
+        <td><b>${r.pts}</b></td><td>${r.g}</td><td>${r.v}</td><td>${r.n}</td><td>${r.p}</td>
+        <td>${r.gf}</td><td>${r.ga}</td><td>${r.gd>0?'+':''}${r.gd}</td>
+        <td>${r.ppg.toFixed(2).replace('.',',')}</td>
+        <td>${r.gpm.toFixed(2).replace('.',',')}</td>
+        <td>${r.gapm.toFixed(2).replace('.',',')}</td>
+        <td><span class="form">${r.forma.split(' ').map(f=>`<i class="f-${f}">${f}</i>`).join('')}</span></td>
+        <td><div class="bar"><span style="width:${(r.pts/12*100).toFixed(0)}%"></span></div></td>
+      </tr>`;
+    }).join('');
+    head.querySelectorAll('th').forEach(th=>th.onclick=()=>{
+      const k=th.dataset.k; if(k===sortKey) asc=!asc; else {sortKey=k;asc=false;} render();
+    });
+  }
+  document.getElementById('q').oninput = e => { filter = e.target.value.toLowerCase().trim(); render(); };
+  document.getElementById('onlyField').onchange = e => { onlyField = e.target.checked; render(); };
+  render();
+})();
+
+/* ---------------- MATCH CARDS ---------------- */
+(function(){
+  const filters = [['all','Tutte'],['ven','Venerdì 18'],['sab','Sabato 19'],['dom','Domenica 20'],
+                   ['upcoming','Da giocare'],['live','In corso'],['played','Conclusa'],['value','Con valore atteso > 0']];
+  let cur='all';
+  const fbox = document.getElementById('filters');
+  fbox.innerHTML = filters.map(f=>`<button class="fbtn${f[0]==='all'?' on':''}" data-f="${f[0]}">${f[1]}</button>`).join('');
+  fbox.querySelectorAll('.fbtn').forEach(b=>b.onclick=()=>{
+    cur=b.dataset.f; fbox.querySelectorAll('.fbtn').forEach(x=>x.classList.toggle('on',x===b)); render();
+  });
+
+  function bar(label, p, mkt, tag){
+    return `<div class="pbox" title="${tag||''}">
+      <div class="lbl">${label}</div>
+      <div class="big">${pct(p)}</div>
+      <div class="pbar"><span style="width:${(p*100).toFixed(1)}%"></span></div>
+      <div class="mini" style="margin-top:6px">mercato ${pct(mkt)}</div>
+      <div class="pbar mkt"><span style="width:${(mkt*100).toFixed(1)}%"></span></div>
+    </div>`;
+  }
+
+  function marketsTable(m){
+    return `<table class="mini-tbl">` +
+      marketOrder.filter(s=>m.markets[s]).map(s=>{
+        const v=m.markets[s];
+        if(!v.q && v.p<0.08) return '';
+        return `<tr><td>${selLabel(s)}</td>
+          <td style="text-align:right">${pct(v.p,1)}</td>
+          <td style="text-align:right;color:var(--dim)">${v.q?(v.qsrc==='stima'?'≈':'' )+q2(v.q):'≈'+q2(v.fair)}</td>
+          <td style="text-align:right" class="${v.ev==null?'ev-neu':evClass(v.ev)}">${v.ev==null?'—':evfmt(v.ev)}</td></tr>`;
+      }).join('') + `</table><p class="small">Quota con “≈” = quota equa stimata (1/probabilità), non rilevata sul mercato.</p>`;
+  }
+
+  function heat(m){
+    const max = m.model_cs[0].p;
+    let h = '<div class="heat-hdr">righe = gol ' + m.home + ' · colonne = gol ' + m.away + '</div><div class="heat">';
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++){
+      const cell = m.heat.find(c=>c.s===`${x}-${y}`) || {p:0};
+      const a = Math.min(1, cell.p/(max||1));
+      h += `<div style="background:rgba(34,227,164,${(a*0.95).toFixed(2)});color:${a>0.5?'#04121a':'#cfe8ff'}"
+        title="${x}-${y}: ${pct(cell.p,2)}">${cell.p>=0.03?(cell.p*100).toFixed(0):''}</div>`;
+    }
+    return h+'</div>';
+  }
+
+  function render(){
+    let list = M.filter(m=>{
+      if(cur==='all') return true;
+      if(['ven','sab','dom'].includes(cur)) return m.day===cur;
+      if(cur==='value') return m.best_value && m.best_value.ev>0;
+      return m.status===cur;
+    });
+    document.getElementById('matchList').innerHTML = list.map(m=>{
+      const fp=m.final_probs, mk=m.market_probs, mo=m.model_probs;
+      const tagm = m.status==='upcoming'?`<span class="status st-upcoming">da giocare</span>`:
+        (m.status==='live'?`<span class="status st-live">● in corso</span>`:`<span class="status st-played">conclusa</span>`);
+      return `<div class="mcard" id="card-${m.id}">
+        <div class="top" onclick="this.parentNode.classList.toggle('open')">
+          <div class="row1">
+            <span class="daytag">${dayName(m.day)} · ${m.time}</span>
+            ${tagm}
+            ${m.status!=='upcoming'?`<span class="scorebox">${m.score}</span>`:''}
+            <span class="mt-meta">${m.venue}<br>${m.tv}</span>
+          </div>
+          <div class="teams-row">
+            <span class="tname">${m.home}</span>
+            <span class="vs">vs</span>
+            <span class="tname">${m.away}</span>
+            <span class="stars" title="confidenza ${m.confidence}/5">${stars(m.confidence)}</span>
+            <span class="small" style="margin-left:auto">${m.expected_goals} gol attesi · lean <b>${m.model_lean}</b> (${pct(m.model_lean_p,0)})</span>
+          </div>
+          <div class="probs3">
+            ${bar('1 · '+m.home, fp.home, mk.home, 'probabilità modello finale vs mercato')}
+            ${bar('X · pareggio', fp.draw, mk.draw)}
+            ${bar('2 · '+m.away, fp.away, mk.away)}
+          </div>
+        </div>
+        <div class="details">
+          <div class="dgrid">
+            <div class="block">
+              <h4>Lettura della partita</h4>
+              <p><b>Momento:</b> ${m.formNote || ''}</p>
+              <p><b>Precedenti:</b> ${m.h2h}</p>
+              <p><b>Contesto:</b> ${m.note}</p>
+              ${m.lesson?`<p style="color:var(--green)"><b>Verifica:</b> ${m.lesson}</p>`:''}
+            </div>
+            <div class="block">
+              <h4>Indisponibili</h4>
+              <p><b>${m.home}:</b> ${m.absences.home.length?m.absences.home.join(', '):'nessuno'}</p>
+              <div class="taglist">${m.absences.home.map(a=>`<span class="tg">${a}</span>`).join('')}</div>
+              <p style="margin-top:10px"><b>${m.away}:</b> ${m.absences.away.length?m.absences.away.join(', '):'nessuno'}</p>
+              <div class="taglist">${m.absences.away.map(a=>`<span class="tg">${a}</span>`).join('')}</div>
+              <h4 style="margin-top:14px">Gol attesi (λ)</h4>
+              <p>${m.home} ${m.lambda_home} — ${m.away} ${m.lambda_away} <span class="small">(fonte: ${m.xg_src})</span></p>
+              <p class="small">Overround del mercato: ${(m.overround*100).toFixed(1)}% — margine del banco sul 1X2.</p>
+            </div>
+            <div class="block">
+              <h4>Mercati e valore</h4>
+              ${marketsTable(m)}
+            </div>
+            <div class="block">
+              <h4>Risultati esatti del modello</h4>
+              <table class="mini-tbl">${m.model_cs.slice(0,5).map(c=>`<tr><td>${c.s}</td><td>${pct(c.p,1)}</td></tr>`).join('')}</table>
+              <h4 style="margin-top:14px">Giocata consigliata</h4>
+              <p><b>${m.pick}</b></p>
+              ${m.best_value?`<p class="small">Miglior valore statistico: <b>${selLabel(m.best_value.sel)}</b>
+                ${m.best_value.q?'a '+q2(m.best_value.q):''} · p ${pct(m.best_value.p)} · EV
+                <span class="${evClass(m.best_value.ev)}">${evfmt(m.best_value.ev)}</span></p>`:''}
+              ${m.scorers?`<p class="small">Marcatori: ${m.scorers}</p>`:''}
+            </div>
+            <div class="block">
+              <h4>Mappa risultato</h4>
+              ${heat(m)}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  window.__renderMatches = render;
+  render();
+})();
+
+/* ---------------- TABELLA RIEPILOGO ---------------- */
+(function(){
+  const thead = document.querySelector('#overview thead');
+  const tb = document.querySelector('#overview tbody');
+  thead.innerHTML = `<tr><th style="text-align:left">Partita</th><th>Quando</th><th>1</th><th>X</th><th>2</th>
+    <th>Gol attesi</th><th>Esito più probabile</th><th>Miglior quota</th><th>Confidenza</th><th>Stato</th></tr>`;
+  tb.innerHTML = M.map(m=>{
+    const f=m.final_probs;
+    const bv=m.best_value;
+    return `<tr style="cursor:pointer" onclick="openCard('${m.id}')">
+      <td class="team">${m.home} – ${m.away}</td>
+      <td>${dayName(m.day).split(' ')[0].slice(0,3)} ${m.time}</td>
+      <td${f.home>f.draw&&f.home>f.away?' style="color:var(--green);font-weight:700"':''}>${pct(f.home,0)}</td>
+      <td${f.draw>f.home&&f.draw>f.away?' style="color:var(--green);font-weight:700"':''}>${pct(f.draw,0)}</td>
+      <td${f.away>f.draw&&f.away>f.home?' style="color:var(--green);font-weight:700"':''}>${pct(f.away,0)}</td>
+      <td>${m.expected_goals}</td>
+      <td><span class="pill eu">${selLabel2(m.model_lean,m)}</span></td>
+      <td>${bv?selLabel2(bv.sel,m)+' <b>'+q2(bv.q)+'</b>':'—'}
+        ${bv&&bv.ev>0?'<span class="small ev-pos">'+evfmt(bv.ev)+'</span>':''}</td>
+      <td class="stars">${stars(m.confidence)}</td>
+      <td><span class="status st-${m.status==='live'?'live':(m.status==='played'?'played':'upcoming')}">${statusLabel(m.status)}</span></td>
+    </tr>`;
+  }).join('');
+})();
+function selLabel2(sel, m){
+  if(sel==='1') return m.home;
+  if(sel==='2') return m.away;
+  if(sel==='X') return 'pareggio';
+  return selLabel(sel);
+}
+function openCard(id){
+  const c=document.getElementById('card-'+id);
+  if(!c) return;
+  c.classList.add('open');
+  if(c.scrollIntoView) c.scrollIntoView({behavior:'smooth',block:'center'});
+}
+window.openCard=openCard;
+window.toggleAll = () => {
+  const cards=[...document.querySelectorAll('.mcard')];
+  const anyClosed = cards.some(c=>!c.classList.contains('open'));
+  cards.forEach(c=>c.classList.toggle('open', anyClosed));
+};
+
+/* ---------------- SIMULATORE ---------------- */
+const slip = new Map();
+function renderSim(){
+  const playable = M.filter(m=>m.status==='upcoming');
+  document.getElementById('simRows').innerHTML = playable.map(m=>{
+    const opts = marketOrder.filter(s=>m.markets[s] && m.markets[s].q && m.markets[s].qsrc==='real');
+    return `<div class="sim-row">
+      <span class="nm">${m.home} – ${m.away}<br><span class="small">${m.date} ${m.time}</span></span>
+      ${opts.map(s=>{
+        const v=m.markets[s], on = slip.get(m.id)===s;
+        return `<button class="selbtn${on?' on':''}" onclick="pick('${m.id}','${s}')">${s}<span class="q">${q2(v.q)}</span></button>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+  updateSim();
+}
+function pick(mid, sel){ if(slip.get(mid)===sel) slip.delete(mid); else slip.set(mid, sel); renderSim(); }
+function clearSlip(){ slip.clear(); renderSim(); }
+window.pick=pick; window.clearSlip=clearSlip;
+function loadSlip(code){
+  clearSlip();
+  const s = DATA.schedine.find(x=>x.code===code);
+  s.dettaglio.forEach(d=>slip.set(d.mid, d.sel));
+  renderSim();
+  document.getElementById('simMsg').innerHTML = `<b>Schedina ${code} caricata</b>: ${s.nome}. ${s.note||''}`;
+}
+window.loadSlip=loadSlip;
+function updateSim(){
+  let q=1,p=1,n=0;
+  slip.forEach((sel,mid)=>{
+    const m=M.find(x=>x.id===mid); const v=m.markets[sel];
+    if(v&&v.q){q*=v.q;p*=v.p;n++;}
+  });
+  const kf = document.getElementById('kf').value/100;
+  const bank = parseFloat(document.getElementById('bank').value)||0;
+  const ev = n? p*q-1 : null;
+  const stake = (n && ev>0) ? bank * kf * ev/(q-1) : 0;
+  document.getElementById('simSummary').innerHTML = `
+    <div class="sumbox"><div class="lbl">Selezioni</div><div class="v">${n}</div></div>
+    <div class="sumbox"><div class="lbl">Quota totale</div><div class="v">${n?q2(q):'—'}</div></div>
+    <div class="sumbox"><div class="lbl">Probabilità combinata</div><div class="v">${n?pct(p):'—'}</div></div>
+    <div class="sumbox"><div class="lbl">Valore atteso</div><div class="v ${evClass(ev)}">${evfmt(ev)}</div></div>
+    <div class="sumbox"><div class="lbl">Stake suggerito (¼ Kelly)</div><div class="v">${stake>0?stake.toFixed(2)+' €':'0 €'}</div>
+      <div class="small">${stake>0?(stake/bank*100).toFixed(2)+'% del bankroll':'EV non positivo: non giocare'}</div></div>
+    <div class="sumbox"><div class="lbl">Ritorno potenziale</div><div class="v">${n?(bank&&stake>0?(stake*q).toFixed(2)+' €':'—'):'—'}</div>
+      <div class="small">sullo stake suggerito</div></div>`;
+  document.getElementById('simMsg').innerHTML = n===0
+    ? 'Seleziona un esito per partita. Le quote combinate assumono l\'indipendenza fra le partite.'
+    : (n===1 ? 'Una sola selezione: è la forma di puntata con il minor impatto del margine bancario.'
+             : `${n} selezioni: il margine del banco si moltiplica. Valuta se le prime ${n-1} selezioni sono davvero solide.`);
+}
+['kf','bank'].forEach(id=>document.addEventListener('input',e=>{
+  if(e.target.id===id){
+    if(id==='kf'){const v=+e.target.value; document.getElementById('kfLbl').textContent=
+      v===25?'¼':(v===50?'½':(v===100?'pieno':v/100));}
+    updateSim();
+  }
+}));
+renderSim();
+
+/* ---------------- SCHEDINE ---------------- */
+(function(){
+  document.getElementById('schedineBox').innerHTML = DATA.schedine.map(s=>{
+    const rows = s.dettaglio.map(d=>`<li><span>${d.partita} <span class="small" style="color:var(--dim)">${d.ora}</span></span>
+      <span><span class="pill eu">${d.sel}</span> <b>${q2(d.q)}</b> <span class="small ${evClass(d.ev)}">${evfmt(d.ev)}</span></span></li>`).join('');
+    return `<div class="scard">
+      <span class="tg2">${s.tag}</span>
+      <h3>${s.nome}</h3>
+      <ul>${rows}</ul>
+      <div class="foot">
+        <div><div class="lbl">Quota</div><div class="v">${q2(s.quota)}</div></div>
+        <div><div class="lbl">Probabilità</div><div class="v">${pct(s.prob)}</div></div>
+        <div><div class="lbl">Valore atteso</div><div class="v ${evClass(s.ev)}">${evfmt(s.ev)}</div></div>
+        <div><div class="lbl">Stake</div><div class="v" style="font-size:14px">${s.stake}</div></div>
+      </div>
+      <p class="note">${s.note||''}</p>
+      <p class="note"><b>Simulazione su 100 ipotetiche giocate:</b> vinte ${(s.prob*100).toFixed(0)},
+        perse ${(100-s.prob*100).toFixed(0)}. Ritorno teorico ${((s.prob*s.quota)*100).toFixed(0)} € su 100 € giocati.</p>
+    </div>`;
+  }).join('');
+})();
+
+/* ---------------- VALUE / AVOID ---------------- */
+(function(){
+  const row = (r,cls)=>`<tr><td>${r.partita}<br><span class="small" style="color:var(--dim)">${selLabel(r.sel)} · ${r.ora}</span></td>
+    <td style="text-align:right">${pct(r.p)}</td>
+    <td style="text-align:right">${q2(r.q)}</td>
+    <td style="text-align:right" class="${cls}">${evfmt(r.ev)}</td>
+    <td style="text-align:right">${r.kelly?(r.kelly*100).toFixed(2)+'%':'—'}</td></tr>`;
+  document.getElementById('valueTbl').innerHTML =
+    `<tr><td><b>Partita / esito</b></td><td style="text-align:right"><b>Prob.</b></td><td style="text-align:right"><b>Quota</b></td>
+     <td style="text-align:right"><b>EV</b></td><td style="text-align:right"><b>¼ Kelly</b></td></tr>` +
+    DATA.value_top.map(r=>row(r,evClass(r.ev))).join('');
+  document.getElementById('avoidTbl').innerHTML =
+    `<tr><td><b>Partita / esito</b></td><td style="text-align:right"><b>Prob.</b></td><td style="text-align:right"><b>Quota</b></td>
+     <td style="text-align:right"><b>EV</b></td><td style="text-align:right"><b>¼ Kelly</b></td></tr>` +
+    DATA.avoid.map(r=>row(r,'ev-neg')).join('');
+})();
+
+/* ---------------- GRAFICI ---------------- */
+(function(){
+  // scatter attacco vs difesa
+  const W=560,H=360,pad=48;
+  const teams = Object.entries(T).map(([n,t])=>({n,gf:t.gf/t.g,ga:t.ga/t.g,field:fieldTeams.includes(n)}));
+  const maxX = Math.max(...teams.map(t=>t.gf))*1.12, maxY = Math.max(...teams.map(t=>t.ga))*1.12;
+  const X = v => pad + (v/maxX)*(W-pad-24);
+  const Y = v => H-pad - (1 - v/maxY)*(H-pad-24);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scatter attacco difesa">
+    <rect x="0" y="0" width="${W}" height="${H}" fill="none"/>
+    <g stroke="rgba(255,255,255,.09)">`;
+  for(let i=0;i<=4;i++){
+    const xx=pad+i*(W-pad-24)/4, yy=pad+i*(H-pad-24)/4;
+    svg += `<line x1="${xx}" y1="${pad}" x2="${xx}" y2="${H-pad}"/><line x1="${pad}" y1="${yy}" x2="${W-24}" y2="${yy}"/>`;
+  }
+  svg += `</g><text x="${W/2}" y="${H-8}" fill="#93a4c4" font-size="11" text-anchor="middle">gol fatti a partita →</text>
+    <text x="14" y="${H/2}" fill="#93a4c4" font-size="11" transform="rotate(-90 14 ${H/2})" text-anchor="middle">← gol subiti a partita (più in alto = difesa migliore)</text>`;
+  teams.forEach(t=>{
+    svg += `<g><circle cx="${X(t.gf).toFixed(1)}" cy="${Y(t.ga).toFixed(1)}" r="${t.field?7:5}"
+      fill="${t.field?'#22e3a4':'#54688c'}" opacity="${t.field?.95:.6}">
+      <title>${t.n}: ${t.gf.toFixed(2)} gol fatti, ${t.ga.toFixed(2)} subiti a partita</title></circle>
+      <text x="${(X(t.gf)+10).toFixed(1)}" y="${(Y(t.ga)+4).toFixed(1)}" font-size="10.5"
+      fill="${t.field?'#e8eefc':'#93a4c4'}">${t.n}</text></g>`;
+  });
+  document.getElementById('scatter').innerHTML = svg+'</svg>';
+
+  // barre gol attesi
+  const rows = M.map(m=>({m, tot:m.lambda_home+m.lambda_away}));
+  const Wb = 560, rowh = 26, Hb = rows.length*rowh+30;
+  const maxT = Math.max(...rows.map(r=>r.tot))*1.1;
+  let svg2 = `<svg viewBox="0 0 ${Wb} ${Hb}">`;
+  rows.forEach((r,i)=>{
+    const y = i*rowh+12;
+    const wH = (r.m.lambda_home/maxT)*(Wb-190);
+    const wA = (r.m.lambda_away/maxT)*(Wb-190);
+    svg2 += `<text x="0" y="${y+11}" font-size="11" fill="#c6d2ea">${r.m.home}–${r.m.away}</text>
+      <rect x="150" y="${y}" width="${wH.toFixed(1)}" height="15" rx="4" fill="#22e3a4" opacity=".9">
+        <title>${r.m.home}: ${r.m.lambda_home} gol attesi</title></rect>
+      <rect x="${150+wH.toFixed(1)}" y="${y}" width="${wA.toFixed(1)}" height="15" rx="4" fill="#5b8cff" opacity=".9">
+        <title>${r.m.away}: ${r.m.lambda_away} gol attesi</title></rect>
+      <text x="${(150+wH+wA+8).toFixed(1)}" y="${y+11}" font-size="10.5" fill="#93a4c4">${r.tot.toFixed(2)}</text>`;
+  });
+  document.getElementById('xgBars').innerHTML = svg2+'</svg>';
+
+  // heatmaps
+  document.getElementById('heatmaps').innerHTML = M.map(m=>`
+    <div><div style="font-weight:700;font-size:13.5px;margin-bottom:6px">${m.home} – ${m.away}</div>
+    <div class="heat">${(()=>{
+      const max=m.model_cs[0].p; let h='';
+      for(let x=0;x<5;x++) for(let y=0;y<5;y++){
+        const c=m.heat.find(z=>z.s===`${x}-${y}`)||{p:0};
+        const a=Math.min(1,c.p/(max||1));
+        h+=`<div style="background:rgba(34,227,164,${(a*.95).toFixed(2)});color:${a>.5?'#04121a':'#cfe8ff'}"
+          title="${x}-${y}: ${pct(c.p,2)}">${c.p>=0.035?(c.p*100).toFixed(0):''}</div>`;
+      }
+      return h;})()}</div></div>`).join('');
+})();
+</script>
+</body>
+</html>
