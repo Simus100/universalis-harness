@@ -4,6 +4,19 @@ Il codice di questo harness è versionato in un repository GitHub **privato**
 (`universalis-harness`). Questo documento spiega cosa viene pubblicato, cosa resta fuori e come
 aggiornare il repository.
 
+## 0. Stato del collegamento
+
+| | |
+|---|---|
+| repository | https://github.com/Simus100/universalis-harness — **privato** |
+| proprietario | `Simus100` |
+| primo caricamento | 2026-09-21, branch `main` (246 file) |
+| remote locale | `origin` → `https://github.com/Simus100/universalis-harness.git` |
+| verifica rapida | `scripts/github-sync.sh --stato` |
+
+Nel repository **non** sono presenti `.env`, `.session-secret`, `sessions/`, `backups/`,
+`node_modules/`, upload, log né il pacchetto `backup_export/` (verificato via API: tutti `404`).
+
 ---
 
 ## 1. Configurazione di accesso (una volta sola)
