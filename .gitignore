@@ -19,6 +19,14 @@ media/schedule-logs/
 # ---- pacchetto di export locale (contiene copie e .env) ----
 backup_export/
 
+# ---- stato dell'istanza (cambia a ogni uso, non e' codice) ----
+media/ask-log.jsonl
+media/ask-prefs.json
+media/browser-prefs.json
+media/schedules.json
+media/goals.json
+media/.ask-*
+
 # ---- temporanei ----
 *.tmp
 .tail-fix.tmp
