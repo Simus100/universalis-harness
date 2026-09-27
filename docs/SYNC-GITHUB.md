@@ -90,6 +90,39 @@ scripts/github-sync.sh --stato                  # situazione locale e remota, se
 scripts/github-sync.sh --dry-run                # mostra cosa verrebbe pubblicato
 ```
 
+### In coda a una sessione di lavoro (modo consigliato)
+
+Il timer di sincronizzazione **non è attivo**: la pubblicazione è manuale. Perché non dipenda
+dal fatto che qualcuno si ricordi, una sessione di lavoro che ha modificato codice o
+documentazione **si chiude con**:
+
+```bash
+bash scripts/sync-fine-lavoro.sh "messaggio breve del lavoro"
+bash scripts/sync-fine-lavoro.sh --anteprima "messaggio"     # solo controllo + anteprima
+```
+
+Cosa fa, nell'ordine:
+
+1. **controllo di sicurezza**: se nell'elenco di ciò che verrebbe pubblicato compare qualcosa di
+   riservato (`.env`, segreti, `sessions/`, `backups/`, upload, `CU2026…`, `out_gemini-*.json`)
+   **aborta con codice 2 senza committare** — un controllo che fallisce deve fermare tutto, non
+   pubblicare a metà (una volta in un commit, un file resta nella storia);
+2. anteprima (numero di file e dimensione);
+3. registra e pubblica, delegando il push a `scripts/github-sync.sh`;
+4. **verifica** che locale e remoto coincidano, leggendo l'ultimo commit da GitHub.
+
+Se un file finisce nell'elenco pur essendo legittimo, la strada è una riga in `.gitignore` **col
+motivo** (esempio: i documenti con dati personali di terzi). `--forza` salta il controllo ed è
+esplicitamente sconsigliato.
+
+La stessa indicazione è nella **nota di sistema dell'agente** (`SYSTEM_MEDIA_NOTE` in
+`dashboard.mjs`): la sessione la legge, quindi il sync a fine lavoro non dipende dalla memoria di
+chi scrive. Le istanze `tester_01`/`tester_07` hanno copie **non versionate**: lì il sync non si
+applica (il loro codice si allinea con il metodo descritto in `docs/ISTANZE.md`).
+
+Non serve per lavori che non hanno toccato file versionati (domande, analisi, sola lettura): in
+quel caso lo script stesso risponde «niente da pubblicare».
+
 Il push usa l'header di autorizzazione in modo temporaneo (`http.extraHeader`): il remote resta
 l'URL pulito, senza dati di accesso dentro il repository.
 

@@ -12,6 +12,7 @@ token, cache, costo, git, directory, durata) **e un file manager**.
 | `docs/SYNC-GITHUB.md` | cosa finisce nel repository privato, cosa resta fuori, come pubblicare gli aggiornamenti |
 | `scripts/backup-export.sh` | genera il pacchetto di esportazione completo in `backup_export/` (istanze, configurazioni, guide, checksum) |
 | `scripts/github-sync.sh` | crea/aggiorna il repository GitHub (`--stato`, `--crea-repo`, `--dry-run`, `--messaggio`) |
+| `scripts/sync-fine-lavoro.sh` | **sync in coda alla sessione**: controllo dei file riservati (aborta prima del commit), anteprima, pubblicazione con verifica locale↔remoto |
 
 ## 1. Harness da terminale (`harness.mjs`)
 

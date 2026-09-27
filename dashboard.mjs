@@ -890,6 +890,17 @@ const SYSTEM_MEDIA_NOTE =
   `## Cartella dei file generati\n` +
   `Salva SEMPRE i file che generi o produci per l'utente in ${MEDIA_DIR}. ` +
   `Non crearli altrove. Puoi invece modificare file esistenti dove si trovano.\n\n` +
+  `## Fine di una sessione di lavoro: pubblica il codice\n` +
+  `Il repository GitHub di questo harness e' privato e NON si aggiorna da solo (il timer di ` +
+  `sincronizzazione e' spento): la pubblicazione e' manuale e va fatta a FINE lavoro, non a meta'. ` +
+  `Quando la sessione modifica file versionati (dashboard.mjs, dashboard.html, media/*.mjs, i test, ` +
+  `docs/, skills/, README.md), CHIUDILA con:\n` +
+  `    bash scripts/sync-fine-lavoro.sh \"messaggio breve del lavoro\"\n` +
+  `Lo script conta i file interessati, ABORTA senza pubblicare se nell'elenco compare qualcosa di ` +
+  `riservato (.env, segreti, sessions/, backups/, documenti con dati personali di terzi), poi pubblica ` +
+  `e verifica che locale e remoto coincidano. Non aggirarlo con --forza: se un file e' legittimo metti ` +
+  `una riga in .gitignore col motivo. Non serve se la sessione non ha modificato nulla di versionato ` +
+  `(domande, analisi, sola lettura).\n\n` +
   `## Goal della dashboard\n` +
   `La scheda "Goal" della dashboard salva i goal in ${GOALS_FILE}. ` +
   `Struttura: { id, title, description, status, steps:[{id,title,done}], checklist:[{id,text,done}], createdAt, updatedAt }. ` +
