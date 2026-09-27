@@ -11,11 +11,17 @@ aggiornare il repository.
 | repository | https://github.com/Simus100/universalis-harness — **privato** |
 | proprietario | `Simus100` |
 | primo caricamento | 2026-09-21, branch `main` (246 file) |
+| ultimo aggiornamento | **2026-09-27** (`sync 2026-09-27: …`): 30 file, +1 MB — tenuta del servizio, confini della root nello zip, perdite di dati, anteprima SVG, download delle cartelle, `codeHash` in `/api/health`, test di non-regressione, propagazione alle istanze |
 | remote locale | `origin` → `https://github.com/Simus100/universalis-harness.git` |
-| verifica rapida | `scripts/github-sync.sh --stato` |
+| verifica rapida | `scripts/github-sync.sh --stato` · `curl -sH "Authorization: Bearer $TOKEN" https://api.github.com/repos/Simus100/universalis-harness/commits/main` |
 
 Nel repository **non** sono presenti `.env`, `.session-secret`, `sessions/`, `backups/`,
 `node_modules/`, upload, log né il pacchetto `backup_export/` (verificato via API: tutti `404`).
+Dal 2026-09-27 sono esclusi anche, per scelta esplicita, i **documenti con dati personali di
+terzi** (`media/CU2026_MACELLONI_SIMONE_estratto.txt`: una Certificazione Unica con codice
+fiscale) e gli esiti di errore delle API di generazione immagini (`media/out_gemini-*.json`).
+Quei file restano solo sul server: una volta in un commit resterebbero nella storia del
+repository anche dopo una rimozione.
 
 ---
 
