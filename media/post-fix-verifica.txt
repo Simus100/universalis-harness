@@ -1,8 +1,8 @@
-=== verifica post-riavvio · 2026-09-27T18:09:14+02:00 ===
+=== verifica post-riavvio · 2026-09-27T18:53:38+02:00 ===
 riavvio del servizio…
 
 == 1. il codice in esecuzione è quello su disco ==
-  ✔ codeHash di /api/health = hash di dashboard.mjs (184b202e2c5caf13)
+  ✔ codeHash di /api/health = hash di dashboard.mjs (2a3adb68a5d3641c)
 
 == 2. lo stato si legge e il servizio è vivo ==
   ✔ GET /api/state → 200 (200)
@@ -10,7 +10,7 @@ riavvio del servizio…
   ✔ lo stato elenca i modelli usabili (4)
 
 == 3. SSE: una connessione non spegne il processo ==
-  ✔ il pid del servizio è lo stesso dopo una connessione SSE (37326)
+  ✔ il pid del servizio è lo stesso dopo una connessione SSE (38211)
   ✔ /api/health risponde ancora (200)
 
 == 4. zip di una cartella: nessun file fuori dalla root ==
@@ -56,5 +56,6 @@ Error: nessuna voce corrisponde a «servizio riavviato e smoke test in produzion
 Node.js v24.21.0
   (voce non trovata: servizio riavviato e smoke test in produzione)
 segnato: Sync GitHub in coda alla sessione di lavoro → 5/5 passi, 5/5 controlli
+segnato: Repository GitHub reso pubblico → 3/3 passi, 3/3 controlli
   ✔ goal allineati
-=== fine · 2026-09-27T18:09:29+02:00 ===
+=== fine · 2026-09-27T18:53:52+02:00 ===

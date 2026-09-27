@@ -112,7 +112,7 @@ say "risultato: $PASSED ok, $FAILED falliti"
 if [ "$FAILED" = "0" ]; then
   say ""
   say "== chiusura dei goal del lavoro =="
-  for voce in "backup eseguito e verificato" "tutti i test automatici esistenti verdi" "servizio riavviato e smoke test in produzione" "la regola è visibile all'agente nella sessione successiva"; do
+  for voce in "backup eseguito e verificato" "tutti i test automatici esistenti verdi" "servizio riavviato e smoke test in produzione" "la regola è visibile all'agente nella sessione successiva" "la nota dell'agente è aggiornata nella sessione successiva"; do
     if node media/fix-progress.mjs checkall "$voce" >> "$OUT" 2>&1; then :; else say "  (voce non trovata: $voce)"; fi
   done
   say "  ✔ goal allineati"
