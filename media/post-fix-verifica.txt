@@ -1,7 +1,8 @@
-=== verifica post-riavvio · 2026-09-27T16:54:27+02:00 ===
+=== verifica post-riavvio · 2026-09-27T18:09:14+02:00 ===
+riavvio del servizio…
 
 == 1. il codice in esecuzione è quello su disco ==
-  ✔ codeHash di /api/health = hash di dashboard.mjs (561165ab7df34ace)
+  ✔ codeHash di /api/health = hash di dashboard.mjs (184b202e2c5caf13)
 
 == 2. lo stato si legge e il servizio è vivo ==
   ✔ GET /api/state → 200 (200)
@@ -9,13 +10,13 @@
   ✔ lo stato elenca i modelli usabili (4)
 
 == 3. SSE: una connessione non spegne il processo ==
-  ✔ il pid del servizio è lo stesso dopo una connessione SSE (33864)
+  ✔ il pid del servizio è lo stesso dopo una connessione SSE (37326)
   ✔ /api/health risponde ancora (200)
 
 == 4. zip di una cartella: nessun file fuori dalla root ==
   ✔ il download della cartella riesce (200)
   ✔ nessun file preso dai link simbolici fuori root
-  ✔ il tetto dei file non viene sfondato (869 voci)
+  ✔ il tetto dei file non viene sfondato (871 voci)
 
 == 5. le rotte delle correzioni si comportano come atteso ==
   ✔ Content-Disposition sanificato per un nome con virgolette
@@ -24,8 +25,36 @@
 risultato: 11 ok, 0 falliti
 
 == chiusura dei goal del lavoro ==
-segnato: Fix critici — stabilità del servizio e confine della root → 5/5 passi, 5/5 controlli | Fix dati — aggiornamenti che non devono cancellare contenuto → 2/2 passi, 4/5 controlli | Fix interfaccia e diagnostica → 7/7 passi, 4/5 controlli
-segnato: Fix critici — stabilità del servizio e confine della root → 5/5 passi, 5/5 controlli | Fix dati — aggiornamenti che non devono cancellare contenuto → 2/2 passi, 4/5 controlli | Fix interfaccia e diagnostica → 7/7 passi, 4/5 controlli
-segnato: Fix critici — stabilità del servizio e confine della root → 5/5 passi, 5/5 controlli | Fix dati — aggiornamenti che non devono cancellare contenuto → 2/2 passi, 5/5 controlli | Fix interfaccia e diagnostica → 7/7 passi, 5/5 controlli
+file:///root/pi-harness/media/fix-progress.mjs:79
+  if (!targets.length) throw new Error(`nessuna voce corrisponde a «${needle}»`);
+                             ^
+
+Error: nessuna voce corrisponde a «backup eseguito e verificato»
+    at file:///root/pi-harness/media/fix-progress.mjs:79:30
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v24.21.0
+  (voce non trovata: backup eseguito e verificato)
+file:///root/pi-harness/media/fix-progress.mjs:79
+  if (!targets.length) throw new Error(`nessuna voce corrisponde a «${needle}»`);
+                             ^
+
+Error: nessuna voce corrisponde a «tutti i test automatici esistenti verdi»
+    at file:///root/pi-harness/media/fix-progress.mjs:79:30
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v24.21.0
+  (voce non trovata: tutti i test automatici esistenti verdi)
+file:///root/pi-harness/media/fix-progress.mjs:79
+  if (!targets.length) throw new Error(`nessuna voce corrisponde a «${needle}»`);
+                             ^
+
+Error: nessuna voce corrisponde a «servizio riavviato e smoke test in produzione»
+    at file:///root/pi-harness/media/fix-progress.mjs:79:30
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v24.21.0
+  (voce non trovata: servizio riavviato e smoke test in produzione)
+segnato: Sync GitHub in coda alla sessione di lavoro → 5/5 passi, 5/5 controlli
   ✔ goal allineati
-=== fine · 2026-09-27T16:54:38+02:00 ===
+=== fine · 2026-09-27T18:09:29+02:00 ===

@@ -62,18 +62,29 @@ if (cmd === "list" || !cmd) {
   }
 } else if (cmd === "done" || cmd === "undone" || cmd === "check" || cmd === "checkall") {
   if (!needle) throw new Error("serve il testo (anche parziale) della voce");
-  const field = cmd === "check" || cmd === "checkall" ? "checklist" : "steps";
-  const matches = (g) => (g[field] || []).filter((x) => String(x.title ?? x.text).toLowerCase().includes(needle));
-  const targets = goals.filter((g) => matches(g).length);
+  // `check`/`checkall` agiscono sui controlli; `done`/`undone` cercano sia nei passi sia nei
+  // controlli (altrimenti riaprire una voce di checklist non la troverebbe: difetto corretto il
+  // 2026-09-27, quando `undone` guardava solo i passi).
+  const campi = cmd === "check" || cmd === "checkall" ? ["checklist"] : ["steps", "checklist"];
+  const trova = (g) => {
+    const out = [];
+    for (const campo of campi) {
+      for (const x of g[campo] || []) {
+        if (String(x.title ?? x.text).toLowerCase().includes(needle)) out.push(x);
+      }
+    }
+    return out;
+  };
+  const targets = goals.filter((g) => trova(g).length);
   if (!targets.length) throw new Error(`nessuna voce corrisponde a «${needle}»`);
-  // `checkall` serve alle voci TRASVERSALI (backup, test verdi, riavvio verificato), presenti
-  // in più goal di proposito; le altre forme pretendono una corrispondenza sola.
+  // `checkall` serve alle voci TRASVERSALI (backup, test verdi, riavvio verificato), presenti in
+  // più goal di proposito; le altre forme pretendono una corrispondenza sola.
   if (cmd !== "checkall" && targets.length !== 1) {
     throw new Error(`${targets.length} goal contengono «${needle}»: usa checkall per segnarli tutti`);
   }
   const touched = [];
   for (const goal of targets) {
-    for (const item of cmd === "checkall" ? matches(goal) : goal[field]) item.done = cmd !== "undone";
+    for (const item of trova(goal)) item.done = cmd !== "undone";
     const updated = await api("/api/goals", { method: "POST", body: JSON.stringify(goal) });
     const g2 = updated.goal;
     touched.push(`${g2.title} → ${g2.steps.filter((s) => s.done).length}/${g2.steps.length} passi, ${g2.checklist.filter((c) => c.done).length}/${g2.checklist.length} controlli`);
