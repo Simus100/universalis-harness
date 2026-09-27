@@ -22,7 +22,7 @@ const ROOT = "/root/pi-harness";
 const read = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const mjs = read("dashboard.mjs");
 const html = read("dashboard.html");
-const readme = read("README.md");
+const readme = read("docs/MANUALE.md");   // la guida operativa (il README è la vetrina del prodotto)
 const commands = read("media/commands.mjs");
 
 const problems = [];
@@ -160,7 +160,16 @@ section("6. FILE — citati nel README e realmente presenti");
 
 // `jsonl` prima di `json`: altrimenti «media/ask-log.jsonl» veniva letto come «...ask-log.json»
 // (una cattura troncata) e il file risultava mancante.
-const cited = uniq([...readme.matchAll(/`?(media\/[\w./-]+\.(?:jsonl|json|mjs|sh|md))`?/g)].map((m) => m[1]));
+// I percorsi citati come ESEMPIO (righe con «es.», «esempio», «indicativo») non sono file da
+// verificare: illustrano il formato di un percorso, non riferiscono un file che deve esistere
+// (falso positivo: l'esempio `media/report.md` nella sezione delle card di download).
+const testoVerificabile = readme
+  .split("\n")
+  .filter((riga) => !/\bes\.|esempio|indicativo/i.test(riga))
+  .join("\n");
+const cited = uniq(
+  [...testoVerificabile.matchAll(/`?(media\/[\w./-]+\.(?:jsonl|json|mjs|sh|md))`?/g)].map((m) => m[1]),
+);
 const missingFiles = cited.filter((f) => !fs.existsSync(path.join(ROOT, f)));
 missingFiles.length ? bad(`citati nel README ma inesistenti: ${missingFiles.join(", ")}`) : ok(`tutti i ${cited.length} file citati esistono`);
 

@@ -1,9 +1,22 @@
 {
-  "name": "pi-harness",
+  "name": "universalis-harness",
   "private": true,
   "type": "module",
   "scripts": {
     "harness": "node harness.mjs",
     "dashboard": "node dashboard.mjs"
-  }
+  },
+  "version": "1.0.0",
+  "description": "Agente AI con dashboard web: chat con tracciamento dei costi, file manager, obiettivi, pianificazioni, skill e browser pilotato.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": {
+    "name": "Universalis Produzioni"
+  },
+  "keywords": [
+    "agent",
+    "ai",
+    "dashboard",
+    "self-hosted",
+    "automation"
+  ]
 }

@@ -10,7 +10,9 @@ import { readFileSync } from "node:fs";
 const html = readFileSync("/root/pi-harness/dashboard.html", "utf8");
 const mjs = readFileSync("/root/pi-harness/dashboard.mjs", "utf8");
 const commands = readFileSync("/root/pi-harness/media/commands.mjs", "utf8");
-const readme = readFileSync("/root/pi-harness/README.md", "utf8");
+// La guida operativa sta in docs/MANUALE.md (dal 2026-09-27 il README è la vetrina del prodotto):
+// i controlli che verificano l'elenco di comandi, interruttori e API la leggono lì.
+const readme = readFileSync("/root/pi-harness/docs/MANUALE.md", "utf8");
 const browserTool = readFileSync("/root/pi-harness/media/browser-tool.mjs", "utf8");
 let browserSkill = "";
 try {
@@ -541,8 +543,8 @@ check(
   /name: "ask"/.test(commands) && /ask: async \(\{ arg \}\)/.test(mjs),
 );
 check(
-  "il README documenta l'interruttore e il comando /ask",
-  // il README scrive la tabella con le pipe protette (`/ask <on\|off\|status>`): si normalizza
+  "il manuale documenta l'interruttore e il comando /ask",
+  // il manuale scrive la tabella con le pipe protette (`/ask <on\|off\|status>`): si normalizza
   /DASH_ASK=off/.test(readme) && /\/ask (?:<)?on\|off(?:\|status)?/.test(readme.replace(/\\\|/g, "|")),
 );
 
