@@ -9,7 +9,7 @@ token, cache, costo, git, directory, durata) **e un file manager**.
 |---|---|
 | `docs/ISTANZE.md` | le tre istanze in funzione (principale, `tester_01`, sottocliente limitato `tester_07`): porte, utenti, unit, host, limiti |
 | `docs/RICOSTRUZIONE.md` | come reinstallare o ripristinare da zero l'harness: prerequisiti, unit systemd, Caddy, disco dedicato e quota, sandbox, variabili d'ambiente, smoke test |
-| `docs/SYNC-GITHUB.md` | cosa finisce nel repository privato, cosa resta fuori, come pubblicare gli aggiornamenti |
+| `docs/SYNC-GITHUB.md` | cosa finisce nel repository pubblico, cosa resta fuori, come pubblicare gli aggiornamenti |
 | `scripts/backup-export.sh` | genera il pacchetto di esportazione completo in `backup_export/` (istanze, configurazioni, guide, checksum) |
 | `scripts/github-sync.sh` | crea/aggiorna il repository GitHub (`--stato`, `--crea-repo`, `--dry-run`, `--messaggio`) |
 | `scripts/sync-fine-lavoro.sh` | **sync in coda alla sessione**: controllo dei file riservati (aborta prima del commit), anteprima, pubblicazione con verifica locale↔remoto |

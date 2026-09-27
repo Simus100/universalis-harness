@@ -1,6 +1,6 @@
 # Sincronizzazione con GitHub
 
-Il codice di questo harness è versionato in un repository GitHub **privato**
+Il codice di questo harness è versionato in un repository GitHub **pubblico**
 (`universalis-harness`). Questo documento spiega cosa viene pubblicato, cosa resta fuori e come
 aggiornare il repository.
 
@@ -8,15 +8,17 @@ aggiornare il repository.
 
 | | |
 |---|---|
-| repository | https://github.com/Simus100/universalis-harness — **privato** |
+| repository | https://github.com/Simus100/universalis-harness — **pubblico dal 2026-09-27** |
+| cosa implica | tutto ciò che è committato (e tutto ciò che è già nella **storia**, anche se poi rimosso) è leggibile da chiunque: mai dati personali o di terzi, mai segreti; il controllo di `scripts/sync-fine-lavoro.sh` esiste per questo |
 | proprietario | `Simus100` |
 | primo caricamento | 2026-09-21, branch `main` (246 file) |
-| ultimo aggiornamento | **2026-09-27** (`sync 2026-09-27: …`): 30 file, +1 MB — tenuta del servizio, confini della root nello zip, perdite di dati, anteprima SVG, download delle cartelle, `codeHash` in `/api/health`, test di non-regressione, propagazione alle istanze |
+| ultimo aggiornamento | **2026-09-27**, poi reso **pubblico** lo stesso giorno su richiesta del proprietario |
 | remote locale | `origin` → `https://github.com/Simus100/universalis-harness.git` |
 | verifica rapida | `scripts/github-sync.sh --stato` · `curl -sH "Authorization: Bearer $TOKEN" https://api.github.com/repos/Simus100/universalis-harness/commits/main` |
 
 Nel repository **non** sono presenti `.env`, `.session-secret`, `sessions/`, `backups/`,
 `node_modules/`, upload, log né il pacchetto `backup_export/` (verificato via API: tutti `404`).
+Anche con il repository pubblico questi file restano esclusi: sono in `.gitignore`.
 Dal 2026-09-27 sono esclusi anche, per scelta esplicita, i **documenti con dati personali di
 terzi** (`media/CU2026_MACELLONI_SIMONE_estratto.txt`: una Certificazione Unica con codice
 fiscale) e gli esiti di errore delle API di generazione immagini (`media/out_gemini-*.json`).
@@ -46,7 +48,7 @@ viene salvato in `.git/config`.
 
 | tipo di accesso | permessi | quando conviene |
 |---|---|---|
-| **classico** (https://github.com/settings/tokens/new) | scope **`repo`** | percorso più semplice: crea il repository privato **e** pubblica. Consigliato. |
+| **classico** (https://github.com/settings/tokens/new) | scope **`repo`** | percorso più semplice: crea il repository **e** pubblica; consente anche di cambiare la visibilità (`PATCH /repos` con `{"private": false}`) |
 | **fine-grained** (https://github.com/settings/personal-access-tokens/new) | *Repository access*: **All repositories**; permessi **Administration: Read and write** (serve a `POST /user/repos`), **Contents: Read and write** (push), **Metadata: Read** (obbligatorio) | più restrittivo, ma con *Only select repositories* **non** può creare il repository |
 | **fine-grained senza creazione repo** | *Contents: Read and write* + *Metadata: Read* sul repository già esistente | se crei il repository a mano: lo script fa solo il push |
 

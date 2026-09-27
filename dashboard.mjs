@@ -891,8 +891,10 @@ const SYSTEM_MEDIA_NOTE =
   `Salva SEMPRE i file che generi o produci per l'utente in ${MEDIA_DIR}. ` +
   `Non crearli altrove. Puoi invece modificare file esistenti dove si trovano.\n\n` +
   `## Fine di una sessione di lavoro: pubblica il codice\n` +
-  `Il repository GitHub di questo harness e' privato e NON si aggiorna da solo (il timer di ` +
-  `sincronizzazione e' spento): la pubblicazione e' manuale e va fatta a FINE lavoro, non a meta'. ` +
+  `Il repository GitHub di questo harness e' PUBBLICO (dal 2026-09-27) e NON si aggiorna da solo ` +
+  `(il timer di sincronizzazione e' spento): la pubblicazione e' manuale e va fatta a FINE lavoro, ` +
+  `non a meta'. Tutto cio' che viene pubblicato — compreso cio' che e' gia' nella storia — e' ` +
+  `leggibile da chiunque: mai dati personali o di terzi, mai segreti. ` +
   `Quando la sessione modifica file versionati (dashboard.mjs, dashboard.html, media/*.mjs, i test, ` +
   `docs/, skills/, README.md), CHIUDILA con:\n` +
   `    bash scripts/sync-fine-lavoro.sh \"messaggio breve del lavoro\"\n` +
