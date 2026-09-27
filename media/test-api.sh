@@ -83,6 +83,12 @@ tests() {
   # hardcoded che andava fuori sincrono a ogni bump della versione.
   VCODE=$(grep -oP 'const VERSION = "\K[^"]+' /root/pi-harness/dashboard.mjs)
   check "la versione servita coincide con quella nel codice" "$VCODE" "$(curl -s -u pi:testpass $B/api/health | python3 -c "import json,sys;print(json.load(sys.stdin)['version'])")"
+  # ...ma la sola versione è una COSTANTE: un processo fermo a una revisione vecchia la
+  # riporta identica (verificato avviando il codice di HEAD su un'altra porta). Il controllo
+  # che dice davvero se il servizio in esecuzione ha il codice nuovo è l'impronta del file.
+  VHASH=$(sha256sum /root/pi-harness/dashboard.mjs | cut -c1-16)
+  check "l'impronta del codice servita coincide con il file su disco" "$VHASH" \
+    "$(curl -s -u pi:testpass $B/api/health | python3 -c "import json,sys;print(json.load(sys.stdin).get('codeHash'))")"
   # Non il numero di funzioni (fragile, cresce nel tempo) ma la presenza di quelle chiave.
   FEATS=$(curl -s -u pi:testpass $B/api/health | python3 -c "import json,sys;print(','.join(json.load(sys.stdin)['features']))")
   for f in auth-bruteforce-limit abort goals-planning scheduler-cron slash-commands skills pwa-assets; do

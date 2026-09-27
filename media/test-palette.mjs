@@ -46,6 +46,9 @@ const sandbox = {
   document: { createElement: (t) => fakeEl(t), querySelector: () => null },
   autosize() {},
   renderMessages() { calls.renderMessages++; },
+  // `cmdNotice` ridisegna la conversazione con la lista dei messaggi correnti: nello stub la
+  // lista è vuota (senza questa variabile il test si fermava con ReferenceError, non il prodotto)
+  currentMessages: [],
   showTab: (n) => calls.showTab.push(n),
   openDrawer: () => calls.openDrawer++,
   openInEditor: (p) => calls.openInEditor.push(p),

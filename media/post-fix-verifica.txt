@@ -1,0 +1,31 @@
+=== verifica post-riavvio · 2026-09-27T16:54:27+02:00 ===
+
+== 1. il codice in esecuzione è quello su disco ==
+  ✔ codeHash di /api/health = hash di dashboard.mjs (561165ab7df34ace)
+
+== 2. lo stato si legge e il servizio è vivo ==
+  ✔ GET /api/state → 200 (200)
+  ✔ GET / → 200 (200)
+  ✔ lo stato elenca i modelli usabili (4)
+
+== 3. SSE: una connessione non spegne il processo ==
+  ✔ il pid del servizio è lo stesso dopo una connessione SSE (33864)
+  ✔ /api/health risponde ancora (200)
+
+== 4. zip di una cartella: nessun file fuori dalla root ==
+  ✔ il download della cartella riesce (200)
+  ✔ nessun file preso dai link simbolici fuori root
+  ✔ il tetto dei file non viene sfondato (869 voci)
+
+== 5. le rotte delle correzioni si comportano come atteso ==
+  ✔ Content-Disposition sanificato per un nome con virgolette
+  ✔ rinomina su destinazione esistente → 409 (409)
+
+risultato: 11 ok, 0 falliti
+
+== chiusura dei goal del lavoro ==
+segnato: Fix critici — stabilità del servizio e confine della root → 5/5 passi, 5/5 controlli | Fix dati — aggiornamenti che non devono cancellare contenuto → 2/2 passi, 4/5 controlli | Fix interfaccia e diagnostica → 7/7 passi, 4/5 controlli
+segnato: Fix critici — stabilità del servizio e confine della root → 5/5 passi, 5/5 controlli | Fix dati — aggiornamenti che non devono cancellare contenuto → 2/2 passi, 4/5 controlli | Fix interfaccia e diagnostica → 7/7 passi, 4/5 controlli
+segnato: Fix critici — stabilità del servizio e confine della root → 5/5 passi, 5/5 controlli | Fix dati — aggiornamenti che non devono cancellare contenuto → 2/2 passi, 5/5 controlli | Fix interfaccia e diagnostica → 7/7 passi, 5/5 controlli
+  ✔ goal allineati
+=== fine · 2026-09-27T16:54:38+02:00 ===

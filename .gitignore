@@ -33,3 +33,8 @@ media/.ask-*
 nuovo_file.txt
 tre.txt
 piccolo.bin
+
+# documenti con dati personali/di terzi: restano solo sul server (vedi docs/SYNC-GITHUB.md)
+media/CU2026_MACELLONI_SIMONE_estratto.txt
+# esiti di errore delle API di generazione immagini (spazzatura di test)
+media/out_gemini-*.json

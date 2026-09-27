@@ -64,9 +64,14 @@ Config Caddy: `/etc/caddy/Caddyfile` (certificati rinnovati automaticamente).
   supporta input immagini, es. `deepseek-flash`); gli altri file vengono salvati in
   `.pi-chat-uploads/` e il loro percorso è passato al modello, che può leggerli/modificarli.
 - i **file prodotti o letti dal modello** (tool `read`/`write`/`edit`) compaiono in chat come
-  **card** con due azioni: **apri** (nell'editor) e **⬇ scarica** (download diretto).
-  Le card sono generate anche per i percorsi di file citati nel testo della risposta
-  (sotto la root della dashboard).
+  **card** con due azioni: **apri** (nell'editor) e **⬇ scarica** (download diretto). La card
+  compare **subito**, appena il tool finisce (prima serviva ricaricare la pagina).
+  Le card sono generate anche per i percorsi citati nel testo della risposta, in qualsiasi
+  forma siano scritti: `/root/pi-harness/media/report.md`, `media/report.md` o `report.md`.
+  La risoluzione al file reale la fa il server (`/api/resolve-files`) e la card si disegna
+  **solo** per ciò che esiste davvero: niente più tasti «⬇ scarica» che puntavano a una
+  cartella o a un file inesistente. Una cartella citata (es. `media/tema/`) si scarica come
+  `.zip`, dal server.
 - **catena di pensiero, testo e tool intercalati**: durante un turno agentico il modello alterna
   pensiero, testo e chiamate ai tool (`bash`, `read`, …). Ogni blocco è reso **dentro il messaggio
   in corso**, nell'ordine reale, e ogni card di tool mostra il **riassunto leggibile** della
@@ -96,6 +101,17 @@ il prompt. In entrambi i casi si torna al punto scelto nell'albero della session
 (`navigateTree`): il ramo abbandonato resta nel file JSONL, ma non viene più inviato al modello
 (quindi non consuma contesto).
 - **⧉ copia** su ogni messaggio (negli appunti).
+- **nessuna eccezione può spegnere il servizio**: lo stato iniziale della chat si calcola
+  **prima** di aprire lo stream SSE, e una risposta di errore non prova mai a riscrivere header
+  già inviati (era il guasto che faceva terminare il processo Node: `ERR_HTTP_HEADERS_SENT`
+  dentro il `catch`, con `Restart=always` in ciclo). Le statistiche di sessione, se una sessione
+  non standard non le rende calcolabili, si mostrano a zero invece di far fallire lo stato.
+- **anteprima SVG robusta alle fence**: le aperture indentate fino a 3 spazi (fence dentro un
+  elenco) e le chiusure con fine riga CRLF vengono riconosciute; prima la chiusura non veniva
+  vista e il testo successivo finiva dentro la card del disegno.
+- **rappresentazioni visive**: un blocco Markdown con linguaggio `svg` non viene mostrato come
+  codice ma reso come **anteprima grafica nel punto esatto del messaggio** (vista ingrandita,
+  «mostra codice», copia, download). Vedi *Rappresentazioni visive* qui sotto.
 
 ### Domande interattive all'utente (tool `ask_user`)
 
@@ -224,6 +240,72 @@ cartella con un file `SKILL.md` che ha frontmatter YAML con **`name`** e **`desc
 Comandi: **`/skills`** apre la vista; **`/tab skills`** idem. I nomi skill devono essere
 minuscoli, numeri e trattini (max 64 caratteri); la descrizione max 1024 caratteri.
 
+### Rappresentazioni visive (SVG scritto come testo)
+
+Il modello scrive i disegni **come testo** (non serve alcun servizio di generazione immagini):
+diagrammi di flusso, timeline, mappe concettuali, schemi illustrati, piantine e piccole
+illustrazioni geometriche. La dashboard riconosce il blocco e mostra il **disegno** dove il
+modello l'ha messo, al posto del codice.
+
+- **skill `visual-representation`** (`skills/visual-representation/SKILL.md`): è il contratto che
+  il modello legge — quando disegnare e quando no, quali forme usare, igiene del codice, paletta,
+  onestà del disegno (niente dati/proporzioni inventati; se lo schema non è in scala si dichiara)
+  e tre esempi pronti (flusso, timeline, illustrazione geometrica). Gli esempi della skill sono
+  **verificati dai test**: devono passare il sanitizzatore, altrimenti la skill insegnerebbe a
+  produrre disegni che la chat non può mostrare.
+- **contratto del blocco**:
+
+  ```svg
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">
+    <title>…</title><desc>…</desc>
+    <!-- forme, gruppi, testo, gradienti -->
+  </svg>
+  ```
+
+  documento completo (radice `<svg>`, namespace, `viewBox`), autonomo: niente script, risorse
+  esterne, immagini incorporate o dipendenze.
+- **cosa fa l'anteprima**: si adatta alla larghezza della chat mantenendo le proporzioni, ha
+  un'altezza contenuta (`min(58vh, 520px)`), si apre a schermo intero (⤢ ingrandisci, chiusura
+  con Esc o clic sullo sfondo) e offre **‹› mostra codice**, **⧉ copia SVG** e **⬇ scarica SVG**
+  (il nome del file viene dal `<title>`). Più disegni nello stesso messaggio sono indipendenti.
+- **streaming**: il disegno compare solo quando il blocco è **completo** (fence di chiusura
+  arrivata); fino a quel momento resta testo. Un blocco mai chiuso, un SVG invalido o un documento
+  rifiutato non interrompono la chat: si mostra il codice come testo con il motivo dell'errore.
+  La comparsa dell'anteprima **non dipende da come il modello spezza i delta**: anche arrivando un
+  carattere per carattere (fence e linguaggio spezzati in mezzo, es. «``» + «`svg») l'anteprima
+  compare appena il blocco si chiude, senza ricaricare la pagina (difetto corretto: il cursore di
+  scansione saltava oltre i backtick già letti, quindi il blocco restava codice fino al refresh).
+- **sicurezza**: l'SVG del modello è **contenuto non attendibile**. Il documento passa da
+  `media/svg-sanitize.mjs` (tokenizzatore XML rigoroso, whitelist di elementi/attributi, limiti di
+  byte/elementi/profondità/attributi/testo; niente `script`, attributi evento, `foreignObject`,
+  `style`/`<style>`, `<image>`, `<use>`, `<marker>`, filtri, animazioni, `href`, DTD/entità,
+  riferimenti di rete — i `url(#id)` sono ammessi solo verso gradienti/`clipPath` locali). Il
+  risultato, dopo un controllo di benformatezza con `DOMParser`, diventa un **Blob URL mostrato in
+  un elemento `<img>`**: mai `innerHTML`, mai SVG nel DOM. Un SVG caricato come immagine non
+  esegue script e non scarica risorse esterne: è la seconda barriera, non l'unica. I Blob URL
+  vengono **revocati** quando il messaggio viene ridisegnato (e i vecchi non sono più raggiungibili).
+  Il modulo è servito al browser dalla rotta `/svg-sanitize.mjs` (un solo file, `nosniff`,
+  `no-store`): anteprima e server usano lo **stesso** codice, senza duplicazioni.
+- **non-regressione**: gli altri blocchi di codice restano identici (anche la sequenza ```` ```svg ````
+  citata dentro un blocco `js` non viene scambiata per un disegno) e i messaggi senza disegni si
+  comportano esattamente come prima.
+
+Test: `node media/test-svg-sanitize.mjs` (77 casi: whitelist, XSS, entità, limiti, idempotenza,
+esempi della skill) e `node media/test-svg-preview.mjs` (45 verifiche nel browser vero: anteprima
+rasterizzata, script bloccati, Blob URL revocati, streaming incompleto, streaming a un carattere
+per volta, vista ingrandita, schermo piccolo 390 px). `node media/test-svg-stream.mjs` verifica
+senza browser la scansione dei blocchi durante lo streaming (fence spezzate, chiusura con più
+backtick, blocco mai chiuso, più disegni di fila) estraendo le funzioni dal codice della dashboard.
+
+Dimostrazione con il modello vero: `node media/svg-demo-eclissi.mjs` manda a un'istanza di prova la
+richiesta «Spiegami un'eclissi di Sole con uno schema SVG etichettato in italiano, indicando che
+dimensioni e distanze non sono in scala», verifica il blocco prodotto (contratto + sanitizzatore) e
+salva disegno e log in `media/eclissi-sole.svg` e `media/eclissi-sole-demo.md`.
+`media/svg-demo-produzione.mjs` fa lo stesso sull'istanza di servizio: attende che la chat sia ferma,
+riavvia il servizio, manda la richiesta **nella chat reale** e verifica in un browser headless che
+l'anteprima sia disegnata davvero (log in `media/svg-demo-produzione.log`); va lanciato come unità
+transitoria (`systemd-run --unit=svg-demo --collect …`), perché riavvia il servizio che lo ospita.
+
 ### Ricerca
 - **nelle chat**: campo di ricerca nel drawer (☰). Scansiona i JSONL in `sessions/` e mostra
   per ogni chat i riscontri con lo **snippet evidenziato**; da lì si apre la chat o si scarica
@@ -296,17 +378,20 @@ Nel file manager c'è il pulsante **📁 media** per aprire la cartella al volo.
 ### File manager (tab 📁 File)
 - **sfoglia** le cartelle con breadcrumb
 - **apri e modifica** file di testo, **salva**
-- **crea** file e cartelle, **rinomina**, **cancella**
+- **crea** file e cartelle, **rinomina**, **cancella** — rinominare su un nome che esiste già
+  **chiede conferma**: l'API risponde `409` e la sovrascrittura avviene solo con `overwrite: true`
 - **carica** (upload) e **scarica** (download) file
 - si **aggiorna** automaticamente quando l'agente modifica file
 
 Tutto è confinato nella **root** (`--root` o `$DASH_ROOT`, default: cwd).
-Protezione contro `..` e symlink che escono dalla root.
+Protezione contro `..` e symlink che escono dalla root — anche nello **zip di una cartella**:
+ i link simbolici non vengono seguiti (prima un link verso l'esterno faceva finire nell'archivio
+ file fuori dalla root, o faceva sfondare il tetto dei 3000 file su una cartella normale).
 
 ### API
 | Metodo | Endpoint | Descrizione |
 |--------|----------|-------------|
-| GET | `/api/health` | versione del codice in esecuzione, pid, funzioni dichiarate (utile per verificare un deploy) |
+| GET | `/api/health` | versione, **impronta del file di codice in esecuzione** (`codeHash`, `codeMtime`: è ciò che dice se il processo ha davvero il codice nuovo), pid, funzioni dichiarate (utile per verificare un deploy) |
 | GET | `/api/state` | stato completo (modello, thinking, contesto, token, costo, git, subagent, browser, auth) |
 | GET | `/events` | stream SSE (testo, thinking, tool, stato, goal, pianificazioni, browser live) |
 | POST | `/api/prompt` | `{ text, attachments?, clientContext? }` — `clientContext` viene accodato come `[contesto dashboard]` |
@@ -349,7 +434,8 @@ Protezione contro `..` e symlink che escono dalla root.
 | POST | `/api/file/mkdir` | `{ path }` crea cartella |
 | POST | `/api/file/rename` | `{ from, to }` rinomina |
 | POST | `/api/file/delete` | `{ path }` elimina |
-| GET | `/api/download?path=` | scarica file |
+| GET | `/api/download?path=` | scarica il file; se il percorso è una **cartella** risponde con un `.zip` costruito al volo (limiti: 3000 file, 128 MB; i link simbolici sono **saltati**) |
+| POST | `/api/resolve-files` | `{ paths: [...] }` risolve i percorsi citati (assoluti, relativi alla cartella di lavoro o a `media/`) nel file/cartella reale sotto la root: è ciò che alimenta le card «scarica» in chat |
 | POST | `/api/upload?dir=&name=` | carica file (body raw) |
 | POST | `/api/chat/upload` | allegati della chat |
 | GET | `/api/search/files?q=&path=` | cerca nel contenuto dei file |
@@ -444,6 +530,9 @@ attive restano valide (il segreto non cambia); per buttarle fuori tutte basta ca
 ### Test
 
 ```bash
+node media/test-svg-sanitize.mjs # sanitizzatore SVG: whitelist, XSS, entità, limiti, esempi della skill — nessuna rete
+node media/test-svg-preview.mjs  # anteprima SVG in chat nel browser vero: rendering, sicurezza, streaming, vista ingrandita
+node media/test-svg-stream.mjs   # scansione dei blocchi svg durante lo streaming (fence spezzate) — nessuna rete
 node media/test-static.mjs       # coerenza HTML/server (id, endpoint, cablaggio) — nessuna rete
 node media/test-ui.mjs           # logica frontend in node:vm (storico, notifiche, form cron, …)
 node media/test-palette.mjs      # comandi slash: filtro, completamento, esecuzione (istanza su :8499)
@@ -452,6 +541,8 @@ node media/test-stream-replay.mjs               # replay degli eventi (id: + Las
 node media/test-stream-reconnect-live.mjs       # richiede il modello: caduta a metà risposta, replay + snapshot
 node media/test-stream-tools-browser.mjs        # richiede il modello: turno con tool, card nel messaggio e snapshot a segmenti
 node media/test-ask.mjs                         # domande all'utente: stati, timeout, validazione, segreti (nessuna rete)
+node media/test-hardening.mjs                   # tenuta: sessione non standard senza uccidere il processo, zip senza symlink fuori root, aggiornamento parziale dei goal, rinomina senza sovrascritture, Content-Disposition, impronta di /api/health
+node media/test-browser-tool-output.mjs         # screenshot/pdf del tool browser: il file arriva davvero in media/ (browser vero, ~30 s)
 node media/test-ask-live.mjs                    # richiede il modello: l'agente chiede, si risponde via API, il turno riprende
 node media/test-ask-browser.mjs                 # richiede il modello: card nel browser vero, reload durante l'attesa, esiti
 node media/test-ask-cli.mjs                     # richiede il modello: domande nel terminale (harness.mjs, con pseudo-terminale)
@@ -504,7 +595,7 @@ Prima tornava sempre OFF a ogni riavvio e andava riacceso a mano.
 | Sandbox adeguata | verifica `chrome://sandbox` prima di operare e **rifiuta** altrimenti |
 | Nessuna shell | `execFileSync` con array di argomenti (niente `sh -c`) |
 | Ref e URL validati | regex sui ref, solo `http`/`https` sugli URL |
-| Output confinati | `screenshot`/`pdf` finiscono in `media/` |
+| Output confinati | `screenshot`/`pdf` finiscono in `media/` — la CLI scrive in una cartella di transito dell'utente dedicato (`/tmp/pi-browser-out/pi-browser`) e la dashboard, che è root, sposta il file in `media/` (l'utente dedicato non può scrivere lì) |
 | Niente processi appesi | timeout per comando, `close --all`, il check sandbox chiude il browser di servizio |
 
 > ⚠️ **Perché non si può girare come root**: come root la CLI parte e funziona *senza errori* ma con
@@ -618,6 +709,10 @@ Da qui un rischio reale, già capitato una volta:
   cancellando ciò che era stato aggiunto a mano.
 - **il modo sicuro è sempre l'API**: `GET /api/goals`, `POST /api/goals` (con `id` per aggiornare,
   senza `id` per creare), `POST /api/goals/delete`. Così memoria e file restano allineati.
+- **l'aggiornamento può essere parziale**: `POST /api/goals { id, status }` cambia solo lo stato
+  e lascia intatti descrizione, passi e checklist (una chiave **assente** significa «non toccare»,
+  una chiave presente — anche vuota — significa «sostituisci»). Prima un payload parziale
+  azzerava tutto il resto.
 - **se un goal sparisce**, i backup automatici (`backups/pi-harness-<data>.tar.gz`, ogni giorno alle
   04:15) contengono `media/goals.json`: si estrae il goal con
   `tar -xzOf backups/<archivio>.tar.gz media/goals.json` e lo si ricrea via `POST /api/goals`

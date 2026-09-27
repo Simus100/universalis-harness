@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" role="img" aria-label="Schema di un'eclissi di Sole" preserveAspectRatio="xMidYMid meet">
+  <title>Come avviene un'eclissi di Sole</title>
+  <desc>Schema didattico: il Sole a sinistra, la Luna al centro allineata con Sole e Terra, la Terra a destra. Dalla Luna si proiettano un cono d'ombra (umbra) che si chiude a punta sul suolo terrestre e un cono di penombra che si allarga. Dimensioni e distanze non sono in scala.</desc>
+  <defs>
+    <radialGradient id="sole" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff6cf"/>
+      <stop offset="1" stop-color="#fbbf24"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="420" fill="#0f172a"/>
+
+  
+  <line x1="70" y1="132" x2="545" y2="235.5" stroke="#5b6b8a" stroke-width="1"/>
+  <line x1="70" y1="218" x2="545" y2="114.5" stroke="#5b6b8a" stroke-width="1"/>
+  <line x1="70" y1="132" x2="350" y2="157" stroke="#5b6b8a" stroke-width="1"/>
+  <line x1="70" y1="218" x2="350" y2="193" stroke="#5b6b8a" stroke-width="1"/>
+
+  
+  <polygon points="267,175 545,114.5 545,235.5" fill="#1b2740" stroke="#4a5878" stroke-width="1.5"/>
+  
+  <polygon points="350,157 551.6,175 350,193" fill="#080c16" stroke="#8b5cff" stroke-width="1.5"/>
+
+  
+  <circle cx="640" cy="175" r="95" fill="#16203a" stroke="#5b9dff" stroke-width="2"/>
+  <path d="M640,80 A95,95 0 0 0 640,270 Z" fill="#22395c"/>
+
+  
+  <circle cx="70" cy="175" r="52" fill="#fbbf24" opacity="0.15"/>
+  <circle cx="70" cy="175" r="43" fill="url(#sole)"/>
+
+  
+  <circle cx="350" cy="175" r="18" fill="#c6cfdd" stroke="#8b97ac" stroke-width="1.5"/>
+
+  
+  <circle cx="554" cy="175" r="4.5" fill="#fbbf24"/>
+  <text x="566" y="180" font-size="11" fill="#fbbf24">totalità</text>
+
+  <text x="70" y="252" text-anchor="middle" font-size="15" fill="#fbbf24">Sole</text>
+  <text x="350" y="247" text-anchor="middle" font-size="15" fill="#eef2f9">Luna</text>
+  <text x="640" y="300" text-anchor="middle" font-size="15" fill="#5b9dff">Terra</text>
+  <text x="478" y="148" text-anchor="middle" font-size="12" fill="#9fb0cc">penombra</text>
+
+  <rect x="40" y="330" width="14" height="14" fill="#080c16" stroke="#8b5cff" stroke-width="1.5"/>
+  <text x="62" y="342" font-size="12.5" fill="#c6cfdd">cono d'ombra (umbra): il Sole è coperto completamente</text>
+  <rect x="40" y="352" width="14" height="14" fill="#1b2740" stroke="#4a5878" stroke-width="1.5"/>
+  <text x="62" y="364" font-size="12.5" fill="#c6cfdd">penombra: il Sole è coperto solo in parte (eclissi parziale)</text>
+  <circle cx="47" cy="381" r="6" fill="#fbbf24"/>
+  <text x="62" y="386" font-size="12.5" fill="#c6cfdd">punto di totalità: dove l'ombra della Luna tocca il suolo</text>
+  <text x="40" y="408" font-size="12" fill="#8b97ac">Dimensioni e distanze non sono in scala.</text>
+</svg>

@@ -25,8 +25,9 @@
 
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync } from "node:fs";
-import { join, resolve, basename } from "node:path";
+import { chmodSync, chownSync, copyFileSync, existsSync, mkdirSync, renameSync, statSync, unlinkSync } from "node:fs";
+import { join, resolve, basename, dirname } from "node:path";
+import { tmpdir } from "node:os";
 
 const execFileAsync = promisify(execFile);
 
@@ -37,6 +38,11 @@ const BROWSER_USER = process.env.DASH_BROWSER_USER || "pi-browser";
 const BROWSER_BIN = process.env.DASH_BROWSER_BIN || "/usr/local/bin/pbrowser";
 const TIMEOUT_MS = Number(process.env.DASH_BROWSER_TIMEOUT_MS) || 60_000;
 const MAX_OUTPUT = 4 * 1024 * 1024;
+// Cartella di transito per screenshot e pdf. La CLI gira come utente dedicato e NON può
+// scrivere in media/ (che sta sotto la root della dashboard, di proprietà di root: verificato
+// «Permission denied, os error 13»). Lì scrive; il processo della dashboard, che è root,
+// sposta il file in media/. La sottocartella è dell'utente dedicato, con permessi 0700.
+const BROWSER_OUT_ROOT = process.env.DASH_BROWSER_OUT_DIR || join(tmpdir(), "pi-browser-out");
 
 const ACTIONS = [
   "open", "snapshot", "read", "click", "fill", "type", "press", "scroll",
@@ -112,59 +118,125 @@ export function createBrowserExtension({
     return sandboxState;
   }
 
-  /** Sceglie il percorso di un file generato, confinandolo in media/. */
-  function mediaPath(p, fallbackName) {
-    if (!p) return join(mediaDir, fallbackName);
-    const name = basename(String(p));
-    return resolve(join(mediaDir, name || fallbackName));
+  /** Cartella di transito dell'utente dedicato (creata una volta sola, in modo ASINCRONO :
+   *  nessuna chiamata bloccante, l'event loop non si ferma). */
+  let outDirPromise = null;
+  async function ensureOutDir() {
+    if (!outDirPromise) {
+      outDirPromise = (async () => {
+        const dir = join(BROWSER_OUT_ROOT, BROWSER_USER);
+        mkdirSync(dir, { recursive: true, mode: 0o700 });
+        try {
+          const { stdout: uidOut } = await execFileAsync("id", ["-u", BROWSER_USER], { encoding: "utf8" });
+          const { stdout: gidOut } = await execFileAsync("id", ["-g", BROWSER_USER], { encoding: "utf8" });
+          const uid = Number(String(uidOut).trim());
+          const gid = Number(String(gidOut).trim());
+          if (Number.isInteger(uid) && Number.isInteger(gid)) {
+            chownSync(dir, uid, gid);
+            chmodSync(dir, 0o700);
+          } else {
+            chmodSync(dir, 0o777);
+          }
+        } catch {
+          // utente non risolvibile (ambiente di prova): cartella comunque scrivibile
+          try { chmodSync(dir, 0o777); } catch { /* niente da fare */ }
+        }
+        return dir;
+      })();
+    }
+    return outDirPromise;
   }
 
-  /** Traduce l'azione in argomenti CLI, con validazione. */
-  function buildArgs(params) {
+  /** Percorso di destinazione di un file generato, confinato in media/. */
+  function mediaPath(p, fallbackName) {
+    const name = basename(String(p || "")) || fallbackName;
+    return resolve(join(mediaDir, name));
+  }
+
+  /** Percorso TEMPORANEO (scrivibile dall'utente dedicato) in cui la CLI salva il file. */
+  async function stagedPath(p, fallbackName) {
+    const name = basename(String(p || "")) || fallbackName;
+    return join(await ensureOutDir(), name);
+  }
+
+  /** Sposta in media/ il file prodotto fuori root (lo fa il processo della dashboard, root). */
+  function moveIntoMedia(staged, target) {
+    mkdirSync(dirname(target), { recursive: true });
+    try {
+      renameSync(staged, target);
+    } catch (e) {
+      if (e?.code === "EXDEV") {
+        copyFileSync(staged, target);
+        unlinkSync(staged);
+      } else {
+        throw e;
+      }
+    }
+    try { chmodSync(target, 0o644); } catch { /* permessi non modificabili: non è un errore */ }
+    return target;
+  }
+
+  /**
+   * Traduce l'azione in ordine di esecuzione: `{ args, out }`.
+   * `out`, quando c'è, dice dove la CLI scrive (`staged`) e dove il file deve finire (`target`):
+   * screenshot e pdf passano dalla cartella di transito perché l'utente dedicato non può
+   * scrivere in media/. Tutto il resto ha `out: null`.
+   */
+  function buildArgs(params, stagedFile = null) {
     const a = String(params?.action || "");
     const ref = params?.ref ? normalizeRef(params.ref) : null;
     const need = (v, what) => {
       if (!v) throw new Error(`parametro "${what}" obbligatorio per action=${a}`);
       return v;
     };
+    const outFor = (p, fallbackName) => {
+      if (!stagedFile) throw new Error("percorso temporaneo non preparato per questa azione");
+      return { staged: stagedFile, target: mediaPath(p, fallbackName) };
+    };
     switch (a) {
       case "open": {
         const url = need(params?.url, "url");
         if (!/^https?:\/\//i.test(url)) throw new Error("url deve iniziare con http:// o https://");
-        return ["open", url];
+        return { args: ["open", url], out: null };
       }
-      case "snapshot": return ["snapshot"];
-      case "read": return ["read"];
-      case "back": return ["back"];
-      case "reload": return ["reload"];
-      case "status": return null; // gestita a parte
+      case "snapshot": return { args: ["snapshot"], out: null };
+      case "read": return { args: ["read"], out: null };
+      case "back": return { args: ["back"], out: null };
+      case "reload": return { args: ["reload"], out: null };
+      case "status": return { args: null, out: null }; // gestita a parte
       case "click": {
         const r = need(ref, "ref");
         if (!REF_RE.test(r)) throw new Error(`ref non valido: "${r}" (atteso un ref dello snapshot, es. @e12)`);
-        return ["click", r];
+        return { args: ["click", r], out: null };
       }
       case "fill":
       case "type": {
         const r = need(ref, "ref");
         if (!REF_RE.test(r)) throw new Error(`ref non valido: "${r}"`);
-        return [a, r, need(params?.text, "text")];
+        return { args: [a, r, need(params?.text, "text")], out: null };
       }
-      case "press": return ["press", need(params?.key, "key")];
-      case "scroll": return ["scroll", params?.direction || "down", String(params?.px ?? 500)];
+      case "press": return { args: ["press", need(params?.key, "key")], out: null };
+      case "scroll": return { args: ["scroll", params?.direction || "down", String(params?.px ?? 500)], out: null };
       case "get": {
         const what = String(params?.what || "text");
         // url e title non riguardano un elemento: pretendere un ref qui è un attrito inutile
-        if (what === "url" || what === "title") return ["get", what];
+        if (what === "url" || what === "title") return { args: ["get", what], out: null };
         const r = need(ref, "ref");
         if (!REF_RE.test(r)) throw new Error(`ref non valido: "${r}"`);
-        return ["get", what, r];
+        return { args: ["get", what, r], out: null };
       }
-      case "screenshot": return ["screenshot", mediaPath(params?.path, "screenshot.png")];
-      case "pdf": return ["pdf", mediaPath(params?.path, "pagina.pdf")];
-      case "eval": return ["eval", need(params?.code, "code")];
+      case "screenshot": {
+        const o = outFor(params?.path, "screenshot.png");
+        return { args: ["screenshot", o.staged], out: o };
+      }
+      case "pdf": {
+        const o = outFor(params?.path, "pagina.pdf");
+        return { args: ["pdf", o.staged], out: o };
+      }
+      case "eval": return { args: ["eval", need(params?.code, "code")], out: null };
       // chiude SOLO la sessione dell'agente: `close --all` chiuderebbe anche le sessioni
       // dell'utente (per esempio il browser che sta guardando nella live view)
-      case "close": return ["close"];
+      case "close": return { args: ["close"], out: null };
       default:
         throw new Error(`action sconosciuta: "${a}" (ammesse: ${ACTIONS.join(", ")})`);
     }
@@ -258,16 +330,22 @@ export function createBrowserExtension({
         };
       }
 
-      let args;
+      let plan;
       try {
-        args = buildArgs(params);
+        // screenshot e pdf passano da una cartella di transito scrivibile dall'utente dedicato
+        const staged = action === "screenshot" || action === "pdf"
+          ? await stagedPath(params?.path, action === "pdf" ? "pagina.pdf" : "screenshot.png")
+          : null;
+        plan = buildArgs(params, staged);
       } catch (e) {
         return { content: [{ type: "text", text: String(e.message || e) }], details: {}, isError: true };
       }
+      const args = plan.args;
 
       try {
         onActivity(); // segnala l'uso: serve all'accensione "auto" del tool
         const out = await runCli(args);
+        let text = out.trim() || "(nessun output)";
         let extra = "";
         // Dopo `open` la pagina può essere ancora about:blank: attendere il DOM evita
         // che le azioni successive leggano una pagina vuota (difetto trovato in uso reale).
@@ -278,11 +356,44 @@ export function createBrowserExtension({
             extra = "\n(nota: la pagina potrebbe non aver finito di caricarsi; se leggi about:blank, riprova l'azione)";
           }
         }
+        // screenshot/pdf: la CLI ha scritto nella cartella di transito (l'utente dedicato non
+        // può scrivere in media/). Il processo della dashboard, che è root, sposta il file e
+        // corregge il percorso nel testo restituito al modello.
+        if (plan.out) {
+          const { staged, target } = plan.out;
+          try {
+            if (!existsSync(staged) || !statSync(staged).isFile()) {
+              throw new Error(`la CLI non ha prodotto il file atteso (${staged})`);
+            }
+            const finalPath = moveIntoMedia(staged, target);
+            text = text.split(staged).join(finalPath);
+            if (!text.includes(finalPath)) text += `\n(file salvato in ${finalPath})`;
+          } catch (e) {
+            return {
+              content: [{
+                type: "text",
+                text:
+                  `il file generato (${basename(staged)}) è rimasto fuori da media/ e non è stato ` +
+                  `possibile spostarlo: ${e?.message ?? e}`,
+              }],
+              details: { args, staged, target },
+              isError: true,
+            };
+          }
+        }
         return {
-          content: [{ type: "text", text: (out.trim() || "(nessun output)") + extra }],
-          details: { args, exit: 0 },
+          content: [{ type: "text", text: text + extra }],
+          details: { args, exit: 0, ...(plan.out ? { file: plan.out.target } : {}) },
         };
       } catch (e) {
+        // la CLI ha fallito: nessun file da spostare, si ripulisce l'eventuale residuo
+        if (plan.out) {
+          try {
+            if (existsSync(plan.out.staged)) unlinkSync(plan.out.staged);
+          } catch {
+            /* niente da fare */
+          }
+        }
         return {
           content: [{ type: "text", text: `errore eseguendo il browser: ${cliError(e)}` }],
           details: { args, exit: 1 },

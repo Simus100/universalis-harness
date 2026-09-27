@@ -270,7 +270,7 @@ export const COMMANDS = [
     desc: "Apre una scheda della dashboard",
     usage: "/tab <scheda>",
     client: true,
-    params: [{ name: "scheda", label: "scheda", kind: "enum", values: ["chat", "files", "goals", "cron", "skills"] }],
+    params: [{ name: "scheda", label: "scheda", kind: "enum", values: ["chat", "files", "goals", "cron", "skills", "progetto", "agenda", "live"] }],
   },
   {
     name: "skills",

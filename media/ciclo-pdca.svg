@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 470" role="img" aria-label="Ciclo PDCA: Plan, Do, Check, Act">
+  <title>Il ciclo PDCA del miglioramento continuo</title>
+  <desc>Quattro fasi disposte ai vertici di un quadrato e collegate da frecce in senso orario: Plan (pianifica), Do (esegui), Check (verifica), Act (agisci e standardizza). Al centro la scritta miglioramento continuo. Lo schema illustra l'ordine delle fasi, non durate o proporzioni.</desc>
+  <defs>
+    <linearGradient id="gPlan" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b2740"/>
+      <stop offset="1" stop-color="#12192a"/>
+    </linearGradient>
+    <linearGradient id="gDo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17303d"/>
+      <stop offset="1" stop-color="#12192a"/>
+    </linearGradient>
+    <linearGradient id="gCheck" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#372c14"/>
+      <stop offset="1" stop-color="#12192a"/>
+    </linearGradient>
+    <linearGradient id="gAct" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16332a"/>
+      <stop offset="1" stop-color="#12192a"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="50" y="50" width="230" height="76" rx="14" fill="url(#gPlan)" stroke="#5b9dff" stroke-width="2"/>
+  <text x="165" y="84" text-anchor="middle" font-size="19" fill="#eef2f9">Plan</text>
+  <text x="165" y="108" text-anchor="middle" font-size="13" fill="#a9b6c9">pianifica l'obiettivo</text>
+
+  <rect x="400" y="50" width="230" height="76" rx="14" fill="url(#gDo)" stroke="#38bdf8" stroke-width="2"/>
+  <text x="515" y="84" text-anchor="middle" font-size="19" fill="#eef2f9">Do</text>
+  <text x="515" y="108" text-anchor="middle" font-size="13" fill="#a9b6c9">esegui su piccola scala</text>
+
+  <rect x="400" y="330" width="230" height="76" rx="14" fill="url(#gCheck)" stroke="#fbbf24" stroke-width="2"/>
+  <text x="515" y="364" text-anchor="middle" font-size="19" fill="#eef2f9">Check</text>
+  <text x="515" y="388" text-anchor="middle" font-size="13" fill="#a9b6c9">verifica i risultati</text>
+
+  <rect x="50" y="330" width="230" height="76" rx="14" fill="url(#gAct)" stroke="#34d399" stroke-width="2"/>
+  <text x="165" y="364" text-anchor="middle" font-size="19" fill="#eef2f9">Act</text>
+  <text x="165" y="388" text-anchor="middle" font-size="13" fill="#a9b6c9">correggi e standardizza</text>
+
+  <line x1="290" y1="88" x2="372" y2="88" stroke="#8b97ac" stroke-width="3"/>
+  <polygon points="392,88 372,79 372,97" fill="#8b97ac"/>
+  <line x1="515" y1="134" x2="515" y2="304" stroke="#8b97ac" stroke-width="3"/>
+  <polygon points="515,324 506,304 524,304" fill="#8b97ac"/>
+  <line x1="390" y1="368" x2="308" y2="368" stroke="#8b97ac" stroke-width="3"/>
+  <polygon points="288,368 308,359 308,377" fill="#8b97ac"/>
+  <line x1="165" y1="322" x2="165" y2="152" stroke="#8b97ac" stroke-width="3"/>
+  <polygon points="165,132 156,152 174,152" fill="#8b97ac"/>
+
+  <circle cx="340" cy="228" r="62" fill="#0f1524" stroke="#2b3853" stroke-width="2" stroke-dasharray="6 6"/>
+  <text x="340" y="222" text-anchor="middle" font-size="14" fill="#c6cfdd">miglioramento</text>
+  <text x="340" y="242" text-anchor="middle" font-size="14" fill="#c6cfdd">continuo</text>
+</svg>

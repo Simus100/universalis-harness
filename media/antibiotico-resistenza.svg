@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" role="img" aria-label="Antibiotico-resistenza: come nasce e quanto pesa in morti all'anno" preserveAspectRatio="xMidYMid meet">
+  <title>Antibiotico-resistenza: come nasce e quanto pesa</title>
+  <desc>Due pannelli. In alto il meccanismo in quattro passaggi: l'uso di antibiotici in medicina, allevamenti e ambiente seleziona i batteri resistenti, che sopravvivono e si moltiplicano, si trasmettono fra le persone e rendono le cure inefficaci, con più malattie gravi e più morti. In basso due serie di barre in scala fra loro, in milioni di morti all'anno: nel 2021 1,14 milioni di morti attribuibili alla resistenza batterica e 4,71 milioni ad essa associate; al 2050, senza misure di contenimento, la proiezione sale a 1,91 e 8,22 milioni. In totale, 39 milioni di morti attribuibili fra il 2025 e il 2050, circa 3 al minuto. Le cifre sono stime modellate del Global Burden of Disease; i riquadri del meccanismo non rappresentano quantità.</desc>
+  <defs>
+    <linearGradient id="gBarra" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b9dff"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="gBarra2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4c3a94"/>
+      <stop offset="1" stop-color="#8b5cff"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="6" y="6" width="888" height="608" rx="14" fill="#0e1526" stroke="#22304a"/>
+  <text x="450" y="46" text-anchor="middle" font-family="sans-serif" font-size="21" font-weight="bold" fill="#eef2f9">Antibiotico-resistenza: come nasce e quanto pesa</text>
+  <text x="450" y="72" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#8b97ac">Batteri che sopravvivono agli antibiotici rendono di nuovo pericolose cure oggi banali.</text>
+
+  <text x="28" y="108" font-family="sans-serif" font-size="11" fill="#38bdf8" letter-spacing="1.5">COME NASCE</text>
+
+  <rect x="28" y="120" width="185" height="88" rx="10" fill="#172033" stroke="#5b9dff" stroke-width="1.6"/>
+  <text x="120" y="150" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#eef2f9">uso di antibiotici</text>
+  <text x="120" y="170" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">medicina umana,</text>
+  <text x="120" y="188" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">allevamenti, ambiente</text>
+
+  <line x1="216" y1="164" x2="241" y2="164" stroke="#8b97ac" stroke-width="1.6"/>
+  <polygon points="241,158 249,164 241,170" fill="#8b97ac"/>
+
+  <rect x="248" y="120" width="185" height="88" rx="10" fill="#172033" stroke="#5b9dff" stroke-width="1.6"/>
+  <text x="340" y="150" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#eef2f9">i batteri resistenti</text>
+  <text x="340" y="170" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">sopravvivono e si</text>
+  <text x="340" y="188" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">moltiplicano</text>
+
+  <line x1="436" y1="164" x2="461" y2="164" stroke="#8b97ac" stroke-width="1.6"/>
+  <polygon points="461,158 469,164 461,170" fill="#8b97ac"/>
+
+  <rect x="468" y="120" width="185" height="88" rx="10" fill="#172033" stroke="#5b9dff" stroke-width="1.6"/>
+  <text x="560" y="150" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#eef2f9">le infezioni resistenti</text>
+  <text x="560" y="170" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">si trasmettono</text>
+  <text x="560" y="188" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">fra le persone</text>
+
+  <line x1="656" y1="164" x2="681" y2="164" stroke="#8b97ac" stroke-width="1.6"/>
+  <polygon points="681,158 689,164 681,170" fill="#8b97ac"/>
+
+  <rect x="688" y="120" width="185" height="88" rx="10" fill="#1d293d" stroke="#fb7185" stroke-width="1.6"/>
+  <text x="780" y="150" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#eef2f9">le cure perdono</text>
+  <text x="780" y="170" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">efficacia: più malattie</text>
+  <text x="780" y="188" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">gravi e più morti</text>
+
+  <text x="28" y="248" font-family="sans-serif" font-size="11" fill="#38bdf8" letter-spacing="1.5">QUANTO PESA — morti all'anno nel mondo</text>
+  <rect x="470" y="238" width="14" height="14" rx="3" fill="url(#gBarra)"/>
+  <text x="492" y="250" font-family="sans-serif" font-size="11.5" fill="#c6cfdd">attribuibili alla resistenza</text>
+  <rect x="660" y="238" width="14" height="14" rx="3" fill="url(#gBarra2)"/>
+  <text x="682" y="250" font-family="sans-serif" font-size="11.5" fill="#c6cfdd">associate alla resistenza</text>
+
+  <line x1="386" y1="272" x2="386" y2="474" stroke="#28344a" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="523" y1="272" x2="523" y2="474" stroke="#28344a" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="659" y1="272" x2="659" y2="474" stroke="#28344a" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="795" y1="272" x2="795" y2="474" stroke="#28344a" stroke-width="1" stroke-dasharray="3 4"/>
+  <text x="386" y="268" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#5a6578">2</text>
+  <text x="523" y="268" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#5a6578">4</text>
+  <text x="659" y="268" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#5a6578">6</text>
+  <text x="795" y="268" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#5a6578">8</text>
+  <line x1="250" y1="272" x2="250" y2="474" stroke="#3b4a63" stroke-width="1.2"/>
+
+  <text x="240" y="308" text-anchor="end" font-family="sans-serif" font-size="12.5" fill="#eef2f9">2021 · attribuibili</text>
+  <rect x="250" y="290" width="78" height="26" rx="4" fill="url(#gBarra)"/>
+  <text x="338" y="308" font-family="sans-serif" font-size="13" fill="#5b9dff">1,14 mln</text>
+
+  <text x="240" y="348" text-anchor="end" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">2021 · associate</text>
+  <rect x="250" y="330" width="321" height="26" rx="4" fill="url(#gBarra2)"/>
+  <text x="581" y="348" font-family="sans-serif" font-size="13" fill="#a78bfa">4,71 mln</text>
+
+  <text x="240" y="414" text-anchor="end" font-family="sans-serif" font-size="12.5" fill="#eef2f9">2050 · attribuibili</text>
+  <rect x="250" y="396" width="130" height="26" rx="4" fill="url(#gBarra)" fill-opacity="0.85"/>
+  <text x="390" y="414" font-family="sans-serif" font-size="13" fill="#5b9dff">1,91 mln</text>
+
+  <text x="240" y="454" text-anchor="end" font-family="sans-serif" font-size="12.5" fill="#c6cfdd">2050 · associate</text>
+  <rect x="250" y="436" width="560" height="26" rx="4" fill="url(#gBarra2)" fill-opacity="0.85"/>
+  <text x="820" y="454" font-family="sans-serif" font-size="13" fill="#a78bfa">8,22 mln</text>
+  <text x="240" y="482" text-anchor="end" font-family="sans-serif" font-size="11" fill="#5a6578">le barre 2050 sono proiezioni</text>
+
+  <rect x="28" y="500" width="844" height="58" rx="10" fill="#172033" stroke="#34d399" stroke-width="1.2"/>
+  <text x="450" y="526" text-anchor="middle" font-family="sans-serif" font-size="14.5" fill="#eef2f9">39 milioni di morti attribuibili fra il 2025 e il 2050: circa 3 ogni minuto</text>
+  <text x="450" y="546" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#8b97ac">proiezione senza misure di contenimento (uso prudente degli antibiotici, diagnosi rapide, nuovi farmaci)</text>
+
+  <text x="450" y="584" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a6578">Fonte: GBD 2021 Antimicrobial Resistance Collaborators, The Lancet 2024 · GRAM Project / Wellcome Trust</text>
+  <text x="450" y="602" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a6578">Le barre sono in scala fra loro; le cifre sono stime modellate (intervalli di incertezza negli studi originali).</text>
+</svg>

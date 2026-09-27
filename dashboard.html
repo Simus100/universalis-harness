@@ -252,6 +252,68 @@ main {
   max-width: 62ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .tool .tstate { font-weight: 800; font-size: 11px; opacity: .95; }
+/* ---------- rappresentazioni SVG nella chat (blocchi Markdown ```svg) ----------
+   L'anteprima mostra il DISEGNO, non il codice: l'SVG sanitizzato va in un elemento <img>
+   con Blob URL (l'SVG caricato come immagine non esegue script e non scarica risorse
+   esterne), mentre il codice vive in un <pre> sempre trattato come testo. */
+.svgfig {
+  margin: 10px 0; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-soft); overflow: hidden; max-width: 100%;
+}
+.svgfig .svghead {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 6px 9px; border-bottom: 1px solid var(--border-soft);
+  font-size: 11px; color: var(--dim); letter-spacing: .4px;
+}
+.svgfig .svglbl { color: var(--accent-3); font-weight: 700; text-transform: uppercase; }
+.svgfig .svgacts { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.svgfig .svgacts button {
+  font: 11px/1 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--text-soft); background: var(--panel-3); border: 1px solid var(--border);
+  border-radius: 999px; padding: 5px 9px; cursor: pointer; white-space: nowrap;
+}
+.svgfig .svgacts button:hover { background: var(--panel-4); color: var(--text); }
+.svgfig .svgacts button[disabled] { opacity: .45; cursor: not-allowed; }
+.svgfig .svgbox {
+  padding: 10px; background: var(--panel-2); display: flex; align-items: center; justify-content: center;
+  min-height: 64px;
+}
+.svgfig img {
+  display: block; width: 100%; height: auto; max-height: min(58vh, 520px); object-fit: contain;
+}
+.svgfig .svgwait { color: var(--dim); font-size: 12px; padding: 6px 2px; }
+.svgfig .mdsvgsrc {
+  margin: 0; max-height: 320px; overflow: auto; white-space: pre; font-size: 11.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text-soft);
+  background: var(--panel-3); border-top: 1px solid var(--border-soft); padding: 9px 11px;
+}
+.svgfig.err { border-color: rgba(251,113,133,.45); }
+.svgfig .svgerr {
+  padding: 8px 11px; font-size: 12px; color: var(--red); background: rgba(251,113,133,.08);
+  border-top: 1px solid rgba(251,113,133,.24);
+}
+.svgfig .svgwarn { padding: 6px 11px 0; font-size: 11px; color: var(--yellow); opacity: .9; }
+
+/* vista ingrandita: overlay a tutto schermo, chiusa con Esc, click sullo sfondo o ✕ */
+#svgZoom {
+  position: fixed; inset: 0; z-index: 60; background: rgba(4,7,12,.86);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 16px; backdrop-filter: blur(2px);
+}
+#svgZoom .svgzoom-bar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+#svgZoom .svgzoom-bar button {
+  font: 12px/1 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--text); background: var(--panel-3); border: 1px solid var(--border);
+  border-radius: 999px; padding: 8px 12px; cursor: pointer;
+}
+#svgZoom .svgzoom-bar button:hover { background: var(--panel-4); }
+#svgZoom img {
+  max-width: min(1400px, 96vw); max-height: 80vh; width: auto; height: auto;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 10px; object-fit: contain;
+}
+#svgZoom .svgzoom-hint { color: var(--dim); font-size: 11px; }
+
 /* ---------- domande interattive all'utente (tool `ask_user`) ----------
    La card vive DENTRO il messaggio, dove l'agente ha posto la domanda: stesso principio delle
    card dei tool. Il colore (viola) la distingue da un tool in corso: qui l'attesa è dell'utente. */
@@ -354,6 +416,8 @@ main {
   .filecard { flex-wrap: wrap; }
   .filecard .fmeta { flex-basis: 100%; order: -1; }
 }
+.filecard { margin: 8px 0; }
+.filecards { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .imgs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; justify-content: flex-end; }
 .imgs img {
   max-width: 220px; max-height: 220px; border-radius: 14px; border: 1px solid var(--border);
@@ -1142,6 +1206,8 @@ footer {
 
   <div class="tools">
     <select id="modelSel" class="select" title="Modello">
+      <!-- Fallback usato finché lo stato non è arrivato (e nel caso di server che non manda
+           ancora `models`): l'elenco vero lo scrive applyState da `st.models`. -->
       <option value="deepseek-flash">deepseek-flash</option>
       <option value="deepseek-v4-pro">deepseek-v4-pro</option>
     </select>
@@ -1398,6 +1464,18 @@ footer {
 
 <div id="toasts"></div>
 
+<!-- Vista ingrandita di un disegno SVG: mostra lo STESSO Blob URL già sanitizzato
+     dell'anteprima in chat (nessuna seconda copia del contenuto). -->
+<div id="svgZoom" hidden>
+  <div class="svgzoom-bar">
+    <button type="button" data-zoom="copy">⧉ copia SVG</button>
+    <button type="button" data-zoom="download">⬇ scarica SVG</button>
+    <button type="button" data-zoom="close">✕ chiudi (Esc)</button>
+  </div>
+  <img alt="" />
+  <div class="svgzoom-hint">clic sullo sfondo o Esc per chiudere</div>
+</div>
+
 <script>
 const $ = (id) => document.getElementById(id);
 
@@ -1515,8 +1593,25 @@ function renderStats(st) {
 
   stateRoot = st.root || stateRoot;
   if (st.mediaRel !== undefined && st.mediaRel !== null) mediaRel = st.mediaRel;
-  if ($("modelSel")) { /* legacy */ }
-  const ms = $("modelSel"); if (ms && ms.value !== st.model.id) ms.value = st.model.id;
+  // selettore del modello: l'elenco vero arriva dallo stato (i modelli usabili in questo
+  // momento), non da due <option> scritte a mano nel markup
+  const ms = $("modelSel");
+  if (ms) {
+    const list = Array.isArray(st.models) ? st.models : [];
+    const ids = list.map((m) => m.id).join(",");
+    if (list.length && ms.dataset.opts !== ids) {
+      ms.dataset.opts = ids;
+      ms.replaceChildren(
+        ...list.map((m) => {
+          const o = document.createElement("option");
+          o.value = m.id;
+          o.textContent = m.id;
+          return o;
+        }),
+      );
+    }
+    if (st.model?.id && ms.value !== st.model.id) ms.value = st.model.id;
+  }
   const ts = $("thinkSel");
   if (ts) {
     const opts = st.thinking.supported.join(",");
@@ -1593,9 +1688,515 @@ async function setSubagentMax(value) {
   $("subagentMax").value = n;
   await postJSON("/api/subagents", { maxSpawns: n });
 }
+/* ==================== rappresentazioni visive (SVG) in chat ====================
+ *
+ * Il modello può rispondere con un blocco Markdown il cui linguaggio è `svg`:
+ *
+ *     ```svg
+ *     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360">…</svg>
+ *     ```
+ *
+ * Al posto del codice si mostra il DISEGNO, nel punto esatto del messaggio. L'SVG è contenuto
+ * non attendibile e viene trattato come tale:
+ *  1) sanitizzazione con lo STESSO modulo del server (`/media/svg-sanitize.mjs`), che
+ *     ricostruisce un documento nuovo da una whitelist rigida (niente script, eventi,
+ *     foreignObject, DTD, CSS, riferimenti di rete);
+ *  2) controllo di benformatezza con DOMParser (difesa in profondità);
+ *  3) resa in un elemento <img> con Blob URL: un SVG caricato come immagine non esegue
+ *     script e non scarica risorse esterne. Mai innerHTML, mai SVG nel DOM.
+ * Se il documento è incompleto, invalido o rifiutato si mostra il codice COME TESTO con una
+ * breve indicazione: la chat non si interrompe.
+ *
+ * Durante lo streaming un blocco viene reso solo quando è COMPLETO (fence di chiusura
+ * arrivata); fino a quel momento resta testo.
+ */
+
+/** Linguaggio del blocco Markdown che contiene un disegno. */
+const SVG_FENCE_LANG = "svg";
+/** Elementi che l'anteprima accetta (secondo controllo, oltre al sanitizzatore). */
+const SVG_PREVIEW_TAGS = new Set([
+  "svg", "g", "defs", "title", "desc", "path", "rect", "circle", "ellipse", "line",
+  "polyline", "polygon", "text", "tspan", "linearGradient", "radialGradient", "stop", "clipPath",
+]);
+
+/** Testo visibile di una bolla: i segmenti di testo più il codice dei disegni.
+ *  Serve a chi legge il messaggio in corso (notifica di fine risposta, stop): il codice SVG
+ *  è ancora parte del messaggio, anche se a schermo è sostituito dall'anteprima. */
+function bubbleText(bubble) {
+  if (!bubble) return "";
+  return [...bubble.querySelectorAll(".mdtext, .mdsvgsrc")].map((el) => el.textContent).join("");
+}
+
+/** Coda di testo di una bolla: lo span in cui arrivano i delta e da cui si estraggono i blocchi. */
+const bubbleTails = new WeakMap();
+
+function newTextSpan(bubble, text = "") {
+  const span = document.createElement("span");
+  span.className = "mdtext";
+  span.textContent = text;
+  bubble.appendChild(span);
+  return span;
+}
+
+function makeTextTail(bubble, text = "") {
+  const el = newTextSpan(bubble, text);
+  const tail = { el, text, searched: 0, pending: null };
+  bubbleTails.set(bubble, tail);
+  return tail;
+}
+
+/** Prossima fence di apertura (``` o più) a partire da `from`.
+ *  L'apertura tollera fino a 3 spazi di indentazione (fence dentro un elenco: è Markdown
+ *  valido, e la chiusura li accettava già: l'asimmetria faceva restare il disegno come codice)
+ *  e la coda di riga `\r` di un testo con fine riga CRLF. */
+function findOpenFence(text, from) {
+  const re = /(^|\n)([ \t]{0,3})(`{3,})([^\n]*?)[ \t]*(\n|$)/g;
+  re.lastIndex = Math.max(0, from);
+  const m = re.exec(text);
+  if (!m) return null;
+  return {
+    start: m.index + m[1].length + m[2].length,
+    lang: m[4].trim().toLowerCase(),
+    bodyStart: m.index + m[0].length,
+  };
+}
+
+/** Fence di chiusura (riga di soli backtick, almeno tre) a partire da `from`.
+ *  Il `\r?` prima del fine riga è necessario: senza, una chiusura arrivata con CRLF non veniva
+ *  riconosciuta e la scansione proseguiva fino alla PROSSIMA riga di soli backtick, inghiottendo
+ *  dentro il blocco i paragrafi (e i disegni) che seguivano. */
+function findCloseFence(text, from) {
+  const re = /(^|\n)[ \t]{0,3}(`{3,})[ \t]*\r?(?=\n|$)/g;
+  re.lastIndex = Math.max(0, from);
+  const m = re.exec(text);
+  if (!m) return null;
+  return { index: m.index + m[1].length, end: m.index + m[0].length };
+}
+
+/**
+ * Fin dove si può avanzare il cursore di scansione dopo una ricerca a vuoto.
+ *
+ * Una fence può arrivare A PEZZI nei delta dello streaming (`…\n``` e poi `` `svg\n ``): se dopo
+ * una ricerca a vuoto si saltasse a `text.length`, i backtick già letti resterebbero INDIETRO
+ * rispetto al cursore e la fence non verrebbe più trovata — il blocco `svg` restava codice fino
+ * al reload della pagina (difetto segnalato: «l'SVG non appare, vedo solo il codice scritto»).
+ * Quindi si riparte dall'inizio dell'ultima riga, dove una fence ancora incompleta può stare.
+ * Il taglio a 4096 caratteri evita di ri-scansionare a ogni delta una riga molto lunga (un
+ * blocco di codice su una riga, un `<path d="…">`): oltre quella soglia non può esserci né
+ * un'apertura (`` ```linguaggio ``) né una chiusura (soli backtick) valida.
+ */
+function svgScanFloor(text) {
+  const inizioRiga = text.lastIndexOf("\n") + 1;
+  return Math.max(0, Math.min(inizioRiga, text.length - 4096));
+}
+
+/**
+ * Estrae dalla coda i blocchi `svg` COMPLETI e li sostituisce con le anteprime.
+ * Il testo che precede ogni blocco resta in uno span; dopo il blocco si apre uno span nuovo.
+ * Con `final = true` (fine stream o messaggio salvato) un blocco mai chiuso diventa codice +
+ * indicazione dell'errore, invece di restare testo per sempre.
+ */
+function flushSvgBlocks(bubble, tail, final = false) {
+  for (let guard = 0; guard < 64; guard++) {
+    if (tail.pending) {
+      // la prima ricerca parte dall'inizio del blocco; i tentativi successivi (streaming)
+      // riprendono dagli ultimi caratteri già visti, senza ri-scansionare tutto il blocco
+      const from = tail.pending.scannedTo ?? tail.pending.bodyStart;
+      const close = findCloseFence(tail.text, from);
+      if (!close) {
+        tail.pending.scannedTo = Math.max(tail.pending.bodyStart, svgScanFloor(tail.text));
+        if (!final) return;
+        bubble.appendChild(makeSvgCard(tail.text.slice(tail.pending.bodyStart), "blocco SVG non chiuso (manca la fence ``` di chiusura)"));
+        tail.el.textContent = tail.text.slice(0, tail.pending.fenceStart);
+        tail.text = "";
+        tail.pending = null;
+        tail.searched = 0;
+        tail.el = newTextSpan(bubble, "");
+        bubbleTails.set(bubble, tail);
+        return;
+      }
+      const code = tail.text.slice(tail.pending.bodyStart, close.index);
+      const before = tail.text.slice(0, tail.pending.fenceStart);
+      const rest = tail.text.slice(close.end);
+      tail.el.textContent = before;
+      bubble.appendChild(makeSvgCard(code, null));
+      tail.el = newTextSpan(bubble, rest);
+      tail.text = rest;
+      tail.pending = null;
+      tail.searched = 0;
+      bubbleTails.set(bubble, tail);
+      continue;
+    }
+    const open = findOpenFence(tail.text, tail.searched);
+    if (!open) {
+      tail.searched = svgScanFloor(tail.text);
+      tail.el.textContent = tail.text;
+      return;
+    }
+    if (open.lang !== SVG_FENCE_LANG) {
+      // blocco di codice di altro linguaggio: si salta l'intero blocco, così un ```svg
+      // citato dentro un blocco js non viene scambiato per un disegno
+      const close = findCloseFence(tail.text, open.bodyStart);
+      tail.searched = close ? close.end : svgScanFloor(tail.text);
+      tail.el.textContent = tail.text;
+      continue;
+    }
+    tail.pending = {
+      fenceStart: open.start,
+      bodyStart: open.bodyStart,
+    };
+    tail.el.textContent = tail.text; // in attesa: il blocco resta visibile come testo
+  }
+}
+
+/** Aggiunge un delta di testo alla bolla (streaming). */
+function appendBubbleText(bubble, delta) {
+  let tail = bubbleTails.get(bubble);
+  if (!tail || !tail.el.isConnected) tail = makeTextTail(bubble, "");
+  tail.text += delta;
+  tail.el.textContent = tail.text;
+  // percorso rapido: senza backtick non c'è nessun blocco da estrarre
+  if (tail.text.includes("```") || tail.pending) flushSvgBlocks(bubble, tail, false);
+}
+
+/** Rendering completo del testo di una bolla (messaggi salvati e ricaricati). */
+function renderRichText(bubble, text) {
+  bubble.textContent = "";
+  const tail = makeTextTail(bubble, "");
+  tail.text = text || "";
+  tail.el.textContent = tail.text;
+  if (tail.text.includes("```")) flushSvgBlocks(bubble, tail, true);
+}
+
+/**
+ * Chiusura del turno: niente resta appeso allo streaming.
+ * - un blocco aperto (fence di chiusura mai arrivata) diventa codice + motivo dell'errore;
+ * - una coda in cui il cursore di scansione si era fermato oltre una fence parziale viene
+ *   ri-scansionata DALL'INIZIO: il testo è ancora integrale nella coda, quindi il blocco
+ *   completo viene finalmente reso come anteprima (senza aspettare il reload della pagina).
+ */
+function finalizeSvgStreaming() {
+  if (!cur.wrap) return;
+  for (const bubble of cur.wrap.querySelectorAll(".bubble")) {
+    const tail = bubbleTails.get(bubble);
+    if (!tail) continue;
+    if (tail.pending) { flushSvgBlocks(bubble, tail, true); continue; }
+    if (tail.searched > 0 && tail.text.includes("```")) {
+      tail.searched = 0;
+      flushSvgBlocks(bubble, tail, true);
+    }
+  }
+}
+
+/* ---- Blob URL: creati per l'anteprima e revocati appena non servono più ---- */
+const svgBlobUrls = new Map(); // url → elemento che lo mostra
+
+function registerBlobUrl(url, el) {
+  svgBlobUrls.set(url, el);
+  return url;
+}
+function revokeBlobUrl(url) {
+  if (!url) return;
+  const el = svgBlobUrls.get(url);
+  svgBlobUrls.delete(url);
+  if (zoomState && zoomState.url === url) closeSvgZoom();
+  try { URL.revokeObjectURL(url); } catch { /* già revocato */ }
+  void el;
+}
+/** Revoca i Blob URL i cui elementi non sono più nel documento. */
+function revokeDetachedBlobs() {
+  for (const [url, el] of [...svgBlobUrls]) if (!el.isConnected) revokeBlobUrl(url);
+}
+/** Revoca i Blob URL delle anteprime contenute in un sottoalbero rimosso dal DOM. */
+function revokeBlobsIn(root) {
+  if (!root) return;
+  for (const [url, el] of [...svgBlobUrls]) if (root === el || (root.contains && root.contains(el))) revokeBlobUrl(url);
+}
+function revokeAllBlobs() {
+  for (const url of [...svgBlobUrls.keys()]) revokeBlobUrl(url);
+}
+
+/* ---- caricamento pigro del sanitizzatore (stesso modulo del server) ---- */
+let svgSanitizerPromise = null;
+function loadSvgSanitizer() {
+  if (!svgSanitizerPromise) {
+    svgSanitizerPromise = import("/svg-sanitize.mjs").catch(() => null);
+  }
+  return svgSanitizerPromise;
+}
+
+/** Secondo controllo, nel browser: il documento è ben formato e usa solo elementi noti. */
+function domCheckSvg(svg) {
+  if (typeof DOMParser !== "function") return null;
+  let doc;
+  try {
+    doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+  } catch {
+    return "documento SVG non analizzabile";
+  }
+  if (doc.getElementsByTagName("parsererror").length) return "documento SVG non ben formato";
+  const root = doc.documentElement;
+  if (!root || root.nodeName !== "svg") return "manca l'elemento radice <svg>";
+  for (const el of doc.getElementsByTagName("*")) {
+    if (!SVG_PREVIEW_TAGS.has(el.nodeName)) return `elemento <${el.nodeName}> non consentito`;
+  }
+  return null;
+}
+
+/** Nome file per il download, dedotto dal <title> del disegno. */
+function slugFromTitle(title) {
+  const base = String(title || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  return (base || "disegno") + ".svg";
+}
+
+/**
+ * Crea la card di un disegno. Parte come «preparo l'anteprima», poi diventa immagine
+ * (sanificata) oppure codice + motivo dell'errore: in nessun caso la chat si interrompe.
+ */
+function makeSvgCard(code, forcedError) {
+  const fig = document.createElement("figure");
+  fig.className = "svgfig";
+  const head = document.createElement("div");
+  head.className = "svghead";
+  const lbl = document.createElement("span");
+  lbl.className = "svglbl";
+  lbl.textContent = "disegno SVG";
+  const acts = document.createElement("div");
+  acts.className = "svgacts";
+  const mkBtn = (label, title, act, fn) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    b.dataset.act = act;
+    if (title) b.title = title;
+    b.onclick = fn;
+    acts.appendChild(b);
+    return b;
+  };
+  const box = document.createElement("div");
+  box.className = "svgbox";
+  const wait = document.createElement("span");
+  wait.className = "svgwait";
+  wait.textContent = "preparo l'anteprima…";
+  box.appendChild(wait);
+  const img = document.createElement("img");
+  img.loading = "lazy";
+  img.decoding = "async";
+  img.alt = "";
+  box.appendChild(img); // resta invisibile finché non c'è il Blob URL
+  const pre = document.createElement("pre");
+  pre.className = "mdsvgsrc";
+  pre.hidden = true;
+  pre.textContent = code;
+  const warn = document.createElement("div");
+  warn.className = "svgwarn";
+  warn.hidden = true;
+  fig.appendChild(head);
+  fig.appendChild(box);
+  fig.appendChild(warn);
+  fig.appendChild(pre);
+  head.appendChild(lbl);
+  head.appendChild(acts);
+
+  const state = { raw: code, svg: null, url: null, title: "", error: forcedError || null, img };
+  fig._svg = state;
+
+  const btnZoom = mkBtn("⤢ ingrandisci", "Apri il disegno a schermo intero", "zoom", () => openSvgZoom(state));
+  const btnCode = mkBtn("‹› mostra codice", "Mostra il codice SVG come testo", "code", () => {
+    pre.hidden = !pre.hidden;
+    btnCode.textContent = pre.hidden ? "‹› mostra codice" : "‹› nascondi codice";
+  });
+  const btnCopy = mkBtn("⧉ copia SVG", "Copia il codice SVG sanitizzato", "copy", async () => {
+    const okCopy = await copyText(state.svg || state.raw);
+    btnCopy.textContent = okCopy ? "✓ copiato" : "✗ non copiato";
+    setTimeout(() => (btnCopy.textContent = "⧉ copia SVG"), 1500);
+  });
+  const btnDl = mkBtn("⬇ scarica SVG", "Scarica il disegno come file .svg", "download", () => downloadSvg(state));
+  btnZoom.disabled = true;
+  btnDl.disabled = true;
+
+  // se la struttura non è utilizzabile (streaming mai chiuso) si mostra subito l'errore
+  if (forcedError) showSvgCardError(fig, state, forcedError, true);
+  else hydrateSvgCard(fig, state).catch(() => { /* resa già gestita */ });
+  return fig;
+}
+
+/** Sanitizza il codice e prepara l'anteprima (immagine con Blob URL). */
+async function hydrateSvgCard(fig, state) {
+  const mod = await loadSvgSanitizer();
+  if (!fig.isConnected) return;
+  if (!mod || typeof mod.sanitizeSvg !== "function") {
+    showSvgCardError(fig, state, "sanitizzatore non disponibile (modulo /svg-sanitize.mjs non caricato)", false);
+    return;
+  }
+  const res = mod.sanitizeSvg(state.raw);
+  if (!res.ok) {
+    showSvgCardError(fig, state, res.error, false);
+    return;
+  }
+  const domErr = domCheckSvg(res.svg);
+  if (domErr) {
+    showSvgCardError(fig, state, domErr, false);
+    return;
+  }
+  state.svg = res.svg;
+  state.title = res.title || "";
+  state.warnings = res.warnings || [];
+  // «Mostra codice» espone la versione SANITIZZATA (la stessa dell'anteprima e del download),
+  // sempre come testo: mai HTML generato dal modello.
+  const pre = fig.querySelector(".mdsvgsrc");
+  if (pre) pre.textContent = res.svg;
+  let url;
+  try {
+    url = URL.createObjectURL(new Blob([res.svg], { type: "image/svg+xml;charset=utf-8" }));
+  } catch {
+    showSvgCardError(fig, state, "impossibile preparare l'anteprima nel browser", false);
+    return;
+  }
+  state.url = url;
+  const box = fig.querySelector(".svgbox");
+  const img = state.img;
+  registerBlobUrl(url, img);
+  img.alt = state.title || "disegno SVG prodotto dall'agente";
+  img.onerror = () => {
+    revokeBlobUrl(url);
+    state.url = null;
+    showSvgCardError(fig, state, "il disegno non è visualizzabile (documento SVG non valido per il browser)", false);
+  };
+  img.onload = () => {
+    const wait = box.querySelector(".svgwait");
+    if (wait) wait.remove();
+    if (state.warnings.length) {
+      const w = fig.querySelector(".svgwarn");
+      w.hidden = false;
+      w.textContent = `alcuni elementi non consentiti sono stati rimossi: ${state.warnings.slice(0, 3).join("; ")}`;
+    }
+  };
+  img.src = url;
+  setSvgButtons(fig, { zoom: false, download: false });
+}
+
+/** Abilita/disabilita i pulsanti della card per nome d'azione. */
+function setSvgButtons(fig, patch) {
+  for (const [act, disabled] of Object.entries(patch)) {
+    const b = fig.querySelector(`.svgacts button[data-act="${act}"]`);
+    if (b) b.disabled = !!disabled;
+  }
+}
+
+/** Stato d'errore: si mostra il codice (testo) e il motivo, senza toccare il resto della chat. */
+function showSvgCardError(fig, state, message, codeVisible) {
+  fig.classList.add("err");
+  state.error = message;
+  const box = fig.querySelector(".svgbox");
+  box.textContent = "";
+  const note = document.createElement("div");
+  note.className = "svgerr";
+  note.textContent = `anteprima non disponibile: ${message}`;
+  const pre = fig.querySelector(".mdsvgsrc");
+  if (pre) pre.hidden = false;
+  box.appendChild(note);
+  setSvgButtons(fig, { zoom: true, code: true, download: true, copy: false });
+  void codeVisible;
+}
+
+/** Copia negli appunti, con ripiego per contesti senza Clipboard API (http, iframe). */
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const done = document.execCommand("copy");
+      ta.remove();
+      return !!done;
+    } catch {
+      return false;
+    }
+  }
+}
+
+/** Scarica la versione SANITIZZATA del disegno (mai il codice grezzo). */
+function downloadSvg(state) {
+  if (!state.svg) return false;
+  let url = state.url;
+  let temp = false;
+  if (!url || !svgBlobUrls.has(url)) {
+    try {
+      url = URL.createObjectURL(new Blob([state.svg], { type: "image/svg+xml;charset=utf-8" }));
+      temp = true;
+    } catch {
+      return false;
+    }
+  }
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = slugFromTitle(state.title);
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  if (temp) setTimeout(() => URL.revokeObjectURL(url), 10000);
+  return true;
+}
+
+/* ---- vista ingrandita ---- */
+let zoomState = null;
+
+function openSvgZoom(state) {
+  if (!state.url) return;
+  const box = $("svgZoom");
+  if (!box) return;
+  const img = box.querySelector("img");
+  img.src = state.url;
+  img.alt = state.title || "disegno SVG prodotto dall'agente";
+  box.hidden = false;
+  zoomState = state;
+}
+
+function closeSvgZoom() {
+  const box = $("svgZoom");
+  if (!box || box.hidden) { zoomState = null; return; }
+  const img = box.querySelector("img");
+  img.removeAttribute("src");
+  box.hidden = true;
+  zoomState = null;
+}
+
+/** Pulsanti e chiusura della vista ingrandita (una sola registrazione, all'avvio). */
+function initSvgZoom() {
+  const box = $("svgZoom");
+  if (!box) return;
+  box.addEventListener("click", (e) => {
+    const act = e.target instanceof Element ? e.target.closest("[data-zoom]")?.dataset.zoom : null;
+    if (act === "close") return closeSvgZoom();
+    if (act === "copy" && zoomState) copyText(zoomState.svg || zoomState.raw);
+    if (act === "download" && zoomState) downloadSvg(zoomState);
+    if (!act && e.target === box) closeSvgZoom(); // clic sullo sfondo
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && zoomState) {
+      e.stopPropagation();
+      closeSvgZoom();
+    }
+  });
+}
+
 function renderMessages(messages) {
   // il DOM viene ricostruito dalla lista ricevuta: non ci sono più bolle "locali" da proteggere
   localMsgs = 0;
+  revokeAllBlobs(); // le anteprime stanno per essere distrutte: i Blob URL vanno liberati
   chat.innerHTML = "";
   const list = messages || [];
   if (!list.length) { chat.innerHTML = '<div class="empty"><div class="empty-ico" aria-hidden="true"></div>Scrivi un messaggio per iniziare…</div>'; }
@@ -1635,7 +2236,11 @@ function renderMessages(messages) {
         if (bl.type === "thinking") {
           if (bl.text) { const t = document.createElement("div"); t.className = "thinking"; t.textContent = bl.text; wrap.appendChild(t); }
         } else if (bl.type === "text") {
-          if (bl.text) { const b = document.createElement("div"); b.className = "bubble"; b.textContent = bl.text; wrap.appendChild(b); }
+          if (bl.text) {
+            const b = document.createElement("div"); b.className = "bubble";
+            wrap.appendChild(b);
+            renderRichText(b, bl.text);
+          }
         } else if (bl.type === "tool") {
           // Domanda all'utente: si ricostruisce interattiva (o con le risposte già date),
           // così la vista ricaricata mostra la domanda E la risposta.
@@ -1644,7 +2249,7 @@ function renderMessages(messages) {
             wrap.appendChild(askDedupe(bl.id, card));
             continue;
           }
-          if (bl.path) continue; // i file diventano card scaricabili più sotto
+          // il tool si mostra come gli altri: la card scaricabile gli sta accanto, sotto
           const td = document.createElement("div"); td.className = "tool";
           td.textContent = "🔧 " + bl.name + (bl.command ? " · " + String(bl.command).slice(0, 90) : "");
           wrap.appendChild(td);
@@ -1655,23 +2260,26 @@ function renderMessages(messages) {
       if (m.thinking) { const t = document.createElement("div"); t.className = "thinking"; t.textContent = m.thinking; wrap.appendChild(t); }
       if (m.tools && m.tools.length) {
         for (const t of m.tools) {
-          if (t.path) continue; // i file diventano card scaricabili più sotto
+          // (compatibilità) come sopra: la card del file arriva in fondo al messaggio
           const td = document.createElement("div"); td.className = "tool";
           td.textContent = "🔧 " + t.name + (t.command ? " · " + String(t.command).slice(0, 90) : "");
           wrap.appendChild(td);
         }
       }
-      const b = document.createElement("div"); b.className = "bubble"; b.textContent = m.text; wrap.appendChild(b);
+      // payload senza `blocks` (compatibilità): stesso trattamento dei blocchi di testo
+      const b = document.createElement("div"); b.className = "bubble";
+      wrap.appendChild(b);
+      renderRichText(b, m.text || "");
     } else {
       const b = document.createElement("div"); b.className = "bubble"; b.textContent = m.text; wrap.appendChild(b);
     }
 
     // file prodotti/letti dai tool + eventuali percorsi citati nel testo → card con “scarica”
     if (m.role === "assistant") {
-      const paths = new Set();
-      for (const t of m.tools || []) if (t.path) paths.add(t.path);
-      if (m.text) for (const p of extractRootPaths(m.text)) paths.add(p);
-      for (const p of paths) wrap.appendChild(fileCard(p));
+      // file toccati dai tool + percorsi citati nel testo: il server conferma quali
+      // esistono e la card si disegna solo su quelli (con il percorso normalizzato)
+      const toolPaths = (m.tools || []).map((t) => t.path).filter(Boolean);
+      wrap.appendChild(fileCardsBox(toolPaths, m.text));
     }
     wrap.appendChild(
       msgActions(m, {
@@ -1757,27 +2365,132 @@ function appendAbortedPartial(list) {
 }
 function basenameOf(p) { return String(p).split("/").filter(Boolean).pop() || String(p); }
 function downloadUrl(p) { return "/api/download?path=" + encodeURIComponent(p); }
-function extractRootPaths(text) {
-  if (!text || !stateRoot) return [];
-  const esc = stateRoot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(esc + "\\/[^\\s`\"'()<>\\[\\],;:]+(?:\\.[A-Za-z0-9]{1,8})?", "g");
+
+/* ---- percorsi citati e card dei file ------------------------------------
+ * Un percorso citato non è un file finché il server non lo conferma: la chat può citare
+ * `media/report.md`, `/root/pi-harness/media/report.md`, `report.md` o anche una cartella.
+ * Qui si estraggono i candidati e si chiede a `/api/resolve-files` quale esiste davvero, con
+ * il percorso normalizzato (relativo alla root della dashboard) che scarica e apre il file
+ * giusto. La risposta del server è la sola che può produrre una card: spariti i tasti che
+ * puntavano a una cartella o a un file mai esistito. */
+const fileResolveCache = new Map();   // candidato -> { at, item|null }
+const fileResolvePending = new Map(); // richiesta in corso -> Promise
+const RESOLVE_TTL_MS = 120000;
+
+/** Possibili percorsi dentro un testo libero (assoluti e relativi, con o senza cartella). */
+function extractPaths(text) {
+  if (!text) return [];
+  // gli URL non sono percorsi di file: si tolgono prima di cercare
+  const src = text.replace(/\b[a-z][a-z0-9+.-]*:\/\/\S+/gi, " ");
   const out = new Set();
-  for (const m of text.match(re) || []) out.add(m.replace(/[.,)]+$/, ""));
-  return [...out];
+  // Percorsi assoluti. NON si filtra sul prefisso della root: al primissimo disegno della
+  // chat `stateRoot` può non essere ancora arrivato, e i percorsi assoluti andrebbero persi.
+  // Chi decide se un percorso è un file vero (e dentro la root) è il server.
+  for (const m of src.match(/(?<![\w.-])\/(?:[\w.@+-]+\/)*[\w.@+-]+/g) || []) out.add(m);
+  // relativi con almeno una cartella (media/report.md, pi-harness/media/report.md) e nomi
+  // con estensione (report.md): la risoluzione al file reale la fa il server
+  for (const m of src.match(/(?:[\w.@+-]+\/)+[\w.@+-]+\.[A-Za-z][A-Za-z0-9]{0,7}/g) || []) out.add(m);
+  for (const m of src.match(/[\w.@+-]+\.[A-Za-z][A-Za-z0-9]{0,7}/g) || []) out.add(m);
+  // cartelle citate con la barra finale (media/backups/): non sono file, si scaricano .zip
+  for (const m of src.match(/(?:[\w.@+-]+\/){2,}/g) || []) out.add(m);
+  const clean = [];
+  for (const p of out) {
+    const s = p.replace(/[.,;:)\]}'"]+$/, "");
+    // niente glob, niente resti di markdown tipo "**file.md**"
+    if (!s || /[*?{}\[\]]/.test(s)) continue;
+    if (!/\.[A-Za-z][A-Za-z0-9]{0,7}$/.test(s) && !s.includes("/")) continue;
+    clean.push(s);
+  }
+  return [...new Set(clean)].slice(0, 40);
 }
-function fileCard(path) {
+/** Chiede al server quali candidati esistono davvero (con cache breve, anche in gruppo). */
+async function resolvePaths(inputs) {
+  const wanted = [];
+  for (const raw of inputs || []) {
+    const p = String(raw || "");
+    if (!p) continue;
+    const hit = fileResolveCache.get(p);
+    if (hit && Date.now() - hit.at < RESOLVE_TTL_MS) continue;
+    if (!wanted.includes(p)) wanted.push(p);
+  }
+  if (wanted.length) {
+    const key = wanted.join("\n");
+    let req = fileResolvePending.get(key);
+    if (!req) {
+      req = fetch("/api/resolve-files", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ paths: wanted }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          const items = data && Array.isArray(data.items) ? data.items : [];
+          for (const it of items) fileResolveCache.set(it.input, { at: Date.now(), item: it.ok ? it : null });
+          // chi non compare nella risposta non è un file: si ricorda anche questo, per non
+          // riprovare a ogni ridisegno della chat
+          for (const p of wanted) if (!fileResolveCache.has(p)) fileResolveCache.set(p, { at: Date.now(), item: null });
+        })
+        .catch(() => { /* rete assente: nessuna card, meglio di una card che non scarica */ })
+        .finally(() => fileResolvePending.delete(key));
+      fileResolvePending.set(key, req);
+    }
+    await req;
+  }
+  const found = [];
+  const seen = new Set();
+  for (const raw of inputs || []) {
+    const it = fileResolveCache.get(String(raw || ""))?.item;
+    if (!it || seen.has(it.path)) continue;
+    seen.add(it.path);
+    found.push(it);
+  }
+  return found;
+}
+
+/** Riempie di card il contenitore riservato: la posizione è già quella giusta, l'esito arriva dopo. */
+async function fillFileCards(box, inputs) {
+  if (!box || !inputs || !inputs.length) return;
+  const items = await resolvePaths(inputs);
+  if (!items.length) { box.remove(); return; }
+  for (const it of items) box.appendChild(fileCard(it));
+}
+
+/** Card di un file o di una cartella: «apri» e «scarica» (le cartelle si scaricano come .zip). */
+function fileCard(info) {
+  const it = typeof info === "string" ? { path: info, name: basenameOf(info), type: "file" } : info || {};
+  const path = it.path;
+  const name = it.name || basenameOf(path);
+  const isDir = it.type === "dir";
   const card = document.createElement("div"); card.className = "filecard";
-  const ic = document.createElement("span"); ic.className = "fic"; ic.textContent = "📄";
+  const ic = document.createElement("span"); ic.className = "fic"; ic.textContent = isDir ? "📁" : "📄";
   const meta = document.createElement("div"); meta.className = "fmeta";
-  const nm = document.createElement("div"); nm.className = "fname"; nm.textContent = basenameOf(path);
-  const pp = document.createElement("div"); pp.className = "fpath"; pp.textContent = path; pp.title = path;
+  const nm = document.createElement("div"); nm.className = "fname"; nm.textContent = name;
+  const pp = document.createElement("div"); pp.className = "fpath";
+  pp.textContent = it.size != null && !isDir ? `${path} · ${fmtSize(it.size)}` : path;
+  pp.title = path;
   meta.appendChild(nm); meta.appendChild(pp);
   const openBtn = document.createElement("button"); openBtn.type = "button"; openBtn.className = "fbtn";
-  openBtn.textContent = "apri"; openBtn.onclick = () => openInEditor(path);
-  const dl = document.createElement("a"); dl.className = "fbtn dl"; dl.textContent = "⬇ scarica";
-  dl.href = downloadUrl(path); dl.setAttribute("download", ""); dl.title = "Scarica " + basenameOf(path);
+  openBtn.textContent = isDir ? "cartella" : "apri";
+  openBtn.onclick = () => { if (isDir) { showTab("files"); loadDir(path); } else openInEditor(path); };
+  const dlName = isDir ? name + ".zip" : name;
+  const dl = document.createElement("a"); dl.className = "fbtn dl";
+  dl.textContent = isDir ? "⬇ zip" : "⬇ scarica";
+  // niente attributo `download`: il nome del file lo decide il server con
+  // Content-Disposition (coerente per file e .zip), e il download non viene annullato
+  // dai browser che lo considerano una navigazione
+  dl.href = downloadUrl(path);
+  dl.title = (isDir ? `Scarica la cartella come ${dlName}` : `Scarica ${name}`) + ` (${path})`;
   card.appendChild(ic); card.appendChild(meta); card.appendChild(openBtn); card.appendChild(dl);
   return card;
+}
+
+/** Contenitore (con posizione riservata) delle card di un messaggio. Senza file confermati sparisce. */
+function fileCardsBox(toolPaths, text) {
+  const box = document.createElement("div"); box.className = "filecards";
+  const tools = [...new Set((toolPaths || []).filter(Boolean))];
+  const cited = extractPaths(text || "").filter((p) => !tools.includes(p));
+  fillFileCards(box, [...tools, ...cited]);
+  return box;
 }
 
 function appendUserMessage(text, attachments) {
@@ -1857,7 +2570,8 @@ function appendToolCard(info = {}) {
   if (!cur.wrap) newAssistantBubble();
   const card = document.createElement("div");
   card.className = "tool" + (info.status === "error" ? " err" : "");
-  card.textContent = "🔧 " + (info.name || "tool");
+  // gli eventi SSE portano `toolName`, i messaggi salvati `name`: si accettano entrambi
+  card.textContent = "🔧 " + (info.name || info.toolName || "tool");
   if (info.summary) card.appendChild(Object.assign(document.createElement("span"), { className: "tsum", textContent: " · " + info.summary }));
   const state = document.createElement("span");
   state.className = "tstate";
@@ -1882,6 +2596,20 @@ function endToolCard(info = {}) {
   if (info.isError) card.classList.add("err");
   const state = card.querySelector(".tstate");
   if (state) state.textContent = info.isError ? "✗" : "✓";
+}
+
+/* Un file creato/letto durante la risposta: la card scaricabile entra nel messaggio in corso,
+ * accanto alla card del tool che l'ha toccato (o in fondo, se il tool non è più reperibile).
+ * Il percorso viene fatto confermare al server, quindi il tasto punta al file vero. */
+function attachStreamFile(path, toolCard) {
+  // se il turno non ha ancora aperto una bolla (il modello è andato dritto al tool) la si
+  // apre qui: altrimenti la card del file si perderebbe fino al prossimo ricaricamento
+  if (!cur.wrap) newAssistantBubble();
+  if (!cur.wrap) return;
+  const box = fileCardsBox([path], "");
+  if (toolCard && toolCard.parentNode === cur.wrap) toolCard.after(box);
+  else cur.wrap.appendChild(box);
+  scheduleAutoscroll();
 }
 
 /* =============== DOMANDE INTERATTIVE ALL'UTENTE (tool `ask_user`) ===============
@@ -2224,12 +2952,16 @@ async function askSend(card, action) {
 /* Gli eventi delle domande sono registrati accanto agli altri listener SSE (dopo `new EventSource`),
    perché qui la connessione non esiste ancora. */
 
-function appendText(d) { if (!cur.wrap) newAssistantBubble(); ensureTextBlock().textContent += d; scheduleAutoscroll(); }
+function appendText(d) {
+  if (!cur.wrap) newAssistantBubble();
+  appendBubbleText(ensureTextBlock(), d);
+  scheduleAutoscroll();
+}
 function appendThinking(d) { if (!cur.wrap) newAssistantBubble(); ensureThinkingBlock().textContent += d; scheduleAutoscroll(); }
 
 /** Testo/pensiero complessivo del messaggio in corso (per stop e notifiche). */
 function currentAssistantText() {
-  return cur.wrap ? [...cur.wrap.querySelectorAll(".bubble")].map((b) => b.textContent).join("") : "";
+  return cur.wrap ? [...cur.wrap.querySelectorAll(".bubble")].map((b) => bubbleText(b)).join("") : "";
 }
 function currentThinkingText() {
   return cur.wrap ? [...cur.wrap.querySelectorAll(".thinking")].map((t) => t.textContent).join("\n") : "";
@@ -2244,15 +2976,21 @@ function currentThinkingText() {
 function renderStreamSegments(segments) {
   if (!cur.wrap) newAssistantBubble();
   if (!cur.wrap) return;
-  for (const el of [...cur.wrap.children]) if (el !== cur.who) cur.wrap.removeChild(el);
+  for (const el of [...cur.wrap.children]) {
+    if (el === cur.who) continue;
+    revokeBlobsIn(el); // le anteprime appena rimosse non devono tenere in vita i Blob URL
+    cur.wrap.removeChild(el);
+  }
   cur.assistant = null; cur.thinking = null; cur.tools = new Map();
+  const streamPaths = new Set();
   for (const s of segments || []) {
     if (s.kind === "thinking") {
       const t = document.createElement("div"); t.className = "thinking"; t.style.display = "block"; t.textContent = s.text || "";
       cur.wrap.appendChild(t); cur.thinking = t;
     } else if (s.kind === "text") {
-      const b = document.createElement("div"); b.className = "bubble"; b.textContent = s.text || "";
+      const b = document.createElement("div"); b.className = "bubble";
       cur.wrap.appendChild(b); cur.assistant = b;
+      renderRichText(b, s.text || "");
     } else if (s.kind === "tool") {
       // Le domande all'utente tornano come card, non come riga «🔧 ask_user»: dopo una
       // riconnessione l'agente sta ancora aspettando, e la card deve poter ricevere la risposta.
@@ -2281,8 +3019,10 @@ function renderStreamSegments(segments) {
       card.appendChild(state);
       cur.wrap.appendChild(card);
       if (s.id) cur.tools.set(s.id, card);
+      if (s.path) streamPaths.add(s.path);
     }
   }
+  if (streamPaths.size) cur.wrap.appendChild(fileCardsBox([...streamPaths], ""));
   scheduleAutoscroll();
 }
 
@@ -2294,7 +3034,7 @@ function setStatus(on) {
   $("stop").hidden = !on;
   $("send").disabled = on;
   if ($("compactBtn")) $("compactBtn").disabled = on || compacting;
-  if (!on) resetCur();
+  if (!on) { finalizeSvgStreaming(); revokeDetachedBlobs(); resetCur(); }
 }
 
 /**
@@ -2321,6 +3061,7 @@ let currentMessages = [];
  *  non abbia funzionato (difetto segnalato e misurato: contenuto nuovo a ~2,3 s). */
 function showChatLoading() {
   chat.setAttribute("aria-busy", "true");
+  revokeAllBlobs();
   chat.innerHTML = '<div class="empty chat-loading"><span class="spin" aria-hidden="true"></span>carico la conversazione…</div>';
 }
 
@@ -2340,7 +3081,7 @@ function refreshTailActions() {
   }
   if (last.querySelector(".msgacts")) return;
   const busy = $("dot").classList.contains("on");
-  const text = last.querySelector(".bubble")?.textContent || "";
+  const text = bubbleText(last.querySelector(".bubble"));
   last.appendChild(
     last.classList.contains("assistant")
       ? msgActions({ role: "assistant", text }, { copy: !!text, regen: !busy })
@@ -2456,6 +3197,8 @@ es.addEventListener("tool_start", (e) => {
 es.addEventListener("tool_end", (e) => {
   let d; try { d = JSON.parse(e.data); } catch { d = {}; }
   endToolCard(d);
+  // il file appena scritto/letto si può scaricare SUBITO: niente più card solo dopo il reload
+  if (d.path) attachStreamFile(d.path, d.toolCallId ? cur.tools?.get(d.toolCallId) : null);
 });
 // Domande interattive: il server è la verità (pendenti ed esiti), la card a schermo si adegua.
 // La domanda viene inserita nel messaggio in corso, all'altezza in cui l'agente l'ha posta.
@@ -2688,6 +3431,9 @@ $("thinkSel").onchange = (e) => postJSON("/api/thinking", { level: e.target.valu
 
 let lastState = null;      // ultimo stato ricevuto, per ri-renderizzare
 let cmdNotices = [];       // esiti dei comandi mostrati in chat
+// Schede raggiungibili con `/tab <nome>`: una sola fonte per il comando, la palette e i test.
+// (Vive qui, dentro il blocco dei comandi, perché è il comando a usarla.)
+const TAB_NAMES = ["chat", "files", "goals", "cron", "skills", "progetto", "agenda", "live"];
 let cmdCatalog = null;     // catalogo dal server
 let cmdLoadedAt = 0;
 let cmdByKey = new Map();  // nome/alias -> comando
@@ -3060,8 +3806,8 @@ async function runClientCommand(cmd, line) {
   if (cmd.name === "skills") { showTab("skills"); return true; }
   if (cmd.name === "tab") {
     const t = arg.toLowerCase();
-    if (!["chat", "files", "goals", "cron", "skills"].includes(t)) {
-      cmdNotice(line, "schede disponibili: chat, files, goals, cron, skills", false);
+    if (!TAB_NAMES.includes(t)) {
+      cmdNotice(line, "schede disponibili: " + TAB_NAMES.join(", "), false);
       return true;
     }
     showTab(t);
@@ -3369,8 +4115,19 @@ $("eRename").onclick = async () => {
   const nn = prompt("Nuovo nome:", old); if (!nn || nn === old) return;
   const dir = currentFile.split("/").slice(0, -1).join("/");
   const to = jr(dir, nn);
-  const r = await fetch("/api/file/rename", { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({ from: currentFile, to }) });
-  const j = await r.json();
+  const send = (overwrite) => fetch("/api/file/rename", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ from: currentFile, to, ...(overwrite ? { overwrite: true } : {}) }),
+  });
+  // il server rifiuta (409) se la destinazione esiste: la sovrascrittura si chiede, non si subisce
+  let r = await send(false);
+  let j = await r.json().catch(() => ({}));
+  if (r.status === 409) {
+    if (!confirm((j.error || "La destinazione esiste già") + "\n\nSovrascrivere? Il contenuto attuale andrà perso.")) return;
+    r = await send(true);
+    j = await r.json().catch(() => ({}));
+  }
   if (!r.ok) return alert(j.error || "errore");
   currentFile = j.path; $("eName").textContent = j.path;
 };
@@ -3825,7 +4582,10 @@ async function loadProgetto() {
       const p = `${rel}/${d.name}`;
       rows.push(`<div class="goal-card" style="margin-bottom:8px">
         <div class="goal-head"><span class="goal-title">📁 ${escHtml(d.name)}</span><span class="gcount">${fmtAgo(d.mtime)}</span></div>
-        <div style="display:flex;gap:8px;margin-top:6px"><button class="ghost" data-dir="${escAttr(p)}">apri cartella</button></div>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="ghost" data-dir="${escAttr(p)}">apri cartella</button>
+          <button class="ghost" data-dl="${escAttr(p)}" title="Scarica la cartella come ${escAttr(d.name)}.zip">⬇ zip</button>
+        </div>
       </div>`);
     }
     for (const f of files) {
@@ -4363,6 +5123,18 @@ let goals = [];
 let goalsLoaded = false;
 let goalEditing = null;
 
+/**
+ * Righe di un campo del form dei goal: una voce per riga, senza la numerazione o il trattino
+ * che l'utente può aver scritto di suo (i passi sono già numerati dalla scheda: senza questo si
+ * leggeva «1 | 1. primo passo»). Le righe vuote si scartano.
+ */
+function goalLines(value) {
+  return String(value || "")
+    .split("\n")
+    .map((s) => s.replace(/^\s*(?:\d+[.)]|[-*•])\s+/, "").trim())
+    .filter(Boolean);
+}
+
 function escAttr(s) {
   return String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -4412,7 +5184,7 @@ function goalForm(g) {
     <input type="hidden" id="gFormId" value="${escAttr(g?.id || "")}" />
     <div class="gfield"><label>Obiettivo</label><input id="gTitle" maxlength="200" placeholder="es. Migrare il blog su un nuovo dominio" value="${escAttr(g?.title || "")}" /></div>
     <div class="gfield"><label>Descrizione (opzionale)</label><textarea id="gDesc" placeholder="Contesto, criterio di successo…">${escHtml(g?.description || "")}</textarea></div>
-    <div class="gfield"><label>⛓ Catena di passaggi — uno per riga, in ordine</label><textarea id="gSteps" placeholder="1. fare il backup&#10;2. spostare i file&#10;3. aggiornare il DNS">${escHtml((g?.steps || []).map((s) => s.title).join("\n"))}</textarea></div>
+    <div class="gfield"><label>⛓ Catena di passaggi — uno per riga, in ordine</label><textarea id="gSteps" placeholder="fare il backup&#10;spostare i file&#10;aggiornare il DNS">${escHtml((g?.steps || []).map((s) => s.title).join("\n"))}</textarea></div>
     <div class="gfield"><label>☑ Checklist — un'attività per riga</label><textarea id="gChecklist" placeholder="controllare i permessi&#10;verificare i certificati">${escHtml((g?.checklist || []).map((c) => c.text).join("\n"))}</textarea></div>
     <div class="gfield"><label>Stato</label><select id="gStatus" class="select">
       <option value="active">attivo</option>
@@ -4435,8 +5207,8 @@ async function saveGoalFromForm() {
   const title = $("gTitle").value.trim();
   if (!title) { alert("Serve almeno un titolo (obiettivo)."); return; }
   const existing = goals.find((g) => g.id === id) || null;
-  const stepTitles = $("gSteps").value.split("\n").map((s) => s.trim()).filter(Boolean);
-  const chkTexts = $("gChecklist").value.split("\n").map((s) => s.trim()).filter(Boolean);
+  const stepTitles = goalLines($("gSteps").value);
+  const chkTexts = goalLines($("gChecklist").value);
   const payload = {
     id: id || undefined,
     title,
@@ -5357,6 +6129,7 @@ $("snipSave").onclick = () => {
   renderSnips();
 };
 renderSnips();
+initSvgZoom();
 window.addEventListener("resize", autosize);
 autosize();
 </script>

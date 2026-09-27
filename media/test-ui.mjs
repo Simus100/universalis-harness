@@ -99,6 +99,9 @@ const window = {
   matchMedia: () => ({ matches: false, addEventListener() {} }),
   innerHeight: 800,
   location: { href: "/" },
+  // lo script avvolge window.fetch per accorgersi della sessione scaduta: senza questo
+  // stub il test si fermava subito ("Cannot read properties of undefined (reading 'bind')")
+  fetch: async () => ({ ok: true, status: 200, json: async () => ({}), text: async () => "", clone() { return this; } }),
 };
 // nei browser Notification/URL/localStorage sono proprietà di window: lo stub
 // deve rispettarlo, altrimenti i controlli `"Notification" in window` falliscono
@@ -142,6 +145,7 @@ const accessors = `
   featPanel: () => document.getElementById("featPanel"), featBtn: () => document.getElementById("featBtn"),
   getCrons: () => crons, setCrons: (v) => { crons = v; }, setCronEditing: (v) => { cronEditing = v; },
   cronList: () => document.getElementById("cronList"),
+  goalLines, goalForm, TAB_NAMES,
 };`;
 vm.runInContext(code + accessors, sandbox, { filename: "dashboard-html-script.js" });
 const T = sandbox.__t;
@@ -359,6 +363,24 @@ T.renderHist();
 const hitems = el("histList").children;
 check("il prompt recente non è più tagliato a 120 caratteri", hitems.some((c) => String(c.textContent).length > 200), "max=" + Math.max(0, ...hitems.map((c) => String(c.textContent).length)));
 check("il testo completo resta nel title", hitems.some((c) => String(c.title).length > 200));
+
+// ---------------- 13. passi dei goal: la numerazione scritta a mano non resta nel titolo ----------------
+// (difetto: il placeholder suggeriva «1. fare il backup» e il numero finiva nel titolo del
+// passo, che la scheda numera già: si leggeva «1 | 1. primo passo»)
+check("goalLines toglie la numerazione «1. »", JSON.stringify(T.goalLines("1. primo\n2. secondo")) === JSON.stringify(["primo", "secondo"]), JSON.stringify(T.goalLines("1. primo\n2. secondo")));
+check("goalLines toglie la numerazione «1) »", JSON.stringify(T.goalLines("1) primo")) === JSON.stringify(["primo"]));
+check("goalLines toglie i trattini di elenco", JSON.stringify(T.goalLines("- primo\n* secondo\n• terzo")) === JSON.stringify(["primo", "secondo", "terzo"]), JSON.stringify(T.goalLines("- primo\n* secondo\n• terzo")));
+check("goalLines scarta le righe vuote", JSON.stringify(T.goalLines("primo\n\n  \nsecondo\n")) === JSON.stringify(["primo", "secondo"]));
+check("goalLines non tocca il testo senza numerazione", JSON.stringify(T.goalLines("fare il backup")) === JSON.stringify(["fare il backup"]));
+check("goalLines mantiene una numerazione interna al testo", JSON.stringify(T.goalLines("passo 1 e passo 2")) === JSON.stringify(["passo 1 e passo 2"]));
+check("goalLines di un valore vuoto/null è un elenco vuoto", T.goalLines("").length === 0 && T.goalLines(null).length === 0);
+check("il form dei goal non suggerisce più la numerazione a mano", !/placeholder="1\. /.test(T.goalForm({}).innerHTML));
+
+// ---------------- 14. schede raggiungibili dal comando /tab ----------------
+// (il README documentava /tab progetto|agenda|live ma il client le rifiutava)
+for (const scheda of ["chat", "files", "goals", "cron", "skills", "progetto", "agenda", "live"]) {
+  check(`/tab accetta «${scheda}»`, T.TAB_NAMES.includes(scheda));
+}
 
 console.log(`\nrisultato: ${pass} ok, ${fail} falliti`);
 process.exit(fail ? 1 : 0);

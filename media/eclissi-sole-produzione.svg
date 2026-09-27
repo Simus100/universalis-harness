@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 470" role="img" aria-label="Schema di un'eclissi di Sole: Sole, Luna e Terra con cono d'ombra e penombra" preserveAspectRatio="xMidYMid meet">
+  <title>Eclissi di Sole: l'ombra della Luna sulla Terra</title>
+  <desc>Schema didattico visto di lato: il Sole a sinistra, la Luna al centro allineata fra Sole e Terra, la Terra a destra. I raggi di luce che sfiorano la Luna delimitano un cono d'ombra stretto (umbra) e un cono più largo (penombra). L'umbra tocca la superficie terrestre in una fascia dove l'eclissi è totale; nella penombra l'eclissi è parziale. Dimensioni dei corpi e distanze non sono in scala.</desc>
+  <defs>
+    <radialGradient id="gSole" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff8d6"/>
+      <stop offset="0.55" stop-color="#fbbf24"/>
+      <stop offset="1" stop-color="#e0870a"/>
+    </radialGradient>
+    <linearGradient id="gTerra" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5b9dff"/>
+      <stop offset="1" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <clipPath id="discoTerra">
+      <circle cx="794" cy="225" r="64"/>
+    </clipPath>
+  </defs>
+
+  <rect x="6" y="6" width="888" height="458" rx="14" fill="#0e1526" stroke="#22304a"/>
+  <text x="450" y="42" text-anchor="middle" font-family="sans-serif" font-size="19" fill="#eef2f9">Eclissi di Sole: l'ombra della Luna sulla Terra</text>
+
+  <polygon points="570,201 860,156 860,294 570,249" fill="#8b97ac" fill-opacity="0.12"/>
+  <line x1="570" y1="201" x2="860" y2="156" stroke="#c6cfdd" stroke-width="1" stroke-dasharray="6 5" opacity="0.55"/>
+  <line x1="570" y1="249" x2="860" y2="294" stroke="#c6cfdd" stroke-width="1" stroke-dasharray="6 5" opacity="0.55"/>
+
+  <line x1="70" y1="171" x2="570" y2="201" stroke="#fbbf24" stroke-width="1.4" opacity="0.85"/>
+  <line x1="70" y1="279" x2="570" y2="249" stroke="#fbbf24" stroke-width="1.4" opacity="0.85"/>
+
+  <circle cx="70" cy="225" r="54" fill="url(#gSole)"/>
+  <circle cx="70" cy="225" r="54" fill="none" stroke="#fde68a" stroke-width="1.2" opacity="0.7"/>
+
+  <circle cx="570" cy="225" r="24" fill="#9aa6b8" stroke="#c6cfdd" stroke-width="1.2"/>
+  <circle cx="562" cy="217" r="7" fill="#7c8798" opacity="0.85"/>
+  <circle cx="578" cy="233" r="5" fill="#7c8798" opacity="0.85"/>
+
+  <circle cx="794" cy="225" r="64" fill="url(#gTerra)"/>
+  <circle cx="794" cy="225" r="64" fill="none" stroke="#93c5fd" stroke-width="1.3" opacity="0.8"/>
+
+  <polygon points="570,201 730,211 730,239 570,249" fill="#0b1020" fill-opacity="0.92" stroke="#8b5cff" stroke-width="1.1"/>
+
+  <g clip-path="url(#discoTerra)">
+    <ellipse cx="730" cy="225" rx="18" ry="30" fill="#060a14" fill-opacity="0.95"/>
+  </g>
+  <path d="M733.9 203 A 64 64 0 0 0 733.9 247" fill="none" stroke="#a78bfa" stroke-width="4"/>
+
+  <text x="70" y="150" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#fbbf24">Sole</text>
+  <text x="300" y="166" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#fbbf24" opacity="0.95">raggi di luce solare</text>
+  <text x="570" y="182" text-anchor="middle" font-family="sans-serif" font-size="15" fill="#eef2f9">Luna</text>
+  <text x="794" y="318" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#eef2f9">Terra</text>
+
+  <text x="782" y="140" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#c6cfdd">penombra</text>
+  <line x1="782" y1="146" x2="780" y2="168" stroke="#c6cfdd" stroke-width="1" stroke-dasharray="4 3" opacity="0.8"/>
+
+  <text x="660" y="350" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#a78bfa">umbra (cono d'ombra)</text>
+  <line x1="686" y1="340" x2="688" y2="252" stroke="#a78bfa" stroke-width="1" stroke-dasharray="4 3" opacity="0.85"/>
+
+  <text x="790" y="378" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#fbbf24">zona di totalità</text>
+  <line x1="790" y1="368" x2="748" y2="252" stroke="#fbbf24" stroke-width="1" stroke-dasharray="4 3" opacity="0.85"/>
+
+  <text x="450" y="440" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#8b97ac">Dimensioni dei corpi e distanze non sono in scala.</text>
+</svg>

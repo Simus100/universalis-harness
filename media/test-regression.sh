@@ -67,6 +67,15 @@ check "POST /api/sessions/new" 200 "$(code $A -X POST $J -d '{}' $B/api/sessions
 curl -s -m 3 -D /tmp/pi-test/sse.txt -o /dev/null $A "$B/events" || true
 check "GET /events è uno stream SSE" "text/event-stream" "$(awk 'tolower($1)=="content-type:"{print $2}' /tmp/pi-test/sse.txt | tr -d '\r')"
 
+echo "== sanitizzatore SVG (anteprima in chat) =="
+# La chat carica il modulo del sanitizzatore dalla stessa origine: rotta mirata a un solo
+# file, servita al browser perché anteprima e server usino lo STESSO codice.
+check "GET /svg-sanitize.mjs" 200 "$(code $A "$B/svg-sanitize.mjs")"
+check "content-type del sanitizzatore" "text/javascript;" "$(curl -s -D - -o /dev/null $A "$B/svg-sanitize.mjs" | awk 'tolower($1)=="content-type:"{print $2}' | tr -d '\r')"
+check "il modulo esporta sanitizeSvg" "True" "$(curl -s $A "$B/svg-sanitize.mjs" | grep -c 'export function sanitizeSvg' | python3 -c "import sys;print(str(int(sys.stdin.read().strip())>=1))")"
+check "header nosniff sul sanitizzatore" "nosniff" "$(curl -s -D - -o /dev/null $A "$B/svg-sanitize.mjs" | awk 'tolower($1)=="x-content-type-options:"{print $2}' | tr -d '\r')"
+check "traversal sul sanitizzatore rifiutato" 404 "$(code $A "$B/svg-sanitize.mjs/../../.env")"
+
 echo
 echo "risultato: $PASS ok, $FAIL falliti"
 [ "$FAIL" = "0" ]

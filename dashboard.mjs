@@ -12,7 +12,7 @@
  */
 
 import http from "node:http";
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, createReadStream, existsSync, readdirSync, statSync } from "node:fs";
 import fs from "node:fs/promises";
@@ -36,6 +36,7 @@ import {
 import { createBrowserExtension } from "./media/browser-tool.mjs";
 import { createBrowserLive } from "./media/browser-live.mjs";
 import { extractZip, safeEntryPath } from "./media/unzip.mjs";
+import { zipDirectory } from "./media/zip-write.mjs";
 import { AskError, createAskBroker, normalizeQuestions, sanitizeText } from "./media/ask-broker.mjs";
 import { createAskExtension } from "./media/ask-tool.mjs";
 
@@ -579,7 +580,26 @@ const startedAt = Date.now();
 // Versione del codice caricato in QUESTO processo: cambia ad ogni aggiornamento di
 // dashboard.mjs. Serve a distinguere un 404 "rotta assente" (processo vecchio non
 // riavviato) da un 404 applicativo, ed è esposta da GET /api/health.
-const VERSION = "dashboard-2026-09-21.2";
+//
+// ⚠️ La versione da sola NON dice se il processo in esecuzione ha il codice nuovo: il test
+// `media/test-api.sh` la confrontava con sé stessa (stessa costante nel file) e passava anche
+// con un processo fermo a una revisione vecchia — verificato avviando il codice di HEAD su
+// un'altra porta: stessa stringa, funzioni diverse. Per questo /api/health espone anche
+// `codeHash` e `codeMtime`, calcolati sul file che questo processo ha davvero caricato.
+const VERSION = "dashboard-2026-09-27.1";
+const SELF_PATH = fileURLToPath(import.meta.url);
+const CODE_FINGERPRINT = (() => {
+  try {
+    const buf = readFileSync(SELF_PATH);
+    return {
+      codeHash: createHash("sha256").update(buf).digest("hex").slice(0, 16),
+      codeBytes: buf.length,
+      codeMtime: statSync(SELF_PATH).mtimeMs,
+    };
+  } catch {
+    return { codeHash: null, codeBytes: null, codeMtime: null };
+  }
+})();
 
 // ---- file manager: root e sicurezza -------------------------------------
 let ROOT = resolve(arg("root", process.env.DASH_ROOT || cwd()));
@@ -590,6 +610,9 @@ try {
 }
 const MAX_READ = 2 * 1024 * 1024; // 2 MB per la lettura nell'editor
 const MAX_UPLOAD = 64 * 1024 * 1024; // 64 MB per l'upload
+// Tetti per lo scarico di una CARTELLA: l'archivio si costruisce in memoria.
+const MAX_ZIP_FILES = 3000;
+const MAX_ZIP_BYTES = 128 * 1024 * 1024; // 128 MB non compressi
 const MAX_ATTACH = 32 * 1024 * 1024; // 32 MB per allegato in chat
 
 // cartella predefinita di TUTTI i file generati
@@ -725,6 +748,52 @@ async function safeResolve(rel, { allowMissing = false } = {}) {
   }
 }
 
+/**
+ * Risolve un percorso CITATO (nel testo dell'agente o negli argomenti di un tool) nel file
+ * reale a cui si riferisce. I modelli citano gli stessi file in tre modi diversi — assoluto
+ * (`/root/pi-harness/media/x.md`), relativo alla cartella di lavoro (`media/x.md`), relativo
+ * alla cartella dei file generati (`x.md`) — e la dashboard ha per root `/root`, non la
+ * cartella di lavoro. Qui si provano tutti i candidati, dal più letterale al più permissivo:
+ * senza questo il tasto «scarica» di una citazione finiva su un percorso inesistente.
+ */
+async function resolveCitedPath(input) {
+  const rel = String(input || "").trim();
+  if (!rel || /[*?{}]/.test(rel)) return null; // glob o segnaposto: non è un file
+  const candidates = [];
+  const add = (abs) => {
+    if (abs && withinRoot(abs) && !candidates.includes(abs)) candidates.push(abs);
+  };
+  if (rel.startsWith("/") || rel.startsWith("~")) {
+    add(resolve(rel));
+  } else {
+    // ordine = come scrive l'agente: prima la cartella di lavoro (dove cita `media/x`,
+    // `skills/…`), poi la cartella dei file generati (dove cita `x.md`), infine la root
+    const workdir = cwd();
+    if (withinRoot(workdir)) add(resolve(workdir, rel));
+    add(resolve(MEDIA_DIR, rel));
+    add(resolve(MEDIA_DIR, basename(rel)));
+    add(resolve(ROOT, rel));
+  }
+  for (const abs of candidates) {
+    let st;
+    try {
+      const rp = await fs.realpath(abs);
+      if (!withinRoot(rp)) continue;
+      st = await fs.stat(abs);
+    } catch {
+      continue;
+    }
+    return {
+      path: relative(ROOT, abs),
+      name: basename(abs),
+      type: st.isDirectory() ? "dir" : "file",
+      size: st.size,
+      mtime: st.mtimeMs,
+    };
+  }
+  return null;
+}
+
 async function listDir(rel) {
   const abs = await safeResolve(rel);
   const st = await fs.stat(abs);
@@ -825,7 +894,22 @@ const SYSTEM_MEDIA_NOTE =
   `La scheda "Goal" della dashboard salva i goal in ${GOALS_FILE}. ` +
   `Struttura: { id, title, description, status, steps:[{id,title,done}], checklist:[{id,text,done}], createdAt, updatedAt }. ` +
   `Se in chat ti viene chiesto di vedere, aggiornare o completare i goal, leggi (e se serve riscrivi) quel file, ` +
-  `mettendo "done": true sui passi e sui controlli completati.`;
+  `mettendo "done": true sui passi e sui controlli completati.` +
+  `\n\n## Rappresentazioni visive (skill \`visual-representation\`)\n` +
+  `Quando un disegno aiuta davvero a capire (flusso di processo, timeline, mappa concettuale, ` +
+  `schema illustrato, piantina, figura geometrica), disegnalo in SVG dentro un blocco Markdown ` +
+  `con linguaggio \`svg\`: documento COMPLETO (elemento radice <svg>, namespace ` +
+  `xmlns="http://www.w3.org/2000/svg", attributo viewBox, <title> e <desc>), autonomo, senza ` +
+  `script né risorse esterne. La dashboard riconosce il blocco e mostra il DISEGNO come anteprima ` +
+  `nel punto esatto del messaggio, con vista ingrandita, copia e download. Il codice viene ` +
+  `sanitizzato come contenuto non attendibile: \`style\`/\`<style>\`, \`<foreignObject>\`, ` +
+  `\`<image>\`, \`<use>\`, \`<marker>\`, filtri, animazioni, \`href\` e riferimenti di rete ` +
+  `vengono rifiutati o rimossi (le punte delle frecce si disegnano con un \`<polygon>\`). ` +
+  `Contratto completo, paletta, limiti e tre esempi pronti stanno nella skill ` +
+  `\`visual-representation\`: leggila prima di disegnare. Per tutto il resto basta una breve ` +
+  `spiegazione testuale: non aggiungere immagini decorative e non inventare dati, proporzioni ` +
+  `o relazioni (se lo schema non è in scala, dichiaralo). \`ascii\` a parte, i blocchi di codice ` +
+  `di altro linguaggio restano invariati.`;
 
 // Tool browser (estensione inline definita in media/browser-tool.mjs).
 // Invoca SEMPRE agent-browser come utente dedicato: come root la CLI partirebbe
@@ -1274,12 +1358,16 @@ const GOAL_STATUSES = new Set(["active", "done", "archived"]);
 /** Valida e normalizza un goal in ingresso (creazione o aggiornamento). */
 function normalizeGoal(input, existing = null) {
   const now = Date.now();
-  // In aggiornamento il titolo può mancare: si mantiene quello esistente. Aggiornare solo lo
-  // stato (o un singolo passo) non deve obbligare a rimandare l'intero goal.
+  // Un aggiornamento PARZIALE non deve cancellare ciò che non viene inviato: la chiave ASSENTE
+  // significa «non toccare», la chiave presente (anche vuota) significa «sostituisci».
+  // Prima `POST /api/goals { id, status }` azzerava descrizione, passi e checklist — proprio
+  // il caso che il commento qui sopra dichiarava di voler sostenere, e che l'API è il modo
+  // consigliato per aggiornare i goal (vedi la nota nel README).
+  const given = (k) => input != null && input[k] !== undefined;
   const title = String(input?.title ?? existing?.title ?? "").trim().slice(0, 200);
   if (!title) throw new HttpError(400, "titolo del goal mancante");
 
-  const steps = (Array.isArray(input?.steps) ? input.steps : [])
+  const steps = (given("steps") ? (Array.isArray(input.steps) ? input.steps : []) : existing?.steps ?? [])
     .map((s, i) => ({
       id: String(s?.id || randomBytes(6).toString("hex")),
       title: String(s?.title || "").trim().slice(0, 300),
@@ -1288,7 +1376,7 @@ function normalizeGoal(input, existing = null) {
     }))
     .filter((s) => s.title);
 
-  const checklist = (Array.isArray(input?.checklist) ? input.checklist : [])
+  const checklist = (given("checklist") ? (Array.isArray(input.checklist) ? input.checklist : []) : existing?.checklist ?? [])
     .map((c) => ({
       id: String(c?.id || randomBytes(6).toString("hex")),
       text: String(c?.text || "").trim().slice(0, 300),
@@ -1301,7 +1389,9 @@ function normalizeGoal(input, existing = null) {
   return {
     id: existing?.id || randomBytes(8).toString("hex"),
     title,
-    description: String(input?.description || "").trim().slice(0, 4000),
+    description: (given("description") ? String(input.description || "") : existing?.description ?? "")
+      .trim()
+      .slice(0, 4000),
     status,
     steps,
     checklist,
@@ -1745,6 +1835,12 @@ function askSpecFromArgs(args, toolResult) {
   };
 }
 
+/** Percorso toccato da una chiamata di tool (`write`, `edit`, `read`…), se c'è. */
+function toolPathFromArgs(a) {
+  const p = a?.path ?? a?.file_path ?? a?.filePath ?? null;
+  return typeof p === "string" && p ? p : null;
+}
+
 /** Converte un messaggio della sessione nel formato usato dalla UI. */
 function toUiMessage(msg, toolResults = null) {
   if (msg.role === "user") {
@@ -1787,10 +1883,9 @@ function toUiMessage(msg, toolResults = null) {
           blocks.push({ type: "thinking", text: b.thinking });
         } else if (b.type === "toolCall") {
           const a = b.arguments || {};
-          const p = a.path ?? a.file_path ?? a.filePath ?? null;
           const t = {
             name: b.name,
-            path: typeof p === "string" ? p : null,
+            path: toolPathFromArgs(a),
             command: typeof a.command === "string" ? a.command : null,
           };
           tools.push(t);
@@ -1824,9 +1919,48 @@ function toUiMessage(msg, toolResults = null) {
  * Ora la chiede solo la GET /api/state iniziale; gli aggiornamenti in streaming restano leggeri
  * e il client conserva i messaggi che ha già.
  */
+/**
+ * Statistiche di sessione con rete di sicurezza.
+ *
+ * `session.getSessionStats()` scandisce i messaggi e assume che ogni risposta dell'assistente
+ * abbia il campo `usage`: una sessione importata, scritta a mano o troncata (anche una sola
+ * risposta senza `usage`) faceva sollevare l'eccezione dentro `getState`, quindi `/api/state`
+ * rispondeva 500 e — prima della guardia in `json()` — una connessione SSE poteva spegnere il
+ * processo. Le statistiche sono un'informazione di contorno: se non si possono calcolare si
+ * mostrano a zero e il motivo resta nel log.
+ */
+function sessionStatsSafe() {
+  try {
+    const s = session?.getSessionStats?.() || null;
+    return {
+      tokens: s?.tokens ?? { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0 },
+      cost: s?.cost ?? 0,
+      userMessages: s?.userMessages ?? 0,
+      assistantMessages: s?.assistantMessages ?? 0,
+      toolCalls: s?.toolCalls ?? 0,
+    };
+  } catch (err) {
+    console.error("[dashboard] statistiche di sessione non calcolabili:", err?.message ?? err);
+    return {
+      tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0 },
+      cost: 0,
+      userMessages: 0,
+      assistantMessages: 0,
+      toolCalls: 0,
+    };
+  }
+}
+
 function getState({ withMessages = false } = {}) {
-  const stats = session.getSessionStats();
-  let ctxUsage = session.getContextUsage();
+  const stats = sessionStatsSafe();
+  // Anche la stima del contesto è di contorno: se la sessione è incoerente non deve
+  // impedire che lo stato (e quindi l'intera dashboard) si possa leggere.
+  let ctxUsage = null;
+  try {
+    ctxUsage = session.getContextUsage();
+  } catch (err) {
+    console.error("[dashboard] uso del contesto non calcolabile:", err?.message ?? err);
+  }
   // Dopo una compaction pi restituisce tokens: null finche' non risponde un
   // assistant successivo: in quella finestra mostriamo la stima del riassunto,
   // cosi' la barra del contesto si aggiorna subito.
@@ -1852,13 +1986,14 @@ function getState({ withMessages = false } = {}) {
   if (withMessages) {
     // I risultati dei tool servono a ricostruire le card delle domande con la risposta già data
     // (e, in generale, l'esito): senza, una domanda risolta tornerebbe "in attesa" al reload.
+    const all = session?.state?.messages ?? [];
     const toolResults = new Map();
-    for (const msg of session.state.messages) {
+    for (const msg of all) {
       if (msg.role === "toolResult" && msg.toolCallId) {
         toolResults.set(msg.toolCallId, { details: msg.details ?? null, isError: !!msg.isError });
       }
     }
-    for (const msg of session.state.messages) {
+    for (const msg of all) {
       const ui = toUiMessage(msg, toolResults);
       if (ui) messages.push(ui);
     }
@@ -1866,6 +2001,9 @@ function getState({ withMessages = false } = {}) {
 
   return {
     model: { id: model.id, provider: model.provider, name: model.name },
+    // elenco dei modelli USABILI adesso: alimenta il selettore in barra, che prima era cablato
+    // con due voci e non offriva i modelli disponibili in più (es. quello con vision)
+    models: availableModels(),
     thinking: { level: session.thinkingLevel, supported },
     context: {
       tokens: ctxUsage?.tokens ?? null,
@@ -1888,7 +2026,7 @@ function getState({ withMessages = false } = {}) {
       available: hasSubagentExt,
       enabled: hasSubagentExt && subagentsEnabled,
       maxSpawns: maxSubagentSpawns,
-      activeTools: session.agent.state.tools
+      activeTools: (session?.agent?.state?.tools || [])
         .map((t) => t.name)
         .filter((n) => SUBAGENT_TOOL_NAMES.has(n)),
     },
@@ -1956,6 +2094,9 @@ function handleSessionEvent(event) {
       name: event.toolName,
       summary: toolSummary(event.args),
       status: "running",
+      // il file toccato viaggia con il segmento: in streaming la card «scarica» compare
+      // subito, senza aspettare un ricaricamento della pagina
+      path: toolPathFromArgs(event.args),
     };
     // Le domande si portano DENTRO il segmento: dopo una riconnessione il messaggio in corso
     // viene ricostruito dai segmenti, e senza la specifica la card interattiva sparirebbe
@@ -1971,7 +2112,7 @@ function handleSessionEvent(event) {
       }
     }
     streamSnapshot.segments.push(seg);
-    broadcast("tool_start", { toolCallId: seg.id, toolName: seg.name, summary: seg.summary });
+    broadcast("tool_start", { toolCallId: seg.id, toolName: seg.name, summary: seg.summary, path: seg.path });
     return;
   }
   if (event.type === "tool_execution_end") {
@@ -1981,7 +2122,12 @@ function handleSessionEvent(event) {
       [...streamSnapshot.segments].reverse().find((s) => s.kind === "tool" && s.id && s.id === event.toolCallId) ||
       [...streamSnapshot.segments].reverse().find((s) => s.kind === "tool" && s.status === "running" && s.name === event.toolName);
     if (seg) seg.status = event.isError ? "error" : "ok";
-    broadcast("tool_end", { toolCallId: event.toolCallId || null, toolName: event.toolName, isError: event.isError });
+    broadcast("tool_end", {
+      toolCallId: event.toolCallId || null,
+      toolName: event.toolName,
+      isError: event.isError,
+      path: seg?.path ?? null,
+    });
     broadcast("files_touch", { toolName: event.toolName });
     return;
   }
@@ -2932,6 +3078,20 @@ function readBody(req, limit = 2 * 1024 * 1024) {
 }
 
 function json(res, code, obj) {
+  // Se la risposta è GIÀ partita non si possono riscrivere gli header: `writeHead` solleverebbe
+  // ERR_HTTP_HEADERS_SENT. Succede quando un errore nasce DOPO l'apertura di una risposta
+  // (tipicamente lo stream SSE in /events) e finisce in errorResponse: senza questa guardia
+  // l'eccezione nasceva dentro il `catch`, diventava un rejection non gestito e **il processo
+  // Node terminava** (verificato: una sola connessione SSE con lo stato non calcolabile
+  // spegneva il servizio; con systemd Restart=always si entrava in ciclo).
+  if (res.headersSent) {
+    try {
+      res.end();
+    } catch {
+      /* risposta già chiusa */
+    }
+    return;
+  }
   res.writeHead(code, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(obj));
 }
@@ -2939,7 +3099,23 @@ function json(res, code, obj) {
 function errorResponse(res, err) {
   const code = err instanceof HttpError ? err.code : 500;
   if (code === 500) console.error("[dashboard]", err);
+  // L'errore si registra SEMPRE; se la risposta è già partita (stream aperto) `json` chiude
+  // senza riscrivere gli header, invece di far morire il processo.
   json(res, code, { error: err?.message ?? String(err) });
+}
+
+/**
+ * Header `Content-Disposition` per un nome di file arbitrario.
+ *
+ * Le virgolette e i caratteri di controllo non possono entrare in `filename="…"`: una cartella
+ * chiamata `cart"ella` produceva l'header malformato `filename="cart"ella.zip"` (il ramo dei
+ * file le toglieva, quello delle cartelle no). I nomi non ASCII vanno inoltre annunciati con la
+ * forma RFC 5987 (`filename*`), che i browser moderni preferiscono.
+ */
+function contentDisposition(name) {
+  const clean = String(name || "download").replace(/[\u0000-\u001f\u007f"\\/]/g, "_").trim() || "download";
+  const ascii = clean.replace(/[^\x20-\x7e]/g, "_") || "download";
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(clean)}`;
 }
 
 // ---- prompt con allegati -------------------------------------------------
@@ -3160,6 +3336,9 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, {
         ok: true,
         version: VERSION,
+        // impronta del file di codice CARICATO da questo processo: è ciò che permette di
+        // distinguere "il servizio ha il codice nuovo" da "la costante nel file è la stessa"
+        ...CODE_FINGERPRINT,
         pid: process.pid,
         node: process.version,
         startedAt,
@@ -3187,6 +3366,11 @@ const server = http.createServer(async (req, res) => {
           "stream-replay",
           "stream-snapshot",
           "stream-segments",
+          "zip-folders",
+          "svg-preview",
+          "download-cards",
+          "browser-output-staging",
+          "state-safe",
         ],
       });
     }
@@ -3205,12 +3389,33 @@ const server = http.createServer(async (req, res) => {
         headers: { "Service-Worker-Allowed": "/" },
       });
     }
+
+    // Sanitizzatore SVG: è un modulo del CODICE (media/svg-sanitize.mjs), servito al browser
+    // dalla stessa origine perché l'anteprima in chat usi esattamente lo stesso codice del
+    // server. Rotta mirata a un solo file: non si apre una cartella intera alla pubblicazione.
+    if (req.method === "GET" && url.pathname === "/svg-sanitize.mjs") {
+      return sendFile(res, join(__dirname, "media", "svg-sanitize.mjs"), {
+        mime: "text/javascript; charset=utf-8",
+        noStore: true,
+        headers: { "X-Content-Type-Options": "nosniff" },
+      });
+    }
     const iconMatch = url.pathname.match(/^\/(icon-\d+\.png|apple-touch-icon\.png|favicon\.ico)$/);
     if (req.method === "GET" && iconMatch) {
       return sendFile(res, join(__dirname, "assets", iconMatch[1]));
     }
 
     if (req.method === "GET" && url.pathname === "/events") {
+      // Lo stato iniziale si calcola PRIMA di aprire lo stream. Se il calcolo fallisce si può
+      // ancora rispondere con un errore JSON pulito; al contrario una `writeHead` su header già
+      // inviati solleva ERR_HTTP_HEADERS_SENT dentro il catch (vedi `json`).
+      let initialState;
+      try {
+        initialState = getState({ withMessages: true });
+      } catch (err) {
+        console.error("[dashboard] stato iniziale non calcolabile:", err);
+        return json(res, 500, { error: `stato non disponibile: ${err?.message ?? err}` });
+      }
       res.writeHead(200, {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -3234,7 +3439,7 @@ const server = http.createServer(async (req, res) => {
       }
       // L'evento iniziale è ciò che popola la chat all'apertura: qui i messaggi SERVONO
       // (una volta per connessione), mentre gli aggiornamenti successivi restano leggeri.
-      res.write(`event: state\ndata: ${JSON.stringify(getState({ withMessages: true }))}\n\n`);
+      res.write(`event: state\ndata: ${JSON.stringify(initialState)}\n\n`);
       // Se una risposta è in corso, il testo già generato viene rimandato INTEGRALMENTE: è la
       // verità del turno e rende idempotente qualunque delta applicato dal replay.
       if (streamSnapshot.active) {
@@ -3462,7 +3667,7 @@ const server = http.createServer(async (req, res) => {
       const fname = `pi-${safeTitle}-${new Date().toISOString().slice(0, 10)}.md`;
       res.writeHead(200, {
         "Content-Type": "text/markdown; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${fname}"`,
+        "Content-Disposition": contentDisposition(fname),
         "Cache-Control": "no-store",
       });
       res.end(md);
@@ -3907,6 +4112,25 @@ const server = http.createServer(async (req, res) => {
       const to = await safeResolve(String(body.to || ""), { allowMissing: true });
       if (from === ROOT) return json(res, 400, { error: "non puoi rinominare la root" });
       if (to === ROOT) return json(res, 400, { error: "destinazione non valida" });
+      // `fs.rename` SOVRASCRIVE in silenzio: un refuso nel nome di destinazione cancellava un
+      // file esistente senza avviso (e la risposta era comunque `ok: true`). La sovrascrittura
+      // ora si fa solo se richiesta esplicitamente (`overwrite: true`), altrimenti 409.
+      if (!body.overwrite) {
+        let occupied = false;
+        try {
+          await fs.lstat(to);
+          occupied = true;
+        } catch {
+          /* destinazione libera */
+        }
+        if (occupied) {
+          return json(res, 409, {
+            error: `esiste già «${relative(ROOT, to)}»: conferma la sovrascrittura`,
+            exists: true,
+            path: relative(ROOT, to),
+          });
+        }
+      }
       await fs.rename(from, to);
       return json(res, 200, { ok: true, path: relative(ROOT, to) });
     }
@@ -3919,14 +4143,52 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { ok: true });
     }
 
+    // ---------------- resolve-files ----------------
+    // La chat cita file e cartelle in forma libera: la risoluzione la fa il server, che sa
+    // dove sono davvero (root, cartella di lavoro, media/). La UI disegna la card «scarica»
+    // solo per ciò che qui risulta esistere, quindi nessun tasto può più puntare a vuoto.
+    if (req.method === "POST" && url.pathname === "/api/resolve-files") {
+      const body = await readBody(req);
+      const inputs = Array.isArray(body?.paths) ? body.paths.slice(0, 60) : [];
+      const items = [];
+      for (const raw of inputs) {
+        const input = String(raw ?? "");
+        if (!input.trim() || /[*?{}]/.test(input)) {
+          items.push({ input, ok: false, reason: "non è un percorso di file" });
+          continue;
+        }
+        const found = await resolveCitedPath(input);
+        items.push(found ? { input, ok: true, ...found } : { input, ok: false, reason: "non trovato" });
+      }
+      return json(res, 200, { root: ROOT, mediaRel: relative(ROOT, MEDIA_DIR), items });
+    }
+
     if (req.method === "GET" && url.pathname === "/api/download") {
       const abs = await safeResolve(url.searchParams.get("path") || "");
       const st = await fs.stat(abs);
+      // Una cartella si scarica come .zip: prima il tasto «scarica» su una cartella
+      // restituiva un JSON d'errore, cioè un file inutile chiamato «media».
+      if (st.isDirectory()) {
+        let zipped;
+        try {
+          zipped = await zipDirectory(abs, { maxFiles: MAX_ZIP_FILES, maxTotal: MAX_ZIP_BYTES });
+        } catch (err) {
+          return json(res, 413, { error: String(err?.message || err) });
+        }
+        if (!zipped.files) return json(res, 400, { error: "cartella vuota" });
+        res.writeHead(200, {
+          "Content-Type": "application/zip",
+          "Content-Length": zipped.buffer.length,
+          "Content-Disposition": contentDisposition(`${basename(abs)}.zip`),
+        });
+        res.end(zipped.buffer);
+        return;
+      }
       if (!st.isFile()) return json(res, 400, { error: "non è un file" });
       res.writeHead(200, {
         "Content-Type": "application/octet-stream",
         "Content-Length": st.size,
-        "Content-Disposition": `attachment; filename="${basename(abs).replace(/"/g, "")}"`,
+        "Content-Disposition": contentDisposition(basename(abs)),
       });
       createReadStream(abs).pipe(res);
       return;

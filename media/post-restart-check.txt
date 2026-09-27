@@ -1,10 +1,12 @@
 == smoke test post-riavvio ==
-quando: 2026-09-19 18:11:49 CEST
-servizio : active  ·  avviato: Sat 2026-09-19 18:11:20 CEST
-risposta : /api/health → 401  (dopo 1 tentativi)
-versione : dashboard-2026-09-19.2
-pid      : 236667 · node v26.8.2
+quando: 2026-09-23 18:53:10 CEST
+servizio : active  ·  avviato: Wed 2026-09-23 18:53:10 CEST
+risposta : /api/health → 401  (dopo 3 tentativi)
+versione : dashboard-2026-09-21.2
+pid      : 491535 · node v26.8.2
   ok  auth-bruteforce-limit
+  ok  auth-progressive-backoff
+  ok  login-page-session
   ok  abort
   ok  messages-edit
   ok  messages-regenerate
@@ -20,7 +22,7 @@ pid      : 236667 · node v26.8.2
   ok  stream-replay
   ok  stream-snapshot
   ok  stream-segments
-pagina   : 242785 byte
+pagina   : 276755 byte
   ok   class="pill feat-btn"
   ok   id="compactBtn"
   ok   id="connTxt"
@@ -37,10 +39,10 @@ senza credenziali: 401  (atteso 401)
 manifest : Universalis Harness
 favicon  : 200 1702B
 -- ultime righe del servizio:
-   Sep 19 18:11:22 vmi3171743 node[236667]: file root: /root
-   Sep 19 18:11:22 vmi3171743 node[236667]: media (file generati): /root/pi-harness/media
-   Sep 19 18:11:22 vmi3171743 node[236667]: sessioni: /root/pi-harness/sessions
-   Sep 19 18:11:22 vmi3171743 node[236667]: fuso orario (pianificazioni): Europe/Rome — ora locale: 19/09/2026, 18:11:22
-   Sep 19 18:11:22 vmi3171743 node[236667]: subagent: disponibile (OFF di default, max 3 per richiesta)
-   Sep 19 18:11:22 vmi3171743 node[236667]: auth -> utente: pi  password: ***
+   Sep 23 18:53:13 vmi3171743 node[491535]: sessioni: /root/pi-harness/sessions
+   Sep 23 18:53:13 vmi3171743 node[491535]: fuso orario (pianificazioni): Europe/Rome — ora locale: 23/09/2026, 18:53:13
+   Sep 23 18:53:13 vmi3171743 node[491535]: subagent: disponibile (OFF di default, max 3 per richiesta)
+   Sep 23 18:53:13 vmi3171743 node[491535]: auth -> utente: pi  password: ***
+   Sep 23 18:53:13 vmi3171743 node[491535]: login: pagina /login + cookie di sessione (720h) · Basic accettato · anti brute-force: 8 tentativi → attese progressive 15s, 30s, 60s, 120s, 300s, 600s, 900s
+   Sep 23 18:53:13 vmi3171743 node[491535]: segreto di sessione: /root/pi-harness/.session-secret
 == fine ==

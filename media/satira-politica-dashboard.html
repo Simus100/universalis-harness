@@ -1,0 +1,1670 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cruscotto Nazionale del Potere — dashboard satirica</title>
+<meta name="description" content="Dashboard satirica e interattiva sul linguaggio politico: promessometro, bingo del politichese, termometro dell'onestà, traduzione simultanea del comunicato stampa. Opera di satira, personaggi immaginari." />
+<style>
+  /* ============================================================
+     CRUSCOTTO NAZIONALE DEL POTERE — foglio di stile unico
+     Palette: inchiostro, oro istituzionale, vermiglio d'aula,
+     verde bandiera, carta ingiallita.
+     ============================================================ */
+  :root{
+    --ink:#0b0e14;
+    --ink-2:#111826;
+    --ink-3:#18202f;
+    --line:#2a3446;
+    --paper:#f4ecd8;
+    --paper-dim:#cfc4a8;
+    --gold:#e9c46a;
+    --gold-2:#f7e3ac;
+    --vermillion:#d7263d;
+    --flag:#3f9d5a;
+    --violet:#8b5cf6;
+    --cyan:#39c6d6;
+    --muted:#93a0b8;
+    --shadow: 0 18px 40px -18px rgba(0,0,0,.85);
+    --r: 16px;
+    --font-ui: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  *,*::before,*::after{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(1200px 600px at 12% -10%, #1b2a44 0%, transparent 60%),
+      radial-gradient(900px 500px at 95% 0%, #3a1d2a 0%, transparent 55%),
+      linear-gradient(180deg, var(--ink) 0%, #080a10 100%);
+    color:var(--paper);
+    font-family:var(--font-ui);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  body::before{ /* grana da carta/televisione */
+    content:"";
+    position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.05;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(255,255,255,.5) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.35) 0 1px, transparent 1px 4px);
+    mix-blend-mode:overlay;
+  }
+  #stars{ position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.55; }
+  .wrap{ position:relative; z-index:1; max-width:1220px; margin:0 auto; padding:0 clamp(12px, 2.4vw, 28px) 120px; }
+
+  /* ---------- accessibilità ---------- */
+  .skip{
+    position:absolute; left:-9999px; top:0; z-index:99;
+    background:var(--gold); color:#1a1408; padding:10px 16px; border-radius:0 0 10px 0;
+    font-weight:700; text-decoration:none;
+  }
+  .skip:focus{ left:0; }
+  :focus-visible{
+    outline:3px solid var(--gold);
+    outline-offset:3px;
+    border-radius:6px;
+  }
+  .sr-only{
+    position:absolute !important; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+  }
+
+  /* ---------- testata ---------- */
+  header.top{
+    position:relative;
+    margin-top:clamp(14px,3vw,30px);
+    border:1px solid var(--line);
+    border-radius:calc(var(--r) + 6px);
+    background:
+      linear-gradient(135deg, rgba(233,196,106,.10), transparent 42%),
+      linear-gradient(180deg, #131b2b, #0d131f);
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  header.top::after{ /* tricolore sottile */
+    content:""; position:absolute; inset:auto 0 0 0; height:4px;
+    background:linear-gradient(90deg, var(--flag) 0 33.3%, var(--paper) 33.3% 66.6%, var(--vermillion) 66.6% 100%);
+    opacity:.75;
+  }
+  .head-inner{
+    display:flex; gap:clamp(14px,2.5vw,26px); align-items:center;
+    padding:clamp(16px,2.6vw,28px);
+    flex-wrap:wrap;
+  }
+  .crest{ flex:0 0 auto; filter:drop-shadow(0 10px 18px rgba(0,0,0,.6)); }
+  .titles{ flex:1 1 320px; min-width:0; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--font-mono); font-size:.72rem; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--gold); border:1px solid rgba(233,196,106,.4); border-radius:999px;
+    padding:4px 12px; background:rgba(233,196,106,.07);
+  }
+  h1{
+    font-family:var(--font-serif); font-weight:600;
+    font-size:clamp(1.6rem, 4.2vw, 3rem); line-height:1.08;
+    margin:.32em 0 .18em; letter-spacing:-.01em;
+  }
+  h1 .grad{
+    background:linear-gradient(92deg, var(--gold-2), var(--gold) 45%, var(--vermillion));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .sub{ color:var(--muted); max-width:62ch; margin:0; font-size:.98rem; }
+  .head-meta{
+    display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;
+  }
+  .chip{
+    font-family:var(--font-mono); font-size:.72rem; letter-spacing:.06em;
+    border:1px dashed var(--line); border-radius:999px; padding:4px 10px; color:var(--paper-dim);
+    background:rgba(255,255,255,.02);
+  }
+  .chip b{ color:var(--gold); font-weight:700; }
+
+  /* ---------- schede (tab) ---------- */
+  .tabs{
+    display:flex; gap:8px; overflow-x:auto; padding:12px 4px 10px;
+    scrollbar-width:thin; scroll-snap-type:x proximity;
+    border-bottom:1px solid var(--line); margin-top:22px;
+  }
+  .tab{
+    scroll-snap-align:start;
+    flex:0 0 auto;
+    font:inherit; font-size:.86rem; font-weight:600;
+    color:var(--paper-dim);
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:9px 15px;
+    cursor:pointer;
+    transition:transform .16s ease, color .16s ease, border-color .16s ease, background .16s ease;
+    display:inline-flex; align-items:center; gap:8px;
+  }
+  .tab:hover{ transform:translateY(-2px); color:var(--paper); border-color:rgba(233,196,106,.55); }
+  .tab[aria-selected="true"]{
+    color:#1a1408; background:linear-gradient(180deg, var(--gold-2), var(--gold));
+    border-color:var(--gold);
+    box-shadow:0 10px 24px -12px rgba(233,196,106,.9);
+  }
+  .tab .em{ font-size:1.02rem; }
+
+  /* ---------- pannelli ---------- */
+  .panels{ margin-top:24px; }
+  .panel[hidden]{ display:none; }
+  .grid{ display:grid; gap:clamp(14px,2vw,22px); grid-template-columns:repeat(12,1fr); }
+  .card{
+    grid-column:span 12;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:linear-gradient(180deg, rgba(24,32,47,.92), rgba(13,18,29,.92));
+    box-shadow:var(--shadow);
+    padding:clamp(14px,2vw,22px);
+    position:relative;
+    overflow:hidden;
+  }
+  .card.tight{ padding:clamp(12px,1.6vw,16px); }
+  .card::before{
+    content:""; position:absolute; inset:0 0 auto 0; height:2px;
+    background:linear-gradient(90deg, transparent, rgba(233,196,106,.55), transparent);
+    opacity:.7;
+  }
+  .col-5{ grid-column:span 5; } .col-6{ grid-column:span 6; }
+  .col-7{ grid-column:span 7; } .col-4{ grid-column:span 4; }
+  .col-8{ grid-column:span 8; } .col-3{ grid-column:span 3; }
+  .col-9{ grid-column:span 9; }
+  @media (max-width: 940px){
+    .col-3,.col-4,.col-5,.col-6,.col-7,.col-8,.col-9{ grid-column:span 12; }
+  }
+
+  h2.panel-title{
+    font-family:var(--font-serif); font-size:clamp(1.25rem,2.4vw,1.75rem); margin:0 0 6px;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  }
+  h3{ font-family:var(--font-serif); font-size:1.06rem; margin:0 0 8px; color:var(--gold-2); }
+  p.lead{ color:var(--muted); margin:.2em 0 1.1em; max-width:78ch; }
+  .hint{ color:var(--muted); font-size:.84rem; margin:.35em 0 0; }
+  .rule{ height:1px; background:var(--line); margin:16px 0; border:0; }
+
+  /* ---------- pulsanti ---------- */
+  .btnrow{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .btn{
+    font:inherit; font-size:.9rem; font-weight:650;
+    color:var(--paper);
+    background:linear-gradient(180deg, #22304a, #172033);
+    border:1px solid #3b4a66;
+    border-radius:12px;
+    padding:11px 16px;
+    cursor:pointer;
+    display:inline-flex; align-items:center; gap:9px;
+    transition:transform .14s ease, box-shadow .18s ease, border-color .18s ease, filter .18s ease;
+    box-shadow:0 8px 20px -14px rgba(0,0,0,.95);
+  }
+  .btn:hover{ transform:translateY(-2px); border-color:var(--gold); }
+  .btn:active{ transform:translateY(0) scale(.985); }
+  .btn .k{
+    font-family:var(--font-mono); font-size:.68rem; padding:1px 6px; border-radius:6px;
+    background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.16); color:var(--paper-dim);
+  }
+  .btn.primary{
+    color:#1a1408; border-color:var(--gold);
+    background:linear-gradient(180deg, var(--gold-2), var(--gold));
+  }
+  .btn.primary .k{ background:rgba(0,0,0,.14); border-color:rgba(0,0,0,.2); color:#3a2c07; }
+  .btn.danger{
+    color:#fff; border-color:#7c1b2c;
+    background:linear-gradient(180deg, #b6203a, #7c1226);
+  }
+  .btn.ghost{ background:transparent; border-color:var(--line); color:var(--paper-dim); }
+  .btn.ghost:hover{ color:var(--paper); }
+  .btn[aria-pressed="true"]{
+    border-color:var(--cyan);
+    box-shadow:0 0 0 2px rgba(57,198,214,.35) inset, 0 8px 20px -14px rgba(0,0,0,.9);
+  }
+  .btn[disabled]{ opacity:.5; cursor:not-allowed; transform:none; }
+
+  /* ---------- output / display ---------- */
+  .display{
+    margin-top:14px;
+    border:1px solid var(--line);
+    border-left:4px solid var(--gold);
+    border-radius:12px;
+    background:
+      linear-gradient(180deg, rgba(39,31,14,.65), rgba(20,17,9,.75));
+    padding:clamp(14px,1.8vw,20px);
+    font-family:var(--font-serif);
+    font-size:clamp(1rem,1.7vw,1.22rem);
+    line-height:1.5;
+    min-height:96px;
+    position:relative;
+  }
+  .display.small{ font-size:clamp(.92rem,1.4vw,1rem); }
+  .display .tag{
+    position:absolute; top:-10px; right:12px;
+    font-family:var(--font-mono); font-size:.66rem; letter-spacing:.16em; text-transform:uppercase;
+    background:var(--gold); color:#241b05; border-radius:999px; padding:3px 9px;
+  }
+  .flash{ animation:flashIn .5s ease; }
+  @keyframes flashIn{
+    from{ opacity:0; transform:translateY(6px) }
+    to{ opacity:1; transform:none }
+  }
+  .mono{ font-family:var(--font-mono); font-size:.86rem; }
+  .stamp{
+    display:inline-block; transform:rotate(-3.5deg);
+    font-family:var(--font-mono); font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--vermillion); border:3px double var(--vermillion); border-radius:8px;
+    padding:6px 12px; opacity:.9; margin-top:12px;
+  }
+
+  /* ---------- bingo ---------- */
+  .bingo-grid{
+    display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; margin-top:6px;
+  }
+  .cell{
+    font:inherit; font-size:clamp(.6rem,1.25vw,.78rem); line-height:1.2;
+    min-height:74px;
+    padding:6px 4px;
+    color:var(--paper-dim);
+    background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.012));
+    border:1px solid var(--line); border-radius:10px;
+    cursor:pointer; text-transform:uppercase; letter-spacing:.03em;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    transition:transform .12s ease, background .18s ease, color .18s ease, border-color .18s;
+  }
+  .cell:hover{ transform:translateY(-2px); border-color:var(--gold); }
+  .cell[aria-pressed="true"]{
+    background:linear-gradient(180deg, #2f4a39, #1d3225);
+    border-color:var(--flag); color:#dff3e4;
+  }
+  .cell.drawn{
+    border-color:var(--cyan); color:#eaffff;
+    box-shadow:0 0 0 2px rgba(57,198,214,.35), 0 0 22px -6px rgba(57,198,214,.5);
+    animation:pulse .9s ease infinite alternate;
+  }
+  @keyframes pulse{ from{ filter:brightness(1) } to{ filter:brightness(1.28) } }
+  .cell.line{ background:linear-gradient(180deg, #4b3c12, #33280a); border-color:var(--gold); color:#ffe9ae; }
+
+  /* ---------- termometro ---------- */
+  .gauge-wrap{ display:flex; gap:clamp(14px,2vw,26px); align-items:center; flex-wrap:wrap; }
+  .gauge{
+    --v: 3;
+    width:190px; height:190px; flex:0 0 auto;
+    border-radius:50%;
+    background:
+      conic-gradient(from 200deg, var(--vermillion) 0 calc(var(--v) * 4.2deg), rgba(255,255,255,.08) calc(var(--v) * 4.2deg) 360deg);
+    display:grid; place-items:center; position:relative;
+    box-shadow:inset 0 0 40px rgba(0,0,0,.75), 0 14px 30px -20px #000;
+  }
+  .gauge::after{
+    content:""; position:absolute; inset:16px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #1b2333, #0b0f18 70%);
+    border:1px solid var(--line);
+  }
+  .gauge .val{
+    position:relative; z-index:1; text-align:center;
+  }
+  .gauge .num{ font-family:var(--font-mono); font-size:2.1rem; font-weight:700; color:var(--gold); display:block; }
+  .gauge .cap{ font-family:var(--font-mono); font-size:.62rem; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+
+  /* ---------- form ---------- */
+  label.field{ display:block; margin:0 0 12px; }
+  label.field span.lbl{ display:block; font-size:.82rem; color:var(--muted); margin-bottom:5px; }
+  input[type="number"], input[type="text"], select{
+    font:inherit; font-family:var(--font-mono); font-size:.92rem;
+    width:100%; padding:10px 12px; color:var(--paper);
+    background:#0c111b; border:1px solid var(--line); border-radius:10px;
+  }
+  input[type="range"]{ width:100%; accent-color:var(--vermillion); }
+  .inline-fields{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); }
+  .stat-line{
+    display:flex; justify-content:space-between; gap:14px; padding:7px 0;
+    border-bottom:1px dashed rgba(147,160,184,.22); font-family:var(--font-mono); font-size:.86rem;
+  }
+  .stat-line b{ color:var(--gold); }
+  .stat-line.total{ border-bottom:0; font-size:1rem; color:var(--paper); }
+  .stat-line.total b{ color:var(--vermillion); font-size:1.15rem; }
+
+  /* ---------- traduttore / eufemismi ---------- */
+  .xlate{ display:grid; gap:10px; margin-top:12px; }
+  .pair{
+    border:1px solid var(--line); border-radius:12px; overflow:hidden;
+    background:rgba(255,255,255,.02);
+  }
+  .pair .said{
+    padding:10px 14px; font-family:var(--font-serif); font-size:1rem;
+    background:linear-gradient(90deg, rgba(233,196,106,.10), transparent);
+  }
+  .pair .meant{
+    padding:10px 14px; font-family:var(--font-mono); font-size:.88rem;
+    color:#ffd9d9; background:linear-gradient(90deg, rgba(215,38,61,.14), transparent);
+    border-top:1px dashed rgba(215,38,61,.4);
+  }
+  .pair .meant::before{ content:"TRADUZIONE SIMULTANEA ▸ "; color:var(--vermillion); font-weight:700; }
+
+  /* ---------- carte tecniche ---------- */
+  .deck{ display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(232px,1fr)); }
+  .tech{
+    text-align:left; cursor:pointer; font:inherit; color:var(--paper);
+    border:1px solid var(--line); border-radius:14px; padding:14px;
+    background:
+      linear-gradient(160deg, rgba(139,92,246,.10), transparent 60%),
+      linear-gradient(180deg, #18202f, #0e1420);
+    transition:transform .16s ease, border-color .16s ease, box-shadow .18s ease;
+  }
+  .tech:hover{ transform:translateY(-3px); border-color:var(--violet); box-shadow:0 18px 34px -22px #000; }
+  .tech .name{ font-family:var(--font-serif); font-size:1.04rem; color:var(--gold-2); display:block; }
+  .tech .lat{ font-family:var(--font-mono); font-size:.68rem; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+  .tech .def{ color:var(--paper-dim); font-size:.86rem; margin-top:8px; display:block; }
+  .tech .eg{
+    display:none; margin-top:10px; padding-top:9px; border-top:1px dashed rgba(147,160,184,.3);
+    font-family:var(--font-serif); font-size:.92rem; color:#ffe9b8;
+  }
+  .tech[aria-expanded="true"]{ border-color:var(--gold); }
+  .tech[aria-expanded="true"] .eg{ display:block; }
+
+  /* ---------- verbale ---------- */
+  .log{
+    list-style:none; margin:12px 0 0; padding:0; max-height:340px; overflow:auto;
+    font-family:var(--font-mono); font-size:.84rem;
+  }
+  .log li{
+    padding:9px 12px; border-left:3px solid var(--line); margin-bottom:7px;
+    background:rgba(255,255,255,.028); border-radius:0 10px 10px 0;
+  }
+  .log li .t{ color:var(--muted); font-size:.72rem; display:block; }
+  .log:empty::after{
+    content:"Seduta non ancora aperta. Nessuna dichiarazione verbalizzata.";
+    color:var(--muted); font-family:var(--font-ui); font-size:.86rem;
+  }
+
+  /* ---------- canvas grafico ---------- */
+  .chart-frame{ position:relative; border:1px solid var(--line); border-radius:14px; background:#0a0f18; overflow:hidden; }
+  canvas#chart{ display:block; width:100%; height:auto; }
+  .legend{ display:flex; gap:16px; flex-wrap:wrap; margin-top:12px; font-family:var(--font-mono); font-size:.78rem; }
+  .legend span{ display:inline-flex; align-items:center; gap:7px; color:var(--paper-dim); }
+  .swatch{ width:14px; height:4px; border-radius:2px; display:inline-block; }
+
+  /* ---------- ticker ---------- */
+  .ticker{
+    position:fixed; left:0; right:0; bottom:0; z-index:5;
+    border-top:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(9,12,19,.94), rgba(9,12,19,.99));
+    backdrop-filter:blur(6px);
+    display:flex; align-items:center; gap:12px;
+    padding:9px 12px;
+  }
+  .ticker .badge{
+    flex:0 0 auto; font-family:var(--font-mono); font-size:.7rem; letter-spacing:.14em;
+    background:var(--vermillion); color:#fff; padding:4px 9px; border-radius:6px; font-weight:700;
+  }
+  .ticker .rail{ flex:1 1 auto; overflow:hidden; white-space:nowrap; }
+  .ticker .rail p{
+    display:inline-block; margin:0; padding-left:100%;
+    font-family:var(--font-mono); font-size:.82rem; color:var(--paper-dim);
+    animation:slide 46s linear infinite;
+  }
+  .ticker:hover .rail p, .ticker:focus-within .rail p{ animation-play-state:paused; }
+  @keyframes slide{ from{ transform:translateX(0) } to{ transform:translateX(-100%) } }
+
+  /* ---------- misc ---------- */
+  .bullets{ margin:0; padding-left:1.15em; color:var(--paper-dim); font-size:.92rem; }
+  .bullets li{ margin-bottom:6px; }
+  details.src{
+    margin-top:18px; border:1px dashed var(--line); border-radius:12px; padding:10px 14px;
+    color:var(--muted); font-size:.84rem;
+  }
+  details.src summary{ cursor:pointer; color:var(--gold); font-weight:600; }
+  details.src a{ color:var(--cyan); }
+  footer.foot{
+    margin-top:34px; text-align:center; color:var(--muted); font-size:.8rem;
+  }
+  .disclaimer{
+    border:1px solid rgba(233,196,106,.35); border-radius:12px;
+    background:rgba(233,196,106,.05); padding:12px 16px; margin-top:22px;
+    font-size:.86rem; color:var(--paper-dim);
+  }
+  .shake{ animation:shake .5s cubic-bezier(.36,.07,.19,.97) both; }
+  @keyframes shake{
+    10%,90%{ transform:translateX(-2px) } 20%,80%{ transform:translateX(4px) }
+    30%,50%,70%{ transform:translateX(-7px) } 40%,60%{ transform:translateX(7px) }
+  }
+  .toast{
+    position:fixed; left:50%; bottom:74px; transform:translateX(-50%) translateY(20px);
+    background:var(--gold); color:#221a05; font-weight:700; font-size:.88rem;
+    padding:10px 18px; border-radius:999px; z-index:9; opacity:0; pointer-events:none;
+    transition:opacity .22s ease, transform .22s ease; box-shadow:var(--shadow);
+  }
+  .toast.on{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
+    html{ scroll-behavior:auto; }
+    .ticker .rail p{ padding-left:0; transform:none; }
+    .ticker .rail{ overflow-x:auto; }
+  }
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<a class="skip" href="#main">Salta al contenuto principale</a>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="head-inner">
+      <svg class="crest" width="92" height="104" viewBox="0 0 92 104" role="img" aria-label="Stemma satirico: uno scudo con penna, microfono e poltrona vuota">
+        <title>Stemma del Cruscotto Nazionale del Potere</title>
+        <desc>Scudo dorato con dentro un microfono, una penna e una poltrona vuota.</desc>
+        <polygon points="46,3 86,18 86,62 46,101 6,62 6,18" fill="#131b2b" stroke="#e9c46a" stroke-width="2.5"/>
+        <polygon points="46,13 76,25 76,60 46,88 16,60 16,25" fill="none" stroke="#2a3446" stroke-width="1.4"/>
+        <rect x="28" y="34" width="10" height="30" rx="5" fill="#e9c46a" opacity="0.9"/>
+        <rect x="22" y="30" width="22" height="38" rx="10" fill="none" stroke="#e9c46a" stroke-width="2"/>
+        <path d="M33 68 q0 8 0 10 M26 78 h14" stroke="#e9c46a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+        <path d="M56 74 l14 -34 l6 3 l-14 34 z" fill="#d7263d"/>
+        <polygon points="56,74 62,68 58,78" fill="#f4ecd8"/>
+        <rect x="50" y="76" width="26" height="6" rx="3" fill="#3f9d5a" opacity="0.85"/>
+      </svg>
+
+      <div class="titles">
+        <span class="eyebrow">Unità di crisi retorica · edizione satirica</span>
+        <h1>Cruscotto Nazionale <span class="grad">del Potere</span></h1>
+        <p class="sub">Nove strumenti di misura per il linguaggio politico: la promessa, la buzzword, la fiducia, il gettone, il comunicato stampa, la poltrona. Tutti i personaggi di questa pagina sono immaginari; i meccanismi che mettono in scena, molto meno.</p>
+        <div class="head-meta">
+          <span class="chip">Sessione: <b id="clock">--:--:--</b></span>
+          <span class="chip">Promesse mantenute: <b id="keptCounter">0</b></span>
+          <span class="chip">Poltrone disponibili: <b id="seatCounter">∞</b></span>
+        </div>
+      </div>
+
+      <div class="btnrow" style="flex:0 0 auto">
+        <button class="btn primary" id="btnTour" type="button" aria-haspopup="dialog">▶ Avvia seduta guidata <span class="k">T</span></button>
+        <button class="btn ghost" id="btnTone" type="button" aria-pressed="false" title="Passa dal sorriso oraziano all'invettiva giovenaliana">🎚️ Tono: <b id="toneLabel">Orazio</b></button>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Strumenti del cruscotto" id="tablist">
+    <button class="tab" role="tab" id="tab-promesse"  aria-controls="p-promesse"  aria-selected="true"  tabindex="0"><span class="em" aria-hidden="true">📢</span> Promessometro</button>
+    <button class="tab" role="tab" id="tab-bingo"     aria-controls="p-bingo"     aria-selected="false" tabindex="-1"><span class="em" aria-hidden="true">🎲</span> Bingo del politichese</button>
+    <button class="tab" role="tab" id="tab-fiducia"   aria-controls="p-fiducia"   aria-selected="false" tabindex="-1"><span class="em" aria-hidden="true">🌡️</span> Termometro &amp; grafico</button>
+    <button class="tab" role="tab" id="tab-costo"     aria-controls="p-costo"     aria-selected="false" tabindex="-1"><span class="em" aria-hidden="true">💸</span> Costo della fiducia</button>
+    <button class="tab" role="tab" id="tab-stampa"    aria-controls="p-stampa"    aria-selected="false" tabindex="-1"><span class="em" aria-hidden="true">🎤</span> Sala stampa</button>
+    <button class="tab" role="tab" id="tab-rimpasto"  aria-controls="p-rimpasto"  aria-selected="false" tabindex="-1"><span class="em" aria-hidden="true">🏛️</span> Rimpasto istantaneo</button>
+    <button class="tab" role="tab" id="tab-arsenale"  aria-controls="p-arsenale"  aria-selected="false" tabindex="-1"><span class="em" aria-hidden="true">🎭</span> Arsenale satirico</button>
+    <button class="tab" role="tab" id="tab-verbale"   aria-controls="p-verbale"   aria-selected="false" tabindex="-1"><span class="em" aria-hidden="true">📜</span> Verbale della seduta</button>
+  </div>
+
+  <main id="main" class="panels" tabindex="-1">
+
+    <!-- ============ 1. PROMESSOMETRO ============ -->
+    <section class="panel" id="p-promesse" role="tabpanel" aria-labelledby="tab-promesse" tabindex="0">
+      <div class="grid">
+        <div class="card col-7">
+          <h2 class="panel-title">📢 Promessometro elettorale <span class="chip">modello P-1</span></h2>
+          <p class="lead">Assembla promesse con la stessa cura artigianale con cui vengono dimenticate: soggetto altisonante, verbo al futuro, scadenza elastica.</p>
+
+          <div class="btnrow">
+            <button class="btn primary" id="btnGenPromise" type="button">⚙️ Genera promessa <span class="k">G</span></button>
+            <button class="btn" id="btnGenPromiseX3" type="button">📚 Programma elettorale (3 promesse)</button>
+            <button class="btn" id="btnPromiseAbsurd" type="button">🌪️ Versione iperbolica</button>
+            <button class="btn ghost" id="btnPromiseLog" type="button">📜 Verbalizza</button>
+          </div>
+
+          <div class="display" id="outPromise" role="status" aria-live="polite">
+            <span class="tag">promessa n. 0</span>
+            <p style="margin:0">Premi «Genera promessa»: il futuro è già stato promesso, e non è ancora arrivato.</p>
+          </div>
+
+          <hr class="rule" />
+          <h3>Metro di elasticità della scadenza</h3>
+          <label class="field" for="horizon">
+            <span class="lbl">Orizzonte temporale dichiarato</span>
+            <input type="range" id="horizon" min="1" max="5" step="1" value="2"
+                   aria-describedby="horizonOut" />
+          </label>
+          <p class="hint" id="horizonOut" style="color:var(--gold)">2 — «nei prossimi mesi»</p>
+          <div class="btnrow" style="margin-top:10px">
+            <button class="btn" id="btnDeadline" type="button">⏳ Verifica se la scadenza è passata</button>
+          </div>
+          <p class="hint" id="deadlineOut"></p>
+        </div>
+
+        <div class="card col-5">
+          <h2 class="panel-title">🧮 Contatore di verifica</h2>
+          <p class="lead">Il dispositivo di controllo più usato: la memoria corta.</p>
+          <div class="stat-line"><span>Promesse pronunciate</span><b id="promMade">0</b></div>
+          <div class="stat-line"><span>Promesse mantenute</span><b id="promKept">0</b></div>
+          <div class="stat-line"><span>Commissioni istituite</span><b id="promComm">0</b></div>
+          <div class="stat-line"><span>“Tavoli tecnici” aperti</span><b id="promTable">0</b></div>
+          <div class="stat-line total"><span>Responsabili individuati</span><b>nessuno</b></div>
+          <button class="btn danger" id="btnBlame" type="button" style="margin-top:14px">🙈 Attribuisci la colpa al governo precedente</button>
+          <p class="hint" id="blameOut" aria-live="polite"></p>
+        </div>
+
+        <div class="card col-12 tight">
+          <h3>Registro delle promesse</h3>
+          <ul class="log" id="promiseLog"></ul>
+          <p class="hint">Le promesse scadute non vengono cancellate: vengono riciclate come «nuove sfide».</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 2. BINGO ============ -->
+    <section class="panel" id="p-bingo" role="tabpanel" aria-labelledby="tab-bingo" tabindex="0" hidden>
+      <div class="grid">
+        <div class="card col-8">
+          <h2 class="panel-title">🎲 Bingo del politichese</h2>
+          <p class="lead">Ascolta un dibattito pubblico e marca le caselle. Chi completa una riga ha diritto a un talk show.</p>
+          <div class="btnrow">
+            <button class="btn primary" id="btnDraw" type="button">🎯 Estrai una frase fatta <span class="k">E</span></button>
+            <button class="btn" id="btnNewCard" type="button">🔄 Nuova cartella</button>
+            <button class="btn ghost" id="btnClearCard" type="button">🧽 Pulisci i segni</button>
+            <button class="btn danger" id="btnShoutBingo" type="button">📣 Grida «BINGO ISTITUZIONALE»</button>
+          </div>
+          <p class="hint" id="bingoMsg" aria-live="polite">Cartella pronta: 25 formule, zero contenuti.</p>
+        </div>
+        <div class="card col-4">
+          <h2 class="panel-title">📋 Regolamento</h2>
+          <ul class="bullets">
+            <li>Una casella vale un’intervista.</li>
+            <li>Due caselle in diagonale valgono una commissione d’inchiesta.</li>
+            <li>«Non è il momento» annulla il turno dell’avversario.</li>
+          </ul>
+          <div class="display small" id="bingoOut" role="status" aria-live="polite" style="min-height:70px">
+            <p style="margin:0">Ultima estrazione: —</p>
+          </div>
+        </div>
+        <div class="card col-12">
+          <div class="bingo-grid" id="bingoGrid" role="group" aria-label="Cartella del bingo del politichese"></div>
+          <p class="hint" style="margin-top:10px">Usa <b>Tab</b> per spostarti fra le caselle e <b>Spazio</b> per segnarle.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3. TERMOMETRO + GRAFICO ============ -->
+    <section class="panel" id="p-fiducia" role="tabpanel" aria-labelledby="tab-fiducia" tabindex="0" hidden>
+      <div class="grid">
+        <div class="card col-5">
+          <h2 class="panel-title">🌡️ Termometro dell’onestà politica</h2>
+          <p class="lead">Strumento di precisione, ancora in fase di taratura dal 1994.</p>
+          <div class="gauge-wrap">
+            <div class="gauge" id="gauge" role="img" aria-label="Indicatore dell'onestà politica: 3 per cento">
+              <div class="val"><span class="num" id="gaugeNum">3%</span><span class="cap">onestà stimata</span></div>
+            </div>
+            <div style="flex:1 1 210px">
+              <label class="field" for="honesty">
+                <span class="lbl">Prova a sollevare l’ago</span>
+                <input type="range" id="honesty" min="0" max="100" step="1" value="3"
+                       aria-valuetext="3 per cento" />
+              </label>
+              <p class="hint" id="honestyMsg" aria-live="polite">L’ago torna al suo posto: è la media storica.</p>
+              <button class="btn" id="btnCalibrate" type="button" style="margin-top:10px">🔧 Ricalibra dopo la prossima riforma</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card col-7">
+          <h2 class="panel-title">📉 Grafico della fiducia e delle promesse</h2>
+          <p class="lead">Serie storica immaginaria: gli annunci crescono, il mantenimento resta orizzontale, la fiducia segue la gravità.</p>
+          <div class="chart-frame">
+            <canvas id="chart" width="900" height="420" role="img"
+              aria-label="Grafico satirico: gli annunci salgono, le promesse mantenute restano piatte a zero, la fiducia scende nel tempo."></canvas>
+          </div>
+          <div class="legend">
+            <span><i class="swatch" style="background:var(--gold)"></i> Annunci (per miliardo di parole)</span>
+            <span><i class="swatch" style="background:var(--flag)"></i> Promesse mantenute</span>
+            <span><i class="swatch" style="background:var(--vermillion)"></i> Fiducia dei cittadini</span>
+          </div>
+          <div class="btnrow" style="margin-top:14px">
+            <button class="btn primary" id="btnRedraw" type="button">📊 Rilancia la legislatura</button>
+            <button class="btn" id="btnAusterity" type="button" aria-pressed="false">💼 Applica manovra correttiva</button>
+          </div>
+          <p class="hint">Dati dichiaratamente inventati, a fini di satira: nessun numero qui è una misura reale.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 4. COSTO DELLA FIDUCIA ============ -->
+    <section class="panel" id="p-costo" role="tabpanel" aria-labelledby="tab-costo" tabindex="0" hidden>
+      <div class="grid">
+        <div class="card col-6">
+          <h2 class="panel-title">💸 Costo della fiducia</h2>
+          <p class="lead">Calcolatore fantastico: inserisci le voci, le moltiplichiamo per la pazienza dei contribuenti.</p>
+          <div class="inline-fields">
+            <label class="field" for="inSeats"><span class="lbl">Poltrone (numero)</span>
+              <input type="number" id="inSeats" value="46" min="0" max="9999" /></label>
+            <label class="field" for="inTokens"><span class="lbl">Gettoni di presenza al mese</span>
+              <input type="number" id="inTokens" value="28" min="0" max="9999" /></label>
+            <label class="field" for="inCars"><span class="lbl">Auto blu in servizio</span>
+              <input type="number" id="inCars" value="12" min="0" max="9999" /></label>
+            <label class="field" for="inTable"><span class="lbl">Tavoli tecnici attivi</span>
+              <input type="number" id="inTable" value="34" min="0" max="9999" /></label>
+          </div>
+          <div class="btnrow" style="margin-top:6px">
+            <button class="btn primary" id="btnCost" type="button">🧾 Calcola il conto <span class="k">C</span></button>
+            <button class="btn ghost" id="btnCostReset" type="button">↺ Valori di default</button>
+          </div>
+          <p class="hint">Unità di misura: <b>«minuti di coda al pronto soccorso»</b> e <b>«cartelle esattoriali»</b>. Nessuna cifra ha valore documentale.</p>
+        </div>
+
+        <div class="card col-6">
+          <h2 class="panel-title">🧾 Ricevuta non fiscale</h2>
+          <div id="costOut" role="status" aria-live="polite">
+            <div class="stat-line"><span>Totale indennità</span><b>—</b></div>
+            <div class="stat-line"><span>Totale gettoni</span><b>—</b></div>
+            <div class="stat-line"><span>Totale auto blu</span><b>—</b></div>
+            <div class="stat-line"><span>Totale tavoli tecnici</span><b>—</b></div>
+            <div class="stat-line total"><span>Conto per il contribuente</span><b>—</b></div>
+          </div>
+          <div class="stamp">pagabile in comode rate</div>
+          <p class="hint" id="costComment" style="margin-top:14px"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5. SALA STAMPA ============ -->
+    <section class="panel" id="p-stampa" role="tabpanel" aria-labelledby="tab-stampa" tabindex="0" hidden>
+      <div class="grid">
+        <div class="card col-7">
+          <h2 class="panel-title">🎤 Sala stampa automatica</h2>
+          <p class="lead">Dichiara una posizione senza esprimerla: il software fa il resto. Poi leggi la traduzione simultanea.</p>
+          <div class="btnrow">
+            <button class="btn primary" id="btnConference" type="button">🎙️ Convocà una conferenza <span class="k">S</span></button>
+            <button class="btn" id="btnDodge" type="button">🌀 Rispondi a una domanda scomoda</button>
+            <button class="btn ghost" id="btnConferenceLog" type="button">📜 Verbalizza</button>
+          </div>
+          <label class="field" style="margin-top:14px; display:flex; align-items:center; gap:10px">
+            <span class="lbl" style="margin:0; flex:1 1 200px">Traduzione simultanea (mostra ciò che significa)</span>
+            <button class="btn ghost" id="btnTranslate" type="button" aria-pressed="true" style="margin:0">🟢 Attiva</button>
+          </label>
+
+          <div class="display" id="outPress" role="status" aria-live="polite">
+            <span class="tag">comunicato</span>
+            <p style="margin:0">Nessuna dichiarazione. Nessun contenuto. Perfetto: si può già pubblicare.</p>
+          </div>
+          <div class="xlate" id="xlateOut"></div>
+        </div>
+
+        <div class="card col-5">
+          <h2 class="panel-title">🗞️ Titoli domani in edicola</h2>
+          <ul class="log" id="headlines" style="max-height:420px"></ul>
+          <button class="btn ghost" id="btnHeadline" type="button" style="margin-top:12px">🖨️ Genera titolo</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6. RIMPASTO ============ -->
+    <section class="panel" id="p-rimpasto" role="tabpanel" aria-labelledby="tab-rimpasto" tabindex="0" hidden>
+      <div class="grid">
+        <div class="card col-8">
+          <h2 class="panel-title">🏛️ Rimpasto istantaneo</h2>
+          <p class="lead">Un clic e il Governo cambia forma senza cambiare sostanza. Ministeri creati per necessità creative.</p>
+          <div class="btnrow">
+            <button class="btn danger" id="btnShuffleGov" type="button">🔥 Esegui rimpasto <span class="k">R</span></button>
+            <button class="btn" id="btnSameFaces" type="button">🎭 Cambia solo le facce</button>
+            <button class="btn ghost" id="btnLogGov" type="button">📜 Verbalizza il decreto</button>
+          </div>
+          <div class="deck" id="govDeck" style="margin-top:16px" aria-live="polite"></div>
+        </div>
+        <div class="card col-4">
+          <h2 class="panel-title">📌 Comunicato del rimpasto</h2>
+          <div class="display small" id="govOut" role="status" aria-live="polite" style="min-height:120px">
+            <p style="margin:0">Governo non pervenuto. Il rimpasto è imminente dal 1974.</p>
+          </div>
+          <p class="hint">Personaggi, ministeri e nomi sono inventati.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7. ARSENALE ============ -->
+    <section class="panel" id="p-arsenale" role="tabpanel" aria-labelledby="tab-arsenale" tabindex="0" hidden>
+      <div class="grid">
+        <div class="card col-12">
+          <h2 class="panel-title">🎭 Arsenale satirico</h2>
+          <p class="lead">Le tecniche usate in questa pagina, spiegate e citate: dalla tradizione latina alla satira televisiva. Seleziona una carta per vedere l’esempio.</p>
+          <div class="deck" id="deck"></div>
+        </div>
+
+        <div class="card col-6">
+          <h2 class="panel-title">⚖️ Orazio o Giovenale?</h2>
+          <p class="lead">Le due grandi famiglie della satira. Cambia il tono del cruscotto e guarda come cambiano le frasi.</p>
+          <ul class="bullets">
+            <li><b>Oraziano</b> — sorriso urbano, complicità, correzione bonaria: fa ridere il potente con lui, non di lui.</li>
+            <li><b>Giovenaliano</b> — indignazione, invettiva, realismo amaro: punta il dito e non chiede scusa.</li>
+          </ul>
+          <div class="btnrow" style="margin-top:12px">
+            <button class="btn" id="btnToneTabs" type="button">🎚️ Cambia tono (come in testata)</button>
+          </div>
+        </div>
+
+        <div class="card col-6">
+          <h2 class="panel-title">🧪 Come si smonta una frase</h2>
+          <ol class="bullets">
+            <li><b>Isola la formula</b>: «cabina di regia», «fase due», «non è il momento».</li>
+            <li><b>Spingila al limite</b> (iperbole) fino a farne vedere l’assurdo interno.</li>
+            <li><b>Rovesciala</b>: prendila alla lettera e applicala alla vita quotidiana.</li>
+            <li><b>Traducila</b>: dì in cinque parole ciò che nascondeva in cinquanta.</li>
+            <li><b>Ripetila senza commento</b> (deadpan): la citazione è già satira.</li>
+          </ol>
+          <p class="hint">Regola d’oro: si prende in giro il <i>potere</i> e le <i>sue formule</i>, non le persone fragili o le opinioni private di chi non ha potere.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 8. VERBALE ============ -->
+    <section class="panel" id="p-verbale" role="tabpanel" aria-labelledby="tab-verbale" tabindex="0" hidden>
+      <div class="grid">
+        <div class="card col-12">
+          <h2 class="panel-title">📜 Verbale della seduta</h2>
+          <p class="lead">Tutto ciò che è stato verbalizzato in questa sessione. Il documento ha valore puramente comico.</p>
+          <div class="btnrow">
+            <button class="btn primary" id="btnExport" type="button">💾 Esporta verbale (.txt)</button>
+            <button class="btn ghost" id="btnCopy" type="button">📋 Copia negli appunti</button>
+            <button class="btn danger" id="btnTear" type="button">🗑️ Strappa il verbale</button>
+          </div>
+          <ul class="log" id="sessionLog" style="max-height:460px"></ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="disclaimer">
+    <b>Nota necessaria.</b> Questa è un’opera di satira: colpisce per definizione il <i>potere</i> e i suoi linguaggi.
+    Tutti i personaggi, i ministeri, le poltrone e i dati numerici sono inventati, e la formula classica vale anche qui:
+    ogni riferimento a persone o fatti reali è — augurandoci di no — evidentemente involontario.
+    Nessuna affermazione fattuale su persone esistenti: solo figure retoriche, deformazioni e silenzi messi in scena.
+  </div>
+
+  <details class="src">
+    <summary>Fonti consultate sulle tecniche satiriche</summary>
+    <ul>
+      <li>Treccani, <a href="https://www.treccani.it/enciclopedia/iperbole_%28Enciclopedia-dell%27Italiano%29/">voce «Iperbole»</a> — figura dell’amplificazione; <a href="https://www.treccani.it/enciclopedia/satira_%28Enciclopedia-Italiana%29/">voce «Satira»</a> — silloi, satira antica, <i>castigat ridendo mores</i>.</li>
+      <li>Britannica, <a href="https://www.britannica.com/art/Juvenalian-satire">«Juvenalian satire»</a> — indignazione morale e pessimismo; contrapposta alla satira oraziana.</li>
+      <li>Wikipedia, <a href="https://it.wikipedia.org/wiki/Satira">«Satira»</a>, <a href="https://it.wikipedia.org/wiki/Saturae_Menippeae">«Satira menippea»</a> (<i>prosimetrum</i>, <i>spoudaiogeloion</i>), <a href="https://it.wikipedia.org/wiki/Satira_latina">«Satira latina»</a>.</li>
+      <li>Circolo Semiologico Siciliano, <a href="https://www.circolosemiologicosiciliano.it/scuola-estiva/quarta-edizione/come-analizzare-la-satira-politica/">«Come analizzare la satira politica»</a> — “armi della satira” e “armi spuntate”.</li>
+      <li>M. Bonafin, <a href="https://www.tecalibri.info/B/BONAFIN-M_parodia.htm"><i>Contesti della parodia</i></a> — differenza fra satira e parodia.</li>
+      <li>S. Milner, ricerche su satira e figure retoriche: <a href="https://zenodo.org/records/15587426">Milner, Satire, rhetoric and figures</a>.</li>
+      <li><i>La via difficile della satira politica</i>, <a href="https://www.lospaziobianco.it/la-via-difficile-della-satira-politica/">Lo Spazio Bianco</a> — limiti e ambiguità della satira rivolta ai potenti.</li>
+    </ul>
+  </details>
+
+  <footer class="foot">
+    Cruscotto Nazionale del Potere — costruito come pagina unica, offline, senza dipendenze esterne.
+    Chi promette di migliorarlo lo farà entro i prossimi mesi.
+  </footer>
+</div>
+
+<!-- ticker -->
+<div class="ticker" role="region" aria-label="Notiziario scorrevole satirico">
+  <span class="badge">TG POTERE</span>
+  <div class="rail"><p id="tickerText">Ultim’ora: il tavolo tecnico si è riunito per decidere quando riunirsi. — Il provvedimento coraggioso è stato rinviato al prossimo coraggioso. — Nessuna promessa è stata mantenuta durante la produzione di questo notiziario. — Il rimpasto è imminente entro le prossime ventiquattro legislature. — «Non è il momento» è diventato un bene rifugio. — Le virgolette attorno a «riforma» sono state raddoppiate per sicurezza.</p></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =====================================================================
+   CRUSCOTTO NAZIONALE DEL POTERE
+   Single file, nessuna dipendenza. Tutto il testo è satira di fantasia.
+   ===================================================================== */
+(function () {
+  "use strict";
+
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var rnd = function (a) { return a[Math.floor(Math.random() * a.length)]; };
+  var esc = function (s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  };
+  var mq = (typeof window.matchMedia === "function") ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+  var reduced = !!(mq && mq.matches);
+
+  /* ---------- stato ---------- */
+  var state = {
+    tono: "oraziano",          // oraziano | giovenaliano
+    traduci: true,
+    promesse: 0,
+    commissioni: 0,
+    tavoli: 0,
+    seduta: [],
+    card: [],
+    segnate: {}
+  };
+
+  var T = {};  // testi per tono
+  T.oraziano = {
+    etichetta: "Orazio",
+    incipit: [
+      "Con garbo, ci permettiamo di annunciare che",
+      "Senza voler disturbare nessuno, si comunica che",
+      "Con l’eleganza che ci contraddistingue,",
+      "Il Governo, con il sorriso sulle labbra,"
+    ],
+    chiusa: [
+      "Ne riparliamo con calma, davanti a un buon caffè.",
+      "Nessuno si offenda, era solo una battuta istituzionale.",
+      "Prendetela come una boutade: il budget lo conferma.",
+      "Se non funziona, avremo comunque fatto un’esperienza."
+    ],
+    commento: "Sorridiamo insieme: il Paese, del resto, sta già piangendo da solo."
+  };
+  T.giovenaliano = {
+    etichetta: "Giovenale",
+    incipit: [
+      "A questo punto bisogna gridarlo,",
+      "Basta con i giri di parole:",
+      "Non c’è più tempo per la cortesia,",
+      "Con il disprezzo che meritano i loro silenzi,"
+    ],
+    chiusa: [
+      "E nessuno pagherà, come sempre.",
+      "Che il vento si porti via anche le loro promesse.",
+      "La vergogna non è un’opinione.",
+      "Siamo governati da gente che non ha mai chiesto il conto."
+    ],
+    commento: "L’indignazione, qui, non è una figura retorica: è l’unica forma di contabilità rimasta."
+  };
+
+  /* ---------- toast ---------- */
+  var toastEl = $("#toast"), toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("on"); }, 2600);
+  }
+
+  /* ---------- verbale di seduta ---------- */
+  function verbalizza(tipo, testo) {
+    var ora = new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    state.seduta.push({ t: ora, tipo: tipo, testo: testo });
+    var li = document.createElement("li");
+    li.innerHTML = '<span class="t">' + esc(ora) + " · " + esc(tipo) + "</span>" + esc(testo);
+    var log = $("#sessionLog");
+    log.appendChild(li);
+    log.scrollTop = log.scrollHeight;
+    return true;
+  }
+  window.verbalizza = verbalizza;
+
+  /* ===================== TAB ACCESSIBILI ===================== */
+  var tabs = $$(".tab");
+  function selectTab(tab, focus) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      var p = document.getElementById(t.getAttribute("aria-controls"));
+      if (p) { p.hidden = !on; }
+    });
+    if (focus) { tab.focus(); }
+  }
+  tabs.forEach(function (tab, i) {
+    tab.addEventListener("click", function () { selectTab(tab, false); });
+    tab.addEventListener("keydown", function (e) {
+      var k = e.key, n = null;
+      if (k === "ArrowRight") n = tabs[(i + 1) % tabs.length];
+      else if (k === "ArrowLeft") n = tabs[(i - 1 + tabs.length) % tabs.length];
+      else if (k === "Home") n = tabs[0];
+      else if (k === "End") n = tabs[tabs.length - 1];
+      if (n) { e.preventDefault(); selectTab(n, true); }
+    });
+  });
+
+  /* ===================== OROLOGIO ===================== */
+  function tick() {
+    $("#clock").textContent = new Date().toLocaleTimeString("it-IT");
+  }
+  tick(); setInterval(tick, 1000);
+
+  /* ===================== SFONDO: PARTICELLE ===================== */
+  (function stars() {
+    if (reduced) { return; }
+    var c = $("#stars"), ctx = c.getContext("2d"), pts = [], w = 0, h = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    function resize() {
+      w = c.width = Math.floor(window.innerWidth * dpr);
+      h = c.height = Math.floor(window.innerHeight * dpr);
+      c.style.width = window.innerWidth + "px";
+      c.style.height = window.innerHeight + "px";
+      var n = Math.min(70, Math.round(window.innerWidth / 22));
+      pts = [];
+      for (var i = 0; i < n; i++) {
+        pts.push({ x: Math.random() * w, y: Math.random() * h, r: (Math.random() * 1.6 + .5) * dpr, vx: (Math.random() - .5) * .18 * dpr, vy: (Math.random() - .5) * .18 * dpr, a: Math.random() * .5 + .18 });
+      }
+    }
+    function loop() {
+      ctx.clearRect(0, 0, w, h);
+      for (var i = 0; i < pts.length; i++) {
+        var p = pts[i];
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(233,196,106," + p.a + ")";
+        ctx.fill();
+      }
+      for (var j = 0; j < pts.length; j++) {
+        for (var k = j + 1; k < pts.length; k++) {
+          var dx = pts[j].x - pts[k].x, dy = pts[j].y - pts[k].y, d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 130 * dpr) {
+            ctx.strokeStyle = "rgba(60,150,160," + (0.11 * (1 - d / (130 * dpr))) + ")";
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(pts[j].x, pts[j].y); ctx.lineTo(pts[k].x, pts[k].y); ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(loop);
+    }
+    resize(); loop();
+    window.addEventListener("resize", resize);
+  })();
+
+  /* ===================== TONO ORAZIO / GIOVENALE ===================== */
+  function setTone(t) {
+    state.tono = t;
+    var gio = t === "giovenaliano";
+    $("#toneLabel").textContent = T[t].etichetta;
+    $("#btnTone").setAttribute("aria-pressed", gio ? "true" : "false");
+    document.documentElement.style.setProperty("--gold", gio ? "#d9a24a" : "#e9c46a");
+    toast(gio ? "Tono giovenaliano: indignazione attivata." : "Tono oraziano: sorriso diplomatico ripristinato.");
+    verbalizza("Tono", "Impostato registro " + T[t].etichetta.toLowerCase() + ".");
+  }
+  $("#btnTone").addEventListener("click", function () {
+    setTone(state.tono === "oraziano" ? "giovenaliano" : "oraziano");
+  });
+  $("#btnToneTabs").addEventListener("click", function () {
+    setTone(state.tono === "oraziano" ? "giovenaliano" : "oraziano");
+    selectTab($("#tab-promesse"), true);
+  });
+
+  /* ===================== 1. PROMESSOMETRO ===================== */
+  var PEZZI = {
+    soggetto: [
+      "il Governo", "questa maggioranza", "il Ministro competente", "l’Esecutivo",
+      "il Parlamento, all’unanimità dei capigruppo", "un apposito decreto", "la Cabina di Regia"
+    ],
+    verbo: [
+      "ridurrà", "semplificherà", "rilancerà", "difenderà", "rilancerà definitivamente",
+      "metterà al centro", "libererà", "taglierà", "investirà su", "proteggerà"
+    ],
+    oggetto: [
+      "il ceto medio", "le famiglie numerose e quelle in attesa di diventarlo", "le piccole imprese che non hanno ancora chiuso",
+      "la burocrazia, una pratica alla volta", "i giovani che sono rimasti", "il made in Italy autentico",
+      "la sanità territoriale, quando ci sarà", "il lavoro nobile, quello degli altri", "l’ambiente, in senso ampio"
+    ],
+    modo: [
+      "senza aumentare le tasse, a parte quelle che aumenteranno",
+      "con risorse già individuate ma non ancora reperite",
+      "grazie a un piano straordinario di durata ordinaria",
+      "in collaborazione con tutti gli enti coinvolti e alcuni enti inventati",
+      "attraverso un tavolo permanente che si riunirà in via permanente"
+    ]
+  };
+  var SCADENZE = ["nei prossimi mesi", "entro cento giorni (lavorativi, e solo in autunno)", "nella prossima legislatura", "al più presto, si spera", "entro il 2030, salvo imprevisti e salvo Governi"];
+
+  function orizzonteLabel(v) {
+    return ["1 — «immediatamente» (cioè mai)", "2 — «nei prossimi mesi»", "3 — «entro la legislatura»", "4 — «nel medio periodo»", "5 — «alle prossime generazioni»"][v - 1];
+  }
+  function generaPromessa(iperbole) {
+    var p = PEZZI;
+    var frase = rnd(T[state.tono].incipit) + " " + rnd(p.soggetto) + " " + rnd(p.verbo) + " " + rnd(p.oggetto) +
+      ", " + rnd(p.modo) + ", " + rnd(SCADENZE) + ".";
+    if (iperbole) {
+      frase = frase.replace(/\.$/, "") + " E questa volta, giuro su ogni talk show, sarà la volta che funziona davvero: se non funziona, cambieremo il nome al decreto. " + rnd(T[state.tono].chiusa);
+    }
+    state.promesse++;
+    state.tavoli++;
+    $("#promMade").textContent = state.promesse;
+    $("#promTable").textContent = state.tavoli;
+    var out = $("#outPromise");
+    out.classList.remove("flash"); void out.offsetWidth; out.classList.add("flash");
+    out.innerHTML = '<span class="tag">promessa n. ' + state.promesse + '</span><p style="margin:0">' + esc(frase) + "</p>";
+    $("#deadlineOut").textContent = "";
+    return frase;
+  }
+  $("#btnGenPromise").addEventListener("click", function () { generaPromessa(false); });
+  $("#btnGenPromiseX3").addEventListener("click", function () {
+    var frasi = [];
+    for (var i = 0; i < 3; i++) { frasi.push(generaPromessa(false)); }
+    var out = $("#outPromise");
+    out.innerHTML = '<span class="tag">programma elettorale</span><ol style="margin:0; padding-left:1.2em">' +
+      frasi.map(function (f) { return "<li>" + esc(f) + "</li>"; }).join("") + "</ol>";
+  });
+  $("#btnPromiseAbsurd").addEventListener("click", function () { generaPromessa(true); });
+  $("#btnPromiseLog").addEventListener("click", function () {
+    var testo = $("#outPromise").textContent.replace(/\s+/g, " ").trim();
+    verbalizza("Promessa", testo.slice(0, 220));
+    toast("Promessa verbalizzata: ora è ufficiale e irrealizzabile.");
+  });
+  $("#horizon").addEventListener("input", function (e) {
+    $("#horizonOut").textContent = orizzonteLabel(Number(e.target.value));
+  });
+  $("#btnDeadline").addEventListener("click", function () {
+    var v = Number($("#horizon").value);
+    var msg = v <= 2
+      ? "Scadenza superata da 4 legislature. Il ritardo è stato definito «fisiologico» e «legato alla congiuntura internazionale»."
+      : "Scadenza ancora da venire: è la condizione ideale di ogni promessa. Chiedere di nuovo fra dieci anni.";
+    $("#deadlineOut").textContent = msg;
+    verbalizza("Scadenza", msg);
+  });
+  var BLAME = [
+    "Colpa dei Governi precedenti, che però erano composti dalle stesse persone.",
+    "Colpa dell’Europa, che non ha mai chiesto nulla.",
+    "Colpa del mercato, che si rifiuta di obbedire.",
+    "Colpa di un errore materiale nel copia e incolla del decreto.",
+    "Nessuna colpa: si tratta di un «atteggiamento costruttivo» verso il problema."
+  ];
+  $("#btnBlame").addEventListener("click", function () {
+    var m = rnd(BLAME);
+    $("#blameOut").textContent = m;
+    $("#promComm").textContent = state.commissioni = state.commissioni + 1;
+    verbalizza("Colpa", m);
+  });
+
+  /* ===================== 2. BINGO ===================== */
+  var PAROLE = [
+    "RESILIENZA", "SISTEMA PAESE", "CABINA DI REGIA", "TAVOLO TECNICO", "RIFORMA STRUTTURALE",
+    "SUSSIDIARIETÀ", "FASE DUE", "ROADMAP", "SPENDING REVIEW", "SEMPLIFICAZIONE",
+    "PACCHETTO DI MISURE", "FORZA TRANQUILLA", "NON È IL MOMENTO", "CHIARIMENTO DOVEROSO",
+    "COLPA DEL GOVERNO PRECEDENTE", "GRUPPO DI LAVORO", "TRANSIZIONE", "AGENDA", "METODO",
+    "QUESTIONE DI SISTEMA", "SPIRITO COSTRUTTIVO", "PROVVEDIMENTO CORAGGIOSO", "MISURA PONTILE",
+    "LEGGINA", "VERTICE DI MAGGIORANZA"
+  ];
+  var indiceParole = 0, ultimaEstratta = -1;
+  function mescola(a) {
+    var c = a.slice();
+    for (var i = c.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = c[i]; c[i] = c[j]; c[j] = t; }
+    return c;
+  }
+  function nuovaCartella() {
+    state.card = mescola(PAROLE).slice(0, 25);
+    state.segnate = {};
+    var g = $("#bingoGrid");
+    g.innerHTML = "";
+    state.card.forEach(function (parola, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "cell";
+      b.setAttribute("aria-pressed", "false");
+      b.setAttribute("data-i", i);
+      b.textContent = parola;
+      b.addEventListener("click", function () { segna(i, b); });
+      g.appendChild(b);
+    });
+    $("#bingoMsg").textContent = "Cartella pronta: 25 formule, zero contenuti.";
+  }
+  function segna(i, el) {
+    var on = el.getAttribute("aria-pressed") === "true";
+    el.setAttribute("aria-pressed", on ? "false" : "true");
+    state.segnate[i] = !on;
+    var fatto = verificaLinea();
+    if (fatto) {
+      $("#bingoMsg").textContent = "LINEA COMPLETATA: " + fatto + ". Si richiede una commissione d’inchiesta.";
+      toast("Bingo istituzionale! Linea: " + fatto);
+      verbalizza("Bingo", "Completata la linea «" + fatto + "» senza aver detto nulla.");
+    }
+  }
+  function verificaLinea() {
+    var righe = [], i, r, c, d1 = [], d2 = [];
+    for (r = 0; r < 5; r++) { righe.push([0, 1, 2, 3, 4].map(function (c2) { return r * 5 + c2; })); }
+    for (c = 0; c < 5; c++) { righe.push([0, 1, 2, 3, 4].map(function (r2) { return r2 * 5 + c; })); }
+    for (i = 0; i < 5; i++) { d1.push(i * 5 + i); d2.push(i * 5 + (4 - i)); }
+    righe.push(d1); righe.push(d2);
+    for (i = 0; i < righe.length; i++) {
+      var ok = true;
+      for (var j = 0; j < 5; j++) { if (!state.segnate[righe[i][j]]) { ok = false; break; } }
+      if (ok) {
+        righe[i].forEach(function (k) { var el = document.querySelector('.cell[data-i="' + k + '"]'); if (el) el.classList.add("line"); });
+        return state.card[righe[i][0]];
+      }
+    }
+    return null;
+  }
+  $("#btnNewCard").addEventListener("click", function () { nuovaCartella(); toast("Nuova cartella: stesse parole, altro studio televisivo."); });
+  $("#btnClearCard").addEventListener("click", function () {
+    state.segnate = {};
+    $$(".cell").forEach(function (el) { el.setAttribute("aria-pressed", "false"); el.classList.remove("line", "drawn"); });
+    $("#bingoMsg").textContent = "Cartella pulita. Il dibattito, purtroppo, è ancora in corso.";
+  });
+  $("#btnDraw").addEventListener("click", function () {
+    var i = (ultimaEstratta + 1 + Math.floor(Math.random() * 24)) % 25;
+    ultimaEstratta = i;
+    var parola = state.card[i] || rnd(PAROLE);
+    $$(".cell").forEach(function (el) { el.classList.remove("drawn"); });
+    var el = document.querySelector('.cell[data-i="' + i + '"]');
+    if (el) { el.classList.add("drawn"); el.focus(); }
+    $("#bingoOut").innerHTML = "<p style=\"margin:0\">Ultima estrazione: <b style=\"color:var(--cyan)\">" + esc(parola) + "</b></p>";
+    $("#bingoMsg").textContent = "Estratta «" + parola + "». Come previsto, non significa niente.";
+  });
+  $("#btnShoutBingo").addEventListener("click", function () {
+    var m = "BINGO ISTITUZIONALE! Nessuno ha capito la frase, tutti hanno applaudito, un decreto è stato approvato in fiducia.";
+    $("#bingoMsg").textContent = m;
+    document.body.classList.add("shake");
+    setTimeout(function () { document.body.classList.remove("shake"); }, 600);
+    verbalizza("Bingo", m);
+    toast("Applausi registrati. Nessun contenuto rilevato.");
+  });
+  nuovaCartella();
+
+  /* ===================== 3. TERMOMETRO + GRAFICO ===================== */
+  var gauge = $("#gauge"), honesty = $("#honesty");
+  function impostaAgo(v) {
+    v = Math.max(0, Math.min(100, v));
+    gauge.style.setProperty("--v", v);
+    $("#gaugeNum").textContent = v + "%";
+    gauge.setAttribute("aria-label", "Indicatore dell’onestà politica: " + v + " per cento");
+    honesty.setAttribute("aria-valuetext", v + " per cento");
+  }
+  honesty.addEventListener("input", function (e) {
+    var v = Number(e.target.value);
+    impostaAgo(v);
+    if (v > 12) {
+      $("#honestyMsg").textContent = "Richiesta registrata. L’ago ha risposto: «non è il momento» e sta rientrando.";
+    } else if (v > 3) {
+      $("#honestyMsg").textContent = "Ottimismo eccessivo: valore corretto con la media storica europea.";
+    } else {
+      $("#honestyMsg").textContent = "L’ago è al suo posto: è la media storica.";
+    }
+  });
+  honesty.addEventListener("change", function () {
+    setTimeout(function () { honesty.value = 3; impostaAgo(3); }, 500);
+  });
+  $("#btnCalibrate").addEventListener("click", function () {
+    var v = Math.round(Math.random() * 4 + 1);
+    impostaAgo(v);
+    honesty.value = v;
+    $("#honestyMsg").textContent = "Ricalibrazione completata dopo la riforma: nuovo valore " + v + "%. La riforma è rinviata.";
+    verbalizza("Taratura", "Termometro ricalibrato al " + v + "% in attesa della riforma.");
+  });
+  impostaAgo(3);
+
+  /* --- grafico canvas --- */
+  var canvas = $("#chart"), ctx2 = canvas.getContext("2d");
+  var austerita = false, anim = { t: 0, raf: null };
+  var serie = { annunci: [], mantenute: [], fiducia: [] };
+  function generaSerie() {
+    var n = 26, base = 8;
+    serie.annunci = []; serie.mantenute = []; serie.fiducia = [];
+    for (var i = 0; i < n; i++) {
+      base += 1.7 + Math.random() * 0.9;
+      serie.annunci.push(base);
+      serie.mantenute.push(Math.random() < 0.06 ? 1 : 0);
+      var f = 100 - i * (austerita ? 4.1 : 3.3) - Math.random() * 3;
+      serie.fiducia.push(Math.max(2, f));
+    }
+  }
+  function disegna(k) {
+    var W = canvas.width, H = canvas.height, pad = { l: 54, r: 20, t: 26, b: 40 };
+    var iw = W - pad.l - pad.r, ih = H - pad.t - pad.b;
+    ctx2.clearRect(0, 0, W, H);
+    var bg = ctx2.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, "#0d1421"); bg.addColorStop(1, "#080c14");
+    ctx2.fillStyle = bg; ctx2.fillRect(0, 0, W, H);
+
+    // griglia
+    ctx2.strokeStyle = "rgba(147,160,184,.16)"; ctx2.lineWidth = 1;
+    for (var g = 0; g <= 5; g++) {
+      var y = pad.t + (ih / 5) * g;
+      ctx2.beginPath(); ctx2.moveTo(pad.l, y); ctx2.lineTo(W - pad.r, y); ctx2.stroke();
+    }
+    for (var gx = 0; gx <= 6; gx++) {
+      var x = pad.l + (iw / 6) * gx;
+      ctx2.beginPath(); ctx2.moveTo(x, pad.t); ctx2.lineTo(x, H - pad.b); ctx2.stroke();
+    }
+    ctx2.fillStyle = "rgba(147,160,184,.75)";
+    ctx2.font = "12px ui-monospace, monospace";
+    ctx2.fillText("leggi approvate", pad.l - 46, pad.t + 4);
+    ctx2.fillText("fiducia / annunci (scala) ", pad.l, H - 12);
+    ctx2.fillText("tempo →", W - pad.r - 62, H - 12);
+
+    var maxAnn = Math.max.apply(null, serie.annunci) || 1;
+    function px(i) { return pad.l + (iw / (serie.annunci.length - 1)) * i; }
+    function pyAnn(v) { return pad.t + ih - (v / maxAnn) * (ih * 0.92); }
+    function pyFid(v) { return pad.t + ih - (v / 100) * ih; }
+
+    function linea(arr, yf, colore, spessore, dashed, finoA) {
+      ctx2.save();
+      ctx2.setLineDash(dashed ? [7, 6] : []);
+      ctx2.strokeStyle = colore; ctx2.lineWidth = spessore;
+      ctx2.lineJoin = "round";
+      ctx2.shadowColor = colore; ctx2.shadowBlur = 12;
+      ctx2.beginPath();
+      var n = Math.max(2, Math.floor((arr.length - 1) * finoA) + 1);
+      for (var i = 0; i < n; i++) {
+        var X = px(i), Y = yf(arr[i]);
+        if (i === 0) { ctx2.moveTo(X, Y); } else { ctx2.lineTo(X, Y); }
+      }
+      ctx2.stroke();
+      ctx2.restore();
+    }
+    linea(serie.annunci, pyAnn, "rgba(233,196,106,.95)", 3, false, k);
+    linea(serie.mantenute, function (v) { return pyAnn(0) - v * 3; }, "rgba(63,157,90,.95)", 4, false, k);
+    linea(serie.fiducia, pyFid, "rgba(215,38,61,.95)", 3, false, k);
+
+    // etichette di commento
+    ctx2.font = "13px ui-monospace, monospace";
+    ctx2.fillStyle = "rgba(233,196,106,.9)";
+    ctx2.fillText("annunci", px(serie.annunci.length - 3), pyAnn(serie.annunci[serie.annunci.length - 2]) - 10);
+    ctx2.fillStyle = "rgba(63,157,90,.95)";
+    ctx2.fillText("promesse mantenute (0)", pad.l + 8, pyAnn(0) - 10);
+    ctx2.fillStyle = "rgba(215,38,61,.95)";
+    ctx2.fillText("fiducia", px(serie.fiducia.length - 5), pyFid(serie.fiducia[serie.fiducia.length - 6]) + 20);
+  }
+  function anima() {
+    if (reduced) { disegna(1); return; }
+    cancelAnimationFrame(anim.raf);
+    var t0 = performance.now();
+    function step(now) {
+      var k = Math.min(1, (now - t0) / 1300);
+      disegna(k);
+      if (k < 1) { anim.raf = requestAnimationFrame(step); }
+    }
+    anim.raf = requestAnimationFrame(step);
+  }
+  $("#btnRedraw").addEventListener("click", function () {
+    generaSerie(); anima();
+    toast("Legislatura rilanciata: annunci +40%, promesse invariate.");
+    verbalizza("Grafico", "Rilanciata la legislatura: annunci in crescita, promesse mantenute invariate.");
+  });
+  $("#btnAusterity").addEventListener("click", function () {
+    austerita = !austerita;
+    this.setAttribute("aria-pressed", austerita ? "true" : "false");
+    this.textContent = austerita ? "💼 Manovra correttiva attiva" : "💼 Applica manovra correttiva";
+    generaSerie(); anima();
+    toast(austerita ? "Manovra correttiva: la fiducia scende più in fretta." : "Manovra rimossa: la fiducia scende comunque.");
+    verbalizza("Manovra", austerita ? "Applicata manovra correttiva: annunci invariati, fiducia in caduta libera." : "Manovra correttiva revocata.");
+  });
+  generaSerie(); anima();
+
+  /* ===================== 4. COSTO DELLA FIDUCIA ===================== */
+  var UNIT = { indennita: 11800, gettone: 210, auto: 2400, tavolo: 8600 };
+  function num(id) { var v = Number($(id).value); return isFinite(v) && v >= 0 ? v : 0; }
+  function fmt(n) { return n.toLocaleString("it-IT", { maximumFractionDigits: 0 }); }
+  var COMMENTI = [
+    "Il conto è immaginario; la sensazione di averlo già pagato, no.",
+    "Importo arrotondato per eccesso, come le promesse.",
+    "La voce «efficienza» è stata omessa per non falsare il totale.",
+    "Si segnala un avanzo di poltrone e un disavanzo di risposte."
+  ];
+  $("#btnCost").addEventListener("click", function () {
+    var poltrone = num("#inSeats"), gettoni = num("#inTokens"), auto = num("#inCars"), tavoli = num("#inTable");
+    var tInd = poltrone * UNIT.indennita;
+    var tGet = poltrone * gettoni * UNIT.gettone;
+    var tAuto = auto * UNIT.auto;
+    var tTav = tavoli * UNIT.tavolo;
+    var tot = tInd + tGet + tAuto + tTav;
+    var out = $("#costOut");
+    out.innerHTML =
+      '<div class="stat-line"><span>Totale indennità (' + fmt(poltrone) + ' poltrone)</span><b>' + fmt(tInd) + ' €</b></div>' +
+      '<div class="stat-line"><span>Totale gettoni (' + fmt(gettoni) + ' a testa)</span><b>' + fmt(tGet) + ' €</b></div>' +
+      '<div class="stat-line"><span>Auto blu (' + fmt(auto) + ')</span><b>' + fmt(tAuto) + ' €</b></div>' +
+      '<div class="stat-line"><span>Tavoli tecnici (' + fmt(tavoli) + ')</span><b>' + fmt(tTav) + ' €</b></div>' +
+      '<div class="stat-line"><span>Equivalente in minuti di coda al pronto soccorso</span><b>' + fmt(Math.round(tot / 180)) + ' min</b></div>' +
+      '<div class="stat-line total"><span>Conto per il contribuente</span><b>' + fmt(tot) + ' €</b></div>';
+    $("#costComment").textContent = rnd(COMMENTI) + " Unità di misura e moltiplicatori sono inventati per scherzo.";
+    verbalizza("Costo", "Presentata ricevuta satirica da " + fmt(tot) + " € (cifre di fantasia).");
+    toast("Ricevuta emessa. Non è detraibile.");
+  });
+  $("#btnCostReset").addEventListener("click", function () {
+    $("#inSeats").value = 46; $("#inTokens").value = 28; $("#inCars").value = 12; $("#inTable").value = 34;
+    toast("Valori di default ripristinati: è il Governo precedente che li ha scelti.");
+  });
+
+  /* ===================== 5. SALA STAMPA ===================== */
+  var APERTURE = [
+    "Il Governo prende atto con soddisfazione della situazione, qualsiasi essa sia.",
+    "Si è tenuto un proficuo incontro, al termine del quale è stato deciso di incontrarsi.",
+    "Il provvedimento è coraggioso e guarda al futuro con responsabilità.",
+    "Il dibattito è aperto, e resterà tale almeno fino alle prossime elezioni.",
+    "Nessuno resterà indietro, compatibilmente con le risorse disponibili.",
+    "Abbiamo ascoltato il territorio: si è espresso con una nota scritta molto lunga."
+  ];
+  var SVILUPPI = [
+    "Risorse ne troveremo, stiamo valutando la forma giuridica della ricerca.",
+    "Ci sarà un tavolo tecnico che definirà il tavolo tecnico successivo.",
+    "La misura è strutturale per dodici mesi, poi sarà stabilmente temporanea.",
+    "Per il ceto medio abbiamo un pacchetto di misure e un pacchetto di misure per il pacchetto.",
+    "Semplificheremo la burocrazia compilando l’apposito modello.",
+    "Non era nella mia delega, ma la difendo con convinzione."
+  ];
+  var CHIUSE = [
+    "Su questo non c’è nessun tipo di problema.",
+    "Non commento le ricostruzioni di stampa, che però sono interessanti.",
+    "Chi doveva capire ha capito: gli altri voteranno.",
+    "Siamo al lavoro, con umiltà e determinazione, dalle nove alle tredici.",
+    "Se i numeri non tornano, cambieremo i numeri."
+  ];
+  var TRADUZIONI = [
+    ["Abbiamo fatto una verifica interna", "Non ricordo chi ha firmato, e non intendo ricordarlo."],
+    ["È un provvedimento coraggioso", "Farà perdere le elezioni tra due anni."],
+    ["Risorse ne troveremo", "Non le abbiamo, ma è meglio dirlo in tre parole."],
+    ["Ci sarà un tavolo tecnico", "Non se ne farà nulla, ma con eleganza."],
+    ["Non era nella mia delega", "Era nella mia delega, eccome."],
+    ["Il dibattito è aperto", "Non ho la più pallida idea di cosa stiamo dicendo."],
+    ["Rispettiamo la magistratura", "Speriamo che ci metta otto anni."],
+    ["Ascoltiamo il territorio", "Ascoltiamo i sindaci del nostro partito."],
+    ["Nessuno resterà indietro", "Qualcuno resterà indietro, e sarete voi."],
+    ["È una scelta politica, non tecnica", "È una cortesia a chi ci ha votato."],
+    ["Chiudiamo il rubinetto degli sprechi", "Chiudiamo il giornale che ci critica."],
+    ["Semplificheremo la burocrazia", "Aggiungeremo un modulo per chiedere la semplificazione."],
+    ["È una riforma epocale", "Cambia due commi e un condono."],
+    ["Non è il momento", "Non sarà mai il momento."],
+    ["Prendiamo atto con soddisfazione", "Non abbiamo letto il documento."],
+    ["Siamo pronti a discuterne", "Siamo pronti a non discuterne."],
+    ["Il Governo è compatto", "Il Governo è compatto sul fatto che ognuno ha la sua posizione."],
+    ["Ci confronteremo con le opposizioni", "Le informeremo a decisione presa."],
+    ["Dobbiamo essere seri", "Dobbiamo essere rapidi, prima che se ne accorgano."],
+    ["Valuteremo l’impatto sociale", "Valuteremo se perde voti."]
+  ];
+  function orazione() {
+    return rnd(APERTURE) + " " + rnd(SVILUPPI) + " " + rnd(CHIUSE) + (state.tono === "giovenaliano" ? " " + rnd(T.giovenaliano.chiusa) : "");
+  }
+  function renderXlate(pick, quante) {
+    var box = $("#xlateOut");
+    if (!state.traduci) { box.innerHTML = ""; return; }
+    var items = pick || mescola(TRADUZIONI).slice(0, quante || 4);
+    box.innerHTML = items.map(function (p) {
+      return '<div class="pair"><div class="said">«' + esc(p[0]) + '»</div><div class="meant">' + esc(p[1]) + "</div></div>";
+    }).join("");
+  }
+  $("#btnConference").addEventListener("click", function () {
+    var testo = orazione();
+    var out = $("#outPress");
+    out.classList.remove("flash"); void out.offsetWidth; out.classList.add("flash");
+    out.innerHTML = '<span class="tag">comunicato ufficiale</span><p style="margin:0">' + esc(testo) + "</p>";
+    renderXlate(null, 4);
+    verbalizza("Comunicato", testo);
+  });
+  var DODGE = [
+    ["Domanda: «Ministro, ha cambiato idea?»", "Risposta: «La domanda contiene un’insidia. Il merito lo vedremo nel merito, in un contesto più ampio.»"],
+    ["Domanda: «I soldi dove sono?»", "Risposta: «Stiamo parlando di cifre importanti, che non sono però disponibili in questo momento.»"],
+    ["Domanda: «Chi ha firmato?»", "Risposta: «Firmare è un gesto. Noi ci occupiamo del processo, non della grafia.»"],
+    ["Domanda: «Perché è stato rinviato?»", "Risposta: «Il rinvio è il modo più responsabile di accelerare.»"]
+  ];
+  $("#btnDodge").addEventListener("click", function () {
+    var d = rnd(DODGE);
+    var out = $("#outPress");
+    out.innerHTML = '<span class="tag">domanda scomoda</span><p style="margin:0">' + esc(d[0]) + "<br><b>" + esc(d[1]) + "</b></p>";
+    var box = $("#xlateOut");
+    if (state.traduci) {
+      box.innerHTML = '<div class="pair"><div class="said">«' + esc(d[1]) + '»</div><div class="meant">' + esc(rnd(["Sto improvvisando con dignità.", "Non lo so e non lo chiederò.", "Ho ricevuto una telefonata e non posso dirla.", "Spero che la domanda successiva sia peggiore, così sembra migliore."])) + "</div></div>";
+    }
+    verbalizza("Dodging", d[0] + " " + d[1]);
+  });
+  $("#btnConferenceLog").addEventListener("click", function () {
+    verbalizza("Sala stampa", $("#outPress").textContent.replace(/\s+/g, " ").trim().slice(0, 240));
+    toast("Dichiarazione verbalizzata: smentirla sarà più faticoso.");
+  });
+  $("#btnTranslate").addEventListener("click", function () {
+    state.traduci = !state.traduci;
+    this.setAttribute("aria-pressed", state.traduci ? "true" : "false");
+    this.textContent = state.traduci ? "🟢 Attiva" : "⚪ Disattivata";
+    if (state.traduci) {
+      renderXlate(mescola(TRADUZIONI).slice(0, 4));
+      $("#honestyMsg").textContent = "L’ago è al suo posto: è la media storica.";
+    } else {
+      $("#xlateOut").innerHTML = "";
+      toast("Traduzione simultanea disattivata: si torna al linguaggio ufficiale.");
+    }
+  });
+  var TITOLI_A = ["Il Governo promette", "Riforma storica:", "Vertice notturno:", "Svolta annunciata:"];
+  var TITOLI_B = ["ma non dice quando", "slitta a data da destinarsi", "i mercati indifferenti", "nessun testo disponibile cioè non c’è", "tutti d’accordo sul disaccordo"];
+  $("#btnHeadline").addEventListener("click", function () {
+    var t = rnd(TITOLI_A) + " " + rnd(TRADUZIONI)[0].toLowerCase() + " " + rnd(TITOLI_B) + ".";
+    var ul = $("#headlines");
+    var li = document.createElement("li");
+    li.innerHTML = '<span class="t">' + new Date().toLocaleDateString("it-IT") + " · prima pagina</span>" + esc(t);
+    ul.insertBefore(li, ul.firstChild);
+  });
+  $("#btnHeadline").click();
+  renderXlate(mescola(TRADUZIONI).slice(0, 4));
+
+  /* ===================== 6. RIMPASTO ===================== */
+  var MINISTERI = [
+    "Ministero del Fare (senza fare)", "Ministero della Transizione Eterna", "Ministero della Semplificazione (modulo 12/B)",
+    "Ministero delle Riforme Rinviate", "Ministero dell’Ottimismo Statistico", "Ministero della Comunicazione Fiduciosa",
+    "Ministero del Merito Ereditario", "Ministero delle Mani Libere (le nostre)", "Ministero dell’Ascolto del Territorio (solo il nostro)"
+  ];
+  var NOMI = ["On. Cavalier Tacito", "On. Serenella Onde", "On. Belisario Costanzo", "On. Marisa Tautologia", "On. Gualtiero Sfavorevoli",
+    "On. Ivano Slittamenti", "On. Piera Cautelativa", "On. Corrado Nonnulla", "On. Laura Rilascio", "On. Anselmo Nuvoloni"];
+  function poltrone() {
+    var deck = $("#govDeck");
+    deck.innerHTML = "";
+    var mini = mescola(MINISTERI).slice(0, 6), nomi = mescola(NOMI).slice(0, 6);
+    mini.forEach(function (m, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "tech";
+      b.setAttribute("aria-expanded", "false");
+      b.innerHTML = '<span class="name">' + esc(m) + '</span><span class="lat">titolare</span>' +
+        '<span class="def">' + esc(nomi[i]) + '</span><span class="eg">Delega: dichiarare che il dossier è «in fase di studio avanzato».</span>';
+      b.addEventListener("click", function () {
+        var open = b.getAttribute("aria-expanded") === "true";
+        b.setAttribute("aria-expanded", open ? "false" : "true");
+      });
+      deck.appendChild(b);
+    });
+    $("#seatCounter").textContent = mini.length + (Math.floor(Math.random() * 40) + 30);
+  }
+  $("#btnShuffleGov").addEventListener("click", function () {
+    poltrone();
+    document.body.classList.add("shake");
+    setTimeout(function () { document.body.classList.remove("shake"); }, 600);
+    var msg = "Decreto di rimpasto firmato in nottata. «Non cambia nulla di sostanziale», precisano fonti di maggioranza: le poltrone sono state ruotate di trenta gradi.";
+    $("#govOut").innerHTML = '<span class="tag">verbale</span><p style="margin:0">' + esc(msg) + "</p>";
+    verbalizza("Rimpasto", msg);
+    toast("Rimpasto eseguito. Le persone sono cambiate, la sostanza no.");
+  });
+  $("#btnSameFaces").addEventListener("click", function () {
+    var n = rnd(NOMI);
+    var msg = "Cambiano solo le facce: «" + n + "», già titolare di due dicasteri e di una fondazione, ha una nuova delega, gli stessi poteri e nessun dossier.";
+    $("#govOut").innerHTML = '<span class="tag">nota</span><p style="margin:0">' + esc(msg) + "</p>";
+    verbalizza("Poltrone", msg);
+    toast("Le facce sono cambiate. Il resto, per definizione, no.");
+  });
+  $("#btnLogGov").addEventListener("click", function () {
+    verbalizza("Decreto", $("#govOut").textContent.replace(/\s+/g, " ").trim());
+    toast("Decreto verbalizzato. Manca solo il copia-incolla sul prossimo.");
+  });
+  poltrone();
+
+  /* ===================== 7. ARSENALE ===================== */
+  var TECNICHE = [
+    {
+      nome: "Iperbole", lat: "yperbolḗ · superlatio",
+      def: "Amplificare o ridurre all’estremo il riferimento alla realtà per rendere evidente l’assurdo interno a una frase.",
+      eg: "«Entro cento giorni aboliremo la coda al pronto soccorso e il lunedì mattina.»",
+      fonte: "Treccani, «Iperbole»"
+    },
+    {
+      nome: "Litote", lat: "negazione del contrario",
+      def: "Affermare negando il contrario: “non è geniale�� al posto di “è una sciocchezza”. Frequente nei comunicati dove la verità non si può dire.",
+      eg: "«Non si può dire che il provvedimento non sia privo di qualche criticità.»",
+      fonte: "Studio sulla litote nei testi normativi (UniMi)"
+    },
+    {
+      nome: "Parodia", lat: "para-odé · contro-canto",
+      def: "Impossessarsi di un testo o di un format riconoscibile e svuotarlo dall’interno, conservandone il tono solenne.",
+      eg: "Un «verbale» di seduta che approva se stesso, con tanto di timbro e nessun contenuto.",
+      fonte: "M. Bonafin, Contesti della parodia"
+    },
+    {
+      nome: "Ironia / antifrasi", lat: "eirōneía",
+      def: "Dire il contrario di quel che si intende lasciando che il contesto smascheri le parole.",
+      eg: "«Provvedimento coraggioso» per un rinvio di tre anni.",
+      fonte: "Satira, voce enciclopedica"
+    },
+    {
+      nome: "Eufemismo e politichese", lat: "double-talk",
+      def: "Sostituire la realtà con una formula amministrativa: è il bersaglio principale della satira politica, e la sua materia prima.",
+      eg: "«Tavolo tecnico» = non se ne farà nulla.",
+      fonte: "Ricerche su umorismo e comunicazione politica"
+    },
+    {
+      nome: "Deformazione grottesca", lat: "caricatura del potere",
+      def: "Esagerare un tratto reale fino a farne una figura mostruosa e comica, senza inventare fatti nuovi.",
+      eg: "Un Ministero del Fare che non ha mai tempo di fare.",
+      fonte: "Tradizione della satira latina e bernesca"
+    },
+    {
+      nome: "Deadpan", lat: "faccia di pietra",
+      def: "Dire l’assurdo con tono completamente neutro: l’autore non commenta, la citazione si commenta da sé.",
+      eg: "Riportare senza aggettivi: «Nessuno resterà indietro, compatibilmente con le risorse».",
+      fonte: "Satira televisiva contemporanea"
+    },
+    {
+      nome: "Rovesciamento / inversione", lat: "mundus inversus",
+      def: "Far funzionare il mondo alla rovescia: le scadenze che non arrivano, i tavoli che decidono di riunirsi, il futuro che è già passato.",
+      eg: "Questa dashboard: un cruscotto che serve a non governare nulla.",
+      fonte: "Satira menippea, carnevale e tradizione popolare"
+    },
+    {
+      nome: "Bisociazione", lat: "piani che collidono",
+      def: "Mettere insieme due piani di discorso che non possono coesistere, lasciando che si urtino da soli.",
+      eg: "«Manovra strutturale per dodici mesi, poi stabilmente temporanea.»",
+      fonte: "Teorie del comico (incongruenza)"
+    }
+  ];
+  (function buildDeck() {
+    var deck = $("#deck");
+    TECNICHE.forEach(function (t) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "tech";
+      b.setAttribute("aria-expanded", "false");
+      b.innerHTML = '<span class="name">' + esc(t.nome) + '</span><span class="lat">' + esc(t.lat) + "</span>" +
+        '<span class="def">' + esc(t.def) + '</span>' +
+        '<span class="eg">▸ ' + esc(t.eg) + '<br><span class="lat">fonte: ' + esc(t.fonte) + "</span></span>";
+      b.addEventListener("click", function () {
+        var open = b.getAttribute("aria-expanded") === "true";
+        b.setAttribute("aria-expanded", open ? "false" : "true");
+        if (!open) { verbalizza("Tecnica", t.nome + " — " + t.eg); }
+      });
+      deck.appendChild(b);
+    });
+  })();
+
+  /* ===================== 8. VERBALE: EXPORT, COPIA, STRAPPO ===================== */
+  $("#btnExport").addEventListener("click", function () {
+    if (!state.seduta.length) { toast("Il verbale è vuoto: nessuna verità da archiviare."); return; }
+    var testo = "VERBALE DELLA SEDUTA — CRUSCOTTO NAZIONALE DEL POTERE\n" +
+      "Documento satirico. Personaggi e dati immaginari.\n" +
+      "Registro retorico: " + T[state.tono].etichetta + "\n" +
+      "Esportato il " + new Date().toLocaleString("it-IT") + "\n" +
+      Array(66).join("=") + "\n\n" +
+      state.seduta.map(function (v) { return "[" + v.t + "] " + v.tipo.toUpperCase() + " — " + v.testo; }).join("\n\n") +
+      "\n\n" + Array(66).join("=") + "\nNessuna promessa è stata mantenuta durante la redazione di questo verbale.\n";
+    try {
+      var blob = new Blob([testo], { type: "text/plain;charset=utf-8" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "verbale-seduta-satirica.txt";
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      toast("Verbale esportato. Conservarlo è un atto di fede.");
+    } catch (e) {
+      toast("Download non disponibile: usa «Copia negli appunti».");
+    }
+  });
+  $("#btnCopy").addEventListener("click", function () {
+    var testo = state.seduta.map(function (v) { return "[" + v.t + "] " + v.tipo + " — " + v.testo; }).join("\n") ||
+      "Verbalizzato nulla: seduta esemplare.";
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(testo).then(function () { toast("Copiato: adesso è un atto pubblico."); },
+        function () { toast("Copia non consentita dal browser."); });
+    } else { toast("Copia non disponibile in questo contesto."); }
+  });
+  $("#btnTear").addEventListener("click", function () {
+    state.seduta = [];
+    $("#sessionLog").innerHTML = "";
+    toast("Verbale strappato: la memoria corta è una prassi amministrativa.");
+  });
+
+  /* ===================== TOUR GUIDATO ===================== */
+  var TOUR = [
+    ["promesse", "Comincia dal Promessometro: genera una promessa e verbalizzala."],
+    ["bingo", "Nel Bingo marca le caselle: la linea completa vale una commissione."],
+    ["fiducia", "Prova a sollevare l’ago del termometro: tornerà indietro da solo."],
+    ["stampa", "In Sala stampa leggi la traduzione simultanea di ciò che è stato detto."],
+    ["arsenale", "Infine apri una carta dell’Arsenale: scopri quale tecnica stai già usando."]
+  ];
+  var tourEl = null;
+  function chiudiTour() {
+    if (tourEl) { tourEl.remove(); tourEl = null; }
+  }
+  $("#btnTour").addEventListener("click", function () {
+    chiudiTour();
+    var i = 0;
+    var dlg = document.createElement("div");
+    dlg.setAttribute("role", "dialog");
+    dlg.setAttribute("aria-modal", "true");
+    dlg.setAttribute("aria-label", "Seduta guidata");
+    dlg.style.cssText = "position:fixed; inset:auto 12px 74px 12px; max-width:520px; margin:0 auto; z-index:20; border:1px solid var(--gold); border-radius:16px; background:linear-gradient(180deg,#18202f,#0d131f); padding:18px; box-shadow:var(--shadow);";
+    tourEl = dlg;
+    function render() {
+      var step = TOUR[i];
+      dlg.innerHTML =
+        '<p class="chip" style="margin:0 0 8px">Passo ' + (i + 1) + " di " + TOUR.length + "</p>" +
+        "<p style=\"margin:0 0 12px; font-family:var(--font-serif); font-size:1.05rem\">" + esc(step[1]) + "</p>" +
+        '<div class="btnrow"><button class="btn primary" type="button" id="tourGo">Vai allo strumento</button>' +
+        '<button class="btn" type="button" id="tourNext">' + (i === TOUR.length - 1 ? "Concludi" : "Avanti") + "</button>" +
+        '<button class="btn ghost" type="button" id="tourEnd">Chiudi</button></div>';
+      $("#tourGo", dlg).addEventListener("click", function () {
+        var t = document.getElementById("tab-" + step[0]);
+        if (t) { selectTab(t, true); }
+      });
+      $("#tourNext", dlg).addEventListener("click", function () {
+        if (i === TOUR.length - 1) { chiudiTour(); toast("Seduta guidata conclusa: nessun provvedimento adottato."); return; }
+        i++; render();
+      });
+      $("#tourEnd", dlg).addEventListener("click", chiudiTour);
+    }
+    render();
+    document.body.appendChild(dlg);
+    $("#tourGo", dlg).focus();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { chiudiTour(); }
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT" || e.target.tagName === "TEXTAREA") { return; }
+    var k = e.key.toLowerCase();
+    if (k === "g") { selectTab($("#tab-promesse"), true); generaPromessa(false); }
+    if (k === "e") { selectTab($("#tab-bingo"), true); $("#btnDraw").click(); }
+    if (k === "s") { selectTab($("#tab-stampa"), true); $("#btnConference").click(); }
+    if (k === "r") { selectTab($("#tab-rimpasto"), true); $("#btnShuffleGov").click(); }
+    if (k === "c") { selectTab($("#tab-costo"), true); $("#btnCost").click(); }
+    if (k === "t") { $("#btnTour").click(); }
+  });
+
+  /* ===================== TICKER: aggiornamenti ===================== */
+  var TICKER = [
+    "Il tavolo tecnico si è riunito per decidere quando riunirsi.",
+    "Provvedimento coraggioso rinviato al prossimo coraggioso.",
+    "Aumento delle poltrone: nessun aumento dei posti.",
+    "«Non è il momento» è ormai un bene rifugio.",
+    "Le virgolette attorno a «riforma» sono state raddoppiate per sicurezza.",
+    "Intervista esclusiva: il Ministro ha detto che parlerà.",
+    "Sondaggio: il 3% crede al 3%, il resto crede al sondaggio.",
+    "Il Governo compatto conferma che ognuno ha la sua posizione.",
+    "Approvato un emendamento che rinvia l’emendamento.",
+    "Nuova commissione di studio sulle commissioni di studio."
+  ];
+  setInterval(function () {
+    var t = rnd(TICKER);
+    $("#tickerText").textContent += " — " + t;
+    if ($("#tickerText").textContent.length > 1800) { $("#tickerText").textContent = t; }
+  }, 12000);
+
+  /* ---------- primo verbale ---------- */
+  verbalizza("Apertura", "Seduta aperta con registro " + T[state.tono].etichetta.toLowerCase() + ". Nessun provvedimento all’ordine del giorno, come da tradizione.");
+})();
+</script>
+</body>
+</html>

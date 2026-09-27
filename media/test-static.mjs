@@ -244,7 +244,7 @@ check(
   /BROWSER_FPS_HUMAN/.test(mjs) && /setMaxFps\(mode === "human" \? BROWSER_FPS_HUMAN : BROWSER_FPS_BASE\)/.test(mjs),
 );
 check("esiste l'endpoint di ricarica della pagina", /url\.pathname === "\/api\/browser\/reload"/.test(mjs));
-check("il tool browser supporta l'azione reload", /case "reload": return \["reload"\]/.test(browserTool));
+check("il tool browser supporta l'azione reload", /case "reload": return \{[\s\S]{0,40}\["reload"\]/.test(browserTool));
 check(
   "bridge e tool usano lo STESSO binario (profilo persistente)",
   /DASH_BROWSER_BIN \|\| "\/usr\/local\/bin\/pbrowser"/.test(mjs) &&
