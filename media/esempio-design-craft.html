@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Assistenza clienti — settimana 39 (esempio design-craft)</title>
+    <style>
+      /* ============================================================
+         TOKEN — pochi valori, ripetuti con coerenza.
+         I neutri fanno l'80-90% del lavoro; il colore ha un ruolo.
+         Superfici (ruolo strutturale), non ombre: in tema scuro
+         l'elevazione è una superficie più chiara.
+         ============================================================ */
+      :root {
+        color-scheme: dark;
+
+        /* superfici */
+        --base: #08111f;
+        --sup-1: #101a2b;
+        --sup-2: #172033;
+        --bordo: #22304a;
+
+        /* testo */
+        --testo: #eef2f9;
+        --testo-2: #c6cfdd;
+        --testo-3: #93a1b8;
+
+        /* ruoli di colore: accento (azione/evidenza), semantico (stato) */
+        --accento: #5b9dff;
+        --ok: #34d399;
+        --attenzione: #fbbf24;
+        --critico: #fb7185;
+
+        /* scala di spaziatura: 4 8 12 16 24 32 48 64 — niente valori fuori scala */
+        --s1: 4px;
+        --s2: 8px;
+        --s3: 12px;
+        --s4: 16px;
+        --s5: 24px;
+        --s6: 32px;
+        --s7: 48px;
+        --s8: 64px;
+
+        /* scala tipografica, rapporto 1.25 da 16px: 12.8 16 20 25 31 39 */
+        --t-nota: 12.8px;
+        --t-testo: 16px;
+        --t-h3: 20px;
+        --t-h2: 25px;
+        --t-h1: 31px;
+        --t-guida: 39px;
+
+        /* una sola famiglia, due pesi, un raggio, un bordo */
+        --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --raggio: 10px;
+        --p4: 180ms;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--base);
+        color: var(--testo);
+        font: 400 var(--t-testo) / 1.6 var(--font);
+        /* cifre di larghezza uguale: i numeri in colonna si confrontano */
+        font-variant-numeric: tabular-nums;
+        -webkit-font-smoothing: antialiased;
+      }
+      .pagina {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: var(--s6) var(--s5) var(--s8);
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: var(--s4);
+      }
+      p {
+        max-width: 66ch; /* ~66 caratteri per riga */
+        margin: 0;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.2;
+        font-weight: 600;
+      }
+      a {
+        color: var(--accento);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 2px;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accento);
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+      .visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+      .occhiello {
+        font-size: var(--t-nota);
+        letter-spacing: 0.04em; /* maiuscoletto: 4% di spaziatura */
+        text-transform: uppercase;
+        color: var(--testo-3);
+      }
+      .secondario {
+        color: var(--testo-2);
+      }
+      .muto {
+        color: var(--testo-3);
+        font-size: var(--t-nota);
+      }
+
+      /* ---------- intestazione: contesto sobrio, non compete ---------- */
+      header {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: var(--s2) var(--s4);
+        padding-bottom: var(--s4);
+        border-bottom: 1px solid var(--bordo);
+      }
+      header h1 {
+        font-size: var(--t-h1);
+      }
+
+      /* ---------- blocco guida: l'UNICO elemento dominante ---------- */
+      .guida {
+        grid-column: 1 / -1;
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr);
+        gap: var(--s5) var(--s6);
+        align-items: start;
+        padding: var(--s6);
+        background: var(--sup-1);
+        border: 1px solid var(--bordo);
+        border-left: 3px solid var(--attenzione); /* stato, non decorazione */
+        border-radius: var(--raggio);
+      }
+      .guida .numero {
+        font-size: var(--t-guida);
+        line-height: 1.1;
+        font-weight: 600;
+        letter-spacing: -0.01em; /* titolo grande: si può stringere */
+      }
+      .guida .numero b {
+        color: var(--attenzione); /* colore semantico, coerente col bordo */
+      }
+      .guida p {
+        margin-top: var(--s2);
+        color: var(--testo-2);
+      }
+      .azioni {
+        display: flex;
+        flex-direction: column;
+        gap: var(--s3);
+        align-items: stretch;
+      }
+      .bottone {
+        min-height: 44px;
+        padding: var(--s3) var(--s5);
+        font: 600 var(--t-testo) / 1.2 var(--font);
+        color: #04101f;
+        background: var(--accento);
+        border: 1px solid transparent;
+        border-radius: var(--raggio);
+        cursor: pointer;
+        transition: background var(--p4) ease, transform var(--p4) ease;
+      }
+      .bottone:hover {
+        background: #7db2ff;
+      }
+      .bottone:active {
+        transform: translateY(1px);
+      }
+      .bottone[aria-disabled="true"] {
+        color: var(--testo-3);
+        background: var(--sup-2);
+        border-color: var(--bordo);
+        cursor: not-allowed;
+      }
+
+      /* ---------- indicatori: quattro, pari peso, con il confronto ---------- */
+      .indicatori {
+        grid-column: 1 / -1;
+        margin-top: var(--s4); /* 16 in più dei 16 del gap: le sezioni respirano a 32 */
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: var(--s4);
+      }
+      .indicatore {
+        padding: var(--s4) 0 0;
+        border-top: 1px solid var(--bordo); /* separazione, non un contenitore */
+      }
+      .indicatore dt {
+        color: var(--testo-3);
+        font-size: var(--t-nota);
+      }
+      .indicatore dd {
+        margin: var(--s2) 0 0;
+        font-size: var(--t-h3);
+        font-weight: 600;
+      }
+      .delta {
+        display: block;
+        margin-top: var(--s2);
+        font-size: var(--t-nota);
+        font-weight: 400;
+      }
+      /* il significato non sta nel colore: c'è sempre anche la parola */
+      .delta.up {
+        color: var(--critico);
+      }
+      .delta.down {
+        color: var(--ok);
+      }
+      .delta.flat {
+        color: var(--testo-3);
+      }
+
+      /* ---------- tabella: si scorre in fretta, quantità a destra ---------- */
+      section.tabella {
+        grid-column: 1 / -1;
+      }
+      h2 {
+        font-size: var(--t-h2);
+        margin-bottom: var(--s4);
+      }
+      /* la tabella a cinque colonne non entra in 390px: scorre dentro il suo contenitore
+         invece di far scorrere tutta la pagina, e resta raggiungibile da tastiera */
+      .tabella-scroll {
+        max-width: 100%;
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: var(--t-testo);
+      }
+      caption {
+        text-align: left;
+        color: var(--testo-3);
+        font-size: var(--t-nota);
+        padding-bottom: var(--s3);
+      }
+      th,
+      td {
+        padding: var(--s3) var(--s4);
+        border-bottom: 1px solid var(--bordo);
+        text-align: left;
+      }
+      th {
+        color: var(--testo-3);
+        font-size: var(--t-nota);
+        font-weight: 600;
+      }
+      th.num,
+      td.num {
+        text-align: right; /* le quantità si allineano a destra */
+      }
+      tbody tr:hover {
+        background: var(--sup-1);
+      }
+      tr.critica td {
+        /* velo tenue, non un blocco di colore: l'occhio deve vedere il dato,
+           non la decorazione */
+        background: rgba(251, 113, 133, 0.1);
+      }
+      tr.critica td:first-child {
+        border-left: 3px solid var(--critico);
+      }
+      .peggiora {
+        color: var(--critico); /* parola + colore: il significato resta leggibile anche in scala di grigi */
+      }
+      .pastiglia {
+        display: inline-block;
+        padding: var(--s1) var(--s3); /* 4px e 12px: dentro la scala */
+        font-size: var(--t-nota);
+        border: 1px solid var(--bordo);
+        border-radius: 999px;
+        color: var(--testo-2);
+      }
+
+      /* ---------- stati: riposo, caricamento, vuoto, errore ---------- */
+      .stati {
+        grid-column: 1 / -1;
+        margin-top: var(--s4);
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--s5);
+      }
+      .stato {
+        padding: var(--s4);
+        background: var(--sup-1);
+        border: 1px solid var(--bordo);
+        border-radius: var(--raggio);
+      }
+      .stato h3 {
+        font-size: var(--t-testo);
+        margin-bottom: var(--s3);
+      }
+      /* caricamento: scheletro con la forma del contenuto che arriverà */
+      .scheletro {
+        height: 12px;
+        margin-bottom: var(--s3);
+        background: var(--sup-2);
+        border-radius: 6px;
+        animation: pulsa 1.4s ease-in-out infinite;
+      }
+      .scheletro:nth-child(2) {
+        width: 80%;
+      }
+      .scheletro:nth-child(3) {
+        width: 60%;
+      }
+      @keyframes pulsa {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.55;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+      .errore {
+        display: flex;
+        gap: var(--s2);
+        align-items: flex-start;
+        color: var(--testo);
+        border-left: 3px solid var(--critico);
+        padding-left: var(--s3);
+      }
+      .errore .segno {
+        color: var(--critico);
+        font-weight: 600;
+      }
+      .errore p {
+        font-size: var(--t-nota);
+        color: var(--testo-2);
+      }
+      fieldset {
+        border: 0;
+        padding: 0;
+        margin: 0 0 var(--s4);
+      }
+      legend {
+        /* senza width la legend viene centrata dal browser */
+        width: 100%;
+        font-size: var(--t-nota);
+        color: var(--testo-3);
+        padding: 0 0 var(--s2);
+      }
+      input {
+        min-height: 44px;
+        width: 100%;
+        padding: 0 var(--s3);
+        font: 400 var(--t-testo) / 1 var(--font);
+        color: var(--testo);
+        background: var(--sup-2);
+        border: 1px solid var(--critico);
+        border-radius: var(--raggio);
+      }
+
+      /* ---------- note: le decisioni, consultabili ma non invadenti ---------- */
+      .note {
+        grid-column: 1 / -1;
+        margin-top: var(--s4);
+        padding-top: var(--s4);
+        border-top: 1px solid var(--bordo);
+      }
+      summary {
+        cursor: pointer;
+        color: var(--testo-2);
+        min-height: 24px;
+      }
+      .note ol {
+        margin: var(--s4) 0 0;
+        padding-left: var(--s5);
+        color: var(--testo-2);
+        max-width: 78ch;
+      }
+      .note li {
+        margin-bottom: var(--s2);
+      }
+      .note code {
+        font-size: var(--t-nota);
+        color: var(--testo);
+      }
+      footer {
+        grid-column: 1 / -1;
+        margin-top: var(--s5);
+        color: var(--testo-3);
+        font-size: var(--t-nota);
+      }
+
+      @media (max-width: 480px) {
+        /* sotto i 480px il numero guida scende di un gradino della scala (39 → 31):
+           resta l'elemento dominante senza mangiare quattro righe */
+        .guida .numero {
+          font-size: var(--t-h1);
+        }
+      }
+
+      @media (max-width: 860px) {
+        .guida,
+        .indicatori,
+        .stati {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="pagina">
+      <header>
+        <h1>Assistenza clienti</h1>
+        <span class="secondario">settimana 39 · aggiornato oggi alle 18:40</span>
+      </header>
+
+      <!-- Elemento dominante: uno solo. Il numero guida sta in scala 39,
+           il resto scende a 31, 25, 20, 16: gerarchia con scala + colore + spazio. -->
+      <section class="guida" aria-labelledby="guida-titolo">
+        <div>
+          <p class="occhiello" id="guida-titolo">Da decidere oggi</p>
+          <p class="numero"><b>17</b> richieste fuori SLA entro stasera</p>
+          <p>
+            Sono tutte del canale e-mail e sono aperte da più di 20 ore; 12 riguardano spedizioni
+            della settimana 37. Assegnandole adesso restano 4 ore di margine.
+          </p>
+        </div>
+        <div class="azioni">
+          <!-- una sola azione primaria: due inviti di pari forza sono un errore -->
+          <button class="bottone" type="button">Assegna le 17 richieste critiche</button>
+          <a href="#code">Vedi il dettaglio delle code</a>
+          <p class="muto">Ultimo aggiornamento dei dati: 6 minuti fa</p>
+        </div>
+      </section>
+
+      <!-- Quattro indicatori, pari peso, ognuno con il suo confronto:
+           un valore senza confronto non dice se sta andando bene o male. -->
+      <dl class="indicatori">
+        <div class="indicatore">
+          <dt>Richieste aperte</dt>
+          <dd>
+            248
+            <span class="delta up"
+              ><span aria-hidden="true">▲</span> in aumento, +12 sulla settimana 38</span
+            >
+          </dd>
+        </div>
+        <div class="indicatore">
+          <dt>Prima risposta (mediana)</dt>
+          <dd>
+            3 h 40 m
+            <span class="delta down"
+              ><span aria-hidden="true">▼</span> in calo, −25 minuti</span
+            >
+          </dd>
+        </div>
+        <div class="indicatore">
+          <dt>Riaperte</dt>
+          <dd>
+            6,4%
+            <span class="delta up"
+              ><span aria-hidden="true">▲</span> peggiora, +0,8 punti</span
+            >
+          </dd>
+        </div>
+        <div class="indicatore">
+          <dt>Soddisfazione</dt>
+          <dd>
+            4,3 / 5
+            <span class="delta flat"><span aria-hidden="true">▬</span> stabile, +0,1</span>
+          </dd>
+        </div>
+      </dl>
+
+      <section class="tabella" id="code" aria-labelledby="code-titolo">
+        <h2 id="code-titolo">Code per canale</h2>
+        <div class="tabella-scroll" role="region" aria-label="Code per canale" tabindex="0">
+        <table>
+          <caption>
+            Valori in numero di richieste e ore. Dati di esempio, non reali.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Canale</th>
+              <th scope="col" class="num">Aperte</th>
+              <th scope="col" class="num">Fuori SLA</th>
+              <th scope="col" class="num">Prima risposta</th>
+              <th scope="col">Andamento</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- la riga critica si distingue per superficie + bordo + testo,
+                 non per il solo colore -->
+            <tr class="critica">
+              <th scope="row">Posta</th>
+              <td class="num">104</td>
+              <td class="num">17</td>
+              <td class="num">5 h 10</td>
+              <td class="peggiora">peggiora</td>
+            </tr>
+            <tr>
+              <th scope="row">Chat</th>
+              <td class="num">88</td>
+              <td class="num">2</td>
+              <td class="num">0 h 21</td>
+              <td>stabile</td>
+            </tr>
+            <tr>
+              <th scope="row">Telefono</th>
+              <td class="num">31</td>
+              <td class="num">0</td>
+              <td class="num">0 h 08</td>
+              <td>migliora</td>
+            </tr>
+            <tr>
+              <th scope="row">Modulo web</th>
+              <td class="num">25</td>
+              <td class="num">0</td>
+              <td class="num">1 h 02</td>
+              <td>stabile</td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
+        <p class="muto" style="margin-top: var(--s3)">
+          Posta è l'unico canale fuori obiettivo: <span class="pastiglia">SLA 4 h</span>
+        </p>
+      </section>
+
+      <!-- Gli stati si progettano, non si subiscono. -->
+      <section class="stati" aria-label="Stati del contenitore">
+        <div class="stato">
+          <h3>Caricamento</h3>
+          <div class="scheletro"></div>
+          <div class="scheletro"></div>
+          <div class="scheletro"></div>
+          <p class="muto" role="status">Caricamento delle richieste di Posta…</p>
+        </div>
+
+        <div class="stato">
+          <h3>Vuoto</h3>
+          <p class="secondario">Nessuna riapertura nel periodo selezionato.</p>
+          <p style="margin-top: var(--s3)">
+            <a href="#">Amplia il periodo a 90 giorni</a>
+          </p>
+        </div>
+
+        <div class="stato">
+          <h3>Errore di campo</h3>
+          <fieldset>
+            <legend for="dal">Dal</legend>
+            <input id="dal" value="01/01/2020" aria-invalid="true" aria-describedby="dal-errore" />
+          </fieldset>
+          <p class="errore" id="dal-errore">
+            <span class="segno" aria-hidden="true">!</span>
+            <span
+              >Fuori intervallo. Usa una data degli ultimi 90 giorni: l'archivio tiene solo
+              quell'intervallo.</span
+            >
+          </p>
+        </div>
+      </section>
+
+      <section class="stato" style="grid-column: 1 / -1">
+        <h3>Azione non disponibile</h3>
+        <p class="secondario" id="export-motivo" style="margin-bottom: var(--s4)">
+          L'esportazione è spenta: nel periodo scelto non ci sono righe da esportare.
+        </p>
+        <button class="bottone" type="button" aria-disabled="true" aria-describedby="export-motivo">
+          Esporta CSV
+        </button>
+      </section>
+
+      <details class="note">
+        <summary>Le decisioni di design di questa schermata (17 punti)</summary>
+        <ol>
+          <li>
+            <b>Un solo elemento dominante.</b> Il blocco «Da decidere oggi» ha scala 39, colore
+            semantico e spazio intorno; il resto scende. Coprendo metà schermo, resta chiaro da dove
+            cominciare.
+          </li>
+          <li>
+            <b>Gerarchia con tre strumenti</b> (scala, spazio, colore), non con la sola dimensione:
+            il titolo di pagina è <i>più piccolo</i> del numero guida, perché qui conta il numero.
+          </li>
+          <li>
+            <b>Scala tipografica 1.25</b> da 16px: <code>12.8 · 16 · 20 · 25 · 31 · 39</code>. Sei
+            misure, ognuna con un ruolo: nota, testo, intestazione di stato, indicatore, titolo di
+            pagina, numero guida. Nessun valore fuori scala.
+          </li>
+          <li>
+            <b>Due pesi soltanto</b> (400 e 600): il grassetto resta un segnale, non lo sfondo di
+            tutto.
+          </li>
+          <li>
+            <b>Interlinea per ruolo:</b> 1.6 nel testo, 1.2 nei titoli. Non un valore unico per
+            tutto.
+          </li>
+          <li>
+            <b>Spaziatura su scala fissa</b> 4/8/12/16/24/32/48/64. Nessun 15px accanto a 16px.
+          </li>
+          <li>
+            <b>Prossimità = relazione:</b> etichetta e valore stanno a 8px, un indicatore e il
+            successivo a 16px, le sezioni a 32-48px. La distanza dichiara la struttura, quindi non
+            servono bordi attorno a ogni gruppo.
+          </li>
+          <li>
+            <b>Una superficie in meno invece di una in più:</b> gli indicatori sono separati da una
+            linea sottile, non chiusi in card. Le card qui non ghermirebbero nulla e
+            moltiplicherebbero i bordi.
+          </li>
+          <li>
+            <b>Un solo raggio (10px), un solo bordo, nessuna ombra.</b> In tema scuro l'elevazione è
+            una superficie più chiara (<code>#101a2b</code> su <code>#08111f</code>), non
+            un'ombra.
+          </li>
+          <li>
+            <b>Neutri per l'85% circa della superficie;</b> quattro colori, ognuno con un ruolo:
+            accento (azione), attenzione (fuori SLA), critico (peggioramento), ok (miglioramento).
+          </li>
+          <li>
+            <b>Il colore non porta mai da solo il significato:</b> ogni delta ha la parola («in
+            aumento», «in calo», «peggiora») oltre al colore e al simbolo; la riga critica ha
+            superficie, bordo e la parola «peggiora».
+          </li>
+          <li>
+            <b>Contrasto misurato nel render, non stimato</b> (script sul DOM, non a occhio):
+            titolo 16,85:1, valori degli indicatori 16,85:1, testo secondario 11,1:1, didascalie e
+            intestazioni 7,2:1, link 6,4:1, testo dei pulsanti 7,0:1, testo più attenuato della
+            schermata 6,67:1, pulsante disabilitato 6,22:1, cella della riga critica 14,96:1 (il velo rosso è al 10% di opacità: misurato sul fondo composto).
+            Tutti sopra il 4,5:1 richiesto per il testo piccolo e il 3:1 per quello grande: zero
+            campioni sotto soglia.
+          </li>
+          <li>
+            <b>Numeri allineati a destra e cifre di larghezza uguale</b>
+            (<code>font-variant-numeric: tabular-nums</code>): le colonne si confrontano a colpo
+            d'occhio.
+          </li>
+          <li>
+            <b>Larghezza di riga limitata a 66 caratteri</b> nel testo: l'occhio non perde il
+            ritorno a capo.
+          </li>
+          <li>
+            <b>Stati previsti:</b> caricamento (scheletro con la forma del contenuto che arriverà),
+            vuoto (con la via d'uscita), errore di campo (messaggio accanto al campo, che dice come
+            rimediare), azione non disponibile (spiegata e collegata via
+            <code>aria-describedby</code>).
+          </li>
+          <li>
+            <b>Focus da tastiera visibile</b> (anello da 2px sull'accento), bersagli da 44px,
+            transizioni da 180ms disattivate con <code>prefers-reduced-motion</code>.
+          </li>
+          <li>
+            <b>Su schermo stretto si adatta senza rompersi:</b> le griglie passano a una colonna, la
+            tabella a cinque colonne <i>scorre dentro il proprio contenitore</i> (raggiungibile da
+            tastiera, così chi non usa il mouse può leggerla) invece di far scorrere tutta la
+            pagina, e il numero guida scende da 39 a 31 pixel — un gradino della scala, non un
+            valore inventato.
+          </li>
+        </ol>
+      </details>
+
+      <footer>
+        Esempio didattico creato applicando la skill <code>design-craft</code>. I dati sono
+        inventati: non rappresentano clienti, code o persone reali. File autonomo, senza dipendenze
+        esterne.
+      </footer>
+    </div>
+  </body>
+</html>
