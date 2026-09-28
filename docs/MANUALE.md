@@ -240,7 +240,15 @@ cartella con un file `SKILL.md` che ha frontmatter YAML con **`name`** e **`desc
   circa un secondo (debounce 700 ms, regolabile con `DASH_SKILLS_WATCH_MS`), senza riavviare il
   servizio. La ricarica **non parte mai a metà di una risposta**: se l'agente sta lavorando viene
   applicata alla fine del turno, perché `resourceLoader.reload()` azzera la cache delle estensioni
-  e invaliderebbe i tool della sessione viva;
+  e invaliderebbe i tool della sessione viva. Come rete di sicurezza c'è anche un **controllo
+  periodico** (ogni 60 s, `DASH_SKILLS_POLL_MS`, `0` per spegnerlo) che confronta una firma della
+  cartella — percorsi, mtime, dimensioni — e ricarica se trova differenze: copre i casi in cui
+  `fs.watch` perde un evento (filesystem di rete, coda degli eventi in overflow);
+- per riavviare la dashboard **da dentro** un turno dell'agente c'è **`scripts/restart-dashboard.sh`**:
+  `--fra 120` pianifica il riavvio fra due minuti, `--stato` verifica soltanto che il servizio
+  risponda, `--log FILE` raccoglie l'esito. Il riavvio viene delegato a un'unità transitoria di
+  systemd (`systemd-run`), perché il processo dell'agente vive nel cgroup del servizio e un
+  `systemctl restart` diretto ucciderebbe anche chi l'ha chiesto, lasciando l'esito a metà;
 - **import da `.zip`** (`media/unzip.mjs`, nessuna dipendenza esterna): estrae la cartella,
   toglie l'eventuale cartella radice unica, richiede `SKILL.md` e **sanifica ogni percorso**
   (rifiuta `..`, percorsi assoluti, `.git`, strutture troppo profonde), con limiti su dimensione

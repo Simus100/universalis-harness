@@ -1037,6 +1037,7 @@ let session = null;
 let skillsWatchTimer = null;
 let skillsReloadPending = false;
 let skillsReloading = false;
+let skillsSignatureNota = null;
 const skillsWatchers = [];
 /** Stima post-compaction: pi non conosce il nuovo conteggio finche' non arriva
  *  una risposta successiva alla compaction, quindi lo teniamo noi finche' dura. */
@@ -2856,7 +2857,45 @@ async function reloadSkills() {
 // completa, con debounce e mai a metà di una risposta: `resourceLoader.reload()` azzera la
 // cache delle estensioni, e applicarlo mentre l'agente lavora invaliderebbe i tool della
 // sessione viva.
-const SKILLS_WATCH_MS = Math.max(150, Number(process.env.DASH_SKILLS_WATCH_MS) || 700);
+// `DASH_SKILLS_WATCH_MS=0` spegne il watcher (resta il controllo periodico).
+const rawSkillsWatch = Number(process.env.DASH_SKILLS_WATCH_MS ?? 700);
+const SKILLS_WATCH_MS =
+  Number.isFinite(rawSkillsWatch) && rawSkillsWatch <= 0 ? 0 : Math.max(150, rawSkillsWatch || 700);
+
+/**
+ * Firma della cartella skills/: percorsi, mtime e dimensioni. Serve al controllo periodico,
+ * che interviene quando `fs.watch` ha perso un evento (filesystem di rete, coda di eventi
+ * in overflow, scritture esotiche): senza di esso una skill resterebbe invisibile fino al
+ * riavvio. Costo: una camminata della cartella (poche decine di file), trascurabile.
+ */
+function skillsSignature() {
+  const voci = [];
+  const cammina = (dir, prefisso) => {
+    let entries = [];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return; // cartella assente o illeggibile: la firma resta quella che è
+    }
+    for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      const rel = prefisso ? `${prefisso}/${e.name}` : e.name;
+      if (e.isDirectory()) {
+        if (e.name === ".git" || e.name === "node_modules") continue;
+        voci.push(`${rel}/`); // la cartella conta: crearla o rimuoverla cambia la firma
+        cammina(join(dir, e.name), rel);
+      } else if (e.isFile()) {
+        try {
+          const st = statSync(join(dir, e.name));
+          voci.push(`${rel}:${Math.round(st.mtimeMs)}:${st.size}`);
+        } catch {
+          /* file sparito nel frattempo */
+        }
+      }
+    }
+  };
+  cammina(SKILLS_DIR, "");
+  return voci.join("|");
+}
 
 /** Ricarica completa delle skill: la cartella viene riletta, non rifusa. */
 async function reloadSkillsFromDisk(motivo = "cambio su disco") {
@@ -2876,6 +2915,7 @@ async function reloadSkillsFromDisk(motivo = "cambio su disco") {
       applyToolGate();
     }
     broadcast("skills", skillsPayload());
+    skillsSignatureNota = skillsSignature();
     const nomi = resourceLoader.getSkills().skills.map((s) => s.name);
     console.log(`[skills] ricaricate (${motivo}): ${nomi.join(", ") || "(nessuna)"}`);
   } catch (e) {
@@ -2897,6 +2937,10 @@ function scheduleSkillsReload(motivo = "cambio su disco") {
 
 /** Osserva skills/ e ricarica quando qualcosa cambia (formato di ogni skill: cartella + SKILL.md). */
 function startSkillsWatcher() {
+  if (SKILLS_WATCH_MS <= 0) {
+    console.log("[skills] watcher disattivato (DASH_SKILLS_WATCH_MS=0)");
+    return;
+  }
   const onError = (e) => console.error("[skills] watcher:", e?.message || e);
   try {
     fs.mkdirSync(SKILLS_DIR, { recursive: true });
@@ -2929,6 +2973,29 @@ function startSkillsWatcher() {
     }
   }
   console.log(`[skills] watcher attivo su ${SKILLS_DIR}`);
+}
+
+/**
+ * Rete di sicurezza: confronta la firma della cartella a intervalli regolari e ricarica se
+ * qualcosa è cambiato senza che il watcher lo abbia segnalato. La firma viene aggiornata
+ * solo quando una ricarica è davvero avvenuta, quindi un tentativo rinviato (turno aperto)
+ * viene ritentato al giro successivo.
+ */
+function startSkillsPoll() {
+  const ogni = Number(process.env.DASH_SKILLS_POLL_MS ?? 60_000);
+  if (!Number.isFinite(ogni) || ogni <= 0) {
+    console.log("[skills] controllo periodico disattivato (DASH_SKILLS_POLL_MS=0)");
+    return;
+  }
+  const passo = Math.max(5000, ogni);
+  skillsSignatureNota ??= skillsSignature();
+  const timer = setInterval(() => {
+    const ora = skillsSignature();
+    if (ora === skillsSignatureNota) return;
+    scheduleSkillsReload("differenza rilevata dal controllo periodico");
+  }, passo);
+  timer.unref?.();
+  console.log(`[skills] controllo periodico di sicurezza ogni ${Math.round(passo / 1000)}s`);
 }
 
 // ---- ricerca, export, file statici --------------------------------------
@@ -4331,8 +4398,10 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-// Skill modificate da fuori (shell, git, un'altra sessione): watcher sulla cartella.
+// Skill modificate da fuori (shell, git, un'altra sessione): watcher sulla cartella, più un
+// controllo periodico come rete di sicurezza se il watcher perde un evento.
 startSkillsWatcher();
+startSkillsPoll();
 
 server.listen(PORT, HOST, () => {
   console.log(`Universalis Harness: http://${HOST}:${PORT}`);
