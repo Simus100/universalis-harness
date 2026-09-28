@@ -64,6 +64,36 @@ quota disco (`DASH_QUOTA_MB=300`). Verificato dopo il riavvio: `locked.model=tru
 (il campo `codeHash` è l'impronta del file di codice **in esecuzione**: se non coincide con
 `sha256sum dashboard.mjs`, il processo è fermo a una revisione vecchia).
 
+### Aggiornamento del 2026-09-28 — watcher sulle skill (tutte e tre le istanze)
+
+Cosa è cambiato: la dashboard osserva **`skills/`** e ricarica da sola quando una skill viene
+creata o modificata **fuori** dalla dashboard (shell, `git`, un'altra sessione), con un controllo
+periodico di sicurezza (ogni 60 s) per i casi in cui il watcher perde un evento, più
+`scripts/restart-dashboard.sh` per riavviare l'istanza **da dentro** un turno dell'agente senza che
+il riavvio uccida chi l'ha chiesto (il processo vive nel cgroup del servizio).
+
+Metodo, istanza per istanza: **fusione a tre vie** con base = `658e21b` (ultima versione allineata),
+`ours` = codice dell'istanza, `theirs` = principale. Esito: **0 conflitti** su `dashboard.mjs` e
+`dashboard.html`; le personalizzazioni dell'ospite restano presenti e attive
+(`DASH_LOCK_MODEL=1`, `DASH_THINKING_DISABLED=max`, `DASH_QUOTA_MB=300`). Backup dei file
+preesistenti dell'ospite in `/root/updates/20260928-205057-tester07/`.
+
+| file | principale | tester_01 | tester_07 |
+|---|---|---|---|
+| `dashboard.mjs` | `5a2867521770a5f7` | `5a2867521770a5f7` (identico) | `d6dfe46e5a69259d` (personalizzazioni) |
+| `dashboard.html` | `397bb30bfaa8296f` | `397bb30bfaa8296f` (identico) | `a252f6115361dbd4` (personalizzazioni) |
+| `media/*.mjs` | **identici nelle tre istanze** | | |
+
+Verifiche eseguite il 2026-09-28: impronta in esecuzione = impronta su disco
+(`/api/health.codeHash`) in **tutte e tre**; watcher e controllo periodico presenti nel journal di
+ciascuna; creazione e rimozione di una skill da shell rilevate **senza riavvio** su principale,
+tester_01 e tester_07; nell'ospite i limiti sono intatti (`POST /api/model` → **403**,
+`thinking.disabled = ['max']`, quota 300 MB).
+
+Skill presenti (sono **per istanza**, non si propagano): principale **5** (`bookforge`, `browser`,
+`visual-representation`, `report-dataviz`, `design-craft`); tester_01 **4** (manca
+`visual-representation`); tester_07 **2** (`bookforge`, `browser`).
+
 ### Nota sui backup
 
 Il timer automatico `pi-backup.timer` (04:15) è **solo della principale**: `tester_01` e `tester_07`
