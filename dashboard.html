@@ -42,8 +42,8 @@
   --grad: linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%);
   --grad-soft: linear-gradient(135deg, rgba(91,157,255,.14), rgba(139,92,255,.14));
   --radius-sm: 4px;
-  --radius: 6px;
-  --radius-lg: 8px;
+  --radius: 8px;
+  --radius-lg: 12px;
   --shadow-sm: 0 1px 0 rgba(0,0,0,.28);
   --shadow: 0 6px 18px rgba(0,0,0,.34);
   --shadow-lg: 0 14px 34px rgba(0,0,0,.44);
@@ -120,7 +120,7 @@ input, textarea, select, button { font: inherit; }
 *::-webkit-scrollbar { width: 10px; height: 10px; }
 *::-webkit-scrollbar-track { background: transparent; }
 *::-webkit-scrollbar-thumb {
-  background: var(--panel-3); border-radius: 8px; border: 2px solid transparent; background-clip: content-box;
+  background: var(--panel-3); border-radius: var(--radius); border: 2px solid transparent; background-clip: content-box;
 }
 *::-webkit-scrollbar-thumb:hover { background: var(--panel-4); background-clip: content-box; }
 
@@ -232,7 +232,7 @@ header::after {
 .stat:hover { border-color: var(--border); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 .stat:hover::before { opacity: 1; }
 .stat-ico {
-  width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex: 0 0 auto;
+  width: 32px; height: 32px; border-radius: var(--radius); display: grid; place-items: center; flex: 0 0 auto;
   background: var(--grad-soft); border: 1px solid rgba(91,157,255,.16); font-size: var(--fs-xl);
 }
 .stat-main { flex: 1; min-width: 0; }
@@ -244,8 +244,8 @@ header::after {
   font-size: var(--fs-lg); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-variant-numeric: tabular-nums; color: var(--text-soft); font-weight: 600;
 }
-.ctxbar { height: 5px; background: var(--panel-3); border-radius: 99px; margin-top: 8px; overflow: hidden; }
-.ctxbar > div { height: 100%; background: var(--green); border-radius: 99px; transition: width .4s cubic-bezier(.4,0,.2,1), background .4s; }
+.ctxbar { height: 5px; background: var(--panel-3); border-radius: 999px; margin-top: 8px; overflow: hidden; }
+.ctxbar > div { height: 100%; background: var(--green); border-radius: 999px; transition: width .4s cubic-bezier(.4,0,.2,1), background .4s; }
 
 /* ---------- main ---------- */
 main {
@@ -265,37 +265,56 @@ main {
 .msg.user .who { justify-content: flex-end; }
 .msg.user .who::before { background: var(--green); box-shadow: 0 0 0 3px rgba(52,211,153,.16); }
 .bubble {
-  padding: 12px 15px; border-radius: 6px 18px 18px 18px; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
+  padding: 12px 15px; border-radius: var(--radius) var(--radius-lg) var(--radius-lg) var(--radius-lg); white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
   background: var(--panel); border: 1px solid var(--border-soft); font-size: var(--fs-lg); color: var(--text-soft);
   box-shadow: var(--shadow-sm);
 }
 .msg.user .bubble {
   background: linear-gradient(135deg, rgba(91,157,255,.20), rgba(139,92,255,.18));
-  border-color: rgba(91,157,255,.35); border-radius: 18px 18px 6px 18px;
+  border-color: rgba(91,157,255,.35); border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
   width: fit-content; max-width: 100%; margin-left: auto; color: #eaf1ff;
 }
 .thinking {
-  color: var(--purple); border-left: 3px solid var(--purple); background: rgba(167,139,250,.07);
-  padding: 10px 13px; margin-bottom: 9px; white-space: pre-wrap; opacity: .96;
-  max-height: 40vh; overflow-y: auto; font-size: var(--fs-md); border-radius: 0 12px 12px 0;
-  box-shadow: inset 0 0 0 1px rgba(167,139,250,.08);
+  border-left: 3px solid var(--purple); background: rgba(167,139,250,.07);
+  margin-bottom: var(--sp-2); border-radius: 0 var(--radius-lg) var(--radius-lg) 0; overflow: hidden;
 }
-.thinking::before {
-  content: "pensiero"; display: block; font-size: var(--fs-2xs); letter-spacing: .7px; text-transform: uppercase;
-  color: var(--purple); opacity: .75; margin-bottom: 5px; font-weight: 700;
+/* Il pensiero arriva chiuso: una riga di sintesi, espandibile. Prima occupava fino a 40vh
+   sempre aperto e spingeva fuori schermo la risposta, che è la parte da leggere. */
+.thinking .thead {
+  display: flex; align-items: center; gap: var(--sp-2); width: 100%;
+  padding: var(--sp-2) var(--sp-3); background: none; border: 0; cursor: pointer;
+  font: inherit; font-size: var(--fs-xs); font-weight: 700; letter-spacing: .7px;
+  text-transform: uppercase; color: var(--purple); text-align: left;
 }
+.thinking .thead:hover { background: rgba(167,139,250,.09); }
+.thinking .tcaret { transition: transform .18s; font-size: var(--fs-2xs); display: inline-block; }
+.thinking.aperto .tcaret { transform: rotate(90deg); }
+.thinking .tmeta {
+  margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--dim);
+}
+.thinking .tbody {
+  display: none; padding: 0 var(--sp-3) var(--sp-3); white-space: pre-wrap;
+  color: var(--purple); opacity: .96; font-size: var(--fs-md); max-height: 40vh; overflow-y: auto;
+}
+.thinking.aperto .tbody { display: block; }
 .tool {
-  color: var(--yellow); font-size: var(--fs-sm); margin: 4px 0; word-break: break-word;
-  display: inline-flex; align-items: center; gap: 7px; flex-wrap: wrap; max-width: 100%;
+  color: var(--yellow); font-size: var(--fs-md); margin: var(--sp-1) 0; word-break: break-word;
+  display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; max-width: 100%;
   background: rgba(251,191,36,.08); border: 1px solid rgba(251,191,36,.20);
-  padding: 4px 11px; border-radius: 999px; line-height: 1.5;
+  padding: var(--sp-1) var(--sp-3); border-radius: 999px; line-height: 1.5;
 }
 .tool.err { color: var(--red); background: rgba(251,113,133,.09); border-color: rgba(251,113,133,.24); }
+/* nome del comando in monospaziato (si confrontano a colpo d'occhio), sintesi scorrevole,
+   esito con parola oltre al colore */
+.tool .tname { font-family: var(--mono); font-size: var(--fs-sm); font-weight: 600; }
 .tool .tsum {
-  opacity: .85; font-family: ui-monospace, SFMono-Regular, monospace; font-size: var(--fs-xs);
+  opacity: .9; font-family: var(--mono); font-size: var(--fs-xs);
   max-width: 62ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.tool .tstate { font-weight: 800; font-size: var(--fs-xs); opacity: .95; }
+.tool .tstate { font-weight: 600; font-size: var(--fs-xs); white-space: nowrap; }
+.tool .tstate[data-esito="fatto"] { color: var(--green); }
+.tool .tstate[data-esito="errore"] { color: var(--red); }
+.tool .tstate[data-esito="corso"] { color: var(--yellow); opacity: .9; }
 /* ---------- rappresentazioni SVG nella chat (blocchi Markdown ```svg) ----------
    L'anteprima mostra il DISEGNO, non il codice: l'SVG sanitizzato va in un elemento <img>
    con Blob URL (l'SVG caricato come immagine non esegue script e non scarica risorse
@@ -312,9 +331,10 @@ main {
 .svgfig .svglbl { color: var(--accent-3); font-weight: 700; text-transform: uppercase; }
 .svgfig .svgacts { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 .svgfig .svgacts button {
-  font: 11px/1 ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: var(--fs-xs); font-family: var(--sans); line-height: 1;
   color: var(--text-soft); background: var(--panel-3); border: 1px solid var(--border);
-  border-radius: 999px; padding: 5px 9px; cursor: pointer; white-space: nowrap;
+  border-radius: 999px; padding: var(--sp-2) var(--sp-3); cursor: pointer; white-space: nowrap;
+  min-height: 32px;
 }
 .svgfig .svgacts button:hover { background: var(--panel-4); color: var(--text); }
 .svgfig .svgacts button[disabled] { opacity: .45; cursor: not-allowed; }
@@ -362,7 +382,7 @@ main {
    La card vive DENTRO il messaggio, dove l'agente ha posto la domanda: stesso principio delle
    card dei tool. Il colore (viola) la distingue da un tool in corso: qui l'attesa è dell'utente. */
 .ask {
-  margin: 8px 0; max-width: 660px; border-radius: 13px; padding: 12px 14px; font-size: var(--fs-md);
+  margin: 8px 0; max-width: 660px; border-radius: var(--radius-lg); padding: 12px 14px; font-size: var(--fs-md);
   background: linear-gradient(180deg, rgba(139,92,255,.10), rgba(91,157,255,.04));
   border: 1px solid rgba(139,92,255,.30);
 }
@@ -382,7 +402,7 @@ main {
 .ask-opts { display: flex; flex-direction: column; gap: 6px; }
 .ask-opt {
   display: flex; gap: 9px; align-items: flex-start; text-align: left; cursor: pointer; width: 100%;
-  background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-lg);
   padding: 9px 11px; font: inherit; font-size: var(--fs-md); color: var(--text-soft); min-height: 44px; transition: .15s;
 }
 .ask-opt:hover { border-color: var(--accent); background: var(--panel-3); }
@@ -390,26 +410,26 @@ main {
   flex: none; width: 17px; height: 17px; margin-top: 2px; border-radius: 50%;
   border: 2px solid var(--faint); display: grid; place-items: center; font-size: var(--fs-xs); color: transparent;
 }
-.ask-opt.multi .ask-mark { border-radius: 5px; }
+.ask-opt.multi .ask-mark { border-radius: var(--radius-sm); }
 .ask-opt[aria-pressed="true"] { border-color: var(--accent); background: rgba(91,157,255,.14); color: var(--text); }
 .ask-opt[aria-pressed="true"] .ask-mark { background: var(--accent); border-color: var(--accent); color: #08111f; font-weight: 800; }
 .ask-lb { font-weight: 650; }
 .ask-desc { display: block; font-size: var(--fs-xs); color: var(--dim); margin-top: 2px; }
 .ask-other {
   width: 100%; margin-top: 7px; background: var(--panel); color: var(--text);
-  border: 1px solid var(--border); border-radius: 10px; padding: 9px 11px;
+  border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 9px 11px;
   font: inherit; font-size: var(--fs-md); min-height: 44px;
 }
 .ask-other:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
 .ask-other::placeholder { color: var(--faint); }
 .ask-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 11px; }
 .ask-send {
-  background: var(--grad); color: #08111f; border: none; border-radius: 9px; padding: 0 16px;
+  background: var(--grad); color: #08111f; border: none; border-radius: var(--radius); padding: 0 16px;
   font: inherit; font-size: var(--fs-lg); font-weight: 750; min-height: 44px; cursor: pointer;
 }
 .ask-send:hover { filter: brightness(1.08); }
 .ask-skip {
-  background: transparent; color: var(--dim); border: 1px solid var(--border); border-radius: 9px;
+  background: transparent; color: var(--dim); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 0 13px; font: inherit; font-size: var(--fs-md); min-height: 44px; cursor: pointer;
 }
 .ask-skip:hover { color: var(--text-soft); border-color: var(--faint); }
@@ -437,12 +457,12 @@ main {
 .filecard {
   display: flex; align-items: center; gap: 12px; margin: 8px 0; max-width: 560px;
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
-  border: 1px solid var(--border-soft); border-radius: 13px; padding: 10px 12px;
+  border: 1px solid var(--border-soft); border-radius: var(--radius-lg); padding: 10px 12px;
   transition: .18s;
 }
 .filecard:hover { border-color: var(--border); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
 .filecard .fic {
-  font-size: var(--fs-4xl); flex: 0 0 auto; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center;
+  font-size: var(--fs-4xl); flex: 0 0 auto; width: 38px; height: 38px; border-radius: var(--radius-lg); display: grid; place-items: center;
   background: var(--grad-soft); border: 1px solid rgba(91,157,255,.14);
 }
 .filecard .fmeta { flex: 1; min-width: 0; }
@@ -450,8 +470,8 @@ main {
 .filecard .fpath { font-size: var(--fs-xs); color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fbtn {
   background: var(--panel-2); border: 1px solid var(--border); color: var(--text-soft);
-  border-radius: 9px; padding: 7px 12px; font: inherit; font-size: var(--fs-sm); cursor: pointer;
-  text-decoration: none; white-space: nowrap; min-height: 0; transition: .15s; display: inline-flex; align-items: center; gap: 5px;
+  padding: var(--sp-2) var(--sp-3); font: inherit; font-size: var(--fs-sm); cursor: pointer;
+  text-decoration: none; white-space: nowrap; min-height: 36px; transition: .15s; display: inline-flex; align-items: center; gap: var(--sp-1);
 }
 .fbtn:hover { border-color: var(--accent); color: var(--accent); }
 .fbtn.dl { background: var(--grad); color: #08111f; border-color: transparent; font-weight: 700; box-shadow: 0 4px 12px rgba(91,157,255,.25); }
@@ -464,7 +484,7 @@ main {
 .filecards { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .imgs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; justify-content: flex-end; }
 .imgs img {
-  max-width: 220px; max-height: 220px; border-radius: 14px; border: 1px solid var(--border);
+  max-width: 220px; max-height: 220px; border-radius: var(--radius-lg); border: 1px solid var(--border);
   box-shadow: var(--shadow); transition: .18s;
 }
 .imgs img:hover { transform: scale(1.02); }
@@ -486,7 +506,7 @@ main {
 @keyframes chatspin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .chat-loading .spin { animation-duration: 2.4s; } }
 .empty-ico {
-  width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 22px; display: grid; place-items: center;
+  width: 72px; height: 72px; margin: 0 auto 16px; border-radius: var(--radius-lg); display: grid; place-items: center;
   font-size: var(--fs-5xl); font-weight: 800; color: #08111f;
   background: var(--grad); box-shadow: 0 16px 40px rgba(91,157,255,.35), inset 0 1px 0 rgba(255,255,255,.4);
   animation: floaty 4s ease-in-out infinite;
@@ -502,7 +522,7 @@ footer {
 }
 .inputrow {
   display: flex; gap: 8px; max-width: 920px; margin: 0 auto; align-items: flex-end;
-  background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 7px 7px 7px 9px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 7px 7px 7px 9px;
   transition: border-color .18s, box-shadow .18s;
 }
 .inputrow:focus-within { border-color: var(--accent); box-shadow: var(--ring); }
@@ -515,7 +535,7 @@ textarea:focus { outline: none; }
 button { font-family: inherit; }
 .send {
   background: var(--grad); color: #08111f;
-  border: none; border-radius: 13px; padding: 0 22px; font: inherit; font-size: var(--fs-xl); font-weight: 750;
+  border: none; border-radius: var(--radius-lg); padding: 0 22px; font: inherit; font-size: var(--fs-xl); font-weight: 750;
   cursor: pointer; min-height: 44px; flex: 0 0 auto; transition: .18s;
   box-shadow: 0 6px 18px rgba(91,157,255,.28), inset 0 1px 0 rgba(255,255,255,.35);
   display: inline-flex; align-items: center; gap: 6px;
@@ -525,7 +545,7 @@ button { font-family: inherit; }
 .send:disabled { opacity: .45; cursor: default; box-shadow: none; }
 .icon-btn {
   background: transparent; color: var(--dim); border: none; cursor: pointer; font-size: var(--fs-3xl);
-  width: 42px; height: 42px; border-radius: 12px; flex: 0 0 auto; transition: .15s;
+  width: 42px; height: 42px; border-radius: var(--radius-lg); flex: 0 0 auto; transition: .15s;
 }
 .icon-btn:hover { background: var(--panel-2); color: var(--text); }
 /* Storico prompt e snippet: solo su desktop. Su mobile il pulsante 🕘 non compare
@@ -560,13 +580,13 @@ button { font-family: inherit; }
 .crumbs { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; flex: 1; min-width: 0; }
 .crumb {
   background: transparent; color: var(--accent); border: none; padding: 5px 9px; min-height: 32px;
-  font-size: var(--fs-md); cursor: pointer; border-radius: 8px; transition: .15s;
+  font-size: var(--fs-md); cursor: pointer; border-radius: var(--radius); transition: .15s;
 }
 .crumb:hover { background: var(--panel-2); }
 .csep { color: var(--faint); }
 .factions { display: flex; gap: 6px; flex-wrap: wrap; }
 .ghost {
-  background: var(--panel-2); color: var(--dim); border: 1px solid var(--border); border-radius: 10px;
+  background: var(--panel-2); color: var(--dim); border: 1px solid var(--border); border-radius: var(--radius-lg);
   padding: 0 12px; min-height: 36px; font: inherit; font-size: var(--fs-md); cursor: pointer; transition: .15s;
   display: inline-flex; align-items: center; gap: 5px;
 }
@@ -575,12 +595,12 @@ button { font-family: inherit; }
 .flist { display: flex; flex-direction: column; padding: 12px 14px 32px; max-width: 1000px; width: 100%; margin: 0 auto; gap: 2px; }
 .frow {
   display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-  background: transparent; border: 1px solid transparent; border-radius: 11px;
+  background: transparent; border: 1px solid transparent; border-radius: var(--radius-lg);
   color: var(--text-soft); padding: 11px 12px; min-height: 48px; cursor: pointer; font: inherit; transition: .13s;
 }
 .frow:hover { background: var(--panel); border-color: var(--border-soft); }
 .frow:active { background: var(--panel-2); }
-.frow .ic { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 auto; font-size: var(--fs-2xl); background: var(--panel-2); border-radius: 9px; transition: .13s; }
+.frow .ic { width: 30px; height: 30px; display: grid; place-items: center; flex: 0 0 auto; font-size: var(--fs-2xl); background: var(--panel-2); border-radius: var(--radius); transition: .13s; }
 .frow.dir .ic { background: var(--grad-soft); }
 .frow .nm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: var(--fs-md); }
 .frow.dir .nm { color: var(--accent); font-weight: 650; }
@@ -633,14 +653,14 @@ body[data-tab="live"] #chatView { display: none !important; }
 .livewrap { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 0 8px 6px; }
 .livestage { position: relative; flex: 1 1 auto; min-height: 200px; display: flex; align-items: center;
   justify-content: center; overflow: hidden; background: #07070b; border: 1px solid rgba(255,255,255,.08);
-  border-radius: 10px; }
+  border-radius: var(--radius-lg); }
 .livestage img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 .livestage.control img { cursor: crosshair; }
 .liveempty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   text-align: center; padding: 20px; color: var(--muted, #9aa0a6); font-size: var(--fs-lg); }
 .livebar { display: flex; align-items: center; gap: 6px; padding: 6px 0 0; font-size: var(--fs-sm);
   color: var(--muted, #9aa0a6); }
-.liveurl { flex: 1; min-width: 0; min-height: 34px; padding: 0 10px; border-radius: 8px;
+.liveurl { flex: 1; min-width: 0; min-height: 34px; padding: 0 10px; border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.25); color: inherit; font-size: var(--fs-md); }
 .liveurl:focus { outline: none; border-color: rgba(167,139,250,.6); }
 .livebadge { font-size: var(--fs-xs); padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); }
@@ -657,7 +677,7 @@ body[data-tab="live"] #chatView { display: none !important; }
 .livechatlog.hidden { display: none; }
 .livebar { flex: none; }
 .livechat { flex: none; }
-.livechatlog .lm { padding: 3px 8px; border-radius: 8px; white-space: pre-wrap; word-break: break-word; }
+.livechatlog .lm { padding: 3px 8px; border-radius: var(--radius); white-space: pre-wrap; word-break: break-word; }
 .livechatlog .lm.you { background: rgba(139,92,255,.16); align-self: flex-end; max-width: 86%; }
 .livechatlog .lm.agent { background: rgba(255,255,255,.05); max-width: 96%; }
 .livechatlog .lm.tool { font-family: ui-monospace, SFMono-Regular, monospace; font-size: var(--fs-xs); opacity: .85; }
@@ -665,7 +685,7 @@ body[data-tab="live"] #chatView { display: none !important; }
 .livechatlog:empty::before { content: "Scrivi qui per dare comandi all'agente mentre guardi il browser.";
   opacity: .45; font-size: var(--fs-md); }
 .livechatin { display: flex; gap: 6px; align-items: center; }
-.livechatin input { flex: 1; min-height: 34px; padding: 0 10px; border-radius: 8px;
+.livechatin input { flex: 1; min-height: 34px; padding: 0 10px; border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.25); color: inherit; font-size: var(--fs-lg); }
 .livechatin input:focus { outline: none; border-color: rgba(167,139,250,.6); }
 
@@ -674,7 +694,7 @@ body[data-tab="live"] #chatView { display: none !important; }
 .mobile-stats {
   display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto;
   background: var(--panel-2); color: var(--dim); border: 1px solid var(--border);
-  border-radius: 10px; width: 34px; height: 34px; font-size: var(--fs-2xl); cursor: pointer;
+  border-radius: var(--radius-lg); width: 34px; height: 34px; font-size: var(--fs-2xl); cursor: pointer;
   transition: .15s;
 }
 .mobile-stats:hover { color: var(--text); border-color: var(--panel-4); }
@@ -699,23 +719,23 @@ body[data-tab="live"] #chatView { display: none !important; }
 .newchat {
   margin: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--grad); color: #08111f;
-  border: none; border-radius: 13px; padding: 12px; font: inherit; font-size: var(--fs-lg); font-weight: 750; cursor: pointer;
+  border: none; border-radius: var(--radius-lg); padding: 12px; font: inherit; font-size: var(--fs-lg); font-weight: 750; cursor: pointer;
   transition: .18s; box-shadow: 0 8px 20px rgba(91,157,255,.28);
 }
 .newchat:hover { filter: brightness(1.08); transform: translateY(-1px); }
 .session-list { flex: 1; overflow-y: auto; padding: 4px 12px 24px; display: flex; flex-direction: column; gap: 5px; }
-.sitem { border: 1px solid transparent; border-radius: 13px; transition: .14s; }
+.sitem { border: 1px solid transparent; border-radius: var(--radius-lg); transition: .14s; }
 .sitem:hover { background: var(--panel-2); }
 .sitem.current { background: var(--panel-2); border-color: var(--border); }
 .smain { display: flex; flex-direction: column; gap: 3px; padding: 11px 12px 6px; cursor: pointer; }
-.smain:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 11px; }
+.smain:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: var(--radius-lg); }
 .stitle { font-size: var(--fs-lg); font-weight: 650; display: flex; align-items: center; gap: 7px; }
 .stitle .txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sbadge { color: var(--accent); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
 .smeta { font-size: var(--fs-xs); color: var(--faint); }
 .sacts { display: flex; gap: 6px; padding: 0 11px 10px; }
 .sact {
-  background: transparent; border: 1px solid var(--border); color: var(--dim); border-radius: 8px;
+  background: transparent; border: 1px solid var(--border); color: var(--dim); border-radius: var(--radius);
   padding: 4px 10px; font: inherit; font-size: var(--fs-xs); cursor: pointer; min-height: 0; transition: .13s;
 }
 .sact:hover { color: var(--text); border-color: var(--panel-4); }
@@ -753,8 +773,8 @@ body[data-tab="live"] #chatView { display: none !important; }
   main { padding: 14px 12px 20px; gap: 14px; }
   .msg { max-width: 100%; }
   .msg.user { align-self: stretch; max-width: 100%; }
-  .bubble { border-radius: 12px 16px 16px 16px; }
-  .msg.user .bubble { border-radius: 16px 16px 12px 16px; max-width: 92%; }
+  .bubble { border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-lg); }
+  .msg.user .bubble { border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-lg); max-width: 92%; }
   .imgs img { max-width: 160px; max-height: 160px; }
   footer { padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); }
   .ftoolbar { padding: 8px 12px; }
@@ -775,7 +795,8 @@ body[data-tab="live"] #chatView { display: none !important; }
 .msg:hover .msgacts, .msg:focus-within .msgacts { opacity: 1; }
 .mact {
   border: 1px solid var(--border); background: var(--panel-2); color: var(--dim); cursor: pointer;
-  font: inherit; font-size: var(--fs-xs); line-height: 1; padding: 5px 10px; border-radius: 999px; transition: .15s;
+  font: inherit; font-size: var(--fs-xs); line-height: 1; padding: var(--sp-2) var(--sp-3); transition: .15s;
+  min-height: 32px; display: inline-flex; align-items: center; gap: var(--sp-1);
 }
 .mact:hover { color: var(--text); border-color: var(--panel-4); background: var(--panel-3); }
 .mact.danger:hover { color: var(--red); border-color: rgba(251,113,133,.5); }
@@ -835,12 +856,12 @@ body[data-tab="live"] #chatView { display: none !important; }
 .hist-head { display: flex; align-items: center; gap: 8px; font-size: var(--fs-md); color: var(--dim); margin-bottom: 8px; }
 .hist-head strong { color: var(--text-soft); font-weight: 650; }
 .hist-head .spacer2 { flex: 1; }
-.hist-head button { all: unset; cursor: pointer; color: var(--faint); font-size: var(--fs-lg); padding: 2px 6px; border-radius: 6px; }
+.hist-head button { all: unset; cursor: pointer; color: var(--faint); font-size: var(--fs-lg); padding: 2px 6px; border-radius: var(--radius-sm); }
 .hist-head button:hover { color: var(--text); background: var(--panel-2); }
 .histlist { display: flex; flex-direction: column; gap: 4px; max-height: 330px; overflow: auto; }
 .hitem {
   text-align: left; border: 1px solid transparent; background: transparent; color: var(--text);
-  font: inherit; font-size: var(--fs-lg); line-height: 1.5; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+  font: inherit; font-size: var(--fs-lg); line-height: 1.5; padding: 8px 10px; border-radius: var(--radius); cursor: pointer;
   width: 100%; overflow-wrap: anywhere;
   /* il prompt si legge su più righe (prima veniva tagliato su una sola) */
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
@@ -868,8 +889,8 @@ body[data-tab="live"] #chatView { display: none !important; }
 .sres-h .nm { font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sres-h .meta { color: var(--faint); font-size: var(--fs-xs); margin-left: auto; white-space: nowrap; }
 .sres-hit { font-family: ui-monospace, Menlo, monospace; font-size: var(--fs-sm); color: var(--dim); margin-top: 5px; word-break: break-word; }
-smark { background: rgba(251,191,36,.28); color: var(--text); border-radius: 3px; padding: 0 2px; }
-.sres-act { all: unset; cursor: pointer; color: var(--accent); font-size: var(--fs-sm); padding: 2px 7px; border-radius: 6px; border: 1px solid transparent; }
+smark { background: rgba(251,191,36,.28); color: var(--text); border-radius: var(--radius-sm); padding: 0 2px; }
+.sres-act { all: unset; cursor: pointer; color: var(--accent); font-size: var(--fs-sm); padding: 2px 7px; border-radius: var(--radius-sm); border: 1px solid transparent; }
 .sres-act:hover { border-color: var(--accent); }
 .fsearchbar { display: flex; gap: 8px; align-items: center; padding: 8px 14px 0; max-width: 1000px; margin: 0 auto; width: 100%; }
 .drawer-foot { padding: 10px 14px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border-soft); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -955,6 +976,38 @@ header::after { display: none; }
   .stat { padding: var(--sp-2) var(--sp-3); }
   .stat .value { font-size: var(--fs-md); }
 }
+
+/* ---------- icone (al posto delle emoji) e dettagli della barra ---------- */
+.ico { width: 16px; height: 16px; flex: 0 0 auto; }
+.tab .ico { width: 15px; height: 15px; }
+.stat-ico { color: var(--dim); display: grid; place-items: center; }
+.stat-ico .ico { width: 17px; height: 17px; }
+.stat .sub { display: block; margin-top: 1px; font-size: var(--fs-xs); color: var(--dim); }
+.stat .ctxwarn { display: block; margin-top: 1px; font-size: var(--fs-xs); font-weight: 600; color: var(--red); }
+
+/* ---------- densità: comoda o compatta ----------
+   Chi legge a lungo compatte le spaziature e il corpo del testo; chi usa il telefono no.
+   Cambiano solo i token, quindi ogni regola resta coerente con la scala. */
+html[data-densita="compatto"] { --fs-xl: 14px; --fs-2xl: 15px; --lh-testo: 1.5; --sp-4: 12px; --sp-5: 18px; --sp-6: 24px; }
+html[data-densita="compatto"] main { padding: var(--sp-4) var(--sp-3) var(--sp-5); gap: var(--sp-3); }
+html[data-densita="compatto"] .bubble { padding: var(--sp-2) var(--sp-3); }
+html[data-densita="compatto"] .thinking .tbody { max-height: 30vh; }
+
+/* Su touch i bersagli crescono: «copia», «apri», «scarica» e le linguette erano alti 23-35px,
+   cioè sotto la misura che si centra con un dito. */
+@media (pointer: coarse), (max-width: 860px) {
+  .mact, .fbtn, .ghost, .pill, .tab { min-height: 44px; }
+  .mact { padding: 0 var(--sp-3); }
+  .msgacts { gap: var(--sp-2); }
+}
+
+/* Su touch i bersagli crescono: «copia», «apri», «scarica» e le linguette erano alti 23-35px,
+   cioè sotto la misura che si centra con un dito. */
+@media (pointer: coarse), (max-width: 860px) {
+  .mact, .fbtn, .ghost, .pill, .tab { min-height: 44px; }
+  .mact { padding: 0 var(--sp-3); }
+  .msgacts { gap: var(--sp-2); }
+}
 .msg { max-width: 900px; }
 .bubble {
   border-radius: var(--radius); background: var(--panel); border: 1px solid var(--border);
@@ -998,7 +1051,7 @@ header::after { display: none; }
 .sinput { border-radius: var(--radius-sm); background: var(--panel); }
 .sres { border-radius: var(--radius); background: var(--panel); }
 .histpanel, .hintbar { border-radius: var(--radius); box-shadow: none; }
-smark { border-radius: 2px; }
+smark { border-radius: var(--radius-sm); }
 
 /* --- drawer chat --- */
 .drawer { border-radius: 0; box-shadow: none; border-right: 1px solid var(--border); }
@@ -1144,8 +1197,8 @@ footer {
 .goal-desc { color: var(--dim); font-size: var(--fs-md); margin: 7px 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .goal-progress { margin: 4px 0 2px; }
 .goal-progress-h { display: flex; justify-content: space-between; font-size: var(--fs-sm); color: var(--faint); margin-bottom: 5px; }
-.goal-progress .bar { height: 6px; background: var(--panel-3); border-radius: 99px; overflow: hidden; }
-.goal-progress .fill { height: 100%; background: var(--grad); border-radius: 99px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+.goal-progress .bar { height: 6px; background: var(--panel-3); border-radius: 999px; overflow: hidden; }
+.goal-progress .fill { height: 100%; background: var(--grad); border-radius: 999px; transition: width .35s cubic-bezier(.4,0,.2,1); }
 .goal-sect { margin-top: 13px; }
 .goal-sect-h {
   font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .7px; color: var(--faint);
@@ -1162,7 +1215,7 @@ footer {
 .step.done .txt, .chk.done .txt { text-decoration: line-through; color: var(--faint); }
 .chkbox {
   appearance: none; -webkit-appearance: none; width: 18px; height: 18px; flex: 0 0 auto; margin-top: 2px;
-  border: 2px solid var(--panel-4); border-radius: 5px; cursor: pointer; background: transparent;
+  border: 2px solid var(--panel-4); border-radius: var(--radius-sm); cursor: pointer; background: transparent;
   position: relative; transition: .15s;
 }
 .chkbox:hover { border-color: var(--accent); }
@@ -1202,7 +1255,7 @@ footer {
   white-space: pre-wrap; overflow-wrap: anywhere; max-height: 120px; overflow: auto;
 }
 .cron-next { font-size: var(--fs-xs); color: var(--faint); margin-top: 7px; line-height: 1.7; }
-.cron-next code, .cron-next b { color: var(--text-soft); background: var(--panel-2); border-radius: 4px; padding: 1px 5px; }
+.cron-next code, .cron-next b { color: var(--text-soft); background: var(--panel-2); border-radius: var(--radius-sm); padding: 1px 5px; }
 .cron-quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
 .cron-quick button {
   all: unset; cursor: pointer; font-size: var(--fs-xs); color: var(--accent); border: 1px solid var(--border);
@@ -1218,7 +1271,7 @@ footer {
 /* avvisi in basso a destra (esiti delle operazioni pianificate) */
 #toasts { position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 60; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 /* barra di accesso: sessione scaduta o accesso temporaneamente sospeso (401/429 sulle API) */
-#authBar { position: fixed; left: 50%; transform: translateX(-50%); top: calc(10px + env(safe-area-inset-top)); z-index: 70; display: flex; gap: 12px; align-items: center; max-width: min(92vw, 620px); background: #2a1116; border: 1px solid #7f1d1d; color: #fecaca; padding: 9px 14px; border-radius: 10px; font-size: var(--fs-lg); box-shadow: 0 10px 26px rgba(0,0,0,.45); }
+#authBar { position: fixed; left: 50%; transform: translateX(-50%); top: calc(10px + env(safe-area-inset-top)); z-index: 70; display: flex; gap: 12px; align-items: center; max-width: min(92vw, 620px); background: #2a1116; border: 1px solid #7f1d1d; color: #fecaca; padding: 9px 14px; border-radius: var(--radius-lg); font-size: var(--fs-lg); box-shadow: 0 10px 26px rgba(0,0,0,.45); }
 #authBar[hidden] { display: none !important; }
 #authBar a { color: #93c5fd; white-space: nowrap; }
 #authBar.warn { background: #2a1f0b; border-color: #78350f; color: #fde68a; }
@@ -1251,12 +1304,28 @@ footer {
 </style>
 </head>
 <body data-tab="chat">
+<!-- Icone disegnate una volta sola e richiamate con <use>: prima erano emoji, che cambiano
+     aspetto da sistema a sistema (e invecchiano). fill/stroke sono attributi di presentazione,
+     non stili inline. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 12a7.6 7.6 0 0 1-7.6 7.6H9.2L4.6 22v-4.3A7.6 7.6 0 0 1 12 4.6 7.6 7.6 0 0 1 20 12Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.6 8.2A1.7 1.7 0 0 1 5.3 6.5h3.9l1.9 2.4h7.6a1.7 1.7 0 0 1 1.7 1.7v6.2a1.7 1.7 0 0 1-1.7 1.7H5.3a1.7 1.7 0 0 1-1.7-1.7V8.2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-model" viewBox="0 0 24 24"><rect x="8" y="8" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 4.4V8M12 16v3.6M4.4 12H8M16 12h3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-think" viewBox="0 0 24 24"><path d="M12 4.4l1.7 5.1 5.1 1.7-5.1 1.7L12 18l-1.7-5.1L5.2 11.2l5.1-1.7L12 4.4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-ctx" viewBox="0 0 24 24"><path d="M5 19.5v-6M12 19.5V6.5M19 19.5v-9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
+  <symbol id="i-token" viewBox="0 0 24 24"><path d="M9.4 5 7.6 19M16.4 5 14.6 19M5.4 9.6h14M4.6 14.4h14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-cache" viewBox="0 0 24 24"><ellipse cx="12" cy="7" rx="6.6" ry="2.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5.4 7v10c0 1.5 3 2.6 6.6 2.6s6.6-1.1 6.6-2.6V7M5.4 12c0 1.5 3 2.6 6.6 2.6s6.6-1.1 6.6-2.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-cost" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+  <symbol id="i-git" viewBox="0 0 24 24"><circle cx="7.2" cy="6.6" r="2.1" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="7.2" cy="17.4" r="2.1" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="13.4" r="2.1" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.2 8.7v6.6M9.3 6.6h3.5a4.2 4.2 0 0 1 4.2 4.2v.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.4v4.9l3.1 1.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-dens" viewBox="0 0 24 24"><path d="M4.5 8h15M4.5 12h10M4.5 16h15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+</svg>
 <header>
   <div class="brand"><span class="logo" aria-hidden="true"></span><span class="brandname">Universalis Harness</span></div>
   <button id="chatsBtn" class="icon-btn" type="button" title="Le tue chat" aria-label="Le tue chat">☰</button>
   <nav class="tabs">
-    <button class="tab active" id="tabChat" type="button">💬 Chat</button>
-    <button class="tab" id="tabFiles" type="button">📁 File</button>
+    <button class="tab active" id="tabChat" type="button"><svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg>Chat</button>
+    <button class="tab" id="tabFiles" type="button"><svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg>File</button>
   </nav>
   <span class="spacer"></span>
 
@@ -1269,8 +1338,7 @@ footer {
     </select>
     <select id="thinkSel" class="select" title="Livello thinking"></select>
     <div class="feat" id="featWrap">
-      <button id="featBtn" class="pill feat-btn" type="button" title="Funzioni dell'agente: subagent, compattazione" aria-haspopup="true" aria-expanded="false"><span class="led"></span>features<span class="feat-count" id="featCount"></span></button>
-      <div class="feat-panel" id="featPanel" hidden>
+      <button id="featBtn" class="pill feat-btn" type="button" title="Funzioni dell'agente: subagent, compattazione" aria-haspopup="true" aria-expanded="false"><span class="led"></span>features<span class="feat-count" id="featCount"></span></button>      <div class="feat-panel" id="featPanel" hidden>
         <div class="feat-row">
           <span class="feat-lbl">subagent</span>
           <button id="subagentToggle" class="pill warn" type="button" title="Abilita/disabilita i subagent (aumenta i costi)"><span class="led"></span>subagent</button>
@@ -1298,22 +1366,22 @@ footer {
         </div>
       </div>
     </div>
+    <button id="densBtn" class="pill" type="button" title="Densità dell'interfaccia: comoda o compatta (la scelta resta nel browser)" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-dens"/></svg><span id="densLbl">comoda</span></button>
   </div>
 
   <div class="statusbar"><span class="dot" id="dot"></span><span id="connTxt" class="conn"></span><span id="streamTxt">idle</span></div>
-  <button id="statsToggle" class="mobile-stats" type="button" title="Mostra/nascondi statistiche">📊</button>
-</header>
+  <button id="statsToggle" class="mobile-stats" type="button" title="Mostra/nascondi statistiche">📊</button></header>
 
 <section class="stats" id="stats">
-  <div class="stat"><span class="stat-ico">🧠</span><div class="stat-main"><span class="label">modello</span><span class="value" id="s-model">–</span></div></div>
-  <div class="stat"><span class="stat-ico">✨</span><div class="stat-main"><span class="label">thinking</span><span class="value" id="s-think">–</span></div></div>
-  <div class="stat"><span class="stat-ico">📊</span><div class="stat-main"><span class="label">contesto</span><span class="value" id="s-ctx">–</span><div class="ctxbar"><div id="s-ctxbar" style="width:0%"></div></div></div></div>
-  <div class="stat"><span class="stat-ico">🔢</span><div class="stat-main"><span class="label" title="Token consumati: ↑ ingresso (prompt), ↓ uscita (risposta)">token ↑/↓</span><span class="value" id="s-tokens">–</span></div></div>
-  <div class="stat"><span class="stat-ico">💾</span><div class="stat-main"><span class="label" title="Token letti dalla cache (più economici) e scritti in cache">cache</span><span class="value" id="s-cache">–</span></div></div>
-  <div class="stat"><span class="stat-ico">💵</span><div class="stat-main"><span class="label">costo</span><span class="value" id="s-cost">–</span></div></div>
-  <div class="stat"><span class="stat-ico">⎇</span><div class="stat-main"><span class="label">git</span><span class="value" id="s-git">–</span></div></div>
-  <div class="stat"><span class="stat-ico">📁</span><div class="stat-main"><span class="label">directory</span><span class="value" id="s-cwd">–</span></div></div>
-  <div class="stat"><span class="stat-ico">⏱</span><div class="stat-main"><span class="label">durata</span><span class="value" id="s-time">–</span></div></div>
+  <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-model"/></svg></span><div class="stat-main"><span class="label">modello</span><span class="value" id="s-model">–</span></div></div>
+  <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-think"/></svg></span><div class="stat-main"><span class="label">thinking</span><span class="value" id="s-think">–</span></div></div>
+  <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-ctx"/></svg></span><div class="stat-main"><span class="label">contesto</span><span class="value" id="s-ctx">–</span><span class="ctxwarn" id="s-ctxwarn" hidden></span><div class="ctxbar"><div id="s-ctxbar" style="width:0%"></div></div></div></div>
+  <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-token"/></svg></span><div class="stat-main"><span class="label" title="Token consumati: ↑ ingresso (prompt), ↓ uscita (risposta)">token ↑/↓</span><span class="value" id="s-tokens">–</span></div></div>
+  <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-cache"/></svg></span><div class="stat-main"><span class="label" title="Token letti dalla cache (più economici) e scritti in cache">cache</span><span class="value" id="s-cache">–</span></div></div>
+  <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-cost"/></svg></span><div class="stat-main"><span class="label">costo</span><span class="value" id="s-cost">–</span><span class="sub" id="s-costturn"></span></div></div>
+  <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-git"/></svg></span><div class="stat-main"><span class="label">git</span><span class="value" id="s-git">–</span></div></div>
+  <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg></span><div class="stat-main"><span class="label">directory</span><span class="value" id="s-cwd">–</span></div></div>
+  <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg></span><div class="stat-main"><span class="label">durata</span><span class="value" id="s-time">–</span></div></div>
 </section>
 
 <main id="chatView"><div class="empty"><div class="empty-ico" aria-hidden="true"></div>Scrivi un messaggio per iniziare…</div></main>
@@ -1600,6 +1668,8 @@ let startedAt = Date.now();
 let stateRoot = null;
 let attachments = [];
 let lastContext = null, compacting = false;
+// costo dell'ultimo turno: differenza fra il totale a inizio turno e quello a fine turno
+let turnoBaseCosto = null, ultimoTurnoCosto = 0;
 let subagentsAvailable = false, subagentsEnabled = false;
 
 /**
@@ -1667,9 +1737,25 @@ function renderStats(st) {
   const bar = $("s-ctxbar");
   bar.style.width = (pct != null ? Math.min(100, pct) : 0) + "%";
   bar.style.background = pct == null ? "var(--green)" : pct < 60 ? "var(--green)" : pct < 85 ? "var(--yellow)" : "var(--red)";
+  /* Oltre l'85% il colore non basta: serve la parola, con il comando da usare. */
+  const warn = $("s-ctxwarn");
+  if (warn) {
+    const alto = pct != null && pct >= 85;
+    warn.hidden = !alto;
+    warn.textContent = alto ? "alto · valuta /compact" : "";
+  }
   $("s-tokens").textContent = "↑ " + fmt(st.tokens.input) + " · ↓ " + fmt(st.tokens.output);
   $("s-cache").textContent = fmt(st.tokens.cacheRead) + " · " + fmt(st.tokens.cacheWrite);
   $("s-cost").textContent = fmtCost(st.cost);
+  /* Costo dell'ultimo turno: si registra il totale all'inizio del turno e si mostra la
+     differenza alla fine. Il server manda solo il cumulativo. */
+  if (st.streaming) {
+    if (turnoBaseCosto == null) turnoBaseCosto = Number(st.cost) || 0;
+  } else if (turnoBaseCosto != null) {
+    ultimoTurnoCosto = Math.max(0, (Number(st.cost) || 0) - turnoBaseCosto);
+    turnoBaseCosto = null;
+  }
+  if ($("s-costturn")) $("s-costturn").textContent = ultimoTurnoCosto > 0 ? "ultimo turno " + fmtCost(ultimoTurnoCosto) : "";
   $("s-git").textContent = st.gitBranch || "–";
   $("s-cwd").textContent = fmtPath(st.cwd);
   $("s-cwd").title = st.cwd;
@@ -2318,7 +2404,7 @@ function renderMessages(messages) {
       // mostrava il testo solo in fondo, dopo decine di card.
       for (const bl of m.blocks) {
         if (bl.type === "thinking") {
-          if (bl.text) { const t = document.createElement("div"); t.className = "thinking"; t.textContent = bl.text; wrap.appendChild(t); }
+          if (bl.text) wrap.appendChild(thinkingBlock(bl.text));
         } else if (bl.type === "text") {
           if (bl.text) {
             const b = document.createElement("div"); b.className = "bubble";
@@ -2334,20 +2420,17 @@ function renderMessages(messages) {
             continue;
           }
           // il tool si mostra come gli altri: la card scaricabile gli sta accanto, sotto
-          const td = document.createElement("div"); td.className = "tool";
-          td.textContent = "🔧 " + bl.name + (bl.command ? " · " + String(bl.command).slice(0, 90) : "");
+          const td = toolCard({ name: bl.name, summary: bl.command ? String(bl.command).slice(0, 90) : "", statico: true });
           wrap.appendChild(td);
         }
       }
     } else if (m.role === "assistant") {
       // fallback per payload senza `blocks` (compatibilità)
-      if (m.thinking) { const t = document.createElement("div"); t.className = "thinking"; t.textContent = m.thinking; wrap.appendChild(t); }
+      if (m.thinking) wrap.appendChild(thinkingBlock(m.thinking));
       if (m.tools && m.tools.length) {
         for (const t of m.tools) {
           // (compatibilità) come sopra: la card del file arriva in fondo al messaggio
-          const td = document.createElement("div"); td.className = "tool";
-          td.textContent = "🔧 " + t.name + (t.command ? " · " + String(t.command).slice(0, 90) : "");
-          wrap.appendChild(td);
+          wrap.appendChild(toolCard({ name: t.name, summary: t.command ? String(t.command).slice(0, 90) : "", statico: true }));
         }
       }
       // payload senza `blocks` (compatibilità): stesso trattamento dei blocchi di testo
@@ -2432,10 +2515,7 @@ function appendAbortedPartial(list) {
   who.textContent = "pi · interrotta";
   wrap.appendChild(who);
   if (lt) {
-    const t = document.createElement("div");
-    t.className = "thinking";
-    t.textContent = lt;
-    wrap.appendChild(t);
+    wrap.appendChild(thinkingBlock(lt));
   }
   const b = document.createElement("div");
   b.className = "bubble";
@@ -2443,7 +2523,13 @@ function appendAbortedPartial(list) {
   wrap.appendChild(b);
   const tag = document.createElement("div");
   tag.className = "tool";
-  tag.textContent = "⏹ generazione interrotta — testo non salvato nella sessione";
+  const tagNome = document.createElement("span");
+  tagNome.className = "tname";
+  tagNome.textContent = "generazione interrotta";
+  const tagNota = document.createElement("span");
+  tagNota.className = "tsum";
+  tagNota.textContent = "testo non salvato nella sessione";
+  tag.append(tagNome, tagNota);
   wrap.appendChild(tag);
   chat.appendChild(wrap);
 }
@@ -2639,28 +2725,80 @@ function ensureTextBlock() {
   return cur.assistant;
 }
 
-/** Blocco di pensiero: stesso criterio del testo. */
+/**
+ * Blocco di pensiero: chiuso di default, con una riga di sintesi (▸ pensiero · 1,2k caratteri).
+ * Prima era sempre aperto e arrivava a 40vh: la risposta finiva fuori schermo. Il testo del
+ * corpo continua ad aggiornarsi in streaming anche quando è chiuso.
+ */
+function thinkingBlock(testo = "") {
+  const box = document.createElement("div");
+  box.className = "thinking";
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "thead";
+  head.setAttribute("aria-expanded", "false");
+  const caret = document.createElement("span");
+  caret.className = "tcaret";
+  caret.setAttribute("aria-hidden", "true");
+  caret.textContent = "▸";
+  const label = document.createElement("span");
+  label.className = "tlabel";
+  label.textContent = "pensiero";
+  const meta = document.createElement("span");
+  meta.className = "tmeta";
+  head.append(caret, label, meta);
+  const corpo = document.createElement("div");
+  corpo.className = "tbody";
+  corpo.textContent = testo;
+  meta.textContent = fmt(corpo.textContent.length) + " caratteri";
+  head.addEventListener("click", () => {
+    const aperto = box.classList.toggle("aperto");
+    head.setAttribute("aria-expanded", String(aperto));
+  });
+  box.append(head, corpo);
+  return box;
+}
+
+/** Blocco di pensiero del messaggio in corso: stesso criterio del testo. */
 function ensureThinkingBlock() {
   if (lastBlockKind() !== "thinking") cur.thinking = null;
   if (!cur.thinking) {
-    const t = document.createElement("div"); t.className = "thinking"; t.style.display = "block";
-    cur.wrap.appendChild(t); cur.thinking = t;
+    const box = thinkingBlock();
+    cur.wrap.appendChild(box);
+    cur.thinking = box;
   }
   return cur.thinking;
+}
+
+/**
+ * Card di una chiamata al tool: nome in monospaziato, sintesi, esito con **parola** (non solo
+ * un simbolo) e durata misurata dal client, che è l'unico a sapere quanto è durata davvero.
+ */
+function toolCard(info = {}) {
+  const card = document.createElement("div");
+  card.className = "tool" + (info.status === "error" ? " err" : "");
+  const nome = document.createElement("span");
+  nome.className = "tname";
+  // gli eventi SSE portano `toolName`, i messaggi salvati `name`: si accettano entrambi
+  nome.textContent = info.name || info.toolName || "tool";
+  card.appendChild(nome);
+  if (info.summary) {
+    card.appendChild(Object.assign(document.createElement("span"), { className: "tsum", textContent: info.summary }));
+  }
+  const esito = info.status === "error" ? "errore" : info.status === "ok" ? "fatto" : info.statico ? "" : "corso";
+  const state = document.createElement("span");
+  state.className = "tstate";
+  state.dataset.esito = esito;
+  state.textContent = esito === "corso" ? "in corso…" : esito;
+  card.appendChild(state);
+  if (esito === "corso") card.dataset.inizio = String(Date.now());
+  return card;
 }
 
 /** Card di una chiamata al tool, dentro il messaggio (non più orfana in fondo alla chat). */
 function appendToolCard(info = {}) {
   if (!cur.wrap) newAssistantBubble();
-  const card = document.createElement("div");
-  card.className = "tool" + (info.status === "error" ? " err" : "");
-  // gli eventi SSE portano `toolName`, i messaggi salvati `name`: si accettano entrambi
-  card.textContent = "🔧 " + (info.name || info.toolName || "tool");
-  if (info.summary) card.appendChild(Object.assign(document.createElement("span"), { className: "tsum", textContent: " · " + info.summary }));
-  const state = document.createElement("span");
-  state.className = "tstate";
-  state.textContent = info.status === "error" ? "✗" : info.status === "ok" ? "✓" : "…";
-  card.appendChild(state);
+  const card = toolCard(info);
   cur.wrap.appendChild(card);
   if (info.id && cur.tools) cur.tools.set(info.id, card);
   // il prossimo testo/pensiero apre un nuovo blocco SOTTO la card
@@ -2669,17 +2807,22 @@ function appendToolCard(info = {}) {
   return card;
 }
 
-/** Chiude la card del tool (esito). Correla per id, con ripiego sull'ultima in corso. */
+/** Chiude la card del tool (esito + durata). Correla per id, con ripiego sull'ultima in corso. */
 function endToolCard(info = {}) {
   let card = info.id ? cur.tools?.get(info.id) : null;
   if (!card) {
     const cards = cur.wrap ? [...cur.wrap.querySelectorAll(".tool")] : [];
-    card = [...cards].reverse().find((c) => c.querySelector(".tstate")?.textContent === "…") || null;
+    card = [...cards].reverse().find((c) => c.querySelector(".tstate")?.dataset.esito === "corso") || null;
   }
   if (!card) return;
   if (info.isError) card.classList.add("err");
   const state = card.querySelector(".tstate");
-  if (state) state.textContent = info.isError ? "✗" : "✓";
+  if (!state) return;
+  const inizio = Number(card.dataset.inizio) || 0;
+  const ms = inizio ? Date.now() - inizio : 0;
+  const durata = ms >= 1000 ? (ms / 1000).toFixed(1).replace(".", ",") + " s" : ms ? ms + " ms" : "";
+  state.dataset.esito = info.isError ? "errore" : "fatto";
+  state.textContent = (info.isError ? "errore" : "fatto") + (durata ? " · " + durata : "");
 }
 
 /* Un file creato/letto durante la risposta: la card scaricabile entra nel messaggio in corso,
@@ -3041,7 +3184,16 @@ function appendText(d) {
   appendBubbleText(ensureTextBlock(), d);
   scheduleAutoscroll();
 }
-function appendThinking(d) { if (!cur.wrap) newAssistantBubble(); ensureThinkingBlock().textContent += d; scheduleAutoscroll(); }
+function appendThinking(d) {
+  if (!cur.wrap) newAssistantBubble();
+  const box = ensureThinkingBlock();
+  const corpo = box.querySelector(".tbody");
+  if (!corpo) return;
+  corpo.textContent += d;
+  const meta = box.querySelector(".tmeta");
+  if (meta) meta.textContent = fmt(corpo.textContent.length) + " caratteri";
+  scheduleAutoscroll();
+}
 
 /** Testo/pensiero complessivo del messaggio in corso (per stop e notifiche). */
 function currentAssistantText() {
@@ -3069,7 +3221,7 @@ function renderStreamSegments(segments) {
   const streamPaths = new Set();
   for (const s of segments || []) {
     if (s.kind === "thinking") {
-      const t = document.createElement("div"); t.className = "thinking"; t.style.display = "block"; t.textContent = s.text || "";
+      const t = thinkingBlock(s.text || "");
       cur.wrap.appendChild(t); cur.thinking = t;
     } else if (s.kind === "text") {
       const b = document.createElement("div"); b.className = "bubble";
@@ -3093,14 +3245,7 @@ function renderStreamSegments(segments) {
         if (s.id) cur.tools.set(s.id, askCard);
         continue;
       }
-      const card = document.createElement("div");
-      card.className = "tool" + (s.status === "error" ? " err" : "");
-      card.textContent = "🔧 " + (s.name || "tool");
-      if (s.summary) card.appendChild(Object.assign(document.createElement("span"), { className: "tsum", textContent: " · " + s.summary }));
-      const state = document.createElement("span");
-      state.className = "tstate";
-      state.textContent = s.status === "error" ? "✗" : s.status === "ok" ? "✓" : "…";
-      card.appendChild(state);
+      const card = toolCard({ name: s.name, summary: s.summary, status: s.status, statico: true });
       cur.wrap.appendChild(card);
       if (s.id) cur.tools.set(s.id, card);
       if (s.path) streamPaths.add(s.path);
@@ -3506,6 +3651,35 @@ $("subagentMax").addEventListener("change", (e) => setSubagentMax(e.target.value
 $("askToggle").addEventListener("click", () => toggleAsk());
 $("modelSel").onchange = (e) => postJSON("/api/model", { id: e.target.value });
 $("thinkSel").onchange = (e) => postJSON("/api/thinking", { level: e.target.value });
+
+/* Densità dell'interfaccia: comoda (predefinita) o compatta. La scelta resta nel browser:
+   chi legge a lungo compatte, chi usa il telefono no. Cambiano i token, non le singole regole. */
+(function densita() {
+  const btn = $("densBtn");
+  if (!btn) return;
+  const lbl = $("densLbl");
+  const applica = (v) => {
+    document.documentElement.dataset.densita = v;
+    btn.setAttribute("aria-pressed", String(v === "compatto"));
+    if (lbl) lbl.textContent = v === "compatto" ? "compatta" : "comoda";
+  };
+  let scelta = "comoda";
+  try {
+    if (localStorage.getItem("densita") === "compatto") scelta = "compatto";
+  } catch {
+    /* preferenza non leggibile: resta comoda */
+  }
+  applica(scelta);
+  btn.onclick = () => {
+    scelta = scelta === "compatto" ? "comoda" : "compatto";
+    try {
+      localStorage.setItem("densita", scelta);
+    } catch {
+      /* niente persistenza: la scelta vale per questa sessione */
+    }
+    applica(scelta);
+  };
+})();
 
 /* ============================ COMANDI SLASH ============================ */
 // Digitando "/" compare la palette: i comandi NON vanno al modello, vengono
