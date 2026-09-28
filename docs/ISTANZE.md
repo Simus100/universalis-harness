@@ -96,6 +96,40 @@ tutte e tre** — `bookforge`, `browser`, `visual-representation`, `report-datav
 rilevate dal watcher **senza riavvio** in tutte le istanze). Nell'ospite la cartella `skills/` occupa
 poche decine di KB a fronte di ~313 MB liberi.
 
+### Aggiornamento del 2026-09-28 (secondo) — grafica della dashboard, tutte le istanze
+
+Cosa è cambiato (solo presentazione, nessuna funzione tolta): sistema tipografico a token (16 misure
+→ 9), spaziature su griglia 4/8/12/16/24/32, contrasti a norma su etichette e autore dei messaggi,
+riga di testo limitata a 74 caratteri, barra di stato su una riga con numeri leggibili
+(`291k/1M · 29%`, `↑ 255k · ↓ 178k`, `$0,425`), icona disegnate al posto delle emoji, pensiero
+collassato con riga di sintesi, card dei tool con nome, esito e durata, bersagli tattili 32-44px,
+raggi ridotti a quattro valori, avviso quando il contesto supera l'85%, costo dell'ultimo turno,
+densità comoda/compatta ricordata dal browser.
+
+**Metodo e una lezione.** `tester_01` ha ricevuto una copia diretta (era identico alla base).
+Per `tester_07` la fusione a tre vie su `dashboard.html` ha prodotto **2 conflitti reali**: le sue
+personalizzazioni non sono solo nel `.env`/`.mjs`, ma anche nel markup — la voce **«spazio»** (quota
+disco) nella barra, la funzione `applyLocks(st)` che nasconde il selettore del modello, lo stile
+`.select option:disabled` e le opzioni di thinking disabilitate. Il file con i marcatori di conflitto
+è stato **scartato subito** (ripristino dal backup fatto prima dell'intervento) e le sei
+personalizzazioni sono state **riapplicate a mano** sul file nuovo, adattate ai token
+(la voce «spazio» ha ora una sua icona SVG `#i-quota`).
+
+| file | principale | tester_01 | tester_07 |
+|---|---|---|---|
+| `dashboard.html` | `f4fd99451501bb55` | `f4fd99451501bb55` (identico) | `c2e939881e0bba73` (con personalizzazioni) |
+| `dashboard.mjs` | `5a2867521770a5f7` | `5a2867521770a5f7` (identico) | `d6dfe46e5a69259d` |
+| `scripts/restart-dashboard.sh` | presente | copiato | copiato (`tester07:tester07`) |
+
+**Non** copiato `scripts/sync-fine-lavoro.sh`: pubblicherebbe sul repository partendo da un clone di
+prova, con rischio di commit indesiderati.
+
+Verifiche eseguite nel browser su ogni istanza: 9 voci di barra tutte con icona disegnata, nessun
+`<use>` senza simbolo, pensieri collassati con intestazione, card dei tool con nome, pulsante densità
+presente, bersaglio più piccolo ≥ 32px, nessuno scorrimento orizzontale; in `tester_07` il modello
+resta nascosto e non modificabile (`POST /api/model` → 403) e la voce «spazio» mostra la quota
+(`1.5 MB / 300 MB`); impronta del codice in esecuzione = impronta su disco in entrambe.
+
 ### Nota sui backup
 
 Il timer automatico `pi-backup.timer` (04:15) è **solo della principale**: `tester_01` e `tester_07`
