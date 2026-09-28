@@ -90,9 +90,11 @@ ciascuna; creazione e rimozione di una skill da shell rilevate **senza riavvio**
 tester_01 e tester_07; nell'ospite i limiti sono intatti (`POST /api/model` → **403**,
 `thinking.disabled = ['max']`, quota 300 MB).
 
-Skill presenti (sono **per istanza**, non si propagano): principale **5** (`bookforge`, `browser`,
-`visual-representation`, `report-dataviz`, `design-craft`); tester_01 **4** (manca
-`visual-representation`); tester_07 **2** (`bookforge`, `browser`).
+Skill presenti (sono **per istanza**, non si propagano: vanno copiate a mano): **le stesse 5 in
+tutte e tre** — `bookforge`, `browser`, `visual-representation`, `report-dataviz`, `design-craft`
+(copia del 2026-09-28 verso `tester_01` e `tester_07`, con `chown tester07:tester07` sull'ospite;
+rilevate dal watcher **senza riavvio** in tutte le istanze). Nell'ospite la cartella `skills/` occupa
+poche decine di KB a fronte di ~313 MB liberi.
 
 ### Nota sui backup
 
