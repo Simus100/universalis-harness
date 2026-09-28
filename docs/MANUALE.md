@@ -235,6 +235,12 @@ cartella con un file `SKILL.md` che ha frontmatter YAML con **`name`** e **`desc
   nell'editor e eliminarlo. Le modifiche fatte da lì (o salvando il `SKILL.md` dall'editor file)
   rendono la skill **attiva subito**: la dashboard ricarica la lista e ricostruisce il system
   prompt della sessione senza cambiare chat (`session.reload()`);
+- le skill cambiate **fuori** dalla dashboard (shell, `git`, `cp`, un'altra sessione) vengono
+  rilevate da un **watcher su `skills/`**: la lista e il system prompt si aggiornano da soli entro
+  circa un secondo (debounce 700 ms, regolabile con `DASH_SKILLS_WATCH_MS`), senza riavviare il
+  servizio. La ricarica **non parte mai a metà di una risposta**: se l'agente sta lavorando viene
+  applicata alla fine del turno, perché `resourceLoader.reload()` azzera la cache delle estensioni
+  e invaliderebbe i tool della sessione viva;
 - **import da `.zip`** (`media/unzip.mjs`, nessuna dipendenza esterna): estrae la cartella,
   toglie l'eventuale cartella radice unica, richiede `SKILL.md` e **sanifica ogni percorso**
   (rifiuta `..`, percorsi assoluti, `.git`, strutture troppo profonde), con limiti su dimensione

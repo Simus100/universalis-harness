@@ -14,7 +14,7 @@
 import http from "node:http";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readFileSync, writeFileSync, createReadStream, existsSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, createReadStream, existsSync, readdirSync, statSync, watch as watchFs } from "node:fs";
 import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join, resolve, relative, basename, extname, sep } from "node:path";
@@ -1032,6 +1032,12 @@ await fs.mkdir(SESSION_DIR, { recursive: true }).catch(() => {});
 const SUBAGENT_TOOL_NAMES = new Set(["subagent", "bg_wait"]);
 
 let session = null;
+// Stato del watcher sulle skill (funzioni in "skill modificate da fuori"): dichiarato qui
+// perché gli eventi di sessione possono arrivare prima del resto dell'inizializzazione.
+let skillsWatchTimer = null;
+let skillsReloadPending = false;
+let skillsReloading = false;
+const skillsWatchers = [];
 /** Stima post-compaction: pi non conosce il nuovo conteggio finche' non arriva
  *  una risposta successiva alla compaction, quindi lo teniamo noi finche' dura. */
 let compactEstimate = null;
@@ -2159,6 +2165,11 @@ function handleSessionEvent(event) {
   }
   if (event.type === "agent_end") {
     turnActive = false;
+    // Skill cambiate mentre l'agente lavorava: la ricarica era stata rinviata.
+    if (skillsReloadPending) {
+      skillsReloadPending = false;
+      scheduleSkillsReload("cambio durante la risposta");
+    }
     // Rete di sicurezza: se il turno è finito (per errore del provider) mentre una domanda era
     // in attesa, la si chiude. Non può accadere a turno normale: il tool blocca il turno.
     askBroker.cancelAll("turno concluso senza risposta");
@@ -2834,6 +2845,90 @@ async function reloadSkills() {
   }
   broadcast("skills", skillsPayload());
   broadcast("state", getState());
+}
+
+// ---- skill modificate da fuori -------------------------------------------
+// Le skill si leggono UNA volta all'avvio (resourceLoader.reload() più sopra) e restano in
+// cache: una skill creata da shell, da git o da un'altra sessione restava invisibile nella
+// scheda Skill e fuori dal system prompt fino al riavvio del servizio o al cambio di chat.
+// `reloadSkills()` (dall'editor) non basta: rifonde i percorsi già noti e non riscansiona la
+// cartella, quindi non vede una skill NUOVA. Qui un watcher su skills/ applica la ricarica
+// completa, con debounce e mai a metà di una risposta: `resourceLoader.reload()` azzera la
+// cache delle estensioni, e applicarlo mentre l'agente lavora invaliderebbe i tool della
+// sessione viva.
+const SKILLS_WATCH_MS = Math.max(150, Number(process.env.DASH_SKILLS_WATCH_MS) || 700);
+
+/** Ricarica completa delle skill: la cartella viene riletta, non rifusa. */
+async function reloadSkillsFromDisk(motivo = "cambio su disco") {
+  if (skillsReloading) return;
+  if (turnActive) {
+    // Mai a metà risposta: si applica appena il turno finisce (vedi agent_end).
+    skillsReloadPending = true;
+    return;
+  }
+  skillsReloading = true;
+  try {
+    await refreshExtensionRuntime(); // resourceLoader.reload(): rilegge anche skills/
+    if (session?.isIdle) {
+      await session.reload();
+      ALL_TOOLS = allToolsOf(session);
+      hasSubagentExt = ALL_TOOLS.some((t) => SUBAGENT_TOOL_NAMES.has(t.name));
+      applyToolGate();
+    }
+    broadcast("skills", skillsPayload());
+    const nomi = resourceLoader.getSkills().skills.map((s) => s.name);
+    console.log(`[skills] ricaricate (${motivo}): ${nomi.join(", ") || "(nessuna)"}`);
+  } catch (e) {
+    console.error("[skills] ricarica fallita:", e?.message || e);
+  } finally {
+    skillsReloading = false;
+  }
+}
+
+/** Accumula i cambiamenti ravvicinati (un salvataggio genera più eventi) in una sola ricarica. */
+function scheduleSkillsReload(motivo = "cambio su disco") {
+  if (skillsWatchTimer) clearTimeout(skillsWatchTimer);
+  skillsWatchTimer = setTimeout(() => {
+    skillsWatchTimer = null;
+    void reloadSkillsFromDisk(motivo);
+  }, SKILLS_WATCH_MS);
+  skillsWatchTimer.unref?.();
+}
+
+/** Osserva skills/ e ricarica quando qualcosa cambia (formato di ogni skill: cartella + SKILL.md). */
+function startSkillsWatcher() {
+  const onError = (e) => console.error("[skills] watcher:", e?.message || e);
+  try {
+    fs.mkdirSync(SKILLS_DIR, { recursive: true });
+  } catch {
+    /* verrà creata al primo salvataggio */
+  }
+  // Nota: `fs` qui è node:fs/promises, il cui watch() non è un EventEmitter (non ha .on):
+  // serve watch() da node:fs, importato come watchFs.
+  const osserva = (dir, options) => {
+    try {
+      const w = watchFs(dir, options, () => scheduleSkillsReload());
+      w.on("error", onError);
+      skillsWatchers.push(w);
+      return true;
+    } catch (e) {
+      console.error(`[skills] watcher non attivabile su ${dir}:`, e?.message || e);
+      return false;
+    }
+  };
+  // Ricorsivo dove la piattaforma lo supporta (Linux da Node 20); altrimenti radice +
+  // sottocartelle di primo livello, che bastano per creare/rimuovere una skill.
+  if (!osserva(SKILLS_DIR, { recursive: true, persistent: false })) {
+    osserva(SKILLS_DIR, { persistent: false });
+    try {
+      for (const d of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
+        if (d.isDirectory()) osserva(join(SKILLS_DIR, d.name), { persistent: false });
+      }
+    } catch {
+      /* niente */
+    }
+  }
+  console.log(`[skills] watcher attivo su ${SKILLS_DIR}`);
 }
 
 // ---- ricerca, export, file statici --------------------------------------
@@ -4235,6 +4330,9 @@ const server = http.createServer(async (req, res) => {
     errorResponse(res, err);
   }
 });
+
+// Skill modificate da fuori (shell, git, un'altra sessione): watcher sulla cartella.
+startSkillsWatcher();
 
 server.listen(PORT, HOST, () => {
   console.log(`Universalis Harness: http://${HOST}:${PORT}`);
