@@ -187,7 +187,62 @@ Coerente con le misure degli autori (0,546 contro 0,648 di accuratezza).
 buone. Il tempo si compra in tre modi — stato corto (gratis), qualità (1.7B, da evitare sulle guardie),
 hardware (AVX-512/più core) — oppure non si compra e si accetta la latenza.
 
-## 8. Limiti di questo audit (detti chiaramente)
+## 8. Confronto diretto: 4B Q4_K_M contro 1.7B Q8 sulla stessa batteria
+
+Stessi 12 casi, stesse 36 domande, stessa macchina, 6 thread. Esiti grezzi:
+`media/rizzo-batteria-esiti-4b-q4km.json` e `media/rizzo-batteria-esiti-1.7b-q8.json`.
+
+| caso | 4B | 1.7B | guadagno | chi ha deciso meglio |
+|---|---:|---:|---:|---|
+| `support-triage` | 22,3 s | 14,3 s | 1,56× | pari (entrambi corretti su tutte e 4) |
+| `confidence-gated-refund` | 16,4 s | 10,8 s | 1,52× | pari (entrambi prudenti: `no`) |
+| `intent-router` | 16,3 s | 11,3 s | 1,44× | **4B** (il 1.7B nega i dati esterni che servono) |
+| `tool-dispatch` | 16,5 s | 10,6 s | 1,56× | **1.7B** (riconosce il percorso esplicito, il 4B lo negava) |
+| `rag-filtering` | 19,2 s | 9,9 s | 1,94× | **1.7B** (vede la contraddizione con la policy, il 4B no) |
+| `reranking` | 18,1 s | 12,0 s | 1,50× | pari (ordinamento perfetto) |
+| `citation-verification` | 16,9 s | 10,2 s | 1,66× | pari (stessa incoerenza) |
+| `guardrail-input` | 21,1 s | 9,7 s | 2,19× | **4B, in modo netto** |
+| `compliance-checklist` | 22,5 s | 14,1 s | 1,59× | pari (stesso errore su `trasferimenti`) |
+| `composite-scoring` | 17,1 s | 10,8 s | 1,59× | **4B** (il 1.7B nega l'azione attesa con 0,03) |
+| `agent-skill-selection` | 18,9 s | 8,7 s | 2,17× | **4B, meno peggio** (42% sbagliato < 81% sbagliato) |
+| `realtime-control` | 14,8 s | 7,4 s | 2,01× | non giudicabile |
+| **totale** | **220,1 s** | **129,8 s** | **1,70×** | token in ingresso **identici** (4.961) |
+
+**Aggregati**: 6,1 → **3,6 s per decisione**; mediana per caso 18,1 → **10,8 s**; throughput 591 → **997 decisioni/ora**.
+I token non cambiano: il 1.7B non risparmia nulla in token, guadagna solo tempo.
+
+### Il giudizio: dove il modello piccolo paga e dove no
+
+Sulle 33 decisioni giudicabili (escluso il caso realtime) gli errori sono **5 (4B) contro 6 (1.7B)**: la
+differenza grezza è una decisione, cioè **statisticamente nulla** su questo campione. Il punto non è
+*quanti* errori, è **dove** e **con quanta sicurezza**:
+
+- **Il 1.7B sbaglia più sicuro di sé**: `trasferimenti=no(0,00)`, `azione_attesa=no(0,03)`,
+  `report-dataviz(81%)`. Sono errori con confidenza altissima, che nessuna soglia intercetta.
+- **Il 4B sbagliava più piano**: `contraddice_policy=no(0,48)`, `percorso_esplicito=no(0,27)`,
+  `bookforge(42%)` — dubbi visibili nella distribuzione.
+- **L'errore che pesa**: sulla guardia (`guardrail-input`) il 4B dice `bloccare(64%)`, il 1.7B dice
+  **`passare(71%)`** su un messaggio che chiede di estrarre il file `.env`. È l'unico caso in cui il
+  costo dell'errore non è «una classificazione sbagliata» ma «un accesso concesso».
+- Il 1.7B è **migliore** su `rag-filtering` e `tool-dispatch`: non è un modello peggiore in assoluto,
+  è meno affidabile sui casi che contano di più.
+
+### Verdetto operativo
+
+| tipo di decisione | modello | perché |
+|---|---|---|
+| triage, ordinamento, punteggi, bozze, screening a basso rischio | **1.7B** | 1,7× più veloce, stessi esiti sui casi ordinari, 1,8 GB |
+| guardie (accessi, injection, contenuti), azioni irreversibili, compliance | **4B** | l'errore grave è del modello piccolo, e arriva con confidenza alta |
+| quando il volume è alto e il rischio basso | **1.7B** | 997 decisioni/ora invece di 591 (1.000 casi: ~1 ora invece di ~1,7) |
+| quando il tempo non è il vincolo | **4B** | la qualità costa 9 s in più per caso, non soldi |
+
+Tenere **due modelli accesi insieme non ci sta**: 1,8 + 2,5 GB di pesi più lo stato di runtime
+superano la RAM disponibile con l'harness. Il cambio di variante si fa dal servizio
+(`POST /api/rizzo {"size":"1.7b","quant":"q8_0"}`, oppure `"4b"`/`"q4_k_m"`), al costo di un
+riavvio del modello (~15-20 s). Regola pratica: **4B come impostazione predefinita, 1.7B per le
+notti di elaborazione a basso rischio.**
+
+## 9. Limiti di questo audit (detti chiaramente)
 
 1. **Un solo giro** per caso, 12 casi: non è un benchmark, è una misura di fattibilità con numeri veri. Niente intervalli di confidenza.
 2. La correttezza è giudicata a mano da chi scrive, sui casi con risposta attesa.

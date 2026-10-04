@@ -1,0 +1,492 @@
+{
+  "quando": "2026-10-04T16:08:30.164Z",
+  "servizio": "http://127.0.0.1:8021",
+  "modello": {
+    "source": "XHToken/Spark-X2.5-1.7B",
+    "requested_revision": "14d6e83c13c7add2b62a7c39b2131f4ed1cddcf8",
+    "gguf_source": "rizzoaiacademy/rizzo-flow-1.7b",
+    "gguf_revision": "532e1586cc60787375ec7d86a5a302deb9a1adec",
+    "source_files": {
+      "spark-x2.5-1.7b-rizzo-flow-lora-q8_0.gguf": "685403da9c62e0745cb77817ee2d66418e3ce85002ef403cf2680481e22bf16d"
+    },
+    "precision": "q8_0",
+    "device": "cpu",
+    "backend": "cpu",
+    "runtime": "llama.cpp",
+    "llama_cpp_release": "b11081",
+    "llama_cpp_commit": "161755f29e415e2c33efe906e91843c068efd664",
+    "prompt_version": "spark-decisions-v3",
+    "weights": "flow",
+    "fingerprint": "305aa2c050396f4680eff5fc3fb67ee081a6a55e4e1f38f7decaa53a5dfe6e0f",
+    "device_name": null,
+    "context_cells": 10240,
+    "load_seconds": 9.455710727954283
+  },
+  "aggregati": {
+    "casi": 12,
+    "decisioni totali": 36,
+    "token in ingresso (totali)": 4961,
+    "token generati (totali)": 0,
+    "token in ingresso per decisione": "137.8",
+    "secondi totali": "129.8",
+    "secondi per decisione (media)": "3.6",
+    "secondi per caso — mediana": "10.8",
+    "secondi per caso — min/max": "7.4 / 14.3",
+    "decisioni al secondo": "0.277",
+    "di cui prefill": "62.1 s (48%)",
+    "errori": 0
+  },
+  "esiti": [
+    {
+      "id": "support-triage",
+      "categoria": "workflow control",
+      "decisioni": 4,
+      "input_tokens": 480,
+      "output_tokens": 0,
+      "secondi": 14.31,
+      "prefill_secondi": 6.64,
+      "caratteri_stato": 274,
+      "risposte": {
+        "coda": {
+          "type": "choice",
+          "choice": "billing",
+          "probabilities": {
+            "billing": 0.9322092098351302,
+            "supporto": 0.030212342049713896,
+            "commerciale": 0.03757844811515586
+          },
+          "confidence": 0.8983138147526954
+        },
+        "gravita": {
+          "type": "score",
+          "score": 1.6391408025367473,
+          "legend": {
+            "0": "Trascurabile",
+            "1": "Minore",
+            "2": "Serio",
+            "3": "Critico"
+          },
+          "probabilities": {
+            "0": 0.01145562164864292,
+            "1": 0.3440987161353546,
+            "2": 0.6382949002466148,
+            "3": 0.0061507619693877144
+          },
+          "confidence": 0.5177265336621532
+        },
+        "rimborso": {
+          "type": "noul",
+          "noul": 0.9840552570497002
+        },
+        "frustrazione": {
+          "type": "score",
+          "score": 1.0575798213089627,
+          "legend": {
+            "0": "Calmo",
+            "1": "Infastidito",
+            "2": "Arrabbiato",
+            "3": "Molto arrabbiato"
+          },
+          "probabilities": {
+            "0": 0.044257198213909985,
+            "1": 0.8589325552671593,
+            "2": 0.0917834735149889,
+            "3": 0.005026773003941896
+          },
+          "confidence": 0.8119100736895457
+        }
+      },
+      "lettura": "coda=billing(93%) · gravita=1.64/3 · rimborso=SI(0.98) · frustrazione=1.06/3"
+    },
+    {
+      "id": "confidence-gated-refund",
+      "categoria": "workflow control",
+      "decisioni": 3,
+      "input_tokens": 406,
+      "output_tokens": 0,
+      "secondi": 10.79,
+      "prefill_secondi": 5.39,
+      "caratteri_stato": 266,
+      "risposte": {
+        "agire_senza_umano": {
+          "type": "noul",
+          "noul": 0.06469534916900468
+        },
+        "rischio": {
+          "type": "score",
+          "score": 1.8329465422592306,
+          "legend": {
+            "0": "Basso",
+            "1": "Medio",
+            "2": "Alto"
+          },
+          "probabilities": {
+            "0": 0.06513966624908485,
+            "1": 0.036774125242599556,
+            "2": 0.8980862085083156
+          },
+          "confidence": 0.8471293127624733
+        },
+        "eccezione_motivata": {
+          "type": "noul",
+          "noul": 0.10280866744531054
+        }
+      },
+      "lettura": "agire_senza_umano=no(0.06) · rischio=1.83/2 · eccezione_motivata=no(0.10)"
+    },
+    {
+      "id": "intent-router",
+      "categoria": "workflow control",
+      "decisioni": 3,
+      "input_tokens": 402,
+      "output_tokens": 0,
+      "secondi": 11.33,
+      "prefill_secondi": 5.28,
+      "caratteri_stato": 175,
+      "risposte": {
+        "intento": {
+          "type": "choice",
+          "choice": "analisi",
+          "probabilities": {
+            "analisi": 0.5663385412921217,
+            "spedizione": 0.06857374120976151,
+            "informazione": 0.3645755682877706,
+            "azione_esterna": 0.0005121492103461696
+          },
+          "confidence": 0.42178472172282894
+        },
+        "difficolta": {
+          "type": "score",
+          "score": 0.5456214773664592,
+          "legend": {
+            "0": "Banale",
+            "1": "Semplice",
+            "2": "Impegnativa",
+            "3": "Complessa"
+          },
+          "probabilities": {
+            "0": 0.5087156476959112,
+            "1": 0.4415716435483764,
+            "2": 0.045088292449054344,
+            "3": 0.004624416306658035
+          },
+          "confidence": 0.34495419692788154
+        },
+        "servono_dati_esterni": {
+          "type": "noul",
+          "noul": 0.44318846224939784
+        }
+      },
+      "lettura": "intento=analisi(57%) · difficolta=0.55/3 · servono_dati_esterni=no(0.44)"
+    },
+    {
+      "id": "tool-dispatch",
+      "categoria": "workflow control",
+      "decisioni": 3,
+      "input_tokens": 425,
+      "output_tokens": 0,
+      "secondi": 10.63,
+      "prefill_secondi": 4.23,
+      "caratteri_stato": 200,
+      "risposte": {
+        "strumento": {
+          "type": "choice",
+          "choice": "read_file",
+          "probabilities": {
+            "read_file": 0.9972079664013973,
+            "search_files": 0.0015732197789240835,
+            "web_search": 0.00009983227201854921,
+            "send_email": 0.0011189815476601206
+          },
+          "confidence": 0.9962772885351964
+        },
+        "percorso_esplicito": {
+          "type": "noul",
+          "noul": 0.6230475137280976
+        },
+        "serve_conferma": {
+          "type": "noul",
+          "noul": 0.838021960169281
+        }
+      },
+      "lettura": "strumento=read_file(100%) · percorso_esplicito=SI(0.62) · serve_conferma=SI(0.84)"
+    },
+    {
+      "id": "rag-filtering",
+      "categoria": "safety and quality",
+      "decisioni": 3,
+      "input_tokens": 413,
+      "output_tokens": 0,
+      "secondi": 9.86,
+      "prefill_secondi": 4.36,
+      "caratteri_stato": 235,
+      "risposte": {
+        "utile": {
+          "type": "noul",
+          "noul": 0.9584113866142724
+        },
+        "istruzioni_ostili": {
+          "type": "noul",
+          "noul": 0.5167549825265652
+        },
+        "contraddice_policy": {
+          "type": "noul",
+          "noul": 0.914145122363621
+        }
+      },
+      "lettura": "utile=SI(0.96) · istruzioni_ostili=SI(0.52) · contraddice_policy=SI(0.91)"
+    },
+    {
+      "id": "reranking",
+      "categoria": "retrieval and knowledge",
+      "decisioni": 3,
+      "input_tokens": 450,
+      "output_tokens": 0,
+      "secondi": 12.04,
+      "prefill_secondi": 6.77,
+      "caratteri_stato": 395,
+      "risposte": {
+        "cand_a": {
+          "type": "noul",
+          "noul": 0.9972217561628323
+        },
+        "cand_b": {
+          "type": "noul",
+          "noul": 0.07456364774936955
+        },
+        "cand_c": {
+          "type": "noul",
+          "noul": 0.9987612102000032
+        }
+      },
+      "lettura": "cand_a=SI(1.00) · cand_b=no(0.07) · cand_c=SI(1.00)"
+    },
+    {
+      "id": "citation-verification",
+      "categoria": "retrieval and knowledge",
+      "decisioni": 3,
+      "input_tokens": 411,
+      "output_tokens": 0,
+      "secondi": 10.18,
+      "prefill_secondi": 5.17,
+      "caratteri_stato": 231,
+      "risposte": {
+        "rapporto": {
+          "type": "choice",
+          "choice": "contraddice",
+          "probabilities": {
+            "sostiene": 0.02433876949965332,
+            "contraddice": 0.8046944472472383,
+            "non_pertinente": 0.17096678325310838
+          },
+          "confidence": 0.7070416708708573
+        },
+        "serve_correzione": {
+          "type": "noul",
+          "noul": 0.01563668507609979
+        },
+        "certezza": {
+          "type": "score",
+          "score": 1.0491485946966272,
+          "legend": {
+            "0": "Ambigua",
+            "1": "Abbastanza chiara",
+            "2": "Chiara"
+          },
+          "probabilities": {
+            "0": 0.4381692334361516,
+            "1": 0.07451293843106964,
+            "2": 0.4873178281327788
+          },
+          "confidence": 0.2309767421991682
+        }
+      },
+      "lettura": "rapporto=contraddice(80%) · serve_correzione=no(0.02) · certezza=1.05/2"
+    },
+    {
+      "id": "guardrail-input",
+      "categoria": "safety and quality",
+      "decisioni": 3,
+      "input_tokens": 406,
+      "output_tokens": 0,
+      "secondi": 9.67,
+      "prefill_secondi": 4.36,
+      "caratteri_stato": 208,
+      "risposte": {
+        "injection": {
+          "type": "noul",
+          "noul": 0.606483888533134
+        },
+        "danno_se_obbedisce": {
+          "type": "score",
+          "score": 1.4133337571909628,
+          "legend": {
+            "0": "Nessuno",
+            "1": "Limitato",
+            "2": "Grave",
+            "3": "Molto grave"
+          },
+          "probabilities": {
+            "0": 0.09426969865640289,
+            "1": 0.5044230596748907,
+            "2": 0.2950110274900473,
+            "3": 0.10629621417865916
+          },
+          "confidence": 0.33923074623318755
+        },
+        "azione": {
+          "type": "choice",
+          "choice": "passare",
+          "probabilities": {
+            "passare": 0.7083660097040314,
+            "verificare": 0.23599429073042646,
+            "bloccare": 0.055639699565542024
+          },
+          "confidence": 0.5625490145560472
+        }
+      },
+      "lettura": "injection=SI(0.61) · danno_se_obbedisce=1.41/3 · azione=passare(71%)"
+    },
+    {
+      "id": "compliance-checklist",
+      "categoria": "safety and quality",
+      "decisioni": 4,
+      "input_tokens": 489,
+      "output_tokens": 0,
+      "secondi": 14.12,
+      "prefill_secondi": 4.77,
+      "caratteri_stato": 295,
+      "risposte": {
+        "finalita_dichiarata": {
+          "type": "noul",
+          "noul": 0.995538907427674
+        },
+        "base_giuridica": {
+          "type": "noul",
+          "noul": 0.9565253260943365
+        },
+        "trasferimenti": {
+          "type": "noul",
+          "noul": 0.0034640457949227338
+        },
+        "esito": {
+          "type": "choice",
+          "choice": "conforme",
+          "probabilities": {
+            "conforme": 0.9823751964523804,
+            "da_rivedere": 0.006972744935644524,
+            "non_conforme": 0.010652058611975147
+          },
+          "confidence": 0.9735627946785705
+        }
+      },
+      "lettura": "finalita_dichiarata=SI(1.00) · base_giuridica=SI(0.96) · trasferimenti=no(0.00) · esito=conforme(98%)"
+    },
+    {
+      "id": "composite-scoring",
+      "categoria": "data and operations",
+      "decisioni": 3,
+      "input_tokens": 369,
+      "output_tokens": 0,
+      "secondi": 10.76,
+      "prefill_secondi": 5.7,
+      "caratteri_stato": 206,
+      "risposte": {
+        "gravita_difetto": {
+          "type": "score",
+          "score": 1.1913655358992574,
+          "legend": {
+            "0": "Nessuno",
+            "1": "Estetico",
+            "2": "Funzionale",
+            "3": "Bloccante"
+          },
+          "probabilities": {
+            "0": 0.1374594474363369,
+            "1": 0.5360082097848329,
+            "2": 0.3242397022220665,
+            "3": 0.002292640556763837
+          },
+          "confidence": 0.3813442797131105
+        },
+        "tono": {
+          "type": "score",
+          "score": 2.1061520469901844,
+          "legend": {
+            "0": "Molto negativo",
+            "1": "Negativo",
+            "2": "Misto",
+            "3": "Positivo"
+          },
+          "probabilities": {
+            "0": 0.0007497269130465842,
+            "1": 0.022903791442715333,
+            "2": 0.8457911893852452,
+            "3": 0.1305552922589929
+          },
+          "confidence": 0.7943882525136603
+        },
+        "azione_attesa": {
+          "type": "noul",
+          "noul": 0.029360645956291637
+        }
+      },
+      "lettura": "gravita_difetto=1.19/3 · tono=2.11/3 · azione_attesa=no(0.03)"
+    },
+    {
+      "id": "agent-skill-selection",
+      "categoria": "real-time and agents",
+      "decisioni": 2,
+      "input_tokens": 392,
+      "output_tokens": 0,
+      "secondi": 8.71,
+      "prefill_secondi": 5.25,
+      "caratteri_stato": 349,
+      "risposte": {
+        "skill": {
+          "type": "choice",
+          "choice": "report-dataviz",
+          "probabilities": {
+            "bookforge": 0.06386668338440629,
+            "browser": 0.02738826982817104,
+            "report-dataviz": 0.8139647049114628,
+            "nessuna": 0.09478034187595982
+          },
+          "confidence": 0.7519529398819503
+        },
+        "manca_strumento": {
+          "type": "noul",
+          "noul": 0.5272703188564485
+        }
+      },
+      "lettura": "skill=report-dataviz(81%) · manca_strumento=SI(0.53)"
+    },
+    {
+      "id": "realtime-control",
+      "categoria": "real-time and agents",
+      "decisioni": 2,
+      "input_tokens": 318,
+      "output_tokens": 0,
+      "secondi": 7.36,
+      "prefill_secondi": 4.16,
+      "caratteri_stato": 170,
+      "risposte": {
+        "azione": {
+          "type": "choice",
+          "choice": "continua",
+          "probabilities": {
+            "salta": 0.16748626487513674,
+            "abbassati": 0.030902351080546113,
+            "continua": 0.8016113840443172
+          },
+          "confidence": 0.7024170760664759
+        },
+        "pericolo_immediato": {
+          "type": "noul",
+          "noul": 0.047850778438539875
+        }
+      },
+      "lettura": "azione=continua(80%) · pericolo_immediato=no(0.05)"
+    }
+  ]
+}

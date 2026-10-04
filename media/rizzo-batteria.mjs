@@ -20,6 +20,9 @@ const QUI = dirname(fileURLToPath(import.meta.url));
 const URL_SERVIZIO = process.env.RIZZO_URL || "http://127.0.0.1:8017";
 const args = process.argv.slice(2);
 const comeJson = args.includes("--json");
+// --out FILE: dove salvare gli esiti (serve per confrontare due modelli senza sovrascriversi)
+const iOut = args.indexOf("--out");
+const fileOut = iOut >= 0 && args[iOut + 1] ? args[iOut + 1] : null;
 const filtro = (() => {
   const i = args.indexOf("--solo");
   return i >= 0 && args[i + 1] ? new Set(args[i + 1].split(",").map((s) => s.trim())) : null;
@@ -152,7 +155,7 @@ const uscita = {
   aggregati: Object.fromEntries(righe),
   esiti,
 };
-const file = join(QUI, "rizzo-batteria-esiti.json");
+const file = fileOut ? (fileOut.startsWith("/") ? fileOut : join(QUI, fileOut)) : join(QUI, "rizzo-batteria-esiti.json");
 writeFileSync(file, JSON.stringify(uscita, null, 2));
 console.log(`\nesiti salvati in ${file}\n`);
 if (comeJson) console.log(JSON.stringify(uscita, null, 2));
