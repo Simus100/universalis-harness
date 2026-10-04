@@ -1353,6 +1353,12 @@ footer {
           <button id="compactBtn" class="pill" type="button" title="Compatta il contesto: i messaggi vecchi vengono sostituiti da un riassunto, i recenti restano. La cronologia completa rimane nel file della chat."><span class="led"></span>compatta</button>
         </div>
         <div class="feat-sep"></div>
+        <div class="feat-h">servizi locali — si accendono a richiesta</div>
+        <div class="feat-row">
+          <button id="rizzoToggle" class="pill" type="button" title="Rizzo Flow: decisore tipizzato locale (domande sì/no, scelta, punteggio → probabilità, senza generare testo). Acceso occupa ~5,7 GB di RAM e la CPU; spento libera tutto."><span class="led"></span>rizzo</button>
+          <span class="feat-lbl" id="rizzoInfo">—</span>
+        </div>
+        <div class="feat-sep"></div>
         <div class="feat-h">risorse — goal, pianificazioni e skill</div>
         <div class="feat-row">
           <button id="featGoals" class="pill" type="button" style="flex:1;justify-content:center" title="Goal salvati: obiettivo + catena di passaggi + checklist"><span class="led"></span>🎯 goal<span class="feat-count" id="featGoalCount"></span></button>
@@ -1671,6 +1677,10 @@ let lastContext = null, compacting = false;
 // costo dell'ultimo turno: differenza fra il totale a inizio turno e quello a fine turno
 let turnoBaseCosto = null, ultimoTurnoCosto = 0;
 let subagentsAvailable = false, subagentsEnabled = false;
+// Rizzo Flow: la feature si accende dal menu «features» e NON sta accesa sempre (un modello
+// da 4B su CPU costa ~5,7 GB di RAM e qualche secondo a richiesta). Questo flag serve solo
+// alla UI: il gate vero dei tool sta sul server (applyToolGate).
+let rizzoReady = false;
 
 /**
  * Numeri compatti e leggibili per la barra di stato.
@@ -1790,6 +1800,7 @@ function renderStats(st) {
   }
   renderSubagent(st);
   renderAskToggle(st);
+  renderRizzo(st);
   renderFeatCount();
 }
 
@@ -1832,10 +1843,73 @@ function renderAskToggle(st) {
     : "Domande disattivate all'avvio del servizio (DASH_ASK=off)";
 }
 
+/**
+ * Riga «rizzo» del menu features: acceso o spento, quanto occupa, su che porta e con che
+ * modello. Il testo resta breve (il pannello è largo ~300 px) e non promette numeri che non
+ * vengono dallo stato reale del servizio.
+ */
+function renderRizzo(st) {
+  const r = (st && st.rizzo) || {};
+  const b = $("rizzoToggle");
+  const info = $("rizzoInfo");
+  if (!b) return;
+  // disponibile = feature attiva nell'harness E installazione completa (venv + pesi)
+  const avail = r.available !== false && r.installed !== false;
+  const on = avail && !!r.enabled;
+  const ready = !!(on && r.process && r.process.ready);
+  rizzoReady = ready;
+  b.dataset.avail = avail ? "1" : "0";
+  setPill(b, ready, ready ? "rizzo ON" : on ? "rizzo avvio…" : "rizzo");
+  if (info) {
+    if (r.available === false) info.textContent = "disattivata all'avvio";
+    else if (r.installed === false) info.textContent = "non installata";
+    else if (!on) info.textContent = "spento · ~5,7 GB quando acceso";
+    else if (!ready) info.textContent = "caricamento del modello…";
+    else {
+      const gb = r.process && r.process.rssMb ? ` · ${(r.process.rssMb / 1024).toFixed(1)} GB` : "";
+      info.textContent = `${r.size} ${r.quant} · :${r.port}${gb}`;
+    }
+  }
+  b.title =
+    r.available === false
+      ? "Rizzo Flow è disattivata all'avvio del servizio (DASH_RIZZO=off)"
+      : r.installed === false
+        ? `Rizzo Flow non è installata: manca ${(r.missing || []).join(", ")}`
+        : on
+          ? "Rizzo Flow acceso: clicca per fermarlo e liberare la RAM"
+          : "Rizzo Flow spento: clicca per accendere il decisore locale (~5,7 GB di RAM, qualche secondo a richiesta)";
+}
+
 async function toggleAsk() {
   const a = (lastState || {}).ask || {};
   const on = !(a.available !== false && a.enabled !== false);
   await postJSON("/api/ask", { enabled: on });
+}
+
+/**
+ * Interruttore di Rizzo Flow: acceso = il processo parte, il modello carica e i tool
+ * entrano nella lista inviata all'agente; spento = processo terminato e RAM liberata.
+ * L'avvio dura decine di secondi, quindi la UI si mette subito in «caricamento…» e lascia
+ * che sia il ciclo di stato del server (ogni 5 s) a dire quando è pronto.
+ */
+async function toggleRizzo() {
+  const r = (lastState || {}).rizzo || {};
+  const on = !r.enabled;
+  const btn = $("rizzoToggle");
+  const info = $("rizzoInfo");
+  if (btn) btn.classList.add("on");
+  if (info) info.textContent = on ? "avvio e caricamento del modello…" : "arresto…";
+  try {
+    await postJSON("/api/rizzo", { enabled: on });
+  } finally {
+    // lo stato definitivo arriva dal server (evento state o ciclo di aggiornamento)
+    void fetch("/api/rizzo")
+      .then((r2) => (r2.ok ? r2.json() : null))
+      .then((s) => {
+        if (s) renderRizzo({ rizzo: s });
+      })
+      .catch(() => {});
+  }
 }
 
 async function postJSON(url, payload) {
@@ -3649,6 +3723,7 @@ input.addEventListener("input", cmdOnInput);
 $("subagentToggle").onclick = toggleSubagents;
 $("subagentMax").addEventListener("change", (e) => setSubagentMax(e.target.value));
 $("askToggle").addEventListener("click", () => toggleAsk());
+$("rizzoToggle")?.addEventListener("click", () => toggleRizzo());
 $("modelSel").onchange = (e) => postJSON("/api/model", { id: e.target.value });
 $("thinkSel").onchange = (e) => postJSON("/api/thinking", { level: e.target.value });
 
@@ -4921,7 +4996,7 @@ async function loadAgenda() {
 function renderFeatCount() {
   const el = $("featCount");
   if (!el) return;
-  const on = (subagentsEnabled ? 1 : 0) + (compacting ? 1 : 0);
+  const on = (subagentsEnabled ? 1 : 0) + (compacting ? 1 : 0) + (rizzoReady ? 1 : 0);
   el.textContent = on ? " " + on : "";
   el.title = on ? on + " funzioni attive" : "";
 }

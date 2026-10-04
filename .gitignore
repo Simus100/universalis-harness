@@ -23,6 +23,9 @@ backup_export/
 media/ask-log.jsonl
 media/ask-prefs.json
 media/browser-prefs.json
+# Rizzo Flow: preferenze e pid della feature locale (cambiano a ogni uso)
+media/rizzo-prefs.json
+media/rizzo.pid
 media/schedules.json
 media/goals.json
 media/.ask-*

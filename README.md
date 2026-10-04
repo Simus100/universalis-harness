@@ -31,6 +31,13 @@ girare prompt o obiettivi in autonomia, con esito, durata e log consultabili.
 disegno vero nel punto esatto del messaggio — con vista ingrandita, copia e download — dopo il
 passaggio in un sanitizzatore che rifiuta script, risorse esterne e riferimenti di rete.
 
+**Un decisore locale, acceso a richiesta.** Dove serve un giudizio ripetibile con una probabilità —
+instradare una richiesta, dire se un input è ostile, scegliere fra azioni, dare una priorità —
+l'harness può accendere dal menu *features* un decisore tipizzato locale (Rizzo Flow, 4B su CPU):
+risponde a domande sì/no, scelta e punteggio **senza generare un token** e senza mandare nulla
+fuori. Si accende quando serve e si spegne quando non serve, perché costa ~5,7 GB di RAM; l'agente
+può proporne l'uso e chiederne il consenso, mai deciderlo da solo.
+
 **Skill riutilizzabili** nel formato aperto *Agent Skills* (`SKILL.md`): si creano, si importano da
 `.zip` e si usano come procedure stabili, con il modello che le legge solo quando il compito
 corrisponde.

@@ -39,6 +39,8 @@ import { extractZip, safeEntryPath } from "./media/unzip.mjs";
 import { zipDirectory } from "./media/zip-write.mjs";
 import { AskError, createAskBroker, normalizeQuestions, sanitizeText } from "./media/ask-broker.mjs";
 import { createAskExtension } from "./media/ask-tool.mjs";
+import { createRizzoExtension, normalizeQuestions as normalizeRizzoQuestions } from "./media/rizzo-tool.mjs";
+import { createRizzoService } from "./media/rizzo-service.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -922,7 +924,20 @@ const SYSTEM_MEDIA_NOTE =
   `\`visual-representation\`: leggila prima di disegnare. Per tutto il resto basta una breve ` +
   `spiegazione testuale: non aggiungere immagini decorative e non inventare dati, proporzioni ` +
   `o relazioni (se lo schema non è in scala, dichiaralo). \`ascii\` a parte, i blocchi di codice ` +
-  `di altro linguaggio restano invariati.`;
+  `di altro linguaggio restano invariati.` +
+  `\n\n## Decisore tipizzato locale (feature «rizzo», skill \`rizzo-flow\`)\n` +
+  `L'harness può accendere un decisore locale (Rizzo Flow) che risponde a domande tipizzate ` +
+  `(sì/no, scelta, punteggio) con **probabilità**, senza generare un solo token: serve per i ` +
+  `giudizi ripetibili — instradare, scegliere fra azioni, dare un punteggio su una rubrica — ` +
+  `non per spiegare o scrivere. Si accende dal menu «features» della dashboard (interruttore ` +
+  `\`rizzo\`) e occupa ~5,7 GB di RAM e la CPU per ~12 s a richiesta su uno stato breve: per ` +
+  `questo non è sempre accesa.\n` +
+  `Quando è accesa hai i tool \`rizzo_decide\` (la decisione) e \`rizzo_service\` (accendi, ` +
+  `spegni, ispeziona): leggi la skill \`rizzo-flow\` prima di usarli. Quando è spenta i due ` +
+  `tool NON sono nella tua lista, e non è un guasto: la risorsa la accende l'utente. Se una ` +
+  `decisione tipizzata servirebbe davvero, proponi l'attivazione con \`ask_user\` (una riga ` +
+  `sul costo in RAM) e, se rifiuta, procedi con il tuo giudizio dichiarando che è stato senza ` +
+  `il modello locale.`;
 
 // Tool browser (estensione inline definita in media/browser-tool.mjs).
 // Invoca SEMPRE agent-browser come utente dedicato: come root la CLI partirebbe
@@ -951,6 +966,90 @@ const askBroker = createAskBroker({
 
 const ASK_EXT = ASK_ENABLED ? createAskExtension({ broker: askBroker, log: (m) => console.log(m) }) : null;
 if (!ASK_ENABLED) console.log("[ask] tool «ask_user» NON registrato (DASH_ASK=off)");
+
+// ---- Rizzo Flow: decisore tipizzato locale, acceso a richiesta -----------
+// Rizzo Flow risponde a domande tipizzate (`boolean`/`choice`/`score`) con probabilità,
+// senza generare un token: un giudizio ripetibile invece di una frase. Il modello gira su
+// CPU, quindi il costo non è il denaro ma la RISORSA: ~5,7 GB di RAM residenti e ~12 s per
+// richiesta su uno stato breve (misurato su questa VPS). Per questo è una FEATURE con un
+// interruttore: acceso il processo parte, il modello carica e i due tool entrano nella
+// lista inviata al modello; spento il processo muore e la RAM torna libera. La preferenza
+// vive su disco (media/rizzo-prefs.json), quindi sopravvive al riavvio della dashboard.
+const rizzoService = createRizzoService({
+  mediaDir: MEDIA_DIR,
+  log: (m) => console.log(m),
+  onChange: () => rizoChanged(),
+});
+const RIZZO_AVAILABLE = rizzoService.available;
+const RIZZO_TOOL_NAMES = new Set(["rizzo_decide", "rizzo_service"]);
+// L'estensione si registra SEMPRE (quando la feature è attivabile): è il gate dei tool,
+// non l'ambiente, a decidere se il modello li vede.
+const RIZZO_EXT = RIZZO_AVAILABLE
+  ? createRizzoExtension({ service: rizzoService, log: (m) => console.log(m) })
+  : null;
+if (!RIZZO_AVAILABLE) console.log("[rizzo] feature disattivata all'avvio (DASH_RIZZO=off)");
+
+/** Vero se i tool di Rizzo Flow vanno nella lista inviata al modello (feature accesa). */
+function rizzoToolEnabled() {
+  return RIZZO_AVAILABLE && !!rizzoService.prefs.enabled;
+}
+
+/**
+ * Lo stato del servizio è cambiato (avvio, pronto, arresto, errore): si riallinea il gate
+ * dei tool e si aggiorna la UI. Dichiarata come function perché il servizio può chiamarla
+ * mentre il modulo si sta ancora caricando; la guardia su `session` copre la fase di avvio.
+ */
+function rizoChanged() {
+  try {
+    if (!session) return;
+    applyToolGate();
+    broadcast("state", getState());
+  } catch (err) {
+    console.error("[rizzo] aggiornamento di stato non riuscito:", err?.message ?? err);
+  }
+}
+
+/** Ultima firma dello stato vista dal ciclo: evita broadcast inutili ogni pochi secondi. */
+let rizzoSignature = "";
+/**
+ * Il caricamento del modello dura decine di secondi e la RAM cambia mentre è acceso: senza
+ * questo ciclo la UI mostrerebbe "in avvio" per sempre e una RAM vecchia. Un solo punto di
+ * verità (`status()`), un broadcast solo quando qualcosa cambia davvero.
+ */
+async function refreshRizzoStatus() {
+  if (!RIZZO_AVAILABLE) return;
+  try {
+    const s = await rizzoService.status();
+    const sig = JSON.stringify([
+      s.enabled,
+      s.process.running,
+      s.process.ready,
+      s.process.starting,
+      s.process.rssMb,
+      s.error,
+    ]);
+    if (sig !== rizzoSignature) {
+      rizzoSignature = sig;
+      rizoChanged();
+    }
+  } catch (err) {
+    // Il guasto del servizio non deve mai far cadere la dashboard: si registra e basta.
+    console.error("[rizzo] stato non leggibile:", err?.message ?? err);
+  }
+}
+
+/**
+ * Stato per l'API: lo snapshot del servizio PIÙ la prova che il gate ha agito (`toolsActive`).
+ * `enabled` dice la preferenza, `toolsActive` dice cosa il modello vede davvero adesso: sono
+ * due cose diverse durante l'avvio e dopo un errore, ed è utile vederle entrambe.
+ */
+async function rizzoApiState() {
+  if (!RIZZO_AVAILABLE) return { available: false, enabled: false, toolsActive: false };
+  const stato = await rizzoService.status();
+  const attivi = session?.getActiveToolNames?.() || [];
+  stato.toolsActive = attivi.some((n) => RIZZO_TOOL_NAMES.has(n));
+  return stato;
+}
 
 // ---- interruttore delle domande (come subagent/browser) ------------------
 // La scelta sta su disco, così non si perde a ogni riavvio: se spegni le domande restano spente
@@ -1020,7 +1119,7 @@ const resourceLoader = new DefaultResourceLoader({
   agentDir: getAgentDir(),
   additionalExtensionPaths,
   additionalSkillPaths: [SKILLS_DIR],
-  extensionFactories: [MEDIA_GUARD_EXT, BROWSER_EXT, ...(ASK_EXT ? [ASK_EXT] : [])],
+  extensionFactories: [MEDIA_GUARD_EXT, BROWSER_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(RIZZO_EXT ? [RIZZO_EXT] : [])],
   systemPromptOverride: (base) => `${base ?? ""}${SYSTEM_MEDIA_NOTE}`,
 });
 await resourceLoader.reload();
@@ -1134,9 +1233,13 @@ function applyToolGate() {
   for (const n of BROWSER_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
   for (const n of SUBAGENT_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
   for (const n of ASK_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
+  for (const n of RIZZO_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
   if (!subagentsEnabled) names = names.filter((n) => !SUBAGENT_TOOL_NAMES.has(n));
   if (!browserEnabled) names = names.filter((n) => !BROWSER_TOOL_NAMES.has(n));
   if (!askToolEnabled()) names = names.filter((n) => !ASK_TOOL_NAMES.has(n));
+  // spenta la feature, i tool di Rizzo Flow spariscono dalla lista: il modello non prova
+  // nemmeno a chiamarli, e intanto il processo non occupa RAM
+  if (!rizzoToolEnabled()) names = names.filter((n) => !RIZZO_TOOL_NAMES.has(n));
   // percorso ufficiale: abilita per nome dal registry e ricostruisce il system prompt
   if (typeof session.setActiveToolsByName === "function") session.setActiveToolsByName(names);
   else session.agent.state.tools = all.filter((t) => names.includes(t.name));
@@ -2082,6 +2185,9 @@ function getState({ withMessages = false } = {}) {
       toolActive: (session?.getActiveToolNames?.() || []).includes("ask_user"),
       ...askBroker.snapshot({ withResolved: withMessages }),
     },
+    // Rizzo Flow: snapshot SINCRONO, senza /health — `getState` gira anche nei broadcast
+    // frequenti e non deve fare chiamate di rete. La versione completa sta su /api/rizzo.
+    rizzo: RIZZO_AVAILABLE ? rizzoService.snapshot() : { available: false, enabled: false },
     startedAt: sessionStartedAt,
     elapsedMs: Date.now() - sessionStartedAt,
     streaming: turnActive,
@@ -3545,6 +3651,8 @@ const server = http.createServer(async (req, res) => {
           "svg-preview",
           "download-cards",
           "browser-output-staging",
+          "rizzo-flow-feature",
+          "rizzo-flow-tool-gate",
           "state-safe",
         ],
       });
@@ -3634,6 +3742,79 @@ const server = http.createServer(async (req, res) => {
     // ---------------- domande interattive all'utente ----------------
     // Risposta alla card `ask_user`: risolve la promessa del tool, che è in attesa dentro
     // la chiamata. L'id è il toolCallId, quindi il client sa a quale card si riferisce.
+    // ---- Rizzo Flow: decisore tipizzato locale, acceso a richiesta -------------
+    // GET  /api/rizzo          stato completo: preferenza, processo, modello, RAM, coda del log
+    // POST /api/rizzo          { enabled } · { action: "start"|"stop" } · { port, size, quant, weights, threads }
+    // POST /api/rizzo/decide   { state, questions } → inoltro autenticato al decisore
+    if (req.method === "GET" && url.pathname === "/api/rizzo") {
+      return json(res, 200, await rizzoApiState());
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/rizzo") {
+      if (!RIZZO_AVAILABLE) return json(res, 400, { error: "feature Rizzo Flow disattivata all'avvio (DASH_RIZZO=off)" });
+      const body = await readBody(req, 8 * 1024);
+      let failure = null;
+      try {
+        if (typeof body.enabled === "boolean") {
+          // L'attesa sarebbe lunga (avvio + caricamento del modello: decine di secondi). Si
+          // attendono al massimo 30 s — così un test o uno script vede subito l'esito — poi
+          // si risponde «in avvio» e la UI segue con il suo ciclo di aggiornamento stato.
+          const pending = rizzoService.setEnabled(body.enabled).catch((e) => {
+            failure = String(e?.message || e);
+          });
+          const done = await Promise.race([
+            pending.then(() => true),
+            new Promise((r) => setTimeout(() => r(false), 30_000)),
+          ]);
+          rizzoSignature = "";
+          rizoChanged();
+          const stato = await rizzoApiState();
+          if (failure) return json(res, 500, { error: failure, rizzo: stato });
+          return json(res, done ? 200 : 202, { ...stato, pending: !done });
+        }
+        if (body.action === "start" || body.action === "stop") {
+          return json(res, 202, { ...(await rizzoService.setEnabled(body.action === "start")), pending: true });
+        }
+        if (["port", "size", "quant", "weights", "threads", "dir"].some((k) => k in body)) {
+          const { restart, snapshot } = rizzoService.configure(body);
+          // Variante cambiata con il servizio acceso: si riavvia con le nuove impostazioni,
+          // altrimenti resterebbe acceso un modello diverso da quello dichiarato in UI.
+          if (restart && snapshot.enabled) {
+            void rizzoService.start().catch((e) => console.error("[rizzo]", e?.message ?? e));
+          }
+          rizzoSignature = "";
+          rizoChanged();
+          return json(res, 200, await rizzoApiState());
+        }
+        return json(res, 400, {
+          error: "serve { enabled } oppure { action: start|stop } oppure una configurazione (port, size, quant, weights, threads)",
+        });
+      } catch (e) {
+        return json(res, e?.status || 400, { error: String(e?.message || e) });
+      }
+    }
+
+    // Prova diretta dalla dashboard (o da uno script autenticato): stesso wire format
+    // `POST /v1/systemone` del servizio, ma dietro l'autenticazione che la dashboard già ha.
+    if (req.method === "POST" && url.pathname === "/api/rizzo/decide") {
+      if (!RIZZO_AVAILABLE) return json(res, 400, { error: "feature Rizzo Flow disattivata (DASH_RIZZO=off)" });
+      const body = await readBody(req, 256 * 1024);
+      if (body?.state === undefined || !body?.questions || typeof body.questions !== "object") {
+        return json(res, 400, { error: "servono { state, questions }" });
+      }
+      try {
+        // Stesse forme comode del tool (`boolean`/`options`/`levels`): la normalizzazione è
+        // una sola funzione, così la rotta e il tool dell'agente non possono divergere.
+        const questions = normalizeRizzoQuestions(body.questions);
+        const timeoutMs = Number(body.timeoutMs) > 0 ? Number(body.timeoutMs) : 600_000;
+        return json(res, 200, await rizzoService.decide({ state: body.state, questions }, { timeoutMs }));
+      } catch (e) {
+        const msg = String(e?.message || e);
+        const spento = /spento|non pronto|non è pronto|unreachable|ECONNREFUSED/i.test(msg);
+        return json(res, spento ? 503 : 400, { error: msg });
+      }
+    }
+
     if (req.method === "GET" && url.pathname === "/api/ask") {
       return json(res, 200, askBroker.snapshot({ withResolved: true }));
     }
@@ -4419,4 +4600,20 @@ server.listen(PORT, HOST, () => {
       `anti brute-force: ${AUTH_MAX_FAILS} tentativi → attese progressive ${AUTH_BACKOFF.join("s, ")}s`,
   );
   console.log(`segreto di sessione: ${SESSION_SECRET_FILE}`);
+  // Rizzo Flow: se la preferenza salvata dice ACCESO, il servizio viene riacceso adesso, in
+  // background (il caricamento del modello non deve ritardare la messa in servizio dell'HTTP).
+  // La UI lo vede passare da «in avvio» a «pronto» da sola.
+  if (RIZZO_AVAILABLE) {
+    console.log(
+      `rizzo flow: feature disponibile (${rizzoService.prefs.enabled ? "accesa" : "spenta"}) · ` +
+        `porta ${rizzoService.prefs.port} · ${rizzoService.prefs.size} ${rizzoService.prefs.quant} · ` +
+        `${rizzoService.prefs.threads} thread`,
+    );
+    void rizzoService.boot().then(() => refreshRizzoStatus());
+    // Il modello si carica in decine di secondi e la RAM cambia mentre è acceso: il ciclo
+    // tiene allineati il gate dei tool e la UI senza che nessuno ricarichi la pagina.
+    setInterval(() => void refreshRizzoStatus(), 5000).unref?.();
+  } else {
+    console.log("rizzo flow: feature disattivata (DASH_RIZZO=off)");
+  }
 });
