@@ -111,4 +111,5 @@ Le quattro forme che funzionano bene:
 - Endpoint: `POST http://127.0.0.1:8017/v1/systemone` (wire TypeSafe, `model: "rizzo-latest"`).
 - Dalla dashboard: `POST /api/rizzo` (interruttore), `GET /api/rizzo` (stato), `POST /api/rizzo/decide` (prova autenticata).
 - Varianti disponibili: `4b q4_k_m` (2,5 GB, quella accesa), `4b q8_0` (4,4 GB), `1.7b q8_0` (1,8 GB, ~2× più veloce e molto meno accurato: 0,546 contro 0,648 sul benchmark degli autori).
+- Un caso singolo dalla riga di comando, senza passare dalla chat: `node media/rizzo-caso.mjs caso.json` (JSON con `state` e `questions`; `--template` stampa un modello, `-` legge da stdin per i casi che non devono finire in un file del repository).
 - Per soglie operative, la calibrazione va fatta sui **propri** dati (`rizzo calibrate` nel repo): le temperature sono legate al runtime e alla variante quantizzata.
