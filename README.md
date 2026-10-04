@@ -113,6 +113,8 @@ ruoli e permessi. Nella modalità ospitata non c'è fatturazione automatica: è 
 | [`docs/ISTANZE.md`](docs/ISTANZE.md) | come convivono più istanze sullo stesso server (porte, utenti, limiti, isolamento) |
 | [`docs/RICOSTRUZIONE.md`](docs/RICOSTRUZIONE.md) | ripristino da zero: prerequisiti, servizi, quote, sandbox |
 | [`docs/SYNC-GITHUB.md`](docs/SYNC-GITHUB.md) | cosa viene pubblicato in questo repository e cosa resta fuori |
+| [`docs/INTERFACCIA.md`](docs/INTERFACCIA.md) | sistema visivo della dashboard: token, sfondo nero, contrasti, misure su telefono |
+| [`docs/RIPRISTINO-RESTYLING.md`](docs/RIPRISTINO-RESTYLING.md) | come tornare alla dashboard precedente al restyling del 2026-10-04 |
 
 Qualità: oltre **700 controlli automatici** distribuiti in dodici suite, che girano su istanze
 isolate — inclusi i test che si aprono in un browser vero (anteprima dei disegni, viste, palette dei

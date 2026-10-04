@@ -426,23 +426,23 @@ function loginPageHtml({ error = "", blockedSec = 0, next = "/", note = "" } = {
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0a0e15;
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #000;
          color: #e6edf7; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; padding: 24px; }
   main { width: 100%; max-width: 360px; }
   h1 { margin: 0 0 4px; font-size: 19px; letter-spacing: .2px; }
   .sub { margin: 0 0 22px; color: #8b9bb4; font-size: 13px; }
-  form { display: grid; gap: 6px; background: #111827; border: 1px solid #1f2937; border-radius: 14px; padding: 18px; }
+  form { display: grid; gap: 6px; background: #0f131a; border: 1px solid #2b3240; border-radius: 14px; padding: 18px; }
   label { color: #8b9bb4; font-size: 12px; text-transform: uppercase; letter-spacing: .6px; margin-top: 6px; }
-  input { background: #0a0e15; border: 1px solid #263349; border-radius: 9px; color: inherit; padding: 11px 12px; font: inherit; }
+  input { background: #000; border: 1px solid #2b3240; border-radius: 9px; color: inherit; padding: 11px 12px; font: inherit; }
   input:focus { outline: 2px solid #2563eb; outline-offset: 1px; }
   input:disabled { opacity: .5; }
   button { margin-top: 14px; background: #2563eb; border: 0; border-radius: 9px; color: #fff; font: inherit; font-weight: 600; padding: 11px 12px; cursor: pointer; }
   button:hover { background: #1d4ed8; }
-  button:disabled { background: #1f2937; color: #8b9bb4; cursor: not-allowed; }
+  button:disabled { background: #1d2230; color: #8b9bb4; cursor: not-allowed; }
   .err, .warn, .wait { margin: 0 0 14px; padding: 10px 12px; border-radius: 9px; font-size: 13.5px; }
   .err { background: #2a1116; border: 1px solid #7f1d1d; color: #fecaca; }
   .warn { background: #2a1f0b; border: 1px solid #78350f; color: #fde68a; }
-  .wait { background: #111827; border: 1px solid #1f2937; color: #cbd5e1; text-align: center; margin: 0; }
+  .wait { background: #0f131a; border: 1px solid #2b3240; color: #cbd5e1; text-align: center; margin: 0; }
   .wait strong { font-variant-numeric: tabular-nums; color: #e6edf7; }
   h1 .beta { display: inline-block; vertical-align: 2px; margin-left: 7px; padding: 1px 7px; border-radius: 999px;
              background: #10233f; border: 1px solid #2563eb; color: #93c5fd; font-size: 10.5px; font-weight: 700;

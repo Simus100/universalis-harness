@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#0a0e15" />
+<meta name="theme-color" content="#000000" />
 <meta name="color-scheme" content="dark" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="application-name" content="Universalis Harness" />
@@ -17,20 +17,32 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <style>
 :root {
-  --bg: #0a0e15;
-  --bg-soft: #0d121b;
-  --panel: #121827;
-  --panel-2: #172033;
-  --panel-3: #1d293d;
-  --panel-4: #253349;
-  --border: #28344a;
-  --border-soft: #1b2434;
+  /* Sfondo NERO PIENO: l'area della conversazione non è più «nero ma blu» con un gradiente
+     verticale. Sul nero puro il buio è uniforme (bene su OLED e su telefono, meno luce
+     emessa) e le superfici si staccano per BORDO, non per differenza di riempimento: la
+     scala qui sotto è quindi appena più chiara di prima, così card, bolle e controlli
+     restano leggibili come oggetti distinti e non come macchie. */
+  --bg: #000000;
+  --bg-soft: #07080b;
+  --panel: #0f131a;
+  --panel-2: #171c26;
+  --panel-3: #1d2230;
+  --panel-4: #2a3140;
+  --border: #2b3240;
+  --border-soft: #1c222b;
+  /* Vetro delle barre (header, footer, toolbar) e della fascia statistiche: una sola tinta
+     traslucida, così le barre si accordano invece di avere ognuna il suo grigio. */
+  --glass: rgba(7,8,11,.78);
+  --glass-soft: rgba(7,8,11,.62);
   --text: #eef2f9;
   --text-soft: #c6cfdd;
-  --dim: #8b97ac;
-  /* prima #5a6578: sulle etichette piccole dava 3,0:1, sotto la soglia di
-     leggibilità (WCAG AA chiede 4,5:1 per il testo piccolo) */
-  --faint: #7a8598;
+  /* Etichette di servizio (--dim) e micro-testo (--faint): alzate di un gradino insieme alla
+     scala dei pannelli. --faint era #5a6578 (3,0:1), poi #7a8598; sul pannello-3 più chiaro
+     di prima dava 4,26:1, sotto la soglia di leggibilità del testo piccolo (WCAG AA: 4,5:1).
+     Ora --faint è il gradino più basso della gerarchia ma resta sopra soglia su ogni
+     superficie di testo. */
+  --dim: #a3adc0;
+  --faint: #8a93a6;
   --accent: #5b9dff;
   --accent-2: #8b5cff;
   --accent-3: #38bdf8;
@@ -103,7 +115,6 @@ body {
   display: flex; flex-direction: column; overflow: hidden;
   -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
   background-color: var(--bg);
-  background-image: linear-gradient(180deg, #0b0f17 0%, var(--bg) 100%);
 }
 /* I controlli nativi non ereditano il font: senza questo restavano a 13,3px, il default
    del browser, mentre tutto il resto dell'interfaccia usa la scala dichiarata. */
@@ -132,7 +143,7 @@ input, textarea, select, button { font: inherit; }
 header {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 10px 16px; padding-top: calc(10px + env(safe-area-inset-top));
-  background: rgba(13,18,27,.82);
+  background: var(--glass);
   -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
   border-bottom: 1px solid var(--border-soft);
   position: relative; z-index: 20;
@@ -216,7 +227,7 @@ header::after {
 .stats {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border-soft);
-  background: rgba(13,18,27,.6);
+  background: var(--glass-soft);
 }
 .stats.hidden { display: none; }
 .stat {
@@ -504,7 +515,13 @@ main {
   animation: chatspin .7s linear infinite;
 }
 @keyframes chatspin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .chat-loading .spin { animation-duration: 2.4s; } }
+@media (prefers-reduced-motion: reduce) {
+  .chat-loading .spin { animation-duration: 2.4s; }
+  /* Chi ha chiesto al sistema meno movimento non deve vedersi il logo che fluttua né il
+     tasto "features" che scorre: restano gli stati (colore, bordo), sparisce il moto. */
+  .empty-ico { animation: none; }
+  .feat-btn, .feat-btn::before, .feat-btn::after { animation: none; }
+}
 .empty-ico {
   width: 72px; height: 72px; margin: 0 auto 16px; border-radius: var(--radius-lg); display: grid; place-items: center;
   font-size: var(--fs-5xl); font-weight: 800; color: #08111f;
@@ -516,7 +533,7 @@ main {
 
 /* ---------- footer ---------- */
 footer {
-  border-top: 1px solid var(--border-soft); background: rgba(13,18,27,.88);
+  border-top: 1px solid var(--border-soft); background: var(--glass);
   -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
 }
@@ -573,7 +590,7 @@ button { font-family: inherit; }
 #liveView { padding: 0; gap: 0; overflow: hidden; }
 .ftoolbar {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  padding: 10px 16px; border-bottom: 1px solid var(--border-soft); background: rgba(13,18,27,.7);
+  padding: 10px 16px; border-bottom: 1px solid var(--border-soft); background: var(--glass);
   position: sticky; top: 0; z-index: 2;
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
@@ -743,13 +760,21 @@ body[data-tab="live"] #chatView { display: none !important; }
 
 /* ---------- mobile ---------- */
 @media (max-width: 760px) {
-  header { gap: 8px; padding: 8px 12px; padding-top: calc(8px + env(safe-area-inset-top)); row-gap: 8px; }
+  /* L'header su telefono stava in QUATTRO righe (logo, linguette, stato+statistiche, tools) e
+     rubava ~190px alla chat, che è la cosa da leggere. Ora la prima riga tiene insieme
+     chat + linguette + stato + statistiche, e i tools scendono da soli in una seconda riga
+     (flex-basis 100%: vanno sempre a capo, mai mischiati). Se lo schermo è troppo stretto
+     il wrap riporta un elemento a capo invece di tagliarlo. */
+  header { gap: 8px; padding: 8px 12px; padding-top: calc(8px + env(safe-area-inset-top)); row-gap: 6px; }
   .brandname { display: none; }
+  /* Il logo occupava una riga quasi per intero: su telefono sparisce (l'icona resta nella
+     schermata home e nella scheda del browser), così chat, linguette, stato e statistiche
+     stanno su UNA riga e i tools su una seconda. */
+  .brand { display: none; }
   .spacer { display: none; }
-  .brand { order: 2; }
   #chatsBtn { order: 1; }
-  .tabs { order: 3; flex: 1 1 auto; justify-content: center; }
-  .tab { flex: 1; justify-content: center; padding: 7px 12px; }
+  .tabs { order: 3; flex: 0 1 auto; min-width: 0; justify-content: center; }
+  .tab { flex: 0 1 auto; justify-content: center; padding: 7px 11px; gap: 5px; }
   .statusbar { order: 4; padding: 6px 9px; gap: 6px; }
   .statusbar span:last-child { display: none; }
   /* su mobile il pulsante statistiche entra nella riga dell'header (ordine 5);
@@ -757,7 +782,7 @@ body[data-tab="live"] #chatView { display: none !important; }
   .mobile-stats { order: 5; }
   /* il tasto "features" (che ora contiene goal e cron) resta sempre visibile:
      e' il PRIMO elemento della riga, gli altri scorrono a destra */
-  .tools { order: 6; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+  .tools { order: 6; flex: 1 1 100%; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; }
   .tools::-webkit-scrollbar { display: none; }
   .feat { order: -1; }
   .feat-btn { padding: 8px 13px; min-height: 40px; }
@@ -968,13 +993,18 @@ header::after { display: none; }
    il ritorno a capo); tabelle, codice e figure restano liberi di usare tutta la larghezza. */
 .bubble :is(p, li, blockquote) { max-width: 74ch; }
 
-/* Sotto i 1400px le nove voci della barra non entrano in una riga: invece di lasciarle
+/* Sotto i 1500px le nove voci della barra non entrano in una riga: invece di lasciarle
    andare a capo per pochi pixel, si stringe un gradino (valori a 13px, padding minore),
-   così restano su una riga e la barra non ruba altezza alla chat. */
-@media (max-width: 1400px) {
+   così restano su una riga e la barra non ruba altezza alla chat. La soglia era 1400px:
+   a 1440 la riga era ancora quella larga e i valori lunghi («38% · 74k / 195k»,
+   «/root/pi-harness») finivano troncati con i puntini. */
+@media (max-width: 1500px) {
   .stats { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
   .stat { padding: var(--sp-2) var(--sp-3); }
-  .stat .value { font-size: var(--fs-md); }
+  /* Selettore con #stats di proposito: più sotto nel foglio c'è la regola `.stat .value`
+     con il corpo a 14px e, a pari specificità, vinceva lei — la compattazione non aveva
+     mai effetto e i valori lunghi restavano troncati («deepseek-v4-pr…»). */
+  #stats .stat .value { font-size: var(--fs-md); }
 }
 
 /* ---------- icone (al posto delle emoji) e dettagli della barra ---------- */
@@ -984,22 +1014,6 @@ header::after { display: none; }
 .stat-ico .ico { width: 17px; height: 17px; }
 .stat .sub { display: block; margin-top: 1px; font-size: var(--fs-xs); color: var(--dim); }
 .stat .ctxwarn { display: block; margin-top: 1px; font-size: var(--fs-xs); font-weight: 600; color: var(--red); }
-
-/* ---------- densità: comoda o compatta ----------
-   Chi legge a lungo compatte le spaziature e il corpo del testo; chi usa il telefono no.
-   Cambiano solo i token, quindi ogni regola resta coerente con la scala. */
-html[data-densita="compatto"] { --fs-xl: 14px; --fs-2xl: 15px; --lh-testo: 1.5; --sp-4: 12px; --sp-5: 18px; --sp-6: 24px; }
-html[data-densita="compatto"] main { padding: var(--sp-4) var(--sp-3) var(--sp-5); gap: var(--sp-3); }
-html[data-densita="compatto"] .bubble { padding: var(--sp-2) var(--sp-3); }
-html[data-densita="compatto"] .thinking .tbody { max-height: 30vh; }
-
-/* Su touch i bersagli crescono: «copia», «apri», «scarica» e le linguette erano alti 23-35px,
-   cioè sotto la misura che si centra con un dito. */
-@media (pointer: coarse), (max-width: 860px) {
-  .mact, .fbtn, .ghost, .pill, .tab { min-height: 44px; }
-  .mact { padding: 0 var(--sp-3); }
-  .msgacts { gap: var(--sp-2); }
-}
 
 /* Su touch i bersagli crescono: «copia», «apri», «scarica» e le linguette erano alti 23-35px,
    cioè sotto la misura che si centra con un dito. */
@@ -1092,10 +1106,10 @@ footer {
   margin: auto;
   max-width: 100%; max-height: 100%;
   display: block; cursor: zoom-in; border: 1px solid var(--border);
-  background-color: #131a27;
+  background-color: #0e1116;
   background-image:
-    linear-gradient(45deg, #1d2634 25%, transparent 25%, transparent 75%, #1d2634 75%),
-    linear-gradient(45deg, #1d2634 25%, transparent 25%, transparent 75%, #1d2634 75%);
+    linear-gradient(45deg, #191d26 25%, transparent 25%, transparent 75%, #191d26 75%),
+    linear-gradient(45deg, #191d26 25%, transparent 25%, transparent 75%, #191d26 75%);
   background-size: 18px 18px;
   background-position: 0 0, 9px 9px;
 }
@@ -1172,7 +1186,7 @@ footer {
 .gtoolbar {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 10px 16px; border-bottom: 1px solid var(--border-soft);
-  background: rgba(13,18,27,.7); position: sticky; top: 0; z-index: 2;
+  background: var(--glass); position: sticky; top: 0; z-index: 2;
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
 .gcount { font-size: var(--fs-md); color: var(--dim); font-variant-numeric: tabular-nums; }
@@ -1318,7 +1332,6 @@ footer {
   <symbol id="i-cost" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
   <symbol id="i-git" viewBox="0 0 24 24"><circle cx="7.2" cy="6.6" r="2.1" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="7.2" cy="17.4" r="2.1" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="13.4" r="2.1" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.2 8.7v6.6M9.3 6.6h3.5a4.2 4.2 0 0 1 4.2 4.2v.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.4v4.9l3.1 1.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
-  <symbol id="i-dens" viewBox="0 0 24 24"><path d="M4.5 8h15M4.5 12h10M4.5 16h15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
 </svg>
 <header>
   <div class="brand"><span class="logo" aria-hidden="true"></span><span class="brandname">Universalis Harness</span></div>
@@ -1372,7 +1385,6 @@ footer {
         </div>
       </div>
     </div>
-    <button id="densBtn" class="pill" type="button" title="Densità dell'interfaccia: comoda o compatta (la scelta resta nel browser)" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-dens"/></svg><span id="densLbl">comoda</span></button>
   </div>
 
   <div class="statusbar"><span class="dot" id="dot"></span><span id="connTxt" class="conn"></span><span id="streamTxt">idle</span></div>
@@ -3727,33 +3739,22 @@ $("decisionMToggle")?.addEventListener("click", () => toggleDecisionM());
 $("modelSel").onchange = (e) => postJSON("/api/model", { id: e.target.value });
 $("thinkSel").onchange = (e) => postJSON("/api/thinking", { level: e.target.value });
 
-/* Densità dell'interfaccia: comoda (predefinita) o compatta. La scelta resta nel browser:
-   chi legge a lungo compatte, chi usa il telefono no. Cambiano i token, non le singole regole. */
-(function densita() {
-  const btn = $("densBtn");
-  if (!btn) return;
-  const lbl = $("densLbl");
-  const applica = (v) => {
-    document.documentElement.dataset.densita = v;
-    btn.setAttribute("aria-pressed", String(v === "compatto"));
-    if (lbl) lbl.textContent = v === "compatto" ? "compatta" : "comoda";
+/* Suggerimento del campo di scrittura: su telefono il campo è stretto (restano ~180px fra
+   le icone e il pulsante) e il testo lungo andava a capo, allargando il composer di due
+   righe proprio dove serve spazio per la conversazione. Lì il suggerimento si accorcia;
+   tornando su schermo largo ricompare quello completo. */
+(function suggerimentoCampo() {
+  const campo = $("input");
+  if (!campo) return;
+  const lungo = campo.placeholder;
+  const corto = "Scrivi un prompt…";
+  const stretto = window.matchMedia("(max-width: 760px)");
+  const applica = () => {
+    if (campo.placeholder !== corto && campo.placeholder !== lungo) return; // già sostituito da altri
+    campo.placeholder = stretto.matches ? corto : lungo;
   };
-  let scelta = "comoda";
-  try {
-    if (localStorage.getItem("densita") === "compatto") scelta = "compatto";
-  } catch {
-    /* preferenza non leggibile: resta comoda */
-  }
-  applica(scelta);
-  btn.onclick = () => {
-    scelta = scelta === "compatto" ? "comoda" : "compatto";
-    try {
-      localStorage.setItem("densita", scelta);
-    } catch {
-      /* niente persistenza: la scelta vale per questa sessione */
-    }
-    applica(scelta);
-  };
+  applica();
+  stretto.addEventListener?.("change", applica);
 })();
 
 /* ============================ COMANDI SLASH ============================ */
