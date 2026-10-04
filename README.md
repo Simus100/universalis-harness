@@ -33,7 +33,7 @@ passaggio in un sanitizzatore che rifiuta script, risorse esterne e riferimenti 
 
 **Un decisore locale, acceso a richiesta.** Dove serve un giudizio ripetibile con una probabilità —
 instradare una richiesta, dire se un input è ostile, scegliere fra azioni, dare una priorità —
-l'harness può accendere dal menu *features* un decisore tipizzato locale (Rizzo Flow, 4B su CPU):
+l'harness può accendere dal menu *features* un decisore tipizzato locale — **Decision_M** (4B su CPU):
 risponde a domande sì/no, scelta e punteggio **senza generare un token** e senza mandare nulla
 fuori. Si accende quando serve e si spegne quando non serve, perché costa ~5,7 GB di RAM; l'agente
 può proporne l'uso e chiederne il consenso, mai deciderlo da solo.

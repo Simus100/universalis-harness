@@ -1,11 +1,11 @@
 ---
-name: rizzo-flow
-description: "Decisioni tipizzate locali con Rizzo Flow: dato uno stato breve, ottieni una probabilità per domande sì/no, una scelta fra opzioni o un punteggio su una rubrica (modello Spark-X2.5-4B su CPU, nessun token generato). Usala quando serve un giudizio ripetibile — instradare una richiesta, decidere se un input è ostile, scegliere fra azioni o strumenti, dare una priorità, filtrare candidati — e non quando serve una spiegazione o del testo. Richiede la feature «rizzo» accesa nel menu features della dashboard: se i tool non ci sono, proponi l'attivazione all'utente, non accendere nulla da solo."
+name: decision-m
+description: "Decisioni tipizzate locali con Decision_M: dato uno stato breve, ottieni una probabilità per domande sì/no, una scelta fra opzioni o un punteggio su una rubrica (modello Spark-X2.5-4B su CPU, nessun token generato). Usala quando serve un giudizio ripetibile — instradare una richiesta, decidere se un input è ostile, scegliere fra azioni o strumenti, dare una priorità, filtrare candidati — e non quando serve una spiegazione o del testo. Richiede la feature «Decision_M» accesa nel menu features della dashboard: se i tool non ci sono, proponi l'attivazione all'utente, non accendere nulla da solo."
 ---
 
-# Decisioni tipizzate locali (Rizzo Flow)
+# Decisioni tipizzate locali (Decision_M)
 
-Rizzo Flow è un **decisore**, non un generatore: riceve uno stato e domande tipizzate e
+Decision_M è un **decisore** (il motore è Rizzo Flow, progetto aperto a monte), non un generatore: riceve uno stato e domande tipizzate e
 risponde con una **distribuzione di probabilità** (`output_tokens: 0`). Serve per i giudizi
 ripetibili che altrimenti spenderesti su un modello generativo: instradare, classificare,
 scegliere fra opzioni, dare un punteggio.
@@ -17,13 +17,13 @@ con un interruttore: **occupa risorse solo quando è acceso**.
 
 | Tool | A cosa serve |
 |---|---|
-| `rizzo_decide` | La decisione: `{ state, questions }` → probabilità per ogni domanda |
-| `rizzo_service` | Le risorse: `action: "status" \| "start" \| "stop"` |
+| `decision_m` | La decisione: `{ state, questions }` → probabilità per ogni domanda |
+| `decision_m_service` | Le risorse: `action: "status" \| "start" \| "stop"` |
 
 Se questi due tool **non sono nella tua lista**, la feature è spenta. Non è un guasto e non
 puoi accenderla da solo: chiedi all'utente con `ask_user` — una riga sul costo (~5,7 GB di
 RAM e qualche secondo a richiesta) — e prosegui senza. Se accetta, l'utente la accende dal
-menu **features → rizzo**; se rifiuta, dai il tuo giudizio e dì che è stato senza il modello
+menu **features → Decision_M**; se rifiuta, dai il tuo giudizio e dì che è stato senza il modello
 locale.
 
 ## Costo reale (misurato su questa macchina, non stimato)
@@ -103,13 +103,13 @@ Le quattro forme che funzionano bene:
 | Una domanda per volta sullo stesso stato | paghi il prefill N volte | una chiamata con tutte le domande |
 | Trattare 0,55 come "sì" | decisione arbitraria su un modello incerto | soglie + via di mezzo, o chiedi |
 | Chiedere testo al decisore | non c'è testo, ci sono lettere | usa un modello generativo |
-| Lasciare il servizio acceso a fine lavoro | ~5,7 GB occupati per niente | `rizzo_service action="stop"` |
+| Lasciare il servizio acceso a fine lavoro | ~5,7 GB occupati per niente | `decision_m_service action="stop"` |
 
 ## Dettagli tecnici utili
 
 - Servizio: `rizzo serve --device cpu --port 8017` dal repo in `/root/rizzo-flow` (script `avvia-cpu.sh`).
 - Endpoint: `POST http://127.0.0.1:8017/v1/systemone` (wire TypeSafe, `model: "rizzo-latest"`).
-- Dalla dashboard: `POST /api/rizzo` (interruttore), `GET /api/rizzo` (stato), `POST /api/rizzo/decide` (prova autenticata).
+- Dalla dashboard: `POST /api/decision_m` (interruttore), `GET /api/decision_m` (stato), `POST /api/decision_m/decide` (prova autenticata).
 - Varianti disponibili: `4b q4_k_m` (2,5 GB, quella accesa), `4b q8_0` (4,4 GB), `1.7b q8_0` (1,8 GB, ~2× più veloce e molto meno accurato: 0,546 contro 0,648 sul benchmark degli autori).
-- Un caso singolo dalla riga di comando, senza passare dalla chat: `node media/rizzo-caso.mjs caso.json` (JSON con `state` e `questions`; `--template` stampa un modello, `-` legge da stdin per i casi che non devono finire in un file del repository).
+- Un caso singolo dalla riga di comando, senza passare dalla chat: `node media/decision-m-caso.mjs caso.json` (JSON con `state` e `questions`; `--template` stampa un modello, `-` legge da stdin per i casi che non devono finire in un file del repository).
 - Per soglie operative, la calibrazione va fatta sui **propri** dati (`rizzo calibrate` nel repo): le temperature sono legate al runtime e alla variante quantizzata.

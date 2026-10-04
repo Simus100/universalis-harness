@@ -1,6 +1,6 @@
 {
   "descrizione": "Batteria di prova per il decisore tipizzato locale (Rizzo Flow, Spark-X2.5-4B su CPU). Dodici casi che coprono le categorie d'uso documentate per i modelli System One (workflow control, retrieval, safety, data/operations, agenti in tempo reale). Ogni caso ha uno stato BREVE (poche centinaia di caratteri) e 2-4 domande tipizzate, perché il costo del decisore cresce con la lunghezza dello stato e non con il numero di domande.",
-  "uso": "node media/rizzo-batteria.mjs  (servizio acceso su 127.0.0.1:8017; vedi media/rizzo-batteria.mjs)",
+  "uso": "node media/decision-m-batteria.mjs  (servizio acceso su 127.0.0.1:8017; vedi media/decision-m-batteria.mjs)",
   "riferimenti": [
     "https://systemonemodels.org/use-cases/ — catalogo dei casi d'uso (workflow control, retrieval and knowledge, safety and quality, data and operations, real-time and agents)",
     "https://systemonemodels.org/use-cases/workflow-control/support-inbox-triage/ — triage di un ticket con una sola chiamata",

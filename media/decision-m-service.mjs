@@ -1,7 +1,8 @@
 /**
- * Rizzo Flow come SERVIZIO LOCALE A RICHIESTA.
+ * Decision_M: il decisore tipizzato locale come SERVIZIO A RICHIESTA.
+ * Motore: Rizzo Flow (progetto aperto a monte).
  *
- * Rizzo Flow (github.com/Rizzo-AI-Academy/rizzo-flow) risponde a domande tipizzate
+ * Il motore (github.com/Rizzo-AI-Academy/rizzo-flow) risponde a domande tipizzate
  * (`noul` / `choice` / `score`) con probabilità, senza generare un solo token: è la stessa
  * forma di decisione di una System One API, servita in locale da un modello Spark-X2.5-4B
  * su llama.cpp. Il modello non sta in una GPU ma sulla CPU, e questo ha un prezzo preciso:
@@ -24,8 +25,8 @@ import fs from "node:fs/promises";
 import { availableParallelism, cpus } from "node:os";
 import { join, resolve } from "node:path";
 
-const DEFAULT_DIR = process.env.DASH_RIZZO_DIR || "/root/rizzo-flow";
-const DEFAULT_PORT = Number(process.env.DASH_RIZZO_PORT) || 8017;
+const DEFAULT_DIR = process.env.DASH_DECISION_M_DIR || "/root/rizzo-flow";
+const DEFAULT_PORT = Number(process.env.DASH_DECISION_M_PORT) || 8017;
 /** File GGUF attesi per ogni variante: servono a dire "non installato" PRIMA di provare ad avviare. */
 const GGUF = {
   "4b q4_k_m": "spark-x2.5-4b-rizzo-flow-lora-q4_k_m.gguf",
@@ -37,7 +38,7 @@ const QUANTS = ["q8_0", "q4_k_m", "bf16"];
 const WEIGHTS = ["flow", "base"];
 /** Quanto si aspetta il caricamento del modello. Misurato: ~25 s a caldo, oltre 60 s se il
  *  disco è freddo e i 2,5 GB di pesi vanno letti la prima volta. */
-const READY_TIMEOUT_MS = Number(process.env.DASH_RIZZO_READY_MS) || 180_000,
+const READY_TIMEOUT_MS = Number(process.env.DASH_DECISION_M_READY_MS) || 180_000,
   STOP_TIMEOUT_MS = 15_000;
 
 function defaultThreads() {
@@ -54,12 +55,12 @@ function clampInt(value, min, max, fallback) {
   return Number.isFinite(n) && n >= min && n <= max ? n : fallback;
 }
 
-export function createRizzoService({ mediaDir, log = (m) => console.log(m), onChange = () => {} }) {
-  const prefsFile = process.env.DASH_RIZZO_PREFS_FILE || join(mediaDir, "rizzo-prefs.json");
-  const logFile = process.env.DASH_RIZZO_LOG_FILE || join(mediaDir, "rizzo-serve.log");
-  const pidFile = process.env.DASH_RIZZO_PID_FILE || join(mediaDir, "rizzo.pid");
-  /** `DASH_RIZZO=off` toglie del tutto la feature (istanze di servizio, test automatici). */
-  const available = String(process.env.DASH_RIZZO ?? "on").trim().toLowerCase() !== "off";
+export function createDecisionMService({ mediaDir, log = (m) => console.log(m), onChange = () => {} }) {
+  const prefsFile = process.env.DASH_DECISION_M_PREFS_FILE || join(mediaDir, "decision-m-prefs.json");
+  const logFile = process.env.DASH_DECISION_M_LOG_FILE || join(mediaDir, "decision-m-serve.log");
+  const pidFile = process.env.DASH_DECISION_M_PID_FILE || join(mediaDir, "decision-m.pid");
+  /** `DASH_DECISION_M=off` toglie del tutto la feature (istanze di servizio, test automatici). */
+  const available = String(process.env.DASH_DECISION_M ?? "on").trim().toLowerCase() !== "off";
 
   const prefs = {
     enabled: false,
@@ -89,19 +90,19 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
     try {
       writeFileSync(prefsFile, JSON.stringify(prefs, null, 2));
     } catch (err) {
-      log(`[rizzo] preferenze non salvate: ${err?.message ?? err}`);
+      log(`[Decision_M] preferenze non salvate: ${err?.message ?? err}`);
     }
   }
 
   const pythonBin = () => join(prefs.dir, ".venv", "bin", "python");
-  const rizzoBin = () => join(prefs.dir, ".venv", "bin", "rizzo");
+  const rizzoCli = () => join(prefs.dir, ".venv", "bin", "rizzo");
   const ggufPath = () => join(prefs.dir, "models", "rizzo-flow", GGUF[`${prefs.size} ${prefs.quant}`] || "");
 
   /** L'installazione c'è? (venv + pesi della variante scelta). Se no, non si prova nemmeno. */
   function installState() {
     const missing = [];
     if (!existsSync(pythonBin())) missing.push(`${pythonBin()} (venv)`);
-    if (!existsSync(rizzoBin())) missing.push(`${rizzoBin()} (CLI)`);
+    if (!existsSync(rizzoCli())) missing.push(`${rizzoCli()} (CLI)`);
     if (!existsSync(ggufPath())) missing.push(`${ggufPath()} (pesi)`);
     return { ok: missing.length === 0, missing };
   }
@@ -165,7 +166,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
     try {
       onChange(snapshot());
     } catch (err) {
-      log(`[rizzo] onChange fallita: ${err?.message ?? err}`);
+      log(`[Decision_M] onChange fallita: ${err?.message ?? err}`);
     }
   }
 
@@ -214,7 +215,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
 
   /** Avvia il processo e attende che sia PRONTO. Ritorna lo snapshot finale. */
   async function start({ timeoutMs = READY_TIMEOUT_MS } = {}) {
-    if (!available) throw new Error("feature Rizzo Flow disattivata all'avvio (DASH_RIZZO=off)");
+    if (!available) throw new Error("feature Decision_M disattivata all'avvio (DASH_DECISION_M=off)");
     if (starting) throw new Error("avvio già in corso");
     const inst = installState();
     if (!inst.ok) throw new Error(`installazione incompleta: manca ${inst.missing.join(", ")}`);
@@ -227,7 +228,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
       // Log in append: la coda di un avvio fallito resta leggibile dalla dashboard.
       const out = await fs.open(logFile, "a");
       const args = [
-        rizzoBin(),
+        rizzoCli(),
         "serve",
         "--device",
         "cpu",
@@ -242,7 +243,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
         "--port",
         String(prefs.port),
       ];
-      log(`[rizzo] avvio: ${pythonBin()} ${args.join(" ")}`);
+      log(`[Decision_M] avvio: ${pythonBin()} ${args.join(" ")}`);
       const child = spawn(pythonBin(), args, {
         cwd: prefs.dir,
         detached: true, // gruppo di processi proprio: si arresta tutto il gruppo, non solo il figlio
@@ -251,7 +252,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
       });
       child.on("error", (err) => {
         lastError = `avvio non riuscito: ${err?.message ?? err}`;
-        log(`[rizzo] ${lastError}`);
+        log(`[Decision_M] ${lastError}`);
       });
       // `detached` + unref: il servizio sopravvive a chi lo ha avviato, ma muore col cgroup
       // del servizio (KillMode=control-group), quindi un riavvio della dashboard non lascia
@@ -294,7 +295,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
     }
     metadata = health.model || {};
     lastReadyAt = Date.now();
-    log(`[rizzo] pronto su ${baseUrl()} (pid ${pid}, ${rssMb(pid) ?? "?"} MB)`);
+    log(`[Decision_M] pronto su ${baseUrl()} (pid ${pid}, ${rssMb(pid) ?? "?"} MB)`);
     noteChange();
     resolveWaiters();
     return snapshot();
@@ -328,7 +329,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
     const deadline = Date.now() + STOP_TIMEOUT_MS;
     while (alive(target) && Date.now() < deadline) await new Promise((r) => setTimeout(r, 200));
     if (alive(target)) {
-      log(`[rizzo] arresto forzato del processo ${target}`);
+      log(`[Decision_M] arresto forzato del processo ${target}`);
       try {
         process.kill(-target, "SIGKILL");
       } catch {
@@ -349,7 +350,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
     } catch {
       /* niente */
     }
-    log("[rizzo] fermato: RAM e CPU liberate");
+    log("[Decision_M] fermato: RAM e CPU liberate");
     noteChange();
     return snapshot();
   }
@@ -501,7 +502,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
       await start();
     } catch (err) {
       lastError = String(err?.message ?? err);
-      log(`[rizzo] avvio automatico non riuscito: ${lastError}`);
+      log(`[Decision_M] avvio automatico non riuscito: ${lastError}`);
     }
     return snapshot();
   }
@@ -513,7 +514,7 @@ export function createRizzoService({ mediaDir, log = (m) => console.log(m), onCh
     if (Number.isInteger(saved) && saved > 0 && alive(saved)) {
       pid = saved;
       startedAtMs = Date.now();
-      log(`[rizzo] processo ${saved} già in esecuzione (ripreso dal pid file)`);
+      log(`[Decision_M] processo ${saved} già in esecuzione (ripreso dal pid file)`);
     } else {
       void fs.rm(pidFile, { force: true });
     }

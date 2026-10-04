@@ -2,8 +2,8 @@
 
 **Data:** 4 ottobre 2026 · **Macchina:** VPS senza GPU, 6 vCPU Intel Broadwell (AVX2, no AVX-512), 11,7 GiB di RAM, zero swap
 **Modello:** Spark-X2.5-4B + LoRA *flow* in GGUF Q4_K_M (2,5 GB), llama.cpp b11081, backend CPU, 6 thread
-**Batteria:** `media/rizzo-batteria.json` — 12 casi, 36 decisioni tipizzate · **esiti grezzi:** `media/rizzo-batteria-esiti.json`
-**Strumenti:** `media/rizzo-batteria.mjs` (esecuzione), `media/rizzo-caso.mjs` (caso singolo), `media/test-rizzo.mjs` (ciclo del servizio)
+**Batteria:** `media/decision-m-batteria.json` — 12 casi, 36 decisioni tipizzate · **esiti grezzi:** `media/decision-m-batteria-esiti.json`
+**Strumenti:** `media/decision-m-batteria.mjs` (esecuzione), `media/decision-m-caso.mjs` (caso singolo), `media/test-decision-m.mjs` (ciclo del servizio)
 
 ---
 
@@ -190,7 +190,7 @@ hardware (AVX-512/più core) — oppure non si compra e si accetta la latenza.
 ## 8. Confronto diretto: 4B Q4_K_M contro 1.7B Q8 sulla stessa batteria
 
 Stessi 12 casi, stesse 36 domande, stessa macchina, 6 thread. Esiti grezzi:
-`media/rizzo-batteria-esiti-4b-q4km.json` e `media/rizzo-batteria-esiti-1.7b-q8.json`.
+`media/decision-m-batteria-esiti-4b-q4km.json` e `media/decision-m-batteria-esiti-1.7b-q8.json`.
 
 | caso | 4B | 1.7B | guadagno | chi ha deciso meglio |
 |---|---:|---:|---:|---|
@@ -238,7 +238,7 @@ differenza grezza è una decisione, cioè **statisticamente nulla** su questo ca
 
 Tenere **due modelli accesi insieme non ci sta**: 1,8 + 2,5 GB di pesi più lo stato di runtime
 superano la RAM disponibile con l'harness. Il cambio di variante si fa dal servizio
-(`POST /api/rizzo {"size":"1.7b","quant":"q8_0"}`, oppure `"4b"`/`"q4_k_m"`), al costo di un
+(`POST /api/decision_m {"size":"1.7b","quant":"q8_0"}`, oppure `"4b"`/`"q4_k_m"`), al costo di un
 riavvio del modello (~15-20 s). Regola pratica: **4B come impostazione predefinita, 1.7B per le
 notti di elaborazione a basso rischio.**
 

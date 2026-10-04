@@ -184,10 +184,10 @@ aggancia al punto giusto del messaggio. Nei broadcast leggeri lo stato porta sol
 pendenti: gli esiti ci sono solo quando si chiede anche la conversazione (stessa lezione del payload
 da 1,3 MB).
 
-### Decisore tipizzato locale — feature «rizzo» (Rizzo Flow)
+### Decisore tipizzato locale — feature «Decision_M» (motore Rizzo Flow)
 
-Nel menu **features** c'è un interruttore **rizzo**: accende un **decisore locale**
-([Rizzo Flow](https://github.com/Rizzo-AI-Academy/rizzo-flow), Spark-X2.5-4B su llama.cpp,
+Nel menu **features** c'è un interruttore **Decision_M**: accende un **decisore locale**
+(**Decision_M**, motore [Rizzo Flow](https://github.com/Rizzo-AI-Academy/rizzo-flow), Spark-X2.5-4B su llama.cpp,
 **CPU**) che risponde a domande tipizzate — sì/no, scelta fra opzioni, punteggio su una rubrica —
 con una **distribuzione di probabilità**, senza generare un solo token. È lo stesso modello di
 programmazione di una System One API (wire `noul`/`choice`/`score`), servito in locale.
@@ -196,9 +196,9 @@ programmazione di una System One API (wire `noul`/`choice`/`score`), servito in 
 |---|---|---|
 | Processo | nessuno | `rizzo serve --device cpu`, porta 8017 |
 | RAM | 0 | **~5,7 GB** residenti |
-| Tool per l'agente | `rizzo_decide` e `rizzo_service` **rimossi** dalla lista | presenti |
+| Tool per l'agente | `decision_m` e `decision_m_service` **rimossi** dalla lista | presenti |
 | Costo di una richiesta | — | **~12 s** su stato breve, ~4 min su ~5.000 token |
-| Skill `rizzo-flow` | leggibile, ma dichiara che i tool non ci sono | attiva |
+| Skill `decision-m` | leggibile, ma dichiara che i tool non ci sono | attiva |
 
 Misure reali su questa VPS (6 vCPU Broadwell, 4b Q4_K_M, 6 thread): avvio e caricamento **~20 s**;
 una decisione con stato breve e 3 domande **11,8–15,3 s** (prefill 5,6 s, 311 token); uno stato da
@@ -207,24 +207,24 @@ una decisione con stato breve e 3 domande **11,8–15,3 s** (prefill 5,6 s, 311 
 
 **Chi accende cosa.** Nessuno accende la feature da solo: l'utente lo fa dal menu features, oppure
 l'agente lo *propone* con `ask_user` (una riga sul costo in RAM) e lo accende **solo** con il
-consenso. A fine lavoro l'agente è istruito a spegnerlo (`rizzo_service action="stop"`) se non
-serve più. La preferenza è persistita in `media/rizzo-prefs.json`: se il servizio era acceso,
+consenso. A fine lavoro l'agente è istruito a spegnerlo (`decision_m_service action="stop"`) se non
+serve più. La preferenza è persistita in `media/decision-m-prefs.json`: se il servizio era acceso,
 torna acceso al riavvio della dashboard (che lo riavvia in background).
 
-**API.** `GET /api/rizzo` (stato completo: preferenza, processo, modello, RAM, coda del log,
-`toolsActive`), `POST /api/rizzo` (`{ enabled }`, `{ action: "start"|"stop" }` o una configurazione
-`{ port, size, quant, weights, threads }`), `POST /api/rizzo/decide` (prova autenticata: `{ state,
-questions }` → risposta del decisore). La risposta di `POST /api/rizzo` arriva **subito** (202) se
-il modello sta ancora caricando: lo stato definitivo si legge da `GET /api/rizzo` o dallo stream
+**API.** `GET /api/decision_m` (stato completo: preferenza, processo, modello, RAM, coda del log,
+`toolsActive`), `POST /api/decision_m` (`{ enabled }`, `{ action: "start"|"stop" }` o una configurazione
+`{ port, size, quant, weights, threads }`), `POST /api/decision_m/decide` (prova autenticata: `{ state,
+questions }` → risposta del decisore). La risposta di `POST /api/decision_m` arriva **subito** (202) se
+il modello sta ancora caricando: lo stato definitivo si legge da `GET /api/decision_m` o dallo stream
 SSE, che la UI segue da sola.
 
-**Variabili.** `DASH_RIZZO=off` toglie la feature (nessun tool, nessun processo: è la forma giusta
-per i test automatici e le istanze di servizio); `DASH_RIZZO_DIR` (default `/root/rizzo-flow`),
-`DASH_RIZZO_PORT` (default 8017), `DASH_RIZZO_READY_MS`.
+**Variabili.** `DASH_DECISION_M=off` toglie la feature (nessun tool, nessun processo: è la forma giusta
+per i test automatici e le istanze di servizio); `DASH_DECISION_M_DIR` (default `/root/rizzo-flow`),
+`DASH_DECISION_M_PORT` (default 8017), `DASH_DECISION_M_READY_MS`.
 
-**Test.** `node media/test-rizzo.mjs` (ciclo completo: accensione, readiness, decisione vera,
+**Test.** `node media/test-decision-m.mjs` (ciclo completo: accensione, readiness, decisione vera,
 spegnimento, nessun processo orfano — su porta 8019 e stato in `/tmp`, non tocca la produzione) e
-`node media/test-rizzo-ui.mjs` (rendering della riga nel menu features, nei cinque stati possibili).
+`node media/test-decision-m-ui.mjs` (rendering della riga nel menu features, nei cinque stati possibili).
 
 ### Comandi slash (`/`)
 Nella casella di scrittura, digitando **`/`** compare una **palette** con i comandi: si filtra
@@ -468,9 +468,9 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
 | POST | `/api/thinking` | `{ level }` |
 | POST | `/api/model` | `{ id }` |
 | POST | `/api/subagents` | `{ enabled?, maxSpawns? }` interruttore dei subagent |
-| GET | `/api/rizzo` | stato del decisore locale: preferenza, processo, modello, RAM, `toolsActive` |
-| POST | `/api/rizzo` | `{ enabled: true\|false }` accende/spegne il decisore; `{ action: "start"\|"stop" }`; `{ port, size, quant, weights, threads }` cambia variante (riavvia se acceso) |
-| POST | `/api/rizzo/decide` | `{ state, questions }` → decisioni con probabilità dal decisore locale (503 se è spento) |
+| GET | `/api/decision_m` | stato del decisore locale: preferenza, processo, modello, RAM, `toolsActive` |
+| POST | `/api/decision_m` | `{ enabled: true\|false }` accende/spegne il decisore; `{ action: "start"\|"stop" }`; `{ port, size, quant, weights, threads }` cambia variante (riavvia se acceso) |
+| POST | `/api/decision_m/decide` | `{ state, questions }` → decisioni con probabilità dal decisore locale (503 se è spento) |
 | GET/POST | `/api/goals` | elenco / crea-aggiorna un goal |
 | POST | `/api/goals/delete` | `{ id }` |
 | POST | `/api/goals/execute` | avvia l'esecuzione della catena di passaggi di un goal |
@@ -607,8 +607,8 @@ node media/test-stream-replay.mjs               # replay degli eventi (id: + Las
 node media/test-stream-reconnect-live.mjs       # richiede il modello: caduta a metà risposta, replay + snapshot
 node media/test-stream-tools-browser.mjs        # richiede il modello: turno con tool, card nel messaggio e snapshot a segmenti
 node media/test-ask.mjs                         # domande all'utente: stati, timeout, validazione, segreti (nessuna rete)
-node media/test-rizzo.mjs                       # decisore locale: accensione, readiness, decisione vera, spegnimento, RAM liberata (~90 s, porta 8019)
-node media/test-rizzo-ui.mjs                    # interruttore «rizzo» nel menu features: LED, etichette, stati, pulsante disabilitato (nessuna rete)
+node media/test-decision-m.mjs                       # decisore locale: accensione, readiness, decisione vera, spegnimento, RAM liberata (~90 s, porta 8019)
+node media/test-decision-m-ui.mjs                    # interruttore «Decision_M» nel menu features: LED, etichette, stati, pulsante disabilitato (nessuna rete)
 node media/test-hardening.mjs                   # tenuta: sessione non standard senza uccidere il processo, zip senza symlink fuori root, aggiornamento parziale dei goal, rinomina senza sovrascritture, Content-Disposition, impronta di /api/health
 node media/test-browser-tool-output.mjs         # screenshot/pdf del tool browser: il file arriva davvero in media/ (browser vero, ~30 s)
 node media/test-ask-live.mjs                    # richiede il modello: l'agente chiede, si risponde via API, il turno riprende
@@ -797,8 +797,8 @@ Da qui un rischio reale, già capitato una volta:
 
 Oltre ai pacchetti, la dashboard registra **estensioni inline** dal codice (`extensionFactories` del
 `DefaultResourceLoader`): `media/browser-tool.mjs` (tool `browser`), `media/ask-tool.mjs` (tool
-`ask_user`) e `media/rizzo-tool.mjs` (tool `rizzo_decide` e `rizzo_service`, dietro l'interruttore
-«rizzo»).
+`ask_user`) e `media/decision-m-tool.mjs` (tool `decision_m` e `decision_m_service`, dietro l'interruttore
+«Decision_M»).
 
 ## Interruttore dei tool opzionali (controllo costi)
 
@@ -811,8 +811,8 @@ In alto nella dashboard c'è un interruttore **spento di default**:
 
 Al riavvio torna **OFF**. API: `POST /api/subagents`.
 
-Nel menu **features** c'è anche l'interruttore **rizzo** (decisore tipizzato locale): a differenza
-del subagent la scelta è **persistita** (`media/rizzo-prefs.json`), perché è un servizio che si
+Nel menu **features** c'è anche l'interruttore **Decision_M** (decisore tipizzato locale): a differenza
+del subagent la scelta è **persistita** (`media/decision-m-prefs.json`), perché è un servizio che si
 accende per un lavoro e si spegne quando quel lavoro è finito — non una spunta di sessione.
 Dettagli nella sezione «Decisore tipizzato locale».
 

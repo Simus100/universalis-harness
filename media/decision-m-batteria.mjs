@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Esegue la batteria di casi (media/rizzo-batteria.json) sul decisore locale e produce i
+ * Esegue la batteria di casi (media/decision-m-batteria.json) sul decisore locale e produce i
  * numeri dell'audit: per ogni caso token in ingresso, token GENERATI, latenza, esiti; in
  * fondo gli aggregati.
  *
- *   node media/rizzo-batteria.mjs            # tabella + salva media/rizzo-batteria-esiti.json
- *   node media/rizzo-batteria.mjs --json     # scarica l'intera risposta di ogni caso
- *   node media/rizzo-batteria.mjs --solo id1,id2
+ *   node media/decision-m-batteria.mjs            # tabella + salva media/decision-m-batteria-esiti.json
+ *   node media/decision-m-batteria.mjs --json     # scarica l'intera risposta di ogni caso
+ *   node media/decision-m-batteria.mjs --solo id1,id2
  *
  * Il punto dell'audit è il confronto fra due modi di ottenere la stessa decisione: qui il
  * modello NON genera token (output_tokens = 0), quindi il costo in uscita è zero per
@@ -17,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const QUI = dirname(fileURLToPath(import.meta.url));
-const URL_SERVIZIO = process.env.RIZZO_URL || "http://127.0.0.1:8017";
+const URL_SERVIZIO = process.env.DECISION_M_URL || "http://127.0.0.1:8017";
 const args = process.argv.slice(2);
 const comeJson = args.includes("--json");
 // --out FILE: dove salvare gli esiti (serve per confrontare due modelli senza sovrascriversi)
@@ -28,7 +28,7 @@ const filtro = (() => {
   return i >= 0 && args[i + 1] ? new Set(args[i + 1].split(",").map((s) => s.trim())) : null;
 })();
 
-const batteria = JSON.parse(readFileSync(join(QUI, "rizzo-batteria.json"), "utf8"));
+const batteria = JSON.parse(readFileSync(join(QUI, "decision-m-batteria.json"), "utf8"));
 const casi = batteria.casi.filter((c) => !filtro || filtro.has(c.id));
 
 /** Forma comoda → wire TypeSafe. */
@@ -62,7 +62,7 @@ async function salute() {
 
 const h = await salute();
 if (!h) {
-  console.error(`Il decisore non risponde su ${URL_SERVIZIO}. Accendilo dal menu features della dashboard (interruttore «rizzo»).`);
+  console.error(`Il decisore non risponde su ${URL_SERVIZIO}. Accendilo dal menu features della dashboard (interruttore «Decision_M»).`);
   process.exit(1);
 }
 console.log(`\nmodello: ${h.model?.gguf_source || "?"} · ${h.model?.precision} · device ${h.model?.device} · ${casi.length} casi\n`);
@@ -155,7 +155,7 @@ const uscita = {
   aggregati: Object.fromEntries(righe),
   esiti,
 };
-const file = fileOut ? (fileOut.startsWith("/") ? fileOut : join(QUI, fileOut)) : join(QUI, "rizzo-batteria-esiti.json");
+const file = fileOut ? (fileOut.startsWith("/") ? fileOut : join(QUI, fileOut)) : join(QUI, "decision-m-batteria-esiti.json");
 writeFileSync(file, JSON.stringify(uscita, null, 2));
 console.log(`\nesiti salvati in ${file}\n`);
 if (comeJson) console.log(JSON.stringify(uscita, null, 2));

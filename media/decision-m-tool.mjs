@@ -1,22 +1,22 @@
 /**
- * Tool `rizzo_decide` e `rizzo_service` — decisioni tipizzate locali (Rizzo Flow).
+ * Tool `decision_m` e `decision_m_service` — decisioni tipizzate locali (Decision_M).
  *
  * Il modello è un decisore, non un generatore: riceve uno stato e domande tipizzate e
  * risponde con probabilità, senza scrivere una parola. Su questa VPS gira su CPU, quindi
  * il costo non è il denaro ma la RISORSA: ~5,7 GB di RAM e ~12 s per richiesta su uno
  * stato breve. Ecco perché esistono DUE tool separati:
  *
- *   rizzo_decide   → interroga il servizio (fallisce con un'istruzione chiara se è spento)
- *   rizzo_service  → accende / spegne / ispeziona il servizio (è la leva sulle risorse)
+ *   decision_m   → interroga il servizio (fallisce con un'istruzione chiara se è spento)
+ *   decision_m_service  → accende / spegne / ispeziona il servizio (è la leva sulle risorse)
  *
  * La regola che il modello deve seguire è scritta nella descrizione del tool — il canale
  * più affidabile, perché vive accanto alla definizione che il modello legge — ed è anche
- * nella skill `rizzo-flow`: nessuno accende una risorsa pesante senza che l'utente lo
+ * nella skill `decision-m`: nessuno accende una risorsa pesante senza che l'utente lo
  * sappia. Accendere è una decisione dell'utente o una sua risposta affermativa, mai
  * un'iniziativa silenziosa dell'agente.
  *
  * Confine del modulo: qui c'è solo il contratto verso il modello e la formattazione della
- * risposta. Il ciclo di vita del processo sta in media/rizzo-service.mjs.
+ * risposta. Il ciclo di vita del processo sta in media/decision-m-service.mjs.
  */
 
 /** Latenza dichiarata misurata su questa macchina: entra nelle descrizioni, non va inventata. */
@@ -25,11 +25,11 @@ const LATENZA_LUNGA = "~4 minuti per uno stato da 5.000 token";
 const RAM = "~5,7 GB di RAM";
 
 const DECIDE_DESCRIPTION = [
-  "Interroga Rizzo Flow, il decisore tipizzato locale (modello Spark-X2.5-4B su CPU): dato uno stato, risponde a domande `boolean`/`choice`/`score` con una DISTRIBUZIONE DI PROBABILITÀ, senza generare testo.",
+  "Interroga Decision_M, il decisore tipizzato locale (modello Spark-X2.5-4B su CPU): dato uno stato, risponde a domande `boolean`/`choice`/`score` con una DISTRIBUZIONE DI PROBABILITÀ, senza generare testo.",
   "",
   "Quando usarlo: quando serve un GIUDIZIO ripetibile con una probabilità, non una frase. Instradare una richiesta a un reparto, decidere se un input è ostile, scegliere fra N azioni/tool, dare un punteggio su una rubrica, filtrare candidati prima di un lavoro costoso.",
   `Costo REALE: ${RAM} e ${LATENZA_BREVE}; ${LATENZA_LUNGA}. Quindi: ${"stati brevi e mirati"} (poche centinaia di token), più domande sullo stesso stato (il contesto si paga una volta sola), mai log interi.`,
-  "Se il servizio è spento questo tool risponde con un ERRORE ISTRUTTIVO: non è un guasto, è la risorsa che non è accesa. Non riprovare a vuoto: chiedi prima all'utente (con `ask_user`) se accendere Rizzo Flow, spiegando il costo in RAM, e solo con il suo consenso chiama `rizzo_service` con action=\"start\". Se l'utente rifiuta, procedi senza: il tuo giudizio resta valido, solo meno calibrato.",
+  "Se il servizio è spento questo tool risponde con un ERRORE ISTRUTTIVO: non è un guasto, è la risorsa che non è accesa. Non riprovare a vuoto: chiedi prima all'utente (con `ask_user`) se accendere Rizzo Flow, spiegando il costo in RAM, e solo con il suo consenso chiama `decision_m_service` con action=\"start\". Se l'utente rifiuta, procedi senza: il tuo giudizio resta valido, solo meno calibrato.",
   "",
   "Formato delle domande (le stesse tre forme di una System One API):",
   '{ "esito":   { "type": "boolean", "instructions": "Il cliente è arrabbiato?" } }',
@@ -82,7 +82,7 @@ const DECIDE_PARAMETERS = {
 };
 
 const SERVICE_DESCRIPTION = [
-  "Accende, spegne o ispeziona Rizzo Flow, il decisore tipizzato locale (modello Spark-X2.5-4B su llama.cpp, CPU).",
+  "Accende, spegne o ispeziona Decision_M, il decisore tipizzato locale (modello Spark-X2.5-4B su llama.cpp, CPU).",
   `Acceso: ${RAM} residenti e la CPU occupata per qualche secondo a richiesta (${LATENZA_BREVE}). Spento: nessuna risorsa occupata, e i tool non rispondono.`,
   "Accendilo SOLO con il consenso dell'utente: se serve una decisione tipizzata e il servizio è spento, chiedi prima (con `ask_user`), spiegando che occupa RAM e CPU, poi chiama action=\"start\". Un utente che ha già chiesto lui di usarlo ha già dato quel consenso.",
   "Spegnilo quando hai finito con decisioni tipizzate per un po' (action=\"stop\"): liberare ~5,7 GB è quasi sempre la cosa giusta se il lavoro successivo non è una decisione. Non spegnerlo a metà di una serie di chiamate.",
@@ -174,31 +174,31 @@ function formatAnswers(body) {
 
 /** Stato del servizio in due righe, per il modello e per i log. */
 function formatStatus(s) {
-  if (!s.available) return "Rizzo Flow: feature disattivata all'avvio dell'harness (DASH_RIZZO=off).";
-  if (!s.installed) return `Rizzo Flow: non installato (manca ${(s.missing || []).join(", ")}).`;
-  if (!s.enabled) return "Rizzo Flow: SPENTO (nessuna risorsa occupata).";
+  if (!s.available) return "Decision_M: feature disattivata all'avvio dell'harness (DASH_DECISION_M=off).";
+  if (!s.installed) return `Decision_M: non installato (manca ${(s.missing || []).join(", ")}).`;
+  if (!s.enabled) return "Decision_M: SPENTO (nessuna risorsa occupata).";
   const p = s.process || {};
   if (p.ready) {
     const m = s.model || {};
-    return `Rizzo Flow: ACCESO e pronto — modello ${m.source || s.size} ${m.precision || s.quant}, ${m.device || "cpu"}, porta ${s.port}, pid ${p.pid}, ${p.rssMb ?? "?"} MB di RAM${p.uptimeMs ? `, attivo da ${Math.round(p.uptimeMs / 1000)} s` : ""}.`;
+    return `Decision_M: ACCESO e pronto — modello ${m.source || s.size} ${m.precision || s.quant}, ${m.device || "cpu"}, porta ${s.port}, pid ${p.pid}, ${p.rssMb ?? "?"} MB di RAM${p.uptimeMs ? `, attivo da ${Math.round(p.uptimeMs / 1000)} s` : ""}.`;
   }
-  if (p.starting || p.running) return `Rizzo Flow: in avvio (il modello si sta caricando, pid ${p.pid}).`;
-  return `Rizzo Flow: abilitato ma non in esecuzione${s.error ? ` — ${s.error}` : ""}.`;
+  if (p.starting || p.running) return `Decision_M: in avvio (il modello si sta caricando, pid ${p.pid}).`;
+  return `Decision_M: abilitato ma non in esecuzione${s.error ? ` — ${s.error}` : ""}.`;
 }
 
-export function createRizzoExtension({ service, log = (m) => console.log(m) }) {
+export function createDecisionMExtension({ service, log = (m) => console.log(m) }) {
   const DECIDE = {
-    name: "rizzo_decide",
-    label: "Decisioni tipizzate (Rizzo Flow)",
+    name: "decision_m",
+    label: "Decisioni tipizzate (Decision_M)",
     description: DECIDE_DESCRIPTION,
     promptSnippet:
-      "rizzo_decide: decisioni tipizzate locali con probabilità (boolean/choice/score) su uno stato breve — " +
+      "decision_m: decisioni tipizzate locali con probabilità (boolean/choice/score) su uno stato breve — " +
       "giudizi ripetibili, non testo. Costa RAM e CPU: chiedi il consenso prima di accendere il servizio.",
     promptGuidelines: [
-      "Usa `rizzo_decide` quando serve un giudizio ripetibile con una probabilità (instradare, scegliere fra azioni, dare un punteggio su una rubrica), non quando serve una spiegazione o del testo.",
+      "Usa `decision_m` quando serve un giudizio ripetibile con una probabilità (instradare, scegliere fra azioni, dare un punteggio su una rubrica), non quando serve una spiegazione o del testo.",
       "Tieni lo stato corto (poche centinaia di token) e fai più domande sullo stesso stato: il costo cresce con la lunghezza, non con il numero di domande.",
-      "Se `rizzo_decide` risponde che il servizio è spento, NON riprovare: chiedi all'utente con `ask_user` se accendere Rizzo Flow (occupa ~5,7 GB di RAM) e solo con il suo consenso usa `rizzo_service` con action=\"start\". Se rifiuta, decidi tu e dì che lo hai fatto senza il modello locale.",
-      "Le probabilità di Rizzo Flow non sono calibrate: usale per ordinare o con soglie prudenti, non come frequenze esatte.",
+      "Se `decision_m` risponde che il servizio è spento, NON riprovare: chiedi all'utente con `ask_user` se accendere Decision_M (occupa ~5,7 GB di RAM) e solo con il suo consenso usa `decision_m_service` con action=\"start\". Se rifiuta, decidi tu e dì che lo hai fatto senza il modello locale.",
+      "Le probabilità di Decision_M non sono calibrate: usale per ordinare o con soglie prudenti, non come frequenze esatte.",
     ],
     parameters: DECIDE_PARAMETERS,
     async execute(toolCallId, params, signal, _onUpdate, _ctx) {
@@ -211,15 +211,15 @@ export function createRizzoExtension({ service, log = (m) => console.log(m) }) {
         const st = await service.status();
         if (!st.installed) {
           return {
-            content: [{ type: "text", text: `Rizzo Flow non è installato: ${(st.missing || []).join(", ")}.` }],
+            content: [{ type: "text", text: `Decision_M non è installato: ${(st.missing || []).join(", ")}.` }],
             details: { unavailable: true },
             isError: true,
           };
         }
         if (!st.process.ready) {
           const msg = st.enabled
-            ? `Rizzo Flow è ACCESO ma non ancora pronto (${st.error || "caricamento in corso"}). Attendi qualche secondo e riprova, oppure usa rizzo_service action="status".`
-            : "Rizzo Flow è SPENTO (nessuna risorsa occupata). Non accenderlo da solo: chiedi prima all'utente con `ask_user` se può accendere il decisore locale (occupa ~5,7 GB di RAM e la CPU per ~12 s a richiesta). Solo se acconsente chiama `rizzo_service` con action=\"start\", poi ripeti questa chiamata; se rifiuta, procedi con il tuo giudizio e dichiaralo.";
+            ? `Rizzo Flow è ACCESO ma non ancora pronto (${st.error || "caricamento in corso"}). Attendi qualche secondo e riprova, oppure usa decision_m_service action="status".`
+            : "Rizzo Flow è SPENTO (nessuna risorsa occupata). Non accenderlo da solo: chiedi prima all'utente con `ask_user` se può accendere il decisore locale (occupa ~5,7 GB di RAM e la CPU per ~12 s a richiesta). Solo se acconsente chiama `decision_m_service` con action=\"start\", poi ripeti questa chiamata; se rifiuta, procedi con il tuo giudizio e dichiaralo.";
           return { content: [{ type: "text", text: msg }], details: { off: !st.enabled }, isError: true };
         }
         const t0 = Date.now();
@@ -237,18 +237,18 @@ export function createRizzoExtension({ service, log = (m) => console.log(m) }) {
         return { content: [{ type: "text", text }], details: { model: body?.model, usage, timing, answers: body?.answers } };
       } catch (err) {
         const msg = String(err?.message ?? err);
-        log(`[rizzo] decide non riuscita: ${msg}`);
+        log(`[Decision_M] decide non riuscita: ${msg}`);
         return { content: [{ type: "text", text: `DECISIONE NON ESEGUITA — ${msg}` }], details: { error: msg }, isError: true };
       }
     },
   };
 
   const SERVICE = {
-    name: "rizzo_service",
+    name: "decision_m_service",
     label: "Servizio Rizzo Flow (accendi/spegni)",
     description: SERVICE_DESCRIPTION,
     promptSnippet:
-      "rizzo_service: accende/spegne/ispeziona il decisore tipizzato locale. Accendilo solo col consenso " +
+      "decision_m_service: accende/spegne/ispeziona il decisore tipizzato locale. Accendilo solo col consenso " +
       "dell'utente (occupa ~5,7 GB di RAM) e spegnilo quando non serve più.",
     promptGuidelines: [
       "Prima di accendere Rizzo Flow chiedi all'utente (con `ask_user`), a meno che non sia stato lui a chiedere di usarlo: occupa ~5,7 GB di RAM su una macchina senza swap.",
@@ -279,7 +279,7 @@ export function createRizzoExtension({ service, log = (m) => console.log(m) }) {
             content: [
               {
                 type: "text",
-                text: `${formatStatus(s)} — acceso in ${secs} s. Ora puoi usare rizzo_decide su stati brevi. Ricordati di spegnerlo (action="stop") quando hai finito.`,
+                text: `${formatStatus(s)} — acceso in ${secs} s. Ora puoi usare decision_m su stati brevi. Ricordati di spegnerlo (action="stop") quando hai finito.`,
               },
             ],
             details: { rizzo: s },
@@ -303,7 +303,7 @@ export function createRizzoExtension({ service, log = (m) => console.log(m) }) {
         throw new Error(`azione non riconosciuta: «${action}» (usa status, start o stop)`);
       } catch (err) {
         const msg = String(err?.message ?? err);
-        log(`[rizzo] servizio: ${action} non riuscita: ${msg}`);
+        log(`[Decision_M] servizio: ${action} non riuscita: ${msg}`);
         return { content: [{ type: "text", text: `SERVIZIO NON CAMBIATO — ${msg}` }], details: { error: msg }, isError: true };
       }
     },
@@ -315,7 +315,7 @@ export function createRizzoExtension({ service, log = (m) => console.log(m) }) {
     factory: (pi) => {
       pi.registerTool(DECIDE);
       pi.registerTool(SERVICE);
-      log("[rizzo] tool «rizzo_decide» e «rizzo_service» registrati");
+      log("[Decision_M] tool «decision_m» e «decision_m_service» registrati");
     },
   };
 }

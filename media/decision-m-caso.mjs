@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 /**
- * Un caso singolo al decisore Rizzo Flow, dalla riga di comando.
+ * Un caso singolo al decisore Decision_M, dalla riga di comando (motore: Rizzo Flow).
  *
  * Serve per provare una decisione VERA su un caso proprio, senza costruire a mano un curl e
  * senza passare per la chat: si scrive un file JSON con `state` e `questions`, si lancia
  * questo script e si legge la risposta con le probabilità e la latenza misurata.
  *
- *   node media/rizzo-caso.mjs caso.json          # tabella leggibile
- *   node media/rizzo-caso.mjs caso.json --json   # risposta completa (per salvare/elaborare)
- *   node media/rizzo-caso.mjs --template         # stampa un modello da compilare
- *   node media/rizzo-caso.mjs caso.json -         # legge il JSON da stdin
+ *   node media/decision-m-caso.mjs caso.json          # tabella leggibile
+ *   node media/decision-m-caso.mjs caso.json --json   # risposta completa (per salvare/elaborare)
+ *   node media/decision-m-caso.mjs --template         # stampa un modello da compilare
+ *   node media/decision-m-caso.mjs caso.json -         # legge il JSON da stdin
  *
- * Il servizio si interroga direttamente su 127.0.0.1:8017 (`RIZZO_URL` per cambiarlo), quindi
+ * Il servizio si interroga direttamente su 127.0.0.1:8017 (`DECISION_M_URL` per cambiarlo), quindi
  * nessuna credenziale: quello che scrivi nel caso NON esce dalla macchina.
  *
  * Regola pratica: stato corto (poche centinaia di token) e più domande insieme. Il costo
@@ -20,7 +20,7 @@
  */
 import { readFileSync } from "node:fs";
 
-const URL_SERVIZIO = process.env.RIZZO_URL || "http://127.0.0.1:8017";
+const URL_SERVIZIO = process.env.DECISION_M_URL || "http://127.0.0.1:8017";
 
 const TEMPLATE = {
   state: "Cliente: la fattura è stata addebitata due volte e nessuno risponde al telefono.",
@@ -51,7 +51,7 @@ if (!file && !process.stdin.isTTY) {
   const testo = readFileSync(0, "utf8");
   run(JSON.parse(testo));
 } else if (!file) {
-  console.error("uso: node media/rizzo-caso.mjs caso.json [--json]   (oppure --template)\n");
+  console.error("uso: node media/decision-m-caso.mjs caso.json [--json]   (oppure --template)\n");
   console.error("Il file è un JSON con questa forma:\n");
   console.error(JSON.stringify(TEMPLATE, null, 2));
   process.exit(2);
@@ -100,7 +100,7 @@ async function run(caso) {
   if (!r.ok) {
     console.error(`il servizio ha risposto ${r.status}: ${testo.slice(0, 400)}`);
     if (r.status === 503 || /ECONNREFUSED|fetch failed/i.test(testo)) {
-      console.error("Il decisore è spento: accendilo dal menu features della dashboard (interruttore «rizzo»).");
+      console.error("Il decisore è spento: accendilo dal menu features della dashboard (interruttore «Decision_M»).");
     }
     process.exit(1);
   }
