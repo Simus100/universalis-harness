@@ -160,3 +160,42 @@ Non è una chroot completa: l'agente può **leggere** file pubblici di sistema (
 `ls /`, `df /`) e vede il disco del server. Non può però leggere le altre istanze (le loro
 cartelle sono `700`/`drwx------`), non può scrivere fuori da `/home/tester07` e non può eseguire
 comandi di sistema (`systemctl`, `su`, `sudo` assenti dai suoi permessi).
+
+## Propagazione del 2026-10-04 (restyling, progetto, live view, fix diagrammi)
+
+Alle due istanze è stato portato l'aggiornamento della principale: sfondo nero e restyling,
+vista 📦 progetto con le cartelle scelte (l'agente le riceve nel contesto), live view fruibile da
+telefono (ingrandimento 1:1 e 2×, schermo intero, log che parte chiuso), correzione del
+caricamento del sanitizzatore SVG, passi/checklist dei goal accettati anche come testo semplice,
+messaggi d'errore più chiari su percorsi e pianificazioni, avvisi sulle regole Agent Skills nella
+vista 🧩.
+
+**Cosa è stato copiato**: `dashboard.html`, `dashboard.mjs`, `manifest.webmanifest`, `sw.js`,
+tutti i `media/*.mjs` (servono anche `media/svg-sanitize.mjs`, servito al browser, e i moduli
+`decision-m-*` che il nuovo `dashboard.mjs` importa all'avvio: senza, il servizio non parte) e le
+skill in `skills/` (aggiornata `bookforge`, che ora dice anche *quando* usarla).
+
+**Metodo.** Backup datato in `backups/propagazione-<timestamp>/` di ciascuna istanza (dashboard,
+manifest, sw, `.env`, skills) con `IMPRONTE.sha256`.
+- `tester_01`: **copia diretta** — ha una sola riga propria, che è la versione precedente del
+  codice, non una personalizzazione.
+- `tester_07`: **fusione a tre vie** (`git merge-file` con base `093cd59`, i file nuovi della
+  principale come "ours" e i suoi come "theirs"). 8 conflitti nell'HTML e 10 nel `.mjs`, tutti
+  risolti prendendo il codice nuovo e conservando le sue personalizzazioni, che il merge aveva per
+  il resto già unito da sé: la voce **«spazio»** con l'icona `i-quota`, `option:disabled`,
+  `applyLocks(st)` (modello e thinking bloccati), il blocco **quota** nel `.mjs` (`refreshQuota`,
+  `quotaInfo`, `ensureQuota`, `quotaChanged`) e la sua variante del prompt che **non** contiene la
+  sezione sulla pubblicazione GitHub. Va notato che i due file toccano gli stessi punti
+  (`SYSTEM_MEDIA_NOTE`, campo dello stato): è lì che la fusione va guardata con attenzione.
+
+**Scelta per l'ospite.** A `tester_07` è stato aggiunto `DASH_DECISION_M=off` nel suo `.env`: il
+codice è allineato, ma la feature che accende il modello locale da ~5,7 GB resta spenta, e la riga
+corrispondente **sparisce** dal menu *features* (nel codice: una feature disattivata all'avvio non
+mostra un interruttore inerte). La skill `decision-m` non è stata copiata: senza i tool non serve.
+
+**Verifiche**: `/api/state`, `/api/progetto` e `/svg-sanitize.mjs` rispondono 200 su entrambe; la
+pagina servita è identica a quella su disco; la copia di prova dell'ospite ha mostrato sfondo nero
+(`rgb(0,0,0)`, nessun gradiente), nessun pulsante densità, voce «spazio» (`12.1 MB / 300 MB`),
+modello e riga Decision_M nascosti, vista progetto e live view con ingrandimento e schermo intero.
+Riavvio: `systemctl restart pi-tester01 pi-tester07` (tester_07 impiega ~25 s ad aprire la porta:
+il suo disco dedicato è più lento).

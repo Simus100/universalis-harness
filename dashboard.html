@@ -367,6 +367,14 @@ main {
   padding: 8px 11px; font-size: var(--fs-sm); color: var(--red); background: rgba(251,113,133,.08);
   border-top: 1px solid rgba(251,113,133,.24);
 }
+/* Pulsante «riprova» nello stato d'errore: il modulo del sanitizzatore può mancare per un
+   motivo temporaneo (sessione scaduta, rete giù), quindi si ritenta senza ricaricare. */
+.svgfig .svgretry {
+  font: inherit; font-size: var(--fs-xs); min-height: 32px; padding: 0 10px; margin-left: 4px;
+  color: var(--text-soft); background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 999px; cursor: pointer;
+}
+.svgfig .svgretry:hover { color: var(--text); border-color: var(--red); }
 .svgfig .svgwarn { padding: 6px 11px 0; font-size: var(--fs-xs); color: var(--yellow); opacity: .9; }
 
 /* vista ingrandita: overlay a tutto schermo, chiusa con Esc, click sullo sfondo o ✕ */
@@ -673,6 +681,29 @@ body[data-tab="live"] #chatView { display: none !important; }
   border-radius: var(--radius-lg); }
 .livestage img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 .livestage.control img { cursor: crosshair; }
+/* --- ingrandimento del riquadro (⤢) ---
+   Su un telefono il frame 1280×720 adattato a ~374px è illeggibile: serviva un modo per
+   guardare la pagina ALLA SUA dimensione, con scorrimento per muoversi (pan nativo, funziona
+   anche col dito). Tre stati: «adatta» (default), «1:1», «2×». */
+.livestage { overflow: auto; overscroll-behavior: contain; }
+.livestage.zoom-1x img,
+.livestage.zoom-2x img { max-width: none; max-height: none; object-fit: none; }
+.livestage.zoom-1x img { width: auto; height: auto; }
+.livestage.zoom-2x img { width: 200%; height: auto; }
+.livestage.zoom-1x, .livestage.zoom-2x { align-items: flex-start; justify-content: flex-start; }
+/* --- riquadro a schermo intero (⛶): overlay invece dell'API Fullscreen, così funziona
+   anche nei browser che non la concedono a elementi non video --- */
+.livewrap.full { position: fixed; inset: 0; z-index: 80; background: var(--bg); padding: 0;
+  padding-top: env(safe-area-inset-top); gap: 0; }
+/* La barra dei comandi resta SOPRA l'overlay: su telefono non c'è Esc e la barra (con il
+   pulsante per uscire, «guarda», l'ingrandimento) deve restare raggiungibile, altrimenti lo
+   schermo intero diventa una trappola da cui si esce solo ricaricando. */
+#liveView > .gtoolbar { position: relative; z-index: 90; }
+body.live-full #liveView > .gtoolbar { background: var(--glass); border-bottom: 1px solid var(--border-soft); }
+.livewrap.full .livestage { border: none; border-radius: 0; min-height: 0; }
+.livewrap.full .livebar { padding: 6px 8px; }
+.livewrap.full .livechat { padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
+body.live-full { overflow: hidden; }
 .liveempty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   text-align: center; padding: 20px; color: var(--muted, #9aa0a6); font-size: var(--fs-lg); }
 .livebar { display: flex; align-items: center; gap: 6px; padding: 6px 0 0; font-size: var(--fs-sm);
@@ -705,6 +736,29 @@ body[data-tab="live"] #chatView { display: none !important; }
 .livechatin input { flex: 1; min-height: 34px; padding: 0 10px; border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.25); color: inherit; font-size: var(--fs-lg); }
 .livechatin input:focus { outline: none; border-color: rgba(167,139,250,.6); }
+
+/* --- live view su TELEFONO -------------------------------------------------
+   Misurato su 390×844 prima di questi ritocchi: toolbar 117px (due righe), intestazione del
+   log 57px, log 88px, barra indirizzi 50px, campo 44px → al riquadro del browser restavano
+   324px su 844, e la pagina adattata a 374px era illeggibile. Qui le cromature si stringono:
+   toolbar su UNA riga, intestazione su una riga, campo indirizzi a misura di dito. Il log si
+   nasconde all'apertura (lo riapre «▫ log», che segnala i messaggi nuovi) e lo ingrandimento
+   / schermo intero fanno il resto. */
+@media (max-width: 760px) {
+  #liveView .gtoolbar { gap: 6px; padding: 8px 10px; }
+  #liveView .gtoolbar .ghost { padding: 0 9px; font-size: var(--fs-sm); gap: 4px; }
+  #liveView .livebadge { padding: 2px 6px; font-size: var(--fs-2xs); }
+  .livewrap { padding: 0 6px 4px; gap: 4px; }
+  .liveurl { min-height: 44px; font-size: var(--fs-md); }
+  .livechat { padding: 4px 8px 6px; }
+  .livechathead { padding: 2px 0 0; gap: 6px; }
+  .livechathead .gcount { display: none; }
+  .livechatlog { height: 76px; }
+  .livechatlog.expanded { height: 30vh; }
+  .livechatin input { font-size: var(--fs-lg); }
+}
+/* Il pulsante del log porta un pallino quando ci sono messaggi arrivati a log chiuso. */
+#liveLogToggle.nuovo::after { content: " ●"; color: var(--accent); }
 
 /* Pulsante statistiche: disponibile anche su DESKTOP (prima esisteva solo su mobile).
  * La scelta viene ricordata in localStorage, quindi resta dopo un ricaricamento. */
@@ -1257,6 +1311,39 @@ footer {
   .goal-actions .ghost, .goal-actions .pill { flex: 1; }
 }
 
+/* ---------- skill: costo nel contesto e avvisi sulle regole Agent Skills ---------- */
+.skillcost { font-size: var(--fs-sm); color: var(--faint); margin-top: 4px; }
+.skillwarn {
+  font-size: var(--fs-sm); color: var(--yellow); background: rgba(251,191,36,.08);
+  border: 1px solid rgba(251,191,36,.22); border-radius: var(--radius-sm);
+  padding: 5px 8px; margin-top: 6px;
+}
+
+/* ---------- progetto: stella nel file manager ed elenco file ---------- */
+/* La stella sta nella riga della cartella: il click marca/smarca SENZA aprire la cartella
+   (stopPropagation), altrimenti segnare una cartella significherebbe anche entrarci. */
+.projstar {
+  flex: 0 0 auto; margin-left: 6px; width: 40px; height: 40px; border-radius: var(--radius);
+  background: transparent; border: 1px solid transparent; color: var(--faint);
+  font-size: var(--fs-3xl); line-height: 1; cursor: pointer; transition: .15s;
+}
+.projstar:hover { color: var(--yellow); background: var(--panel-2); border-color: var(--border); }
+.projstar.on { color: var(--yellow); }
+.projfiles { margin-top: 10px; border-top: 1px solid var(--border-soft); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.projfile { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+.projfile .projopen {
+  flex: 1; min-width: 0; text-align: left; background: transparent; border: 1px solid transparent;
+  border-radius: var(--radius-sm); color: var(--accent); font: inherit; font-size: var(--fs-md);
+  padding: 4px 6px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.projfile .projopen:hover { background: var(--panel-2); border-color: var(--border); }
+.projfile .gcount { flex: 0 0 auto; }
+.projfile .ghost { min-height: 32px; padding: 0 10px; }
+@media (max-width: 760px) {
+  .projstar { width: 44px; height: 44px; }
+  .projfile { min-height: 40px; }
+}
+
 /* ---------- operazioni pianificate (cron) ---------- */
 .goal-card.cron-off { opacity: .72; }
 .goal-badge.err { background: var(--red); color: #3a0510; border-color: transparent; }
@@ -1463,6 +1550,7 @@ footer {
     <button class="ghost" id="progettoBack" type="button" title="Torna alla chat">← chat</button>
     <span class="gcount" id="progettoCount">—</span>
     <span style="flex:1"></span>
+    <button class="ghost" id="progettoAdd" type="button" title="Aggiungi una cartella al progetto: si sceglie dalla vista File, con la stella ☆ sulla cartella">＋ cartella</button>
     <button class="ghost" id="progettoRefresh" type="button" title="Ricarica l'elenco degli artefatti">↻</button>
   </div>
   <div class="goals-scroll" id="progettoList"></div>
@@ -1485,6 +1573,8 @@ footer {
     <span style="flex:1"></span>
     <button class="ghost" id="liveWatch" type="button" title="Avvia/ferma il flusso dei frame">▶ guarda</button>
     <button class="ghost" id="liveControl" type="button" title="Passa il controllo del browser a te">🖐 prendi il controllo</button>
+    <button class="ghost" id="liveZoom" type="button" title="Ingrandisci il riquadro del browser: adatta → 1:1 → 2×. Serve a LEGGERE una pagina, non solo a guardarla.">⤢ adatta</button>
+    <button class="ghost" id="liveFull" type="button" title="Riquadro a schermo intero (Esc o di nuovo il pulsante per uscire)">⛶</button>
   </div>
   <div class="livewrap">
     <div class="livestage" id="liveStage">
@@ -1867,6 +1957,11 @@ function renderDecisionM(st) {
   if (!b) return;
   // disponibile = feature attiva nell'harness E installazione completa (venv + pesi)
   const avail = r.available !== false && r.installed !== false;
+  // Feature disattivata all'avvio (DASH_DECISION_M=off, es. istanze senza il modello locale):
+  // la riga sparisce dal menu. Un interruttore che non può fare nulla è solo rumore — e su
+  // un'istanza ospite non deve nemmeno suggerire che si possa accendere un modello da 5,7 GB.
+  const riga = b.closest ? b.closest(".feat-row") : null;
+  if (riga) riga.hidden = r.available === false;
   const on = avail && !!r.enabled;
   const ready = !!(on && r.process && r.process.ready);
   decisionMReady = ready;
@@ -2172,14 +2267,29 @@ function revokeAllBlobs() {
   for (const url of [...svgBlobUrls.keys()]) revokeBlobUrl(url);
 }
 
-/* ---- caricamento pigro del sanitizzatore (stesso modulo del server) ---- */
+/* ---- caricamento pigro del sanitizzatore (stesso modulo del server) ----
+ * Il modulo arriva dalla stessa origine e passa dall'autenticazione: se la sessione è scaduta,
+ * se la rete è giù o se il server non ha ancora la rotta, l'import fallisce. Prima quel
+ * fallimento restava in `svgSanitizerPromise` per tutta la vita della pagina: OGNI disegno
+ * successivo mostrava «sanitizzatore non disponibile» anche dopo il rientro, e l'unico modo
+ * per rivedere un diagramma era ricaricare la pagina. Ora il fallimento vale per il singolo
+ * tentativo: si azzera la promessa e il disegno dopo riprova. */
 let svgSanitizerPromise = null;
 function loadSvgSanitizer() {
-  if (!svgSanitizerPromise) {
-    svgSanitizerPromise = import("/svg-sanitize.mjs").catch(() => null);
-  }
-  return svgSanitizerPromise;
+  if (svgSanitizerPromise) return svgSanitizerPromise;
+  const tentativo = import("/svg-sanitize.mjs")
+    .then((m) => (m && typeof m.sanitizeSvg === "function" ? m : null))
+    .catch(() => null);
+  svgSanitizerPromise = tentativo;
+  tentativo.then((mod) => {
+    if (!mod && svgSanitizerPromise === tentativo) svgSanitizerPromise = null;
+  });
+  return tentativo;
 }
+/* Tornata la connessione, il prossimo disegno non deve pagare l'errore di prima. */
+window.addEventListener("online", () => {
+  svgSanitizerPromise = null;
+});
 
 /** Secondo controllo, nel browser: il documento è ben formato e usa solo elementi noti. */
 function domCheckSvg(svg) {
@@ -2288,7 +2398,28 @@ async function hydrateSvgCard(fig, state) {
   const mod = await loadSvgSanitizer();
   if (!fig.isConnected) return;
   if (!mod || typeof mod.sanitizeSvg !== "function") {
-    showSvgCardError(fig, state, "sanitizzatore non disponibile (modulo /svg-sanitize.mjs non caricato)", false);
+    // Il motivo cambia il rimedio: offline si aspetta la rete, altrimenti quasi sempre è la
+    // sessione da rinnovare. In ogni caso si offre «riprova» senza ricaricare la pagina.
+    const perche =
+      navigator.onLine === false
+        ? "sei offline"
+        : "il modulo non si è caricato (sessione scaduta o server non raggiungibile)";
+    showSvgCardError(fig, state, `sanitizzatore non disponibile: ${perche}`, false, () => {
+      fig.classList.remove("err");
+      state.error = null;
+      const box = fig.querySelector(".svgbox");
+      if (box) {
+        box.textContent = "";
+        const wait = document.createElement("span");
+        wait.className = "svgwait";
+        wait.textContent = "riprovo l'anteprima…";
+        box.appendChild(wait);
+        if (state.img) box.appendChild(state.img);
+      }
+      const pre = fig.querySelector(".mdsvgsrc");
+      if (pre) pre.hidden = true;
+      loadSvgSanitizer().then(() => hydrateSvgCard(fig, state).catch(() => {}));
+    });
     return;
   }
   const res = mod.sanitizeSvg(state.raw);
@@ -2346,8 +2477,9 @@ function setSvgButtons(fig, patch) {
   }
 }
 
-/** Stato d'errore: si mostra il codice (testo) e il motivo, senza toccare il resto della chat. */
-function showSvgCardError(fig, state, message, codeVisible) {
+/** Stato d'errore: si mostra il codice (testo) e il motivo, senza toccare il resto della chat.
+ *  `retry`, se presente, aggiunge un pulsante per ritentare la resa della stessa card. */
+function showSvgCardError(fig, state, message, codeVisible, retry) {
   fig.classList.add("err");
   state.error = message;
   const box = fig.querySelector(".svgbox");
@@ -2355,6 +2487,16 @@ function showSvgCardError(fig, state, message, codeVisible) {
   const note = document.createElement("div");
   note.className = "svgerr";
   note.textContent = `anteprima non disponibile: ${message}`;
+  if (typeof retry === "function") {
+    const again = document.createElement("button");
+    again.type = "button";
+    again.className = "svgretry";
+    again.textContent = "↻ riprova";
+    again.title = "Riprova a preparare l'anteprima di questo disegno";
+    again.onclick = retry;
+    note.appendChild(document.createTextNode(" "));
+    note.appendChild(again);
+  }
   const pre = fig.querySelector(".mdsvgsrc");
   if (pre) pre.hidden = false;
   box.appendChild(note);
@@ -3573,6 +3715,17 @@ es.addEventListener("error", (e) => {
   setStatus(false);
 });
 es.addEventListener("files_touch", () => { if (document.body.dataset.tab === "files") refreshDir(); });
+// Il progetto è cambiato (anche da un'altra scheda/dispositivo): la vista 📦 e le stelle nel
+// file manager si riallineano senza ricaricare la pagina.
+es.addEventListener("progetto", (e) => {
+  try {
+    progettoCache = JSON.parse(e.data);
+  } catch {
+    progettoCache = null;
+  }
+  if (document.body.dataset.tab === "progetto") renderProgetto();
+  if (document.body.dataset.tab === "files") refreshDir();
+});
 
 /* live view del browser: frame, url, stato e controllo */
 es.addEventListener("browser_frame", (e) => {
@@ -4292,6 +4445,18 @@ $("statsToggle").onclick = () => {
 };
 applyStatsHidden();
 
+/* Il progetto serve al file manager (stelle sulle cartelle) e alla vista 📦: si legge una volta
+   all'avvio e poi si aggiorna con l'evento SSE `progetto` o con le azioni dell'utente. */
+(async function caricaProgetto() {
+  try {
+    const r = await fetch("/api/progetto");
+    if (r.ok) progettoCache = await r.json();
+  } catch {
+    progettoCache = null;
+  }
+  if (document.body.dataset.tab === "files") refreshDir();
+})();
+
 $("tabChat").onclick = () => showTab("chat");
 $("tabFiles").onclick = () => showTab("files");
 function showTab(name) {
@@ -4305,7 +4470,9 @@ function showTab(name) {
   $("liveView").hidden = name !== "live";
   // la live view consuma banda: il flusso si ferma quando si lascia la vista
   if (name !== "live" && liveWatching) stopWatch();
-  if (name === "live") openLive();
+  // il riquadro a schermo intero è un overlay: uscendo dalla vista deve sparire
+  if (name !== "live") setSchermoIntero(false);
+  if (name === "live") { openLive(); liveLogSuMisura(); }
   $("tabChat").classList.toggle("active", name === "chat");
   $("tabFiles").classList.toggle("active", name === "files");
   // goal, cron e skill non sono schede: si aprono dal menu "features"
@@ -4366,14 +4533,60 @@ function renderCrumbs(rel) {
   }
 }
 
-function frow(icon, name, type, onClick, meta) {
+function frow(icon, name, type, onClick, meta, extra) {
   const b = document.createElement("button");
   b.type = "button"; b.className = "frow" + (type === "dir" ? " dir" : "");
   b.innerHTML = `<span class="ic">${icon}</span><span class="nm"></span>`;
   b.querySelector(".nm").textContent = name;
   if (meta) { const m = document.createElement("span"); m.className = "meta"; m.textContent = meta; b.appendChild(m); }
+  if (extra) b.appendChild(extra);
   b.onclick = onClick;
   return b;
+}
+
+/** Stella del progetto nella riga di una cartella: ☆ la aggiunge, ★ la toglie.
+ *  Il click non deve aprire la cartella (stopPropagation), altrimenti marcare una cartella
+ *  significa anche navigarci dentro. */
+function stellaProgetto(fullRel) {
+  // `progettoCache` arriva da /api/progetto: `cartelle` è un elenco di oggetti {path,label,…}.
+  // Va normalizzato a percorsi, altrimenti ogni confronto fallisce e la stella resta vuota
+  // anche sulle cartelle che SONO nel progetto (difetto visto in prova: ☆ su «media»).
+  const nel = new Set((progettoCache?.cartelle || []).map((c) => (typeof c === "string" ? c : c?.path)).filter(Boolean));
+  const dentro = nel.has(fullRel);
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "projstar" + (dentro ? " on" : "");
+  b.textContent = dentro ? "★" : "☆";
+  b.title = dentro
+    ? `Togli «${fullRel}» dal progetto`
+    : `Segna «${fullRel}» come cartella del progetto (la vedrà anche l'agente)`;
+  b.setAttribute("aria-pressed", String(dentro));
+  b.setAttribute("aria-label", b.title);
+  b.onclick = async (e) => {
+    e.stopPropagation();
+    await progettoAzione(dentro ? "rimuovi" : "aggiungi", fullRel);
+  };
+  return b;
+}
+
+/** Chiama l'API del progetto e aggiorna le viste interessate. */
+async function progettoAzione(azione, path) {
+  try {
+    const r = await fetch("/api/progetto", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ azione, path }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { toast(j.error || "operazione non riuscita", "err"); return null; }
+    progettoCache = j;
+    if (azione === "aggiungi") toast(`«${path}» aggiunta al progetto`, "ok");
+    if (azione === "rimuovi") toast(`«${path}» tolta dal progetto`);
+    return j;
+  } catch (err) {
+    toast("errore di connessione: " + (err?.message || err), "err");
+    return null;
+  }
 }
 
 async function loadDir(rel) {
@@ -4391,7 +4604,8 @@ async function loadDir(rel) {
       const full = jr(currentDir, e.name);
       const icon = isDir ? "📁" : e.type === "link" ? "🔗" : isImage(e.name) ? "🖼" : "📄";
       const meta = isDir ? "" : fmtSize(e.size);
-      el.appendChild(frow(icon, e.name, e.type, () => (isDir ? loadDir(full) : openFile(full)), meta));
+      // le cartelle portano la stella del progetto (vedi stellaProgetto)
+      el.appendChild(frow(icon, e.name, e.type, () => (isDir ? loadDir(full) : openFile(full)), meta, isDir ? stellaProgetto(full) : null));
     }
   } catch { alert("errore di connessione"); }
 }
@@ -4813,7 +5027,18 @@ function liveChatPush(role, text) {
   liveChatMsgs.push({ role, text });
   if (liveChatMsgs.length > 60) liveChatMsgs = liveChatMsgs.slice(-60);
   liveChatRender();
+  liveLogNuovo();
   return liveChatMsgs[liveChatMsgs.length - 1];
+}
+
+/** Segnala sul pulsante «log» che sono arrivati messaggi mentre il log era chiuso: senza
+ *  questo, su telefono (dove il log parte nascosto per lasciare spazio al browser) una
+ *  risposta dell'agente poteva passare inosservata. */
+function liveLogNuovo() {
+  const log = $("liveChatLog");
+  const btn = $("liveLogToggle");
+  if (!log || !btn) return;
+  if (log.classList.contains("hidden")) btn.classList.add("nuovo");
 }
 
 function liveSetStreaming(on) {
@@ -4880,9 +5105,17 @@ async function liveStop() {
   }
 }
 
-/* ===================== VISTA PROGETTO (artefatti) ===================== */
-/* I file prodotti dal lavoro in media/, come output principale invece della chat. */
+/* ===================== VISTA PROGETTO =====================
+ * Due cose in una schermata:
+ *  1) le CARTELLE DEL PROGETTO che l'utente ha segnato (stella ☆ nella vista File): si vedono
+ *     qui con i loro file, una è attiva, e l'agente le riceve nel contesto (vedi
+ *     `progettoPromptNote` in dashboard.mjs), così «lavora sul progetto» ha un significato;
+ *  2) gli ARTEFATTI in media/, l'elenco che c'era prima (i file prodotti dal lavoro).
+ * I percorsi sono relativi alla root, come nel file manager. */
 let progettoLoaded = false;
+/** Ultimo payload di /api/progetto: lo usano anche le stelle nel file manager. */
+let progettoCache = null;
+let progettoDati = { cartelle: [], attiva: "", rel: "media", entries: [] };
 
 /** Tempo trascorso in forma compatta (per gli artefatti, che stanno nel passato).
  *  fmtRel è pensato per le date future delle pianificazioni, qui non andrebbe bene. */
@@ -4899,22 +5132,81 @@ async function loadProgetto() {
   const list = $("progettoList");
   if (!list) return;
   try {
+    const pRes = await fetch("/api/progetto");
+    const p = pRes.ok ? await pRes.json() : { cartelle: [], attiva: "" };
+    progettoCache = p;
     const st = await (await fetch("/api/state")).json();
     const rel = st.mediaRel || "media";
     const data = await (await fetch(`/api/files?path=${encodeURIComponent(rel)}`)).json();
-    const entries = (data.entries || []).filter((e) => !e.hidden);
-    const files = entries.filter((e) => e.type === "file").sort((a, b) => b.mtime - a.mtime);
-    const dirs = entries.filter((e) => e.type === "dir").sort((a, b) => a.name.localeCompare(b.name));
-    $("progettoCount").textContent =
-      `${files.length} artefatti` + (dirs.length ? ` · ${dirs.length} cartelle` : "");
-    if (!entries.length) {
-      list.innerHTML = `<div class="empty">Nessun artefatto in <b>${escHtml(rel)}</b>.</div>`;
-      return;
+    progettoDati = { cartelle: p.cartelle || [], attiva: p.attiva || "", rel, entries: data.entries || [] };
+    renderProgetto();
+  } catch (e) {
+    list.innerHTML = `<div class="empty">errore: ${escHtml(String(e && e.message ? e.message : e))}</div>`;
+  }
+}
+
+/** Disegna la vista dai dati in memoria (usata anche dall'evento SSE `progetto`). */
+function renderProgetto() {
+  const list = $("progettoList");
+  if (!list) return;
+  const { cartelle, rel, entries } = progettoDati;
+  const visibili = entries.filter((e) => !e.hidden);
+  const files = visibili.filter((e) => e.type === "file").sort((a, b) => b.mtime - a.mtime);
+  const dirs = visibili.filter((e) => e.type === "dir").sort((a, b) => a.name.localeCompare(b.name));
+  const totaleFile = cartelle.reduce((n, c) => n + (c.esiste ? c.file || 0 : 0), 0);
+  $("progettoCount").textContent =
+    `${cartelle.length} ${cartelle.length === 1 ? "cartella" : "cartelle"} del progetto` +
+    (cartelle.length ? ` · ${totaleFile} file` : "") +
+    ` · ${files.length} artefatti`;
+
+  const righe = [];
+  righe.push('<div class="feat-h" style="padding:2px 0 6px">📌 cartelle del progetto</div>');
+  if (!cartelle.length) {
+    righe.push(`<div class="goal-card" style="margin-bottom:10px">
+      <div class="feat-h" style="padding:0 0 6px">nessuna cartella scelta</div>
+      <div style="font-size:var(--fs-md);opacity:.9">Il progetto sono le cartelle su cui stai lavorando: segnale dalla vista
+      <b>File</b> con la stella ☆, e l'agente le conoscerà nel suo contesto (potrà vederne i file senza che glieli elenchi).</div>
+      <div style="display:flex;gap:8px;margin-top:10px"><button class="ghost" data-vai-file="1">vai a File e scegli una cartella</button></div>
+    </div>`);
+  }
+  for (const c of cartelle) {
+    const nome = c.label || c.path.split("/").pop() || c.path;
+    const attiva = c.path === progettoDati.attiva;
+    const fileRighe = [];
+    if (!c.esiste) {
+      fileRighe.push(`<div style="font-size:var(--fs-md);color:var(--red)">cartella non trovata o fuori dalla root${c.motivo ? ": " + escHtml(c.motivo) : ""}</div>`);
+    } else if (!c.elenco || !c.elenco.length) {
+      fileRighe.push('<div style="font-size:var(--fs-md);opacity:.7">nessun file nella cartella</div>');
+    } else {
+      for (const f of c.elenco) {
+        const p = `${c.path}/${f.name}`;
+        fileRighe.push(`<div class="projfile"><button class="projopen" data-open="${escAttr(p)}" title="Apri ${escAttr(f.name)}">${escHtml(f.name)}</button><span class="gcount">${fmtSize(f.size)} · ${fmtAgo(f.mtime)}</span><button class="ghost" data-dl="${escAttr(p)}" title="Scarica">⬇</button></div>`);
+      }
+      if (c.troncato) fileRighe.push(`<div style="font-size:var(--fs-sm);opacity:.7">…e altri ${c.troncato} file (apri la cartella per vederli)</div>`);
     }
-    const rows = [];
+    righe.push(`<div class="goal-card" style="margin-bottom:10px">
+      <div class="goal-head">
+        <span class="goal-title">📁 ${escHtml(nome)}</span>
+        ${attiva ? '<span class="goal-badge done">attiva</span>' : '<span class="goal-badge">progetto</span>'}
+      </div>
+      <div style="font-size:var(--fs-sm);opacity:.75;margin-top:2px">${escHtml(c.path)}${c.esiste ? ` · ${c.file || 0} file${c.cartelle ? ` + ${c.cartelle} cartelle` : ""} · ${fmtSize(c.dimensione || 0)} · ${fmtAgo(c.ultimaModifica)}` : ""}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+        ${attiva ? "" : `<button class="ghost" data-attiva="${escAttr(c.path)}">rendi attiva</button>`}
+        <button class="ghost" data-apri="${escAttr(c.path)}">apri in File</button>
+        <button class="ghost" data-zip="${escAttr(c.path)}">⬇ zip</button>
+        <button class="ghost" data-togli="${escAttr(c.path)}">togli</button>
+      </div>
+      <div class="projfiles">${fileRighe.join("")}</div>
+    </div>`);
+  }
+
+  righe.push('<div class="feat-h" style="padding:12px 0 6px">📦 artefatti recenti in ' + escHtml(rel) + "</div>");
+  if (!visibili.length) {
+    righe.push(`<div class="empty">Nessun artefatto in <b>${escHtml(rel)}</b>.</div>`);
+  } else {
     for (const d of dirs) {
       const p = `${rel}/${d.name}`;
-      rows.push(`<div class="goal-card" style="margin-bottom:8px">
+      righe.push(`<div class="goal-card" style="margin-bottom:8px">
         <div class="goal-head"><span class="goal-title">📁 ${escHtml(d.name)}</span><span class="gcount">${fmtAgo(d.mtime)}</span></div>
         <div style="display:flex;gap:8px;margin-top:6px">
           <button class="ghost" data-dir="${escAttr(p)}">apri cartella</button>
@@ -4924,7 +5216,7 @@ async function loadProgetto() {
     }
     for (const f of files) {
       const p = `${rel}/${f.name}`;
-      rows.push(`<div class="goal-card" style="margin-bottom:8px">
+      righe.push(`<div class="goal-card" style="margin-bottom:8px">
         <div class="goal-head"><span class="goal-title">${escHtml(f.name)}</span><span class="gcount">${fmtSize(f.size)} · ${fmtAgo(f.mtime)}</span></div>
         <div style="display:flex;gap:8px;margin-top:6px">
           <button class="ghost" data-open="${escAttr(p)}">apri</button>
@@ -4932,15 +5224,24 @@ async function loadProgetto() {
         </div>
       </div>`);
     }
-    list.innerHTML = rows.join("");
-    for (const b of list.querySelectorAll("[data-open]")) b.onclick = () => openInEditor(b.dataset.open);
-    for (const b of list.querySelectorAll("[data-dl]"))
-      b.onclick = () => { window.location = "/api/download?path=" + encodeURIComponent(b.dataset.dl); };
-    for (const b of list.querySelectorAll("[data-dir]"))
-      b.onclick = () => { showTab("files"); loadDir(b.dataset.dir); };
-  } catch (e) {
-    list.innerHTML = `<div class="empty">errore: ${escHtml(String(e && e.message ? e.message : e))}</div>`;
   }
+  list.innerHTML = righe.join("");
+
+  for (const b of list.querySelectorAll("[data-open]")) b.onclick = () => openInEditor(b.dataset.open);
+  for (const b of list.querySelectorAll("[data-dl]"))
+    b.onclick = () => { window.location = "/api/download?path=" + encodeURIComponent(b.dataset.dl); };
+  for (const b of list.querySelectorAll("[data-dir]"))
+    b.onclick = () => { showTab("files"); loadDir(b.dataset.dir); };
+  for (const b of list.querySelectorAll("[data-apri]"))
+    b.onclick = () => { showTab("files"); loadDir(b.dataset.apri); };
+  for (const b of list.querySelectorAll("[data-zip]"))
+    b.onclick = () => { window.location = "/api/download?path=" + encodeURIComponent(b.dataset.zip); };
+  for (const b of list.querySelectorAll("[data-attiva]"))
+    b.onclick = async () => { const j = await progettoAzione("attiva", b.dataset.attiva); if (j) { progettoDati = { ...progettoDati, cartelle: j.cartelle || [], attiva: j.attiva || "" }; renderProgetto(); } };
+  for (const b of list.querySelectorAll("[data-togli]"))
+    b.onclick = async () => { const j = await progettoAzione("rimuovi", b.dataset.togli); await loadProgetto(); };
+  for (const b of list.querySelectorAll("[data-vai-file]"))
+    b.onclick = () => { showTab("files"); toast("Scegli la cartella e premi ☆: diventa una cartella del progetto"); };
 }
 
 /* ============================ VISTA AGENDA ============================
@@ -5097,6 +5398,7 @@ $("liveUrlBar").addEventListener("keydown", (e) => {
 $("liveLogToggle").onclick = () => {
   const el = $("liveChatLog");
   const btn = $("liveLogToggle");
+  btn.classList.remove("nuovo");
   if (el.classList.contains("hidden")) {
     el.classList.remove("hidden", "expanded");
     btn.textContent = "▴ log";
@@ -5104,7 +5406,7 @@ $("liveLogToggle").onclick = () => {
   } else if (el.classList.contains("expanded")) {
     el.classList.remove("expanded");
     el.classList.add("hidden");
-    btn.textContent = "▫ log";
+    btn.textContent = "▸ log";
     btn.title = "Mostra il log";
   } else {
     el.classList.add("expanded");
@@ -5112,6 +5414,59 @@ $("liveLogToggle").onclick = () => {
     btn.title = "Comprimi il log";
   }
 };
+
+/* --- ingrandimento del riquadro: adatta → 1:1 → 2× -------------------------
+ * Senza questo, su un telefono il frame 1280×720 ridotto a ~374px non si legge: si vede che
+ * «c'è una pagina», non cosa dice. Le tre modalità sono classi sul riquadro, quindi il pan
+ * è lo scorrimento nativo del contenitore (funziona col dito, senza JS). */
+const LIVE_ZOOM = [
+  { cls: "", label: "⤢ adatta", titolo: "Riquadro adattato alla finestra (clicca per ingrandire a 1:1)" },
+  { cls: "zoom-1x", label: "⤢ 1:1", titolo: "Pagina alla sua dimensione reale: scorri per muoverti (clicca per 2×)" },
+  { cls: "zoom-2x", label: "⤢ 2×", titolo: "Pagina al doppio: scorri per muoverti (clicca per tornare ad adattata)" },
+];
+let liveZoom = 0;
+function applicaZoom() {
+  const stage = $("liveStage");
+  const btn = $("liveZoom");
+  if (!stage || !btn) return;
+  stage.classList.remove("zoom-1x", "zoom-2x");
+  if (LIVE_ZOOM[liveZoom].cls) stage.classList.add(LIVE_ZOOM[liveZoom].cls);
+  btn.textContent = LIVE_ZOOM[liveZoom].label;
+  btn.title = LIVE_ZOOM[liveZoom].titolo;
+}
+$("liveZoom").onclick = () => {
+  liveZoom = (liveZoom + 1) % LIVE_ZOOM.length;
+  applicaZoom();
+};
+$("liveFull").onclick = () => setSchermoIntero(!document.querySelector(".livewrap").classList.contains("full"));
+function setSchermoIntero(on) {
+  const wrap = document.querySelector(".livewrap");
+  const btn = $("liveFull");
+  if (!wrap) return;
+  wrap.classList.toggle("full", on);
+  document.body.classList.toggle("live-full", on);
+  if (btn) {
+    btn.textContent = on ? "⤡" : "⛶";
+    btn.title = on ? "Torna alla vista normale" : "Riquadro a schermo intero";
+  }
+}
+addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  if (document.querySelector(".livewrap.full")) setSchermoIntero(false);
+});
+
+/** Su telefono il log parte chiuso (lascia ~130px al riquadro del browser) ma solo se non ci
+ *  sono messaggi da leggere: chi torna sulla vista non perde quello che era arrivato. */
+function liveLogSuMisura() {
+  const log = $("liveChatLog");
+  const btn = $("liveLogToggle");
+  if (!log || !btn || !window.matchMedia("(max-width: 760px)").matches) return;
+  if (liveChatMsgs.length) return;
+  log.classList.add("hidden");
+  log.classList.remove("expanded");
+  btn.textContent = "▸ log";
+  btn.title = "Mostra il log";
+}
 $("liveFocusBtn").onclick = () => {
   // toglie il focus dalla chat: da qui in poi i tasti vanno al browser (modalità controllo)
   $("liveInput").blur();
@@ -5191,6 +5546,10 @@ $("progettoBack").onclick = () => showTab("chat");
 $("filesBack").onclick = () => showTab("chat");
 $("agendaBack").onclick = () => showTab("chat");
 $("progettoRefresh").onclick = () => loadProgetto();
+$("progettoAdd").onclick = () => {
+  showTab("files");
+  toast("Scegli una cartella nella vista File e premi ☆: diventa una cartella del progetto (la vede anche l'agente)");
+};
 $("agendaRefresh").onclick = () => loadAgenda();
 addEventListener("click", (e) => {
   const w = $("featWrap"), p = $("featPanel");
@@ -5838,6 +6197,23 @@ function skillCard(s) {
     ? `${s.filePath || ""} · ${s.fileCount} file · ${fmtSize(s.sizeBytes)}`
     : s.filePath || "";
   card.appendChild(meta);
+  // Costo e struttura in una riga: il modello vede SEMPRE nome + descrizione (tutte le skill),
+  // mentre il corpo viene letto solo quando la skill serve. Sapere quanto pesa ciascuno dei due
+  // è il modo per accorgersi di una descrizione gonfiata o di un corpo diventato un librone.
+  const costo = document.createElement("div");
+  costo.className = "skillcost";
+  costo.textContent =
+    (s.righeCorpo ? `corpo ${s.righeCorpo} righe · ` : "") +
+    `descrizione ${s.descrizioneCaratteri ?? (s.description || "").length} caratteri sempre nel contesto`;
+  card.appendChild(costo);
+  // Avvisi sulle regole delle Agent Skills (spec + guide Claude/Codex): non bloccano nulla,
+  // dicono dove la skill rischia di non attivarsi o di costare troppo.
+  for (const a of s.avvisi || []) {
+    const w = document.createElement("div");
+    w.className = "skillwarn";
+    w.textContent = "⚠ " + a;
+    card.appendChild(w);
+  }
   const acts = document.createElement("div");
   acts.className = "goal-actions";
   const hint = document.createElement("span");

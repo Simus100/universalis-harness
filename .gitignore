@@ -28,6 +28,8 @@ media/decision-m-prefs.json
 media/decision-m.pid
 media/schedules.json
 media/goals.json
+# Progetto: cartelle scelte dall'utente (stato dell'istanza, non codice)
+media/progetto.json
 media/.ask-*
 
 # ---- temporanei ----

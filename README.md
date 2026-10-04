@@ -27,6 +27,11 @@ scrive.
 avanzamento e un pulsante che manda all'agente i passaggi rimanenti. Le pianificazioni cron fanno
 girare prompt o obiettivi in autonomia, con esito, durata e log consultabili.
 
+**Il progetto sono le cartelle che scegli tu.** Segni una o più cartelle con la stella nella vista
+File e diventano *il progetto*: la vista 📦 le mostra con i loro file (una è quella attiva) e
+**l'agente le riceve nel suo contesto** — sa dove sono, cosa contengono e su quale stai lavorando,
+quindi «lavora sul progetto» ha un significato senza doverlo rispiegare.
+
 **Disegni dentro la risposta.** Se il modello spiega con uno schema, il blocco SVG diventa un
 disegno vero nel punto esatto del messaggio — con vista ingrandita, copia e download — dopo il
 passaggio in un sanitizzatore che rifiuta script, risorse esterne e riferimenti di rete.
@@ -44,7 +49,9 @@ corrisponde.
 
 **Browser pilotato.** L'agente apre siti reali, legge l'albero di accessibilità, clicca e compila
 moduli in un Chrome headless con sandbox verificata. Nella vista *live* lo guardi lavorare e, se
-serve un 2FA o un CAPTCHA, prendi il controllo: la chat resta accanto alla pagina.
+serve un 2FA o un CAPTCHA, prendi il controllo: la chat resta accanto alla pagina. Da telefono il
+riquadro si ingrandisce (1:1 e 2×) o va a schermo intero, perché una pagina ridotta a un francobollo
+non si legge.
 
 **Domande all'utente invece di supposizioni.** Quando una richiesta è ambigua, l'agente pone la
 domanda *dentro la conversazione*, con opzioni concrete e scadenze esplicite, e aspetta la risposta.

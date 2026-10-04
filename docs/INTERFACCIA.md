@@ -37,6 +37,16 @@ comando in più nella barra, che su telefono è affollata. C'è una sola resa, c
 servisse un controllo di leggibilità, la casella giusta è la **dimensione del testo**, non la
 densità: cambierebbe qualcosa di percepibile.
 
+## 3-bis. La stella del progetto e la vista 📦
+
+Nel file manager ogni cartella ha una **stella**: ☆ la segna come cartella del progetto, ★ la
+toglie (il click non entra nella cartella: `stopPropagation` nella riga, perché segnare non è
+navigare). Le cartelle segnate si vedono nella vista **📦 progetto**, con file, dimensione e
+ultima modifica, una è **attiva**, e l'agente le riceve nel contesto (vedi `docs/MANUALE.md`).
+Regole visive: la stella ha bersaglio 40px (44 su telefono) e sta a destra della riga; l'elenco
+dei file dentro una card usa righe sottili (32px, 40 su telefono) con il nome cliccabile in
+colore d'accento e le azioni a destra, per non trasformare la card in un muro di pulsanti.
+
 ## 4. Telefono (≤ 760px)
 
 Misure prese con emulazione iPhone 12 (viewport 390×844), pagina servita e contenuti veri:
@@ -65,7 +75,19 @@ Nove voci su una riga: sotto i 1500px i valori passano a 13px. La soglia era 140
 di compattazione aveva **la stessa specificità** di quella generale più in basso nel foglio: vinceva
 quest'ultima e i valori lunghi («38% · 74k / 195k», `/root/pi-harness`) restavano troncati. Ora la
 regola dentro la media query usa il selettore `#stats .stat .value`. Chi aggiunge regole `#stats`
-deve tenerne conto.
+deve tenerne conto. Una decima voce (es. «spazio» su un'istanza con quota) entra nella stessa
+griglia senza regole nuove.
+
+## 5-bis. Live view su telefono
+
+La barra dei comandi della vista live sta su **una riga** (`#liveView .gtoolbar .ghost` con padding
+ridotto e corpo 12px) e l'intestazione del log pure (l'hint `.gcount` sparisce). Il **log parte
+nascosto** su schermo stretto: lo riapre `▸ log`, che porta un pallino ● quando arrivano messaggi a
+log chiuso (`#liveLogToggle.nuovo`). Il campo indirizzi è alto 44px come gli altri bersagli da dito.
+Ingrandimento (`⤢ adatta → 1:1 → 2×`) e schermo intero (`⛶`) sono classi sul riquadro
+(`.livestage.zoom-1x`, `.livewrap.full`), non trasformazioni inline. In schermo intero la barra dei
+comandi resta **sopra** l'overlay (`z-index: 90`): senza quello, su un telefono senza Esc, il
+riquadro diventerebbe una trappola da cui si esce solo ricaricando la pagina.
 
 ## 6. Movimento
 

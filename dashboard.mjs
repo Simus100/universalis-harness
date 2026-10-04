@@ -1097,6 +1097,150 @@ const BROWSER_FPS_HUMAN = Number(process.env.DASH_BROWSER_STREAM_FPS_HUMAN) || 1
 
 // Ponte verso lo stream di agent-browser: la live view passa da qui, quindi eredita
 // l'autenticazione della dashboard e non richiede porte nuove né modifiche a Caddy.
+// ---- progetto: cartelle scelte dall'utente -------------------------------
+// Sta QUI, prima della creazione del resourceLoader: `systemPromptOverride` (più sotto) chiama
+// `progettoPromptNote()`, e in JavaScript una `let` dichiarata dopo non è ancora accessibile
+// quando quella callback viene eseguita (ReferenceError: Cannot access 'progetto' before
+// initialization). Lo stesso blocco, se spostato dopo, rompe l'avvio del servizio.
+// L'utente marca alcune cartelle (dalla vista File con ☆, o dalla vista Progetto) e quelle
+// diventano «il progetto»: si vedono nella vista 📦 e l'agente le riceve nel contesto, così
+// quando gli si dice «lavora sul progetto» sa di quali cartelle si parla e cosa contengono.
+// Percorsi RELATIVI alla root della dashboard (gli stessi del file manager), una cartella
+// attiva alla volta. Lo stato sta in media/, quindi sopravvive ai riavvii.
+const PROGETTO_FILE = process.env.DASH_PROGETTO_FILE || join(MEDIA_DIR, "progetto.json");
+const PROGETTO_MAX_CARTELLE = 12;
+/** Quanti nomi di file entrano nel contesto per cartella (e quanti se ne elencano nella vista). */
+const PROGETTO_FILE_PROMPT = 8;
+const PROGETTO_FILE_VISTA = 60;
+let progetto = { cartelle: [], attiva: "" };
+
+async function loadProgetto() {
+  try {
+    const parsed = JSON.parse(await fs.readFile(PROGETTO_FILE, "utf8"));
+    const cartelle = Array.isArray(parsed?.cartelle)
+      ? parsed.cartelle
+          .map((c) => ({ path: String(c?.path || "").replace(/^[./]+/, "").replace(/\/+$/, ""), label: String(c?.label || "").slice(0, 80) }))
+          .filter((c) => c.path)
+          .slice(0, PROGETTO_MAX_CARTELLE)
+      : [];
+    progetto = { cartelle, attiva: String(parsed?.attiva || cartelle[0]?.path || "") };
+    if (!cartelle.some((c) => c.path === progetto.attiva)) progetto.attiva = cartelle[0]?.path || "";
+  } catch {
+    progetto = { cartelle: [], attiva: "" };
+  }
+}
+
+async function saveProgetto() {
+  const tmp = PROGETTO_FILE + ".tmp";
+  await fs.writeFile(tmp, JSON.stringify(progetto, null, 2), "utf8");
+  await fs.rename(tmp, PROGETTO_FILE);
+}
+
+/** Contenuto di una cartella del progetto: file diretti (niente ricorsione: il progetto può
+ *  essere grande e al contesto servono i nomi di primo livello). Segue i symlink se restano
+ *  dentro la root. */
+async function schedaCartella(rel, { maxFile = PROGETTO_FILE_VISTA } = {}) {
+  try {
+    const abs = await safeResolve(rel);
+    const st = await fs.stat(abs);
+    if (!st.isDirectory()) return { path: rel, esiste: false, motivo: "non è una cartella" };
+    const dirents = await fs.readdir(abs, { withFileTypes: true });
+    const file = [];
+    let totale = 0;
+    let cartelle = 0;
+    for (const d of dirents) {
+      if (d.name.startsWith(".")) continue;
+      let s;
+      try {
+        s = await fs.lstat(join(abs, d.name));
+      } catch {
+        continue;
+      }
+      if (s.isDirectory()) {
+        cartelle++;
+        continue;
+      }
+      file.push({ name: d.name, size: s.size, mtime: s.mtimeMs });
+      totale += s.size;
+    }
+    file.sort((a, b) => b.mtime - a.mtime);
+    return {
+      path: rel,
+      esiste: true,
+      file: file.length,
+      cartelle,
+      dimensione: totale,
+      ultimaModifica: st.mtimeMs,
+      elenco: file.slice(0, maxFile),
+      troncato: Math.max(0, file.length - maxFile),
+    };
+  } catch (e) {
+    return { path: rel, esiste: false, motivo: e?.message || String(e) };
+  }
+}
+
+/** Payload per la dashboard: cartelle con la loro scheda e quale è attiva. */
+async function progettoPayload() {
+  const cartelle = [];
+  for (const c of progetto.cartelle) {
+    cartelle.push({ ...c, attiva: c.path === progetto.attiva, ...(await schedaCartella(c.path)) });
+  }
+  return { cartelle, attiva: progetto.attiva, root: ROOT, media: MEDIA_DIR };
+}
+
+/**
+ * Blocco di contesto per l'agente. Si calcola a ogni ricostruzione del system prompt (che
+ * avviene al reload delle risorse, quindi anche quando l'utente cambia il progetto: vedi
+ * `ricaricaContestoProgetto`), e legge i nomi dei file direttamente da disco.
+ */
+function progettoPromptNote() {
+  if (!progetto.cartelle.length) return "";
+  const righe = [];
+  for (const c of progetto.cartelle) {
+    let file = [];
+    try {
+      // `readdirSync` arriva da node:fs (import in testa); `fs` qui è node:fs/promises e non ha
+      // la variante sincrona: usando `fs.readdirSync` la lettura lanciava sempre, e il contesto
+      // diceva all'agente «cartella non leggibile» (difetto visto con una richiesta vera).
+      const nomi = readdirSync(resolve(ROOT, c.path), { withFileTypes: true })
+        .filter((d) => !d.name.startsWith("."))
+        .map((d) => ({ name: d.name, dir: d.isDirectory() }));
+      const dirs = nomi.filter((n) => n.dir).map((n) => n.name + "/");
+      const files = nomi.filter((n) => !n.dir).map((n) => n.name);
+      file = [...dirs.slice(0, 4), ...files.slice(0, PROGETTO_FILE_PROMPT)];
+      const resto = dirs.length + files.length - file.length;
+      if (resto > 0) file.push(`…e altri ${resto}`);
+    } catch {
+      file = ["(cartella non leggibile)"];
+    }
+    righe.push(
+      `- \`${c.path}\`${c.path === progetto.attiva ? "  ← ATTIVA (è qui che si sta lavorando)" : ""}` +
+        (file.length ? `\n  contiene: ${file.join(", ")}` : "\n  (vuota)"),
+    );
+  }
+  return (
+    `\n\n## Progetto (cartelle scelte dall'utente)\n` +
+    `L'utente ha segnato queste cartelle come «il progetto» (percorsi relativi alla root ` +
+    `\`${ROOT}\`). Quando dice «il progetto», «il sito», «qui» o chiede di continuare un lavoro ` +
+    `già iniziato, si riferisce a queste cartelle — e in particolare a quella ATTIVA. Guarda lì ` +
+    `prima di cercare altrove e non chiedere dove sono i file: sono elencati qui sotto.\n` +
+    righe.join("\n") +
+    `\nSe il lavoro riguarda davvero un'altra cartella, dillo e proponi di aggiungerla al progetto.`
+  );
+}
+
+/** Rende subito effettivo il nuovo progetto nel contesto dell'agente. */
+async function ricaricaContestoProgetto() {
+  try {
+    if (session?.isIdle) await session.reload();
+    else progettoReloadPending = true;
+  } catch (e) {
+    console.error("[dashboard] reload per il progetto:", e?.message || e);
+  }
+  broadcast("progetto", await progettoPayload());
+}
+let progettoReloadPending = false;
+
 const browserLive = createBrowserLive({
   user: process.env.DASH_BROWSER_USER || "pi-browser",
   // wrapper col profilo PERSISTENTE: se il bridge riavvia il daemon deve usare lo stesso
@@ -1120,7 +1264,7 @@ const resourceLoader = new DefaultResourceLoader({
   additionalExtensionPaths,
   additionalSkillPaths: [SKILLS_DIR],
   extensionFactories: [MEDIA_GUARD_EXT, BROWSER_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(DECISION_M_EXT ? [DECISION_M_EXT] : [])],
-  systemPromptOverride: (base) => `${base ?? ""}${SYSTEM_MEDIA_NOTE}`,
+  systemPromptOverride: (base) => `${base ?? ""}${SYSTEM_MEDIA_NOTE}${progettoPromptNote()}`,
 });
 await resourceLoader.reload();
 
@@ -1478,6 +1622,7 @@ async function saveGoals() {
 
 const GOAL_STATUSES = new Set(["active", "done", "archived"]);
 
+
 /** Valida e normalizza un goal in ingresso (creazione o aggiornamento). */
 function normalizeGoal(input, existing = null) {
   const now = Date.now();
@@ -1490,20 +1635,23 @@ function normalizeGoal(input, existing = null) {
   const title = String(input?.title ?? existing?.title ?? "").trim().slice(0, 200);
   if (!title) throw new HttpError(400, "titolo del goal mancante");
 
+  // Passi e checklist accettano anche la forma breve `["fare questo", "poi quello"]`: l'API è
+  // usata anche dall'agente e da script, e prima gli elementi stringa venivano SVUOTATI in
+  // silenzio (nessun errore, goal senza passi: il chiamante credeva di averli creati).
   const steps = (given("steps") ? (Array.isArray(input.steps) ? input.steps : []) : existing?.steps ?? [])
     .map((s, i) => ({
-      id: String(s?.id || randomBytes(6).toString("hex")),
-      title: String(s?.title || "").trim().slice(0, 300),
-      done: !!s?.done,
+      id: String((typeof s === "string" ? "" : s?.id) || randomBytes(6).toString("hex")),
+      title: String(typeof s === "string" ? s : s?.title || "").trim().slice(0, 300),
+      done: typeof s === "string" ? false : !!s?.done,
       order: i,
     }))
     .filter((s) => s.title);
 
   const checklist = (given("checklist") ? (Array.isArray(input.checklist) ? input.checklist : []) : existing?.checklist ?? [])
     .map((c) => ({
-      id: String(c?.id || randomBytes(6).toString("hex")),
-      text: String(c?.text || "").trim().slice(0, 300),
-      done: !!c?.done,
+      id: String((typeof c === "string" ? "" : c?.id) || randomBytes(6).toString("hex")),
+      text: String(typeof c === "string" ? c : c?.text || "").trim().slice(0, 300),
+      done: typeof c === "string" ? false : !!c?.done,
     }))
     .filter((c) => c.text);
 
@@ -1551,6 +1699,7 @@ function goalExecutionPrompt(g, mode) {
 }
 
 await loadGoals();
+await loadProgetto();
 
 // ---- operazioni pianificate (cron) ---------------------------------------
 // Job salvati in un JSON (sopravvivono ai riavvii) + esecuzione autonoma.
@@ -1618,7 +1767,7 @@ function parseCronField(field, min, max) {
 
 function parseCron(expr) {
   const raw = String(expr || "").trim();
-  if (!raw) throw new HttpError(400, "pianificazione vuota");
+  if (!raw) throw new HttpError(400, "specifica della pianificazione mancante o vuota (campo `schedule`, 5 campi: minuto ora giorno mese giorno-settimana, es. «0 3 * * *»)");
   const lower = raw.toLowerCase();
   if (lower.startsWith("@every")) {
     const m = lower.match(/^@every\s+(\d+)\s*(m|h|d)$/);
@@ -2145,6 +2294,9 @@ function getState({ withMessages = false } = {}) {
     root: ROOT,
     mediaDir: MEDIA_DIR,
     mediaRel: relative(ROOT, MEDIA_DIR),
+    // Il file manager disegna la stella sulle cartelle già nel progetto: gli serve solo
+    // l'elenco dei percorsi, non le schede complete (quelle arrivano da /api/progetto).
+    progetto: { cartelle: progetto.cartelle.map((c) => c.path), attiva: progetto.attiva },
     subagents: {
       available: hasSubagentExt,
       enabled: hasSubagentExt && subagentsEnabled,
@@ -2276,6 +2428,11 @@ function handleSessionEvent(event) {
     if (skillsReloadPending) {
       skillsReloadPending = false;
       scheduleSkillsReload("cambio durante la risposta");
+    }
+    // Progetto cambiato mentre l'agente lavorava: il contesto si ricostruisce ora.
+    if (progettoReloadPending) {
+      progettoReloadPending = false;
+      ricaricaContestoProgetto().catch(() => {});
     }
     // Rete di sicurezza: se il turno è finito (per errore del provider) mentre una domanda era
     // in attesa, la si chiude. Non può accadere a turno normale: il tool blocca il turno.
@@ -2903,6 +3060,31 @@ function dirStats(dir, { maxFiles = 5000 } = {}) {
 }
 
 /** Elenco skill (dalla cache del resource loader) + diagnostica + dir. */
+/**
+ * Consigli sulle regole delle Agent Skills (https://agentskills.io/specification e le guide di
+ * Claude Code / Codex): `name` e `description` sono ciò che il modello vede SEMPRE, il corpo
+ * viene letto solo quando la skill serve. Una descrizione senza «quando usarla» rischia di non
+ * attivare mai la skill; un corpo lunghissimo costa contesto a ogni uso.
+ * Restituisce un elenco di avvisi leggibili (vuoto = tutto a posto); gli stessi controlli stanno
+ * in `media/check-skills.mjs`, così restano verificati a ogni suite.
+ */
+function consigliSkill(raw) {
+  const avvisi = [];
+  const m = raw.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const fm = m ? m[1] : "";
+  const corpo = m ? raw.slice(m[0].length) : raw;
+  const dm = fm.match(/^description:\s*([\s\S]*?)(?=\n[a-zA-Z-]+:|\s*$)/m);
+  const desc = dm ? dm[1].trim() : "";
+  if (desc && !/(usa quando|usala quando|usa per|serve a|use when|attiva quando|ogni volta che|quando\b)/i.test(desc))
+    avvisi.push("descrizione senza «quando usarla»: il modello potrebbe non attivarla mai");
+  if (/<[^>]+>/.test(desc)) avvisi.push("la descrizione non deve contenere tag < >");
+  const righe = corpo.split("\n").filter((r) => r.trim()).length;
+  if (righe > 400) avvisi.push(`corpo lungo (${righe} righe): valuta di spostare i dettagli in references/`);
+  if (!/^\s*#\s+\S/m.test(corpo)) avvisi.push("manca un titolo (# …) all'inizio del corpo");
+  // i riferimenti a file inesistenti li controlla il test, che conosce la cartella della skill
+  return { avvisi, righe, descrizioneCaratteri: desc.length };
+}
+
 function skillsPayload() {
   const loaded = resourceLoader.getSkills();
   return {
@@ -2912,6 +3094,13 @@ function skillsPayload() {
       const dir = dirname(s.filePath);
       const inside = s.filePath.startsWith(SKILLS_DIR + sep);
       const stats = inside ? dirStats(dir) : null;
+      // gli avvisi si calcolano leggendo il file: poche righe, una volta per richiesta
+      let info = { avvisi: [], righe: null, descrizioneCaratteri: String(s.description || "").length };
+      try {
+        info = consigliSkill(readFileSync(s.filePath, "utf8"));
+      } catch {
+        /* file non leggibile: nessun avviso inventato */
+      }
       return {
         name: s.name,
         description: s.description,
@@ -2925,6 +3114,10 @@ function skillsPayload() {
         sizeBytes: stats ? stats.bytes : null,
         writable: s.filePath.startsWith(SKILLS_DIR + sep),
         disableModelInvocation: !!s.disableModelInvocation,
+        // regole delle Agent Skills applicate alla scheda
+        righeCorpo: info.righe,
+        descrizioneCaratteri: info.descrizioneCaratteri,
+        avvisi: info.avvisi,
       };
     }),
     diagnostics: loaded.diagnostics || [],
@@ -4139,6 +4332,67 @@ const server = http.createServer(async (req, res) => {
           broadcast("status", { streaming: false });
         });
       return;
+    }
+
+    // ---------------- progetto: cartelle scelte dall'utente ----------------
+    // L'agente vede le cartelle nel system prompt (vedi progettoPromptNote); queste rotte
+    // servono alla vista 📦 e alla stella nel file manager.
+    if (req.method === "GET" && url.pathname === "/api/progetto") {
+      return json(res, 200, await progettoPayload());
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/progetto") {
+      const body = await readBody(req);
+      const azione = String(body.azione || "aggiungi");
+      const grezzo = String(body.path || "").trim();
+      // Un percorso con «..» non viene "aggiustato in silenzio": si rifiuta, dicendo cosa fare.
+      // (La normalizzazione sotto lo renderebbe comunque innocuo, ma un rifiuto esplicito evita
+      // di far credere che una cartella fuori dalla root sia stata accettata.)
+      if (/\.\./.test(grezzo)) {
+        return json(res, 400, {
+          error: `percorso non valido: «${grezzo}» — usa un percorso relativo alla root della dashboard, senza «..»`,
+        });
+      }
+      const richiesto = grezzo.replace(/^[./]+/, "").replace(/\/+$/, "");
+      const label = String(body.label || "").slice(0, 80);
+
+      if (azione === "aggiungi") {
+        if (!richiesto) return json(res, 400, { error: "path mancante" });
+        let abs;
+        try {
+          abs = await safeResolve(richiesto);
+        } catch (e) {
+          const msg = String(e?.message || e);
+          return json(res, e?.status === 403 ? 403 : 404, {
+            error: msg === "non trovato" || msg === "percorso fuori dalla root"
+              ? `cartella non trovata nella root della dashboard: «${richiesto}» (i percorsi sono relativi a ${ROOT})`
+              : msg,
+          });
+        }
+        const st = await fs.stat(abs);
+        if (!st.isDirectory()) return json(res, 400, { error: `non è una cartella: «${richiesto}»` });
+        if (!progetto.cartelle.some((c) => c.path === richiesto)) {
+          if (progetto.cartelle.length >= PROGETTO_MAX_CARTELLE)
+            return json(res, 400, { error: `massimo ${PROGETTO_MAX_CARTELLE} cartelle nel progetto` });
+          progetto.cartelle.push({ path: richiesto, label });
+        }
+        if (!progetto.attiva) progetto.attiva = richiesto;
+      } else if (azione === "rimuovi") {
+        progetto.cartelle = progetto.cartelle.filter((c) => c.path !== richiesto);
+        if (progetto.attiva === richiesto) progetto.attiva = progetto.cartelle[0]?.path || "";
+      } else if (azione === "attiva") {
+        if (!progetto.cartelle.some((c) => c.path === richiesto))
+          return json(res, 404, { error: "cartella non nel progetto" });
+        progetto.attiva = richiesto;
+      } else if (azione === "svuota") {
+        progetto = { cartelle: [], attiva: "" };
+      } else {
+        return json(res, 400, { error: `azione sconosciuta: ${azione}` });
+      }
+
+      await saveProgetto();
+      await ricaricaContestoProgetto();
+      return json(res, 200, { ok: true, ...(await progettoPayload()) });
     }
 
     // ---------------- operazioni pianificate (cron) ----------------

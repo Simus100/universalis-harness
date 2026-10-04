@@ -21,6 +21,7 @@ const NAME_RE = /^[a-z0-9-]{1,64}$/;
 
 let pass = 0;
 let fail = 0;
+let avvisi = 0;
 const ok = (m) => { console.log("  ✔ " + m); pass++; };
 const ko = (m) => { console.log("  ✘ " + m); fail++; };
 
@@ -75,7 +76,43 @@ for (const { p, expectedName } of files) {
   if (!desc) ko(`${rel}: "description" mancante o vuota`);
   else if (desc.length > 1024) ko(`${rel}: "description" troppo lunga (${desc.length} > 1024)`);
   else ok(`${rel}: description presente (${desc.length} caratteri)`);
+
+  /* ---- regole delle Agent Skills (spec + guide Claude Code / Codex) ----
+   * Alcune sono OBBLIGHI (errore): tag < > nella descrizione, name non valido.
+   * Altre sono CONSIGLI (avviso, non fanno fallire la suite): la descrizione è l'unica cosa
+   * che il modello vede per decidere se caricare la skill, e il corpo pesa a ogni uso. */
+  if (desc && /<[^>]+>/.test(desc)) ko(`${rel}: la descrizione non può contenere tag < >`);
+  if (desc && !/(usa quando|usala quando|usa per|serve a|use when|attiva quando|ogni volta che|quando\b)/i.test(desc)) {
+    console.log(`  ⚠ ${rel}: la descrizione non dice «quando usarla» — è l'unico aggancio per l'attivazione`);
+    avvisi++;
+  }
+  const corpo = raw.slice(m[0].length);
+  const righeCorpo = corpo.split("\n").filter((r) => r.trim()).length;
+  if (righeCorpo > 400) {
+    console.log(`  ⚠ ${rel}: corpo di ${righeCorpo} righe — meglio spostare i dettagli in references/`);
+    avvisi++;
+  }
+  if (!/^\s*#\s+\S/m.test(corpo)) {
+    console.log(`  ⚠ ${rel}: manca un titolo (# …) all'inizio del corpo`);
+    avvisi++;
+  }
+  // file citati nella skill che non esistono (link markdown con percorso relativo)
+  const dir = path.dirname(p);
+  const citati = new Set();
+  for (const mm of corpo.matchAll(/\]\(([^)\s#]+)\)/g)) {
+    const t = mm[1];
+    if (/^([a-z]+:|\/|#)/i.test(t)) continue; // URL, percorsi assoluti, ancore
+    citati.add(t);
+  }
+  for (const t of citati) {
+    const pulito = t.split("?")[0];
+    if (!fs.existsSync(path.resolve(dir, pulito))) {
+      console.log(`  ⚠ ${rel}: cita un file che non esiste: ${pulito}`);
+      avvisi++;
+    }
+  }
 }
 
 console.log(`\nrisultato: ${pass} ok, ${fail} falliti (${files.length} skill controllate)`);
+if (avvisi) console.log(`avvisi sulle regole Agent Skills: ${avvisi} (non bloccanti — li vedi anche nella vista Skill)`);
 process.exit(fail ? 1 : 0);

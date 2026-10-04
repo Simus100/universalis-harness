@@ -1,6 +1,6 @@
 ---
 name: bookforge
-description: Progetta, scrivi, revisiona e continua libri preservando voce e continuità fra capitoli e volumi. Usa per un progetto editoriale, un manoscritto o la preparazione dei suoi materiali KDP; per brevi testi occasionali basta la normale assistenza alla scrittura.
+description: Progetta, scrivi, revisiona e continua libri preservando voce e continuità fra capitoli e volumi. Usala quando l'utente chiede di scrivere o proseguire un capitolo, impostare un progetto editoriale (scaletta, canone, StyleDNA, continuità), riprendere un manoscritto già avviato, o preparare i materiali KDP (titolo, sinossi, descrizione, metadati). Per brevi testi occasionali basta la normale assistenza alla scrittura.
 ---
 
 # BookForge 7.7

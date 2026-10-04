@@ -138,8 +138,9 @@ const viewsState = () =>
   })()`);
 
 const VIS = [
-  { nome: "chat", atteso: "chatView", come: "tab", label: "💬 Chat" },
-  { nome: "files", atteso: "filesView", come: "tab", label: "📁 File" },
+  // le linguette hanno ICONE SVG (non più emoji): il nome accessibile è il testo, senza simboli
+  { nome: "chat", atteso: "chatView", come: "tab", label: "Chat", esatto: true },
+    { nome: "files", atteso: "filesView", come: "tab", label: "File", esatto: true },
   { nome: "goals", atteso: "goalsView", come: "menu", label: "goal" },
   { nome: "cron", atteso: "cronView", come: "menu", label: "cron" },
   { nome: "skills", atteso: "skillsView", come: "menu", label: "skill" },
@@ -166,7 +167,10 @@ console.log("== Apertura di ogni vista dal menu ==");
 for (const v of VIS) {
   try {
     if (v.come === "tab") {
-      ab(["find", "role", "button", "click", "--name", v.label]);
+      // Il nome accessibile va confrontato per intero: cercando «Chat» come sottostringa si trovava
+      // anche «Le tue chat» (il pulsante ☰), che apre il drawer e copre le linguette — l'intera
+      // sezione falliva per un test che cliccava l'elemento sbagliato.
+      ab(["find", "role", "button", "click", "--name", v.label, ...(v.esatto ? ["--exact"] : [])]);
     } else {
       if (!(await apriVoce(v.label))) throw new Error(`voce «${v.label}» non trovata nel menu`);
     }
@@ -187,7 +191,7 @@ for (const v of ["files", "goals", "cron", "skills", "progetto", "agenda", "live
     try { ab(["press", "Escape"]); } catch {}
     await wait(300);
     if (v === "files") {
-      ab(["find", "role", "button", "click", "--name", "📁 File"]);
+      ab(["find", "role", "button", "click", "--name", "File", "--exact"]);
     } else {
       const voce = VIS.find((x) => x.nome === v);
       if (!(await apriVoce(voce.label))) throw new Error(`voce «${voce.label}» non trovata`);

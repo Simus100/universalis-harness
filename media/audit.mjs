@@ -171,7 +171,13 @@ const cited = uniq(
   [...testoVerificabile.matchAll(/`?(media\/[\w./-]+\.(?:jsonl|json|mjs|sh|md))`?/g)].map((m) => m[1]),
 );
 const missingFiles = cited.filter((f) => !fs.existsSync(path.join(ROOT, f)));
-missingFiles.length ? bad(`citati nel README ma inesistenti: ${missingFiles.join(", ")}`) : ok(`tutti i ${cited.length} file citati esistono`);
+// Stati creati AL PRIMO USO: la guida li cita giustamente, ma su un'installazione nuova non
+// esistono ancora. Sono eccezioni dichiarate, non file dimenticati.
+const STATO_AL_BISOGNO = new Set(["media/progetto.json"]);
+const mancantiVeri = missingFiles.filter((f) => !STATO_AL_BISOGNO.has(f));
+mancantiVeri.length
+  ? bad(`citati nel README ma inesistenti: ${mancantiVeri.join(", ")}`)
+  : ok(`tutti i ${cited.length} file citati esistono (${missingFiles.length ? "creati al primo uso: " + missingFiles.join(", ") : "nessuna eccezione"})`);
 
 /* ─────────────────────────── RIEPILOGO ─────────────────────────── */
 section("RIEPILOGO");

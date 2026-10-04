@@ -303,6 +303,16 @@ cartella con un file `SKILL.md` che ha frontmatter YAML con **`name`** e **`desc
 Comandi: **`/skills`** apre la vista; **`/tab skills`** idem. I nomi skill devono essere
 minuscoli, numeri e trattini (max 64 caratteri); la descrizione max 1024 caratteri.
 
+**Regole delle Agent Skills, applicate e visibili.** Nella vista 🧩 ogni scheda mostra quanto la
+skill **costa** (righe del corpo, caratteri della descrizione — la descrizione è l'unica parte che
+il modello vede sempre, per tutte le skill) e segnala con ⚠ dove la skill rischia di non funzionare:
+descrizione che non dice **quando usarla** (è l'unico aggancio per l'attivazione), tag `< >` nella
+descrizione, corpo oltre 400 righe (meglio spostare i dettagli in `references/`), titolo mancante,
+file citato nel testo che non esiste. Gli stessi controlli li fa `node media/check-skills.mjs`, che
+nella suite riporta anche gli avvisi (informativi, non fanno fallire il test); gli obblighi della
+specifica — YAML valido, `name` valido e uguale alla cartella, `description` presente e ≤ 1024 —
+restano errori.
+
 ### Rappresentazioni visive (SVG scritto come testo)
 
 Il modello scrive i disegni **come testo** (non serve alcun servizio di generazione immagini):
@@ -349,6 +359,13 @@ modello l'ha messo, al posto del codice.
   vengono **revocati** quando il messaggio viene ridisegnato (e i vecchi non sono più raggiungibili).
   Il modulo è servito al browser dalla rotta `/svg-sanitize.mjs` (un solo file, `nosniff`,
   `no-store`): anteprima e server usano lo **stesso** codice, senza duplicazioni.
+  Il caricamento del modulo nel browser è **ritentabile**: se l'import fallisce una volta (sessione
+  scaduta, rete assente, servizio appena riavviato) il fallimento vale per quel disegno soltanto —
+  il successivo riprova, e la card in errore offre «↻ riprova» con il motivo reale («sei offline»
+  oppure «sessione scaduta o server non raggiungibile»). Prima quel fallimento restava in cache per
+  tutta la vita della pagina: un diagramma senza anteprima si trascinava dietro tutti gli altri
+  finché non si ricaricava la pagina (difetto corretto, coperto da
+  `node --experimental-vm-modules media/test-svg-sanitizer-retry.mjs`).
 - **non-regressione**: gli altri blocchi di codice restano identici (anche la sequenza ```` ```svg ````
   citata dentro un blocco `js` non viene scambiata per un disegno) e i messaggi senza disegni si
   comportano esattamente come prima.
@@ -471,7 +488,7 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
 | GET | `/api/decision_m` | stato del decisore locale: preferenza, processo, modello, RAM, `toolsActive` |
 | POST | `/api/decision_m` | `{ enabled: true\|false }` accende/spegne il decisore; `{ action: "start"\|"stop" }`; `{ port, size, quant, weights, threads }` cambia variante (riavvia se acceso) |
 | POST | `/api/decision_m/decide` | `{ state, questions }` → decisioni con probabilità dal decisore locale (503 se è spento) |
-| GET/POST | `/api/goals` | elenco / crea-aggiorna un goal |
+| GET/POST | `/api/goals` | elenco / crea-aggiorna un goal (passi e checklist accettano sia `[{title}]` sia `["testo"]`) |
 | POST | `/api/goals/delete` | `{ id }` |
 | POST | `/api/goals/execute` | avvia l'esecuzione della catena di passaggi di un goal |
 | GET/POST | `/api/schedules` | elenco / crea-aggiorna una pianificazione cron |
@@ -512,6 +529,8 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
 | POST | `/api/browser/press` | `{ keys: "Control+a" \| "Backspace" \| "ArrowLeft" … }` tasti e scorciatoie (whitelist rigida): lo stream accetta solo `key`+`text`, quindi i tasti speciali passano dalla CLI |
 | POST | `/api/browser/control` | `{ mode: "agent"\|"human" }` lock anti-conflitto (in modalità human il frame rate sale a 10/s) |
 | POST | `/api/browser/reload` | ricarica la pagina attiva: i frame arrivano solo ai cambi, così una pagina ferma non sembra bloccata |
+| GET | `/api/progetto` | le cartelle del progetto con la loro scheda (file, dimensione, elenco) e quale è attiva |
+| POST | `/api/progetto` | `{ azione: aggiungi\|rimuovi\|attiva\|svuota, path }` — percorsi relativi alla root, senza `..`; aggiorna anche il contesto dell'agente |
 | POST | `/api/browser/open` | `{ url }` naviga a un URL (barra indirizzi della live view); accetta solo http/https |
 | POST | `/api/browser` | `{ mode: auto\|on\|off, idleMinutes? }` accensione del tool (persistita); `enabled` accettato per compatibilità |
 | GET | `/manifest.webmanifest`, `/sw.js`, `/icon-*.png` | asset PWA (pubblici solo dopo l'accesso) |
@@ -597,8 +616,10 @@ attive restano valide (il segreto non cambia); per buttarle fuori tutte basta ca
 
 ```bash
 node media/test-svg-sanitize.mjs # sanitizzatore SVG: whitelist, XSS, entità, limiti, esempi della skill — nessuna rete
+node --experimental-vm-modules media/test-svg-sanitizer-retry.mjs # caricamento del sanitizzatore: un fallimento non deve restare in cache (fallimento → retry → successo)
 node media/test-svg-preview.mjs  # anteprima SVG in chat nel browser vero: rendering, sicurezza, streaming, vista ingrandita
 node media/test-svg-stream.mjs   # scansione dei blocchi svg durante lo streaming (fence spezzate) — nessuna rete
+node media/test-progetto.mjs     # cartelle del progetto: aggiunta, attiva, rimozione, limiti, persistenza al riavvio (istanza di prova su :8496)
 node media/test-static.mjs       # coerenza HTML/server (id, endpoint, cablaggio) — nessuna rete
 node media/test-ui.mjs           # logica frontend in node:vm (storico, notifiche, form cron, …)
 node media/test-palette.mjs      # comandi slash: filtro, completamento, esecuzione (istanza su :8499)
@@ -687,15 +708,26 @@ Prima tornava sempre OFF a ogni riavvio e andava riacceso a mano.
 
 Due viste raggiungibili dal menu *features* (o `/tab progetto`, `/tab agenda`):
 
-- **📦 progetto** — gli **artefatti** del lavoro: i file di `media/` ordinati per data, con
-  dimensione e tempo trascorso, apri nell'editor e scarica; le cartelle si aprono nel file manager.
-  È la vista "i file come output principale, la chat come strumento".
+- **📦 progetto** — il **progetto** e i suoi artefatti:
+  - le **cartelle del progetto**, cioè quelle che hai segnato con la stella **☆** nella vista File
+    (oppure con il pulsante *＋ cartella*, che ti porta a sceglierle). Puoi segnarne più d'una e una
+    alla volta è **attiva**: è quella su cui stai lavorando. Per ciascuna vedi percorso, numero di
+    file, dimensione, quando è stata toccata l'ultima volta e l'elenco dei file (apri, scarica);
+    con *rendi attiva*, *apri in File*, *⬇ zip* e *togli* la governi da qui;
+  - gli **artefatti** recenti di `media/` ordinati per data, con dimensione e tempo trascorso:
+    è la vista "i file come output principale, la chat come strumento".
+
+  **Il progetto non è solo una vista: l'agente lo conosce.** Le cartelle scelte entrano nel suo
+  contesto (con i nomi dei file che contengono e quale è attiva), quindi «lavora sul progetto»,
+  «il sito», «qui» hanno un significato preciso e non serve rispiegare dove sono i file. Il
+  contesto si aggiorna subito quando cambi la selezione (se l'agente sta rispondendo, alla fine
+  del turno). Vivono in `media/progetto.json` (fuori dal repository), massimo 12 cartelle.
 - **🗓 agenda** — timeline unica di ciò che l'harness sta facendo e di ciò che aspetta da te:
   pianificazioni cron (prossima esecuzione, ultimo esito, numero di esecuzioni) e goal attivi con
   l'avanzamento di passi e controlli.
 
-Entrambe riusano endpoint esistenti (`/api/files`, `/api/goals`, `/api/schedules`): nessun endpoint
-nuovo, nessun privilegio nuovo.
+Le due viste riusano endpoint esistenti (`/api/files`, `/api/goals`, `/api/schedules`); il progetto
+aggiunge `/api/progetto` (vedi la tabella delle API).
 
 ## Live view del browser (vista 🖥 live)
 
@@ -714,13 +746,20 @@ esistente**: nessuna porta nuova, nessuna modifica a Caddy, nessun endpoint espo
 | click nell'immagine | inoltra il click al browser, con coordinate scalate sulla dimensione reale del frame |
 | `⌨ → browser` | porta i tasti al browser invece che alla chat |
 | tastiera completa | caratteri singoli dallo stream (immediato); **Backspace, Tab, frecce, Home/End, F1-F12 e le scorciatoie** (Ctrl+A/C/V/Z…) passano dalla CLI, perché lo stream accetta solo `key`+`text` e senza testo il browser non riceve l'evento |
-| `▴ log` | log della chat a tre stati: compatto (88px) → espanso → nascosto |
+| `▴ log` | log della chat a tre stati: compatto (88px) → espanso → nascosto. **Su telefono parte nascosto** (lascia spazio al riquadro) e il pulsante mostra un pallino ● quando arrivano messaggi a log chiuso |
+| `⤢ adatta / 1:1 / 2×` | **ingrandisce il riquadro**: adattato alla finestra → pagina alla sua dimensione reale → al doppio. Serve a *leggere* una pagina, non solo a vederla: in 1:1 e 2× ci si muove con lo scorrimento (dito o rotellina) |
+| `⛶` | riquadro a **schermo intero** (overlay, non l'API Fullscreen: funziona anche dove il browser non la concede). Si esce con `⤡` o con Esc; la barra dei comandi resta raggiungibile in alto, quindi non è una trappola su telefono |
 | **barra indirizzi** | scrivi un **URL** (o un dominio: `wikipedia.org`) e premi **Invio**; se non sembra un indirizzo, **cerca su Google**. Endpoint `POST /api/browser/open`, validato (solo http/https) |
 | **↑ / ↓ e rotellina** | scorrono la pagina nel browser (`mouseWheel`) — i pulsanti servono su mobile, dove la rotellina non c'è |
 | **chat nella vista** | dai comandi all'agente senza lasciare il browser: il messaggio parte già con il **contesto** "sto scrivendo dalla live view, pagina X, usa il tool browser su quella pagina" |
 
 Il riquadro del browser ha **dimensione garantita**: il log ha altezza fissa e non lo comprime
 mai; nascondendo il log il browser guadagna circa il 45% di altezza.
+
+**Su telefono** (misure prese su 390×844, iPhone 12) la barra dei comandi sta su una riga e
+l'intestazione del log su una: il riquadro è passato da **324px a 449px**, e a **683px** in schermo
+intero. Il campo indirizzi è alto 44px (misura da dito), il log parte nascosto. Con `⤢ 1:1` una
+pagina desktop si legge davvero, invece di essere rimpicciolita a un francobollo.
 
 **Il lock anti-conflitto:** quando prendi il controllo, il tool `browser` **rifiuta** di agire e
 spiega perché. Così agente e persona non si contendono lo stesso browser. Il controllo torna
