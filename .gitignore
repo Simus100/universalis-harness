@@ -43,3 +43,8 @@ piccolo.bin
 media/CU2026_MACELLONI_SIMONE_estratto.txt
 # esiti di errore delle API di generazione immagini (spazzatura di test)
 media/out_gemini-*.json
+
+# ---- immagini scaricate dal web ----
+# Restano locali (nella cartella dei file generati): servono a mostrarle in chat, non sono codice
+# né parte del prodotto. Se una serve davvero nella documentazione, va copiata in docs/images/.
+media/web-*

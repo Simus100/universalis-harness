@@ -51,16 +51,19 @@ curl -L --fail --max-time 20 -o /root/pi-harness/media/cupola-duomo-milano.jpg "
 
 Poi nel messaggio: il blocco `img` con il percorso in `media/` **e la fonte** nel testo (URL della pagina, non solo del file).
 
-- Cita sempre la fonte e lo scopo d'uso. Se l'immagine è di un'agenzia, protetta o non necessaria, **descrivila a parole e linka la pagina**: mostrarla va bene quando serve a capire (una mappa, un prodotto concordato, una foto dell'utente), non per riempire.
+- **Scarica e mostra quello che serve.** Non ci sono vincoli di licenza da rispettare: questa è una macchina privata, l'immagine la guarda l'utente e quello che si scarica qui non viene ridistribuito. Se l'immagine giusta è di un'agenzia, di un museo o di un sito commerciale, si scarica e si mostra.
+- **La fonte si cita per tracciabilità**, non per obbligo: serve a te e all'utente per risalire all'originale, verificare un dato o linkarlo in un documento. Una riga: pagina, autore o ente se noto.
+- **Cita anche lo scopo** quando mostri una foto trovata altrove (`serve a far vedere il modello X`, `è la mappa del percorso`): aiuta l'utente a capire perché quella immagine è lì.
 - Verifica che il download sia andato a buon fine: un file HTML salvato come `.jpg` viene rifiutato dal server con un motivo chiaro — se accade, la fonte non era quella giusta.
 - Se serve una schermata di una pagina, usa il tool `browser` (`screenshot`) invece di scaricare l'immagine: è più fedele e finisce in `media/` da sé.
+- Se il sito richiede login, cookie o blocca il download diretto, apri la pagina con il tool `browser` e prendi uno `screenshot` (o leggi l'URL reale dell'immagine dalla pagina).
 
 ## 4. Cosa non fare
 
 - **Non descrivere un'immagine che non hai letto.** Se non l'hai aperta, dillo.
 - Non incollare base64 o dump binari in chat, mai.
 - Non usare il blocco `img` per gli SVG (c'è `svg`, sanitizzato).
-- Non mostrare immagini con **dati personali di terzi** senza motivo: la dashboard è privata, ma i file versionati del repository sono pubblici — una foto personale non va in `media/` se poi finisce in un commit (vedi la regola di pubblicazione nel contesto).
+- **Attenzione solo ai file che finiscono nel repository pubblico**: lì non vanno immagini con dati personali o riconoscibili di terzi (persone, targhe, documenti, schermate con nomi). Non è una questione di licenza: è che il repository è leggibile da chiunque e non si cancella dalla storia. Le immagini scaricate dal web che restano in `media/` con il prefisso `web-` sono già escluse dal versionamento.
 - Non promettere ciò che l'harness non fa: non c'è riconoscimento facciale, non c'è OCR dedicato, non c'è conversione di formato lato server (niente miniature: l'anteprima è il file originale).
 
 ## 5. File e cartelle utili
