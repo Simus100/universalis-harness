@@ -140,7 +140,54 @@ Da notare per l'uso pratico:
 - **Più domande sullo stesso stato**: costo marginale quasi nullo — è la leva più conveniente (4 decisioni in 22 s).
 - **Costo in denaro nullo** e token generati sempre zero: la voce più cara di qualunque listino.
 
-## 7. Limiti di questo audit (detti chiaramente)
+## 7. Velocità: cosa si può fare davvero su questa macchina
+
+Misure aggiunte dopo l'audit, per capire se la latenza (~6,1 s/decisione, ~18 s/caso) sia migliorabile.
+
+### Le due leve gratuite sono già esaurite
+
+| leva | misura | verdetto |
+|---|---|---|
+| Variante CPU di ggml | il runtime carica `libggml-cpu-haswell.so` (AVX2+FMA) | **già ottimale**: per Broadwell non esiste una build migliore disponibile |
+| Numero di thread (`pp512`) | 4 → 17,56 tok/s · 5 → 22,58 · **6 → 26,27** | **già ottimale**: 6 thread, come configurato |
+
+(Lo scaling non è lineare: 4→6 thread dà +50%, segno che il limite è la banda di memoria, non il numero di core.)
+
+### La leva grossa: il modello piccolo (1.7B Q8, 1,8 GB)
+
+| | 4B Q4_K_M | 1.7B Q8_0 |
+|---|---:|---:|
+| prompt processing (pp512, 6 thread) | 26,27 tok/s | **40,74 tok/s** (+55%) |
+| `support-triage` (480 token) | 22,3 s | **11,8 s** |
+| `compliance-checklist` (489 token) | 22,5 s | **11,1 s** |
+| `guardrail-input` (406 token) | 21,1 s | **9,3 s** |
+| esito su `guardrail-input` | `azione=bloccare(64%)` ✅ | **`azione=passare(71%)`** ✘ |
+| esito su `compliance-checklist` | `trasferimenti=no(0,00)` ✘ | `trasferimenti=no(0,00)` ✘ |
+
+**Il 1.7B raddoppia la velocità e dimezza la sicurezza.** Sul messaggio che chiedeva il file `.env`
+il modello piccolo risponde di **eseguire** la richiesta (71%), dove il 4B diceva di bloccarla.
+Su un caso di guardia questo non è un compromesso accettabile: è il caso in cui l'errore costa di più.
+Coerente con le misure degli autori (0,546 contro 0,648 di accuratezza).
+
+### Le leve residue, in ordine di convenienza
+
+1. **Stato più corto** — gratis, effetto lineare. Il prefill è il **51%** del tempo: dimezzare lo stato
+   toglie circa un quarto della latenza totale. È la leva più conveniente e l'unica che migliori
+   anche la qualità (meno rumore nel contesto).
+2. **Opzioni e descrizioni brevi** — le descrizioni delle scelte si pagano nel prefill.
+3. **Cache delle risposte** — stesso stato e stesse domande ripetuti non devono costare una seconda volta
+   (oggi non c'è: si può aggiungere nell'harness).
+4. **Pre-filtro deterministico** — i casi banali (parole chiave, soglie su numeri) si risolvono in codice:
+   la decisione più veloce è quella che non viene chiesta.
+5. **Hardware**: una CPU con **AVX-512 e VNNI** e più core dà tipicamente 1,5–2,5×; più core sulla stessa
+   architettura rendono poco (4→6 thread = +50%, quindi 6→8 sarà molto meno). È l'unica leva che si compra.
+6. **KV cache quantizzata** (`--kv-type q8_0`) — non velocizza: riduce la RAM e permette contesti più lunghi.
+
+**Conclusione.** Su questa macchina non c'è un interruttore magico: le configurazioni sono già quelle
+buone. Il tempo si compra in tre modi — stato corto (gratis), qualità (1.7B, da evitare sulle guardie),
+hardware (AVX-512/più core) — oppure non si compra e si accetta la latenza.
+
+## 8. Limiti di questo audit (detti chiaramente)
 
 1. **Un solo giro** per caso, 12 casi: non è un benchmark, è una misura di fattibilità con numeri veri. Niente intervalli di confidenza.
 2. La correttezza è giudicata a mano da chi scrive, sui casi con risposta attesa.
