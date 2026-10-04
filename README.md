@@ -32,6 +32,14 @@ File e diventano *il progetto*: la vista 📦 le mostra con i loro file (una è 
 **l'agente le riceve nel suo contesto** — sa dove sono, cosa contengono e su quale stai lavorando,
 quindi «lavora sul progetto» ha un significato senza doverlo rispiegare.
 
+**Immagini che si vedono e si capiscono.** L'agente *vede* le foto e gli screenshot che gli indichi
+e le **mostra nella risposta** con un blocco dedicato: anteprima nel punto del messaggio, con nome,
+formato, pixel reali, didascalia e un clic per aprirla a schermo intero. Il formato è verificato dal
+server sui magic number (un HTML rinominato `.png` viene rifiutato), si mostrano solo file locali
+(niente richieste a siti terzi mentre leggi) e per le immagini trovate sul web l'agente le scarica
+prima in `media/` e cita la fonte. Il **lettore** nella vista File ha galleria, zoom (rotellina,
+doppio tocco, due dita), rotazione, schermo intero e scorciatoie da tastiera.
+
 **Disegni dentro la risposta.** Se il modello spiega con uno schema, il blocco SVG diventa un
 disegno vero nel punto esatto del messaggio — con vista ingrandita, copia e download — dopo il
 passaggio in un sanitizzatore che rifiuta script, risorse esterne e riferimenti di rete.

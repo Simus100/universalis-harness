@@ -386,6 +386,52 @@ riavvia il servizio, manda la richiesta **nella chat reale** e verifica in un br
 l'anteprima sia disegnata davvero (log in `media/svg-demo-produzione.log`); va lanciato come unità
 transitoria (`systemd-run --unit=svg-demo --collect …`), perché riavvia il servizio che lo ospita.
 
+### Immagini: vederle e mostrarle
+
+Il modello attivo **vede** le immagini: il tool `read` su un file `.png`, `.jpg`, `.gif`, `.webp` o
+`.bmp` manda l'immagine al modello (che risponde su quello che c'è dentro, testi compresi). La
+skill **`immagini`** è il contratto per l'agente: quando guardare, quando mostrare, cosa non fare.
+
+**Mostrare un'immagine nella risposta.** Un blocco con linguaggio `img` (anche `image` o `foto`)
+diventa un'anteprima nel punto esatto del messaggio:
+
+````
+```img
+media/foto.jpg
+La facciata del palazzo, ripresa da sud
+```
+````
+
+Prima riga il percorso (relativo alla root), righe successive la didascalia — che è anche il testo
+alternativo per gli screen reader. L'anteprima ha in testa nome, formato e **pixel reali**, e tre
+azioni: *ingrandisci* (apre il lettore), *scarica*, *copia percorso*. Anche le **card dei file**
+immagine mostrano una miniatura cliccabile, e il pulsante diventa *vedi grande*.
+
+**Cosa arriva in chat, e cosa no.** Sono ammessi solo file **locali** dentro la root: un URL remoto
+non viene caricato, quindi il browser di chi legge non contatta siti terzi e l'immagine non può
+«sparire». Per mostrare un'immagine trovata sul web l'agente la **scarica prima in `media/`** (curl,
+o uno screenshot del tool browser) e nel testo cita la fonte.
+
+**La verifica del formato è del server** (`GET /api/image?path=`): i primi byte del file vengono
+letti e confrontati con le firme di PNG/JPEG/GIF/WEBP/BMP/AVIF. Un HTML rinominato `.png` viene
+rifiutato con 415 e un motivo chiaro, un documento **SVG** viene rimandato al blocco `svg` (che
+passa dal sanitizzatore), un percorso fuori dalla root dà 403, un file oltre il tetto per
+l'anteprima (40 MB, `DASH_IMAGE_MAX_BYTES`) dà 413 con l'indicazione di aprirlo dai file. I byte si
+servono `inline`, con `Content-Type` verificato e `nosniff`. `?meta=1` non scarica nulla: dice
+formato, peso e se l'immagine è troppo grande — è quello che la chat interroga prima di mostrare
+un'anteprima.
+
+**Lettore a schermo intero** (vista File, o clic su un'anteprima in chat): galleria con le altre
+immagini della stessa cartella (frecce ← →, swipe, contatore «3 di 12»), zoom con pulsanti,
+rotellina, doppio clic (ciclo adatta → 1:1 → 2×), trascinamento per spostarsi, **due dita per
+l'ingrandimento**, rotazione di 90°, schermo intero, scarica, elimina, e una riga di metadati con
+pixel, formato, peso e data. Da tastiera: `←` `→` cambiano immagine, `+` `−` `0` lo zoom, `R` ruota,
+`F` schermo intero, `Esc` chiude.
+
+Test: `node media/test-image-api.mjs` (31 verifiche sul server: magic number, trappole, percorsi,
+limiti) e `node media/test-image-ui.mjs` (47 verifiche nel browser vero: anteprima rasterizzata,
+casi d'errore, miniatura nelle card, galleria, zoom, rotazione, schermo intero, schermo piccolo).
+
 ### Ricerca
 - **nelle chat**: campo di ricerca nel drawer (☰). Scansiona i JSONL in `sessions/` e mostra
   per ogni chat i riscontri con lo **snippet evidenziato**; da lì si apre la chat o si scarica
@@ -529,6 +575,7 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
 | POST | `/api/browser/press` | `{ keys: "Control+a" \| "Backspace" \| "ArrowLeft" … }` tasti e scorciatoie (whitelist rigida): lo stream accetta solo `key`+`text`, quindi i tasti speciali passano dalla CLI |
 | POST | `/api/browser/control` | `{ mode: "agent"\|"human" }` lock anti-conflitto (in modalità human il frame rate sale a 10/s) |
 | POST | `/api/browser/reload` | ricarica la pagina attiva: i frame arrivano solo ai cambi, così una pagina ferma non sembra bloccata |
+| GET | `/api/image?path=` | anteprima di un'immagine: `Content-Type` ricavato dai magic number, `inline`, `nosniff`; `?meta=1` restituisce solo formato, peso e `tooBig` (rifiuta ciò che non è un'immagine: 415) |
 | GET | `/api/progetto` | le cartelle del progetto con la loro scheda (file, dimensione, elenco) e quale è attiva |
 | POST | `/api/progetto` | `{ azione: aggiungi\|rimuovi\|attiva\|svuota, path }` — percorsi relativi alla root, senza `..`; aggiorna anche il contesto dell'agente |
 | POST | `/api/browser/open` | `{ url }` naviga a un URL (barra indirizzi della live view); accetta solo http/https |
@@ -620,6 +667,8 @@ node --experimental-vm-modules media/test-svg-sanitizer-retry.mjs # caricamento 
 node media/test-svg-preview.mjs  # anteprima SVG in chat nel browser vero: rendering, sicurezza, streaming, vista ingrandita
 node media/test-svg-stream.mjs   # scansione dei blocchi svg durante lo streaming (fence spezzate) — nessuna rete
 node media/test-progetto.mjs     # cartelle del progetto: aggiunta, attiva, rimozione, limiti, persistenza al riavvio (istanza di prova su :8496)
+node media/test-image-api.mjs    # immagini: il formato è verificato dai magic number, SVG rimandato al blocco svg, percorsi e limiti (istanza di prova su :8497)
+node media/test-image-ui.mjs     # immagini in chat e lettore a schermo intero nel browser vero: anteprima, errori, miniatura, galleria, zoom, rotazione (istanze di prova su :8482/:8483)
 node media/test-static.mjs       # coerenza HTML/server (id, endpoint, cablaggio) — nessuna rete
 node media/test-ui.mjs           # logica frontend in node:vm (storico, notifiche, form cron, …)
 node media/test-palette.mjs      # comandi slash: filtro, completamento, esecuzione (istanza su :8499)

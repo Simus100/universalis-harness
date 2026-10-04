@@ -484,6 +484,15 @@ main {
   font-size: var(--fs-4xl); flex: 0 0 auto; width: 38px; height: 38px; border-radius: var(--radius-lg); display: grid; place-items: center;
   background: var(--grad-soft); border: 1px solid rgba(91,157,255,.14);
 }
+/* Miniatura di un'immagine nella card del file: stessa impronta dell'icona, così la card resta
+   allineata; il clic apre il lettore a schermo intero. */
+.filecard .fthumb {
+  flex: 0 0 auto; width: 38px; height: 38px; object-fit: cover; border-radius: var(--radius);
+  border: 1px solid var(--border); cursor: zoom-in; background: var(--panel-2);
+}
+@media (max-width: 760px) {
+  .filecard .fthumb { width: 48px; height: 48px; }
+}
 .filecard .fmeta { flex: 1; min-width: 0; }
 .filecard .fname { font-size: var(--fs-md); font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .filecard .fpath { font-size: var(--fs-xs); color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -704,6 +713,8 @@ body.live-full #liveView > .gtoolbar { background: var(--glass); border-bottom: 
 .livewrap.full .livebar { padding: 6px 8px; }
 .livewrap.full .livechat { padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
 body.live-full { overflow: hidden; }
+/* Lightbox delle immagini aperta: la pagina sotto non scorre */
+body.v-open { overflow: hidden; }
 .liveempty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   text-align: center; padding: 20px; color: var(--muted, #9aa0a6); font-size: var(--fs-lg); }
 .livebar { display: flex; align-items: center; gap: 6px; padding: 6px 0 0; font-size: var(--fs-sm);
@@ -1151,23 +1162,53 @@ footer {
   .stat { padding: 9px 12px; }
 }
 
-/* ---------- lettore immagini (sezione File) ---------- */
+/* ---------- lettore immagini (lightbox) ----------------------------------
+ * Galleria + zoom + rotazione + schermo intero, pensata per il TELEFONO quanto per il desktop:
+ * barre su una riga, bersagli da 44px, un dito per spostarsi nel dettaglio, due dita per
+ * l'ingrandimento. Il contenuto è posizionato con `transform`, perché pan e zoom devono seguire
+ * il dito senza far scorrere la pagina sotto.
+ * La barra dei comandi sta SOPRA lo stage e resta raggiungibile anche a schermo intero: su un
+ * telefono senza Esc sarebbe altrimenti impossibile uscire (errore già commesso nella live view). */
+.vlightbox {
+  position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .95);
+  display: flex; flex-direction: column; padding-top: env(safe-area-inset-top);
+}
+.vbar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; position: relative; z-index: 2;
+  padding: 8px 10px; background: var(--glass); border-bottom: 1px solid var(--border-soft);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.vtitle { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+#vName {
+  font-size: var(--fs-md); color: var(--accent); white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 46vw;
+}
+.vcount { font-size: var(--fs-xs); color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .vstage {
-  flex: 1; overflow: auto; display: grid; overscroll-behavior: contain;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
-}
-.vstage img {
-  margin: auto;
-  max-width: 100%; max-height: 100%;
-  display: block; cursor: zoom-in; border: 1px solid var(--border);
-  background-color: #0e1116;
+  position: relative; flex: 1; min-height: 0; overflow: hidden; display: block;
+  background: #05060a; touch-action: none; cursor: grab;
   background-image:
-    linear-gradient(45deg, #191d26 25%, transparent 25%, transparent 75%, #191d26 75%),
-    linear-gradient(45deg, #191d26 25%, transparent 25%, transparent 75%, #191d26 75%);
-  background-size: 18px 18px;
-  background-position: 0 0, 9px 9px;
+    linear-gradient(45deg, rgba(255,255,255,.025) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.025) 75%),
+    linear-gradient(45deg, rgba(255,255,255,.025) 25%, transparent 25%, transparent 75%, rgba(255,255,255,.025) 75%);
+  background-size: 22px 22px; background-position: 0 0, 11px 11px;
 }
-.vstage img.zoomed { cursor: zoom-out; max-width: none; max-height: none; }
+.vstage.panning { cursor: grabbing; }
+.vstage img {
+  position: absolute; left: 0; top: 0; max-width: none; max-height: none;
+  transform-origin: 0 0; will-change: transform; user-select: none;
+}
+.vinfo {
+  padding: 7px 12px calc(9px + env(safe-area-inset-bottom)); font-size: var(--fs-sm); color: var(--dim);
+  border-top: 1px solid var(--border-soft); background: var(--bg-soft);
+}
+.vinfo b { color: var(--text-soft); font-weight: 600; }
+@media (max-width: 760px) {
+  /* su telefono la barra scorre in orizzontale: ✕, nome e frecce restano raggiungibili */
+  .vbar { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; }
+  .vbar::-webkit-scrollbar { display: none; }
+  .vbar .ghost { min-height: 44px; flex: 0 0 auto; }
+  #vName { max-width: 34vw; }
+}
 /* ---------- menu "features" ---------- */
 .feat { position: relative; flex: 0 0 auto; }
 .feat-panel {
@@ -1317,6 +1358,50 @@ footer {
   font-size: var(--fs-sm); color: var(--yellow); background: rgba(251,191,36,.08);
   border: 1px solid rgba(251,191,36,.22); border-radius: var(--radius-sm);
   padding: 5px 8px; margin-top: 6px;
+}
+
+/* ---------- immagini in chat (blocco ```img) ----------
+ * L'anteprima arriva da /api/image (formato verificato dai magic number, `inline`): non serve un
+ * Blob URL, quindi non c'è niente da revocare. L'altezza ha un tetto, così una foto verticale da
+ * telefono non occupa tre schermate di chat; il clic apre il lettore a schermo intero. */
+.imgfig {
+  margin: 10px 0; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-soft); overflow: hidden; max-width: 100%;
+}
+.imgfig .imghead {
+  display: flex; align-items: center; gap: 8px; padding: 6px 9px;
+  border-bottom: 1px solid var(--border-soft); font-size: var(--fs-xs); color: var(--dim);
+}
+.imgfig .imglbl { color: var(--accent-3); font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+.imgfig .imgnome {
+  font-family: var(--mono); font-size: var(--fs-xs); color: var(--text-soft);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 42%; min-width: 0;
+}
+.imgfig .imgmeta { color: var(--faint); white-space: nowrap; }
+.imgfig .imgacts { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.imgfig .imgacts button {
+  font-size: var(--fs-xs); font-family: var(--sans); line-height: 1; color: var(--text-soft);
+  background: var(--panel-3); border: 1px solid var(--border); border-radius: 999px;
+  padding: var(--sp-2) var(--sp-3); cursor: pointer; white-space: nowrap; min-height: 32px;
+}
+.imgfig .imgacts button:hover { background: var(--panel-4); color: var(--text); }
+.imgfig .imgacts button[disabled] { opacity: .45; cursor: not-allowed; }
+.imgfig .imgbox { display: flex; align-items: center; justify-content: center; min-height: 60px; padding: 4px; position: relative; }
+.imgfig .imgbox img {
+  max-width: 100%; max-height: min(62vh, 560px); display: block; border-radius: var(--radius-sm);
+  cursor: zoom-in; background: transparent;
+}
+.imgfig .imgwait { color: var(--dim); font-size: var(--fs-sm); padding: 10px 2px; }
+.imgfig .imgcap { padding: 7px 10px; font-size: var(--fs-sm); color: var(--text-soft); border-top: 1px solid var(--border-soft); }
+.imgfig .imgerr {
+  display: none; padding: 8px 11px; font-size: var(--fs-sm); color: var(--red);
+  background: rgba(251,113,133,.08); border-top: 1px solid rgba(251,113,133,.24);
+}
+.imgfig.err .imgerr { display: block; }
+.imgfig.err .imgbox { display: none; }
+@media (max-width: 760px) {
+  .imgfig .imgnome { max-width: 30%; }
+  .imgfig .imgacts button { min-height: 40px; }
 }
 
 /* ---------- progetto: stella nel file manager ed elenco file ---------- */
@@ -1622,20 +1707,24 @@ footer {
   <textarea id="eContent" spellcheck="false"></textarea>
 </div>
 
-<div class="editor" id="viewer" hidden>
-  <div class="etoolbar">
-    <button class="ghost" id="vBack" type="button">← file</button>
-    <span class="ename" id="vName"></span>
+<div class="vlightbox" id="viewer" hidden>
+  <div class="vbar">
+    <button class="ghost" id="vBack" type="button" title="Chiudi (Esc)">✕</button>
+    <span class="vtitle"><span id="vName"></span><span class="vcount" id="vCount"></span></span>
     <span style="flex:1"></span>
-    <button class="ghost" id="vZoomOut" type="button" title="Riduci">−</button>
-    <button class="ghost" id="vFit" type="button" title="Adatta alla finestra / 100%">adatta</button>
-    <button class="ghost" id="vZoomIn" type="button" title="Ingrandisci">＋</button>
+    <button class="ghost" id="vPrev" type="button" title="Immagine precedente (←)" aria-label="Immagine precedente">←</button>
+    <button class="ghost" id="vNext" type="button" title="Immagine successiva (→)" aria-label="Immagine successiva">→</button>
+    <button class="ghost" id="vRotate" type="button" title="Ruota di 90° (R)">⟳</button>
+    <button class="ghost" id="vZoomOut" type="button" title="Riduci (−)">−</button>
+    <button class="ghost" id="vFit" type="button" title="Adatta alla finestra / 1:1 / 2× (doppio clic o 0)">adatta</button>
+    <button class="ghost" id="vZoomIn" type="button" title="Ingrandisci (＋)">＋</button>
+    <button class="ghost" id="vFull" type="button" title="Schermo intero (F)">⛶</button>
     <button class="ghost" id="vNewTab" type="button" title="Apri in una nuova scheda">↗</button>
-    <button class="ghost" id="vDownload" type="button">scarica</button>
-    <button class="ghost" id="vDelete" type="button">cancella</button>
+    <button class="ghost" id="vDownload" type="button" title="Scarica questo file">⬇</button>
+    <button class="ghost" id="vDelete" type="button" title="Elimina questo file">🗑</button>
   </div>
-  <div class="einfo" id="vInfo"></div>
   <div class="vstage" id="vStage"><img id="vImg" alt="" draggable="false" /></div>
+  <div class="vinfo" id="vInfo"></div>
 </div>
 
 <footer id="chatFooter">
@@ -2064,6 +2153,11 @@ async function setSubagentMax(value) {
 
 /** Linguaggio del blocco Markdown che contiene un disegno. */
 const SVG_FENCE_LANG = "svg";
+/** Linguaggi del blocco che contiene il PERCORSO di un'immagine da mostrare in chat.
+ *  Solo file locali: un URL remoto non viene caricato (niente richieste verso terzi dal browser di
+ *  chi legge, niente immagini che spariscono o cambiano sotto), e il formato viene verificato dai
+ *  magic number prima di servire i byte. */
+const IMG_FENCE_LANGS = new Set(["img", "image", "foto"]);
 /** Elementi che l'anteprima accetta (secondo controllo, oltre al sanitizzatore). */
 const SVG_PREVIEW_TAGS = new Set([
   "svg", "g", "defs", "title", "desc", "path", "rect", "circle", "ellipse", "line",
@@ -2157,7 +2251,9 @@ function flushSvgBlocks(bubble, tail, final = false) {
       if (!close) {
         tail.pending.scannedTo = Math.max(tail.pending.bodyStart, svgScanFloor(tail.text));
         if (!final) return;
-        bubble.appendChild(makeSvgCard(tail.text.slice(tail.pending.bodyStart), "blocco SVG non chiuso (manca la fence ``` di chiusura)"));
+        const corpo = tail.text.slice(tail.pending.bodyStart);
+        if (tail.pending.tipo === "img") bubble.appendChild(makeImgCard(corpo, "blocco immagine non chiuso (manca la fence ``` di chiusura)"));
+        else bubble.appendChild(makeSvgCard(corpo, "blocco SVG non chiuso (manca la fence ``` di chiusura)"));
         tail.el.textContent = tail.text.slice(0, tail.pending.fenceStart);
         tail.text = "";
         tail.pending = null;
@@ -2170,7 +2266,7 @@ function flushSvgBlocks(bubble, tail, final = false) {
       const before = tail.text.slice(0, tail.pending.fenceStart);
       const rest = tail.text.slice(close.end);
       tail.el.textContent = before;
-      bubble.appendChild(makeSvgCard(code, null));
+      bubble.appendChild(tail.pending.tipo === "img" ? makeImgCard(code, null) : makeSvgCard(code, null));
       tail.el = newTextSpan(bubble, rest);
       tail.text = rest;
       tail.pending = null;
@@ -2184,7 +2280,7 @@ function flushSvgBlocks(bubble, tail, final = false) {
       tail.el.textContent = tail.text;
       return;
     }
-    if (open.lang !== SVG_FENCE_LANG) {
+    if (open.lang !== SVG_FENCE_LANG && !IMG_FENCE_LANGS.has(open.lang)) {
       // blocco di codice di altro linguaggio: si salta l'intero blocco, così un ```svg
       // citato dentro un blocco js non viene scambiato per un disegno
       const close = findCloseFence(tail.text, open.bodyStart);
@@ -2195,6 +2291,7 @@ function flushSvgBlocks(bubble, tail, final = false) {
     tail.pending = {
       fenceStart: open.start,
       bodyStart: open.bodyStart,
+      tipo: open.lang === SVG_FENCE_LANG ? "svg" : "img",
     };
     tail.el.textContent = tail.text; // in attesa: il blocco resta visibile come testo
   }
@@ -2307,6 +2404,142 @@ function domCheckSvg(svg) {
     if (!SVG_PREVIEW_TAGS.has(el.nodeName)) return `elemento <${el.nodeName}> non consentito`;
   }
   return null;
+}
+
+/**
+ * Card di un'immagine: il blocco ```img contiene un PERCORSO (relativo alla root della dashboard)
+ * e, dalle righe successive, una didascalia.
+ *
+ *     ```img
+ *     media/foto.jpg
+ *     La facciata del palazzo, ripresa da sud
+ *     ```
+ *
+ * Perché serve: senza questo, per vedere una foto l'utente deve aprire la card del file e cliccare
+ * «apri»; con questo l'immagine è *nella risposta*, nel punto in cui l'agente ne parla. La sicurezza
+ * sta nel server: il formato è verificato dai magic number (un .png che è in realtà HTML viene
+ * rifiutato con un motivo), l'SVG è rimandato al blocco dedicato che passa dal sanitizzatore, e i
+ * byte arrivano dalla stessa origine con l'autenticazione già presente.
+ */
+function makeImgCard(code, forcedError) {
+  const righe = String(code || "")
+    .split("\n")
+    .map((r) => r.trim())
+    .filter(Boolean);
+  let percorso = (righe.shift() || "").replace(/^[`'"](.*)[`'"]$/s, "$1").trim();
+  const didascalia = righe.join(" ").trim();
+  const fig = document.createElement("figure");
+  fig.className = "imgfig";
+
+  const head = document.createElement("div");
+  head.className = "imghead";
+  const lbl = document.createElement("span");
+  lbl.className = "imglbl";
+  lbl.textContent = "immagine";
+  const nome = document.createElement("span");
+  nome.className = "imgnome";
+  nome.textContent = percorso.split("/").pop() || "(percorso mancante)";
+  nome.title = percorso;
+  const meta = document.createElement("span");
+  meta.className = "imgmeta";
+  const acts = document.createElement("div");
+  acts.className = "imgacts";
+  head.append(lbl, nome, meta, acts);
+
+  const box = document.createElement("div");
+  box.className = "imgbox";
+  const wait = document.createElement("span");
+  wait.className = "imgwait";
+  wait.textContent = "carico l'anteprima…";
+  box.appendChild(wait);
+  const img = document.createElement("img");
+  // `loading="lazy"` va bene, MA l'immagine non deve essere `hidden`: Chrome non carica
+  // un'immagine invisibile, e con `hidden` + `lazy` si creava un vicolo cieco (diventava
+  // visibile solo al caricamento, che non partiva mai: l'anteprima restava «carico…» per
+  // sempre). Resta quindi nel flusso, con il testo di attesa sopra finché non è pronta.
+  img.loading = "lazy";
+  img.decoding = "async";
+  img.alt = didascalia || nome.textContent;
+  box.appendChild(img);
+
+  const cap = document.createElement("div");
+  cap.className = "imgcap";
+  cap.textContent = didascalia;
+  cap.hidden = !didascalia;
+  const err = document.createElement("div");
+  err.className = "imgerr";
+  if (didascalia) box.setAttribute("aria-label", didascalia);
+
+  fig.append(head, box, cap, err);
+
+  const mkBtn = (testo, titolo, fn, disabled) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = testo;
+    b.title = titolo;
+    b.disabled = !!disabled;
+    b.onclick = fn;
+    acts.appendChild(b);
+    return b;
+  };
+  const btnZoom = mkBtn("⤢ ingrandisci", "Apri l'immagine a schermo intero", () => openViewer(percorso), true);
+  const btnDl = mkBtn("⬇ scarica", "Scarica il file originale", () => {
+    if (percorso) window.location = downloadUrl(percorso);
+  }, true);
+  const btnCopia = mkBtn("⧉ copia percorso", "Copia il percorso negli appunti", async () => {
+    const okk = await copyText(percorso);
+    btnCopia.textContent = okk ? "✓ percorso copiato" : "✗ non copiato";
+    setTimeout(() => (btnCopia.textContent = "⧉ copia percorso"), 1500);
+  });
+  void btnZoom;
+  void btnDl;
+
+  const fallisci = (messaggio) => {
+    fig.classList.add("err");
+    err.textContent = messaggio;
+    wait.remove();
+    btnZoom.disabled = true;
+    btnDl.disabled = true;
+  };
+
+  if (forcedError) fallisci(forcedError);
+  else if (!percorso) fallisci("il blocco ```img non contiene un percorso di file");
+  else
+    (async () => {
+      try {
+        const r = await fetch(`/api/image?meta=1&path=${encodeURIComponent(percorso)}`);
+        const j = await r.json().catch(() => ({}));
+        if (!fig.isConnected) return;
+        if (!r.ok || !j.ok) {
+          fallisci(j.error || `non riesco a mostrare «${percorso}»`);
+          return;
+        }
+        percorso = j.path || percorso;
+        meta.textContent = `${j.mime.replace("image/", "")} · ${fmtSize(j.size)}`;
+        btnZoom.disabled = false;
+        btnDl.disabled = false;
+        img.onload = () => {
+          wait.remove();
+          meta.textContent = `${img.naturalWidth}×${img.naturalHeight} px · ${j.mime.replace("image/", "")} · ${fmtSize(j.size)}`;
+        };
+        img.onerror = () => fallisci(`il file «${percorso}» non è visualizzabile in chat`);
+        // il clic sull'immagine apre il lettore a schermo intero (galleria inclusa)
+        img.onclick = () => openViewer(percorso);
+        img.src = `/api/image?path=${encodeURIComponent(percorso)}`;
+        if (j.tooBig) {
+          // troppo grande per l'anteprima: i byte non li serviamo, ma il file resta apribile
+          fallisci(
+            `immagine di ${fmtSize(j.size)}, oltre il limite per l'anteprima (${fmtSize(j.maxBytes)}): aprila dai file o scaricala`,
+          );
+          btnDl.disabled = false;
+          img.onclick = null;
+        }
+      } catch (e2) {
+        if (fig.isConnected) fallisci(`errore di rete: ${e2?.message || e2}`);
+      }
+    })();
+
+  return fig;
 }
 
 /** Nome file per il download, dedotto dal <title> del disegno. */
@@ -2861,6 +3094,24 @@ function fileCard(info) {
   const isDir = it.type === "dir";
   const card = document.createElement("div"); card.className = "filecard";
   const ic = document.createElement("span"); ic.className = "fic"; ic.textContent = isDir ? "📁" : "📄";
+  // Immagine: al posto dell'icona una MINIATURA vera, cliccabile, che apre il lettore a schermo
+  // intero. È il modo più diretto per «riportare una foto in chat»: la si vede subito, senza aprire
+  // l'editor. Se il file non è un'immagine leggibile la miniatura resta l'icona di prima.
+  // Nota: l'elemento si sceglie PRIMA di aggiungerlo alla card — `ic.replaceWith(thumb)` su un
+  // nodo non ancora nel DOM non fa nulla, e la miniatura spariva (difetto trovato dal test).
+  let primo = ic;
+  if (!isDir && isImage(path)) {
+    const thumb = document.createElement("img");
+    thumb.className = "fthumb";
+    thumb.loading = "lazy";
+    thumb.decoding = "async";
+    thumb.alt = name;
+    thumb.title = "Apri " + name + " a schermo intero";
+    thumb.onclick = () => openViewer(path);
+    thumb.onerror = () => { thumb.className = "fic"; thumb.textContent = "📄"; thumb.onclick = null; };
+    thumb.src = `/api/image?path=${encodeURIComponent(path)}`;
+    primo = thumb;
+  }
   const meta = document.createElement("div"); meta.className = "fmeta";
   const nm = document.createElement("div"); nm.className = "fname"; nm.textContent = name;
   const pp = document.createElement("div"); pp.className = "fpath";
@@ -2868,8 +3119,12 @@ function fileCard(info) {
   pp.title = path;
   meta.appendChild(nm); meta.appendChild(pp);
   const openBtn = document.createElement("button"); openBtn.type = "button"; openBtn.className = "fbtn";
-  openBtn.textContent = isDir ? "cartella" : "apri";
-  openBtn.onclick = () => { if (isDir) { showTab("files"); loadDir(path); } else openInEditor(path); };
+  openBtn.textContent = isDir ? "cartella" : isImage(path) ? "vedi grande" : "apri";
+  openBtn.onclick = () => {
+    if (isDir) { showTab("files"); loadDir(path); }
+    else if (isImage(path)) openViewer(path);
+    else openInEditor(path);
+  };
   const dlName = isDir ? name + ".zip" : name;
   const dl = document.createElement("a"); dl.className = "fbtn dl";
   dl.textContent = isDir ? "⬇ zip" : "⬇ scarica";
@@ -2878,7 +3133,7 @@ function fileCard(info) {
   // dai browser che lo considerano una navigazione
   dl.href = downloadUrl(path);
   dl.title = (isDir ? `Scarica la cartella come ${dlName}` : `Scarica ${name}`) + ` (${path})`;
-  card.appendChild(ic); card.appendChild(meta); card.appendChild(openBtn); card.appendChild(dl);
+  card.appendChild(primo); card.appendChild(meta); card.appendChild(openBtn); card.appendChild(dl);
   return card;
 }
 
@@ -4700,89 +4955,344 @@ const IMG_MIME = {
 const imgMime = (p) => IMG_MIME[String(p).split(".").pop().toLowerCase()] || "";
 const isImage = (p) => !!imgMime(p);
 
-let viewerPath = null, viewerUrl = null, vFit = true, vScale = 1;
+/* ===================== LETTORE IMMAGINI (lightbox) =====================
+ * Cosa fa: apre un'immagine a tutto schermo, mostra i metadati veri (pixel, peso, formato, data),
+ * permette di passare alle ALTRE immagini della stessa cartella, di ingrandire (pulsanti, rotellina,
+ * doppio clic, due dita), di ruotare, di andare in schermo intero e di scaricare o eliminare.
+ *
+ * La geometria è una sola: l'immagine è posizionata con `transform: translate(x,y) scale(s)`
+ * dentro uno stage `overflow: hidden` — così pan e zoom seguono il dito e la pagina sotto non si
+ * muove. `fit()` calcola la scala che adatta l'immagine allo stage; 1:1 e 2× sono scale esplicite.
+ */
+let viewerPath = null;
+let viewerList = [];      // immagini della cartella corrente (galleria)
+let viewerIndex = -1;
+let vScale = 1, vFit = true, vRot = 0, vX = 0, vY = 0;
+let vNatural = { w: 0, h: 0 };
+let vMime = "", vPeso = 0, vData = 0;
+let vPuntatori = new Map();  // dita/mouse attivi sullo stage (pan e pizzico)
+let vPinchBase = null;       // stato iniziale del gesto a due dita
+let vUltimoTap = 0;
+let vFull = false;
 
-function applyZoom() {
-  const img = $("vImg");
-  if (vFit) {
-    img.classList.remove("zoomed");
-    img.style.width = "";
-  } else {
-    img.classList.add("zoomed");
-    img.style.width = Math.max(16, Math.round(img.naturalWidth * vScale)) + "px";
-  }
-  $("vFit").textContent = vFit ? "adatta" : Math.round(vScale * 100) + "%";
+function vStageBox() {
+  const st = $("vStage");
+  return { w: st.clientWidth, h: st.clientHeight };
 }
 
-async function openViewer(rel) {
-  const mime = imgMime(rel);
+/** Scala di «adatta»: l'immagine sta dentro lo stage (mai ingrandita oltre il 100%). */
+function vFitScale() {
+  const { w, h } = vStageBox();
+  if (!vNatural.w || !vNatural.h || !w || !h) return 1;
+  const ruotata = vRot % 180 !== 0;
+  const larg = ruotata ? vNatural.h : vNatural.w;
+  const alt = ruotata ? vNatural.w : vNatural.h;
+  return Math.min(1, w / larg, h / alt);
+}
+function vApplica() {
+  const img = $("vImg");
+  if (!img) return;
+  const s = vFit ? vFitScale() : vScale;
+  // Con la rotazione dispari larghezza e altezza si scambiano: il centraggio ne tiene conto.
+  const ruotata = vRot % 180 !== 0;
+  const larg = (ruotata ? vNatural.h : vNatural.w) * s;
+  const alt = (ruotata ? vNatural.w : vNatural.h) * s;
+  if (vFit) {
+    const { w, h } = vStageBox();
+    vX = (w - larg) / 2;
+    vY = (h - alt) / 2;
+  }
+  // La rotazione avviene attorno all'angolo in alto a sinistra del box (transform-origin 0 0):
+  // senza la compensazione qui sotto, a 90° e 180° l'immagine finisce fuori dallo stage.
+  const compenso = { 0: [0, 0], 90: [vNatural.h * s, 0], 180: [vNatural.w * s, vNatural.h * s], 270: [0, vNatural.w * s] }[vRot] || [0, 0];
+  img.style.transform =
+    `translate(${Math.round(vX + compenso[0])}px, ${Math.round(vY + compenso[1])}px) rotate(${vRot}deg) scale(${s})`;
+  img.style.transformOrigin = "0 0";
+  const b = $("vFit");
+  if (b) b.textContent = vFit ? "adatta" : Math.round((vScale / (vFitScale() || 1)) * 100) + "%";
+}
+
+function vClampPan() {
+  const { w, h } = vStageBox();
+  const s = vFit ? vFitScale() : vScale;
+  const ruotata = vRot % 180 !== 0;
+  const larg = (ruotata ? vNatural.h : vNatural.w) * s;
+  const alt = (ruotata ? vNatural.w : vNatural.h) * s;
+  // se l'immagine è più piccola dello stage resta centrata; altrimenti non si stacca dai bordi
+  const minX = larg <= w ? (w - larg) / 2 : w - larg;
+  const maxX = larg <= w ? (w - larg) / 2 : 0;
+  const minY = alt <= h ? (h - alt) / 2 : h - alt;
+  const maxY = alt <= h ? (h - alt) / 2 : 0;
+  vX = Math.min(maxX, Math.max(minX, vX));
+  vY = Math.min(maxY, Math.max(minY, vY));
+}
+
+/** Zoom verso un punto dello stage (il punto sotto il dito resta fermo). */
+function vZoomA(nuovaScala, cx, cy) {
+  const { w, h } = vStageBox();
+  const s = vFit ? vFitScale() : vScale;
+  const px = cx == null ? w / 2 : cx;
+  const py = cy == null ? h / 2 : cy;
+  const k = nuovaScala / s;
+  vX = px - k * (px - vX);
+  vY = py - k * (py - vY);
+  vFit = false;
+  vScale = Math.max(0.05, Math.min(16, nuovaScala));
+  vClampPan();
+  vApplica();
+}
+
+function vAdatta() {
+  vFit = true;
+  vApplica();
+}
+
+function vRuota() {
+  vRot = (vRot + 90) % 360;
+  vAdatta();
+  vSetInfo();
+}
+
+/** Ciclo dei comodi tre stati: adatta → 1:1 → 2× → adatta. */
+function vCicloZoom(cx, cy) {
+  const fitS = vFitScale();
+  if (vFit) return vZoomA(1, cx, cy);
+  if (Math.abs(vScale - 1) < 0.01) return vZoomA(2, cx, cy);
+  return vAdatta();
+}
+
+function vSetInfo(extra) {
+  const el = $("vInfo");
+  if (!el) return;
+  const img = $("vImg");
+  const pezzi = [];
+  if (img && img.naturalWidth) pezzi.push(`<b>${vNatural.w}×${vNatural.h}</b> px`);
+  pezzi.push(escHtml(vMime || ""));
+  pezzi.push(escHtml(String(vPeso ? fmtSize(vPeso) : "—")));
+  if (vData) pezzi.push(escHtml(new Date(vData).toLocaleString("it-IT")));
+  if (vRot) pezzi.push(`ruotata ${vRot}°`);
+  if (extra) pezzi.push(escHtml(extra));
+  pezzi.push("<span style=\"opacity:.7\">rotellina o due dita per ingrandire · trascina per spostarti</span>");
+  el.innerHTML = pezzi.join(" · ");
+}
+/** Immagini della cartella indicata: sono la galleria (frecce ← → e swipe). */
+async function vCaricaGalleria(dir) {
+  try {
+    const r = await fetch("/api/files?path=" + encodeURIComponent(dir || ""));
+    const j = await r.json();
+    if (!r.ok) return [];
+    return (j.entries || [])
+      .filter((e) => e.type === "file" && isImage(e.name))
+      .map((e) => jr(j.path || "", e.name))
+      .sort((a, b) => a.localeCompare(b, "it", { numeric: true }));
+  } catch {
+    return [];
+  }
+}
+
+async function openViewer(rel, lista) {
   $("viewer").hidden = false;
-  $("vName").textContent = rel;
+  document.body.classList.add("v-open");
+  // la cartella dell'immagine: se non arriva una lista esplicita, la galleria è quella
+  const dir = rel.includes("/") ? rel.slice(0, rel.lastIndexOf("/")) : "";
+  viewerList = Array.isArray(lista) && lista.length ? lista : await vCaricaGalleria(dir);
+  if (!viewerList.includes(rel)) viewerList = [...viewerList, rel];
+  await vMostra(rel);
+}
+
+async function vMostra(rel) {
+  const img = $("vImg");
+  // le dimensioni note si azzerano: appartengono all'immagine precedente e restare con quelle
+  // mostrerebbe pixel sbagliati fino alla fine del caricamento
+  vNatural = { w: 0, h: 0 };
+  $("vName").textContent = rel.split("/").pop();
+  $("vName").title = rel;
+  viewerIndex = viewerList.indexOf(rel);
+  const n = viewerList.length;
+  $("vCount").textContent = n > 1 ? `${viewerIndex + 1} di ${n}` : "";
+  vRot = 0;
+  vFit = true;
+  // I byte arrivano da /api/image: il formato è verificato dai magic number, non dall'estensione.
+  // Il primo caricamento passa da ?meta=1 per sapere PESO e FORMATO veri (e per avere il motivo
+  // esatto se il file non è un'immagine o è troppo grande per l'anteprima).
   $("vInfo").textContent = "carico…";
   try {
-    const r = await fetch(downloadUrl(rel));
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const len = Number(r.headers.get("content-length") || 0);
-    if (len > 60 * 1024 * 1024 && !confirm("Immagine di " + fmtSize(len) + ": caricarla comunque?")) {
-      closeViewer();
+    const mr = await fetch(`/api/image?meta=1&path=${encodeURIComponent(rel)}`);
+    const mj = await mr.json().catch(() => ({}));
+    if (!mr.ok || !mj.ok) {
+      $("vInfo").innerHTML = `<b style="color:var(--red)">${escHtml(mj.error || "non è un'immagine leggibile")}</b>`;
+      img.removeAttribute("src");
       return;
     }
-    const buf = await r.arrayBuffer();
-    if (viewerUrl) URL.revokeObjectURL(viewerUrl);
-    viewerUrl = URL.createObjectURL(new Blob([buf], { type: mime }));
-    viewerPath = rel;
-    const img = $("vImg");
+    vMime = mj.mime || "";
+    vPeso = mj.size || 0;
+    vData = mj.mtime || 0;
+    viewerPath = mj.path || rel;
+    img.alt = rel.split("/").pop();
     img.onload = () => {
-      $("vInfo").textContent =
-        img.naturalWidth + "×" + img.naturalHeight + " px · " + fmtSize(buf.byteLength) +
-        " · " + mime.replace("image/", "") + " · clic o rotella per lo zoom";
-      vFit = true; vScale = 1;
-      applyZoom();
+      vNatural = { w: img.naturalWidth, h: img.naturalHeight };
+      vAdatta();
+      vSetInfo(vPeso > 8 * 1024 * 1024 ? "immagine grande: l'anteprima può essere lenta" : "");
+      // la successiva si prepara in anticipo: con le frecce il cambio è immediato
+      const dopo = viewerList[viewerIndex + 1];
+      if (dopo) { const pre = new Image(); pre.src = `/api/image?path=${encodeURIComponent(dopo)}`; }
     };
-    img.onerror = () => { $("vInfo").textContent = "questo file non sembra un'immagine leggibile"; };
-    img.src = viewerUrl;
+    img.onerror = () => { $("vInfo").innerHTML = '<b style="color:var(--red)">questo file non sembra un\'immagine leggibile</b>'; };
+    img.src = `/api/image?path=${encodeURIComponent(rel)}`;
   } catch (err) {
-    $("vInfo").textContent = "errore nel caricamento";
-    alert("Non riesco a caricare l'immagine (" + err.message + ")");
-    closeViewer();
+    $("vInfo").innerHTML = `<b style="color:var(--red)">errore nel caricamento: ${escHtml(String(err?.message || err))}</b>`;
   }
+}
+
+function vVai(delta) {
+  if (viewerList.length < 2) return;
+  const i = (viewerIndex + delta + viewerList.length) % viewerList.length;
+  vMostra(viewerList[i]);
 }
 
 function closeViewer() {
   $("viewer").hidden = true;
-  $("vImg").removeAttribute("src");
-  if (viewerUrl) { URL.revokeObjectURL(viewerUrl); viewerUrl = null; }
+  document.body.classList.remove("v-open");
+  const img = $("vImg");
+  img.removeAttribute("src");
+  img.style.transform = "";
+  vPuntatori.clear();
+  vPinchBase = null;
+  if (vFull) setVFull(false);
+  if (viewerPath) {
+    // teniamo allineata la vista file (e la galleria) a ciò che si è appena visto
+    currentDir = currentDir || "";
+  }
   viewerPath = null;
+  viewerList = [];
+  viewerIndex = -1;
+  vRot = 0;
 }
 
-$("vBack").onclick = () => { closeViewer(); loadDir(currentDir); };
-$("vFit").onclick = () => { vFit = !vFit; vScale = 1; applyZoom(); };
-$("vZoomIn").onclick = () => { vFit = false; vScale = Math.min(8, vScale * 1.25); applyZoom(); };
-$("vZoomOut").onclick = () => { vFit = false; vScale = Math.max(0.05, vScale / 1.25); applyZoom(); };
-$("vImg").onclick = () => { vFit = !vFit; vScale = 1; applyZoom(); };
+function setVFull(on) {
+  const box = $("viewer");
+  vFull = on;
+  if (!box) return;
+  if (on && box.requestFullscreen) box.requestFullscreen().catch(() => { vFull = false; });
+  else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  const b = $("vFull");
+  if (b) { b.textContent = on ? "⤡" : "⛶"; b.title = on ? "Esci da schermo intero (F)" : "Schermo intero (F)"; }
+}
+
+/* --- gesture sullo stage: pan con un dito, pizzico con due, doppio tap per lo zoom --- */
+function vDistanza() {
+  const [a, b] = [...vPuntatori.values()];
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+function vCentro() {
+  const [a, b] = [...vPuntatori.values()];
+  const r = $("vStage").getBoundingClientRect();
+  return { x: (a.x + b.x) / 2 - r.left, y: (a.y + b.y) / 2 - r.top };
+}
+$("vStage").addEventListener("pointerdown", (e) => {
+  if ($("viewer").hidden) return;
+  $("vStage").setPointerCapture?.(e.pointerId);
+  vPuntatori.set(e.pointerId, { x: e.clientX, y: e.clientY, x0: vX, y0: vY, cx: e.clientX, cy: e.clientY });
+  if (vPuntatori.size === 2) {
+    vPinchBase = { d: vDistanza(), scala: vFit ? vFitScale() : vScale };
+  }
+  $("vStage").classList.add("panning");
+});
+$("vStage").addEventListener("pointermove", (e) => {
+  const p = vPuntatori.get(e.pointerId);
+  if (!p) return;
+  const prima = [...vPuntatori.values()];
+  p.x = e.clientX;
+  p.y = e.clientY;
+  if (vPuntatori.size === 1) {
+    if (vFit) vZoomA(vFitScale(), null, null); // uscire da «adatta» per poter spostare
+    vX = p.x0 + (e.clientX - p.cx);
+    vY = p.y0 + (e.clientY - p.cy);
+    vClampPan();
+    vApplica();
+    return;
+  }
+  if (vPuntatori.size === 2 && vPinchBase && prima.length === 2) {
+    const c = vCentro();
+    const d = vDistanza();
+    if (vPinchBase.d > 0) vZoomA((vPinchBase.scala * d) / vPinchBase.d, c.x, c.y);
+  }
+});
+function vRilascia(e) {
+  if (!vPuntatori.has(e.pointerId)) return;
+  const solo = vPuntatori.size === 1;
+  vPuntatori.delete(e.pointerId);
+  if (vPuntatori.size < 2) vPinchBase = null;
+  if (!vPuntatori.size) $("vStage").classList.remove("panning");
+  // doppio tap / doppio clic: cicla adatta → 1:1 → 2× (su telefono è il gesto che tutti provano)
+  if (solo) {
+    const ora = Date.now();
+    if (ora - vUltimoTap < 320) {
+      vUltimoTap = 0;
+      const r = $("vStage").getBoundingClientRect();
+      vCicloZoom(e.clientX - r.left, e.clientY - r.top);
+    } else {
+      vUltimoTap = ora;
+    }
+  }
+}
+$("vStage").addEventListener("pointerup", vRilascia);
+$("vStage").addEventListener("pointercancel", vRilascia);
 $("vStage").addEventListener("wheel", (e) => {
   if ($("viewer").hidden) return;
   e.preventDefault();
-  vFit = false;
-  vScale = Math.min(8, Math.max(0.05, vScale * (e.deltaY < 0 ? 1.12 : 0.89)));
-  applyZoom();
+  const r = $("vStage").getBoundingClientRect();
+  const s = vFit ? vFitScale() : vScale;
+  vZoomA(s * (e.deltaY < 0 ? 1.12 : 0.89), e.clientX - r.left, e.clientY - r.top);
 }, { passive: false });
-$("vNewTab").onclick = () => { if (viewerUrl) window.open(viewerUrl, "_blank"); };
+// swipe orizzontale con un dito quando l'immagine è adattata: cambia immagine
+let vSwipe = null;
+$("vStage").addEventListener("touchstart", (e) => {
+  if (e.touches.length === 1) vSwipe = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+  else vSwipe = null;
+}, { passive: true });
+$("vStage").addEventListener("touchend", (e) => {
+  if (!vSwipe || !vFit) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - vSwipe.x;
+  const dy = t.clientY - vSwipe.y;
+  const dt = Date.now() - vSwipe.t;
+  vSwipe = null;
+  if (dt < 600 && Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) vVai(dx < 0 ? 1 : -1);
+}, { passive: true });
+
+$("vBack").onclick = () => { closeViewer(); loadDir(currentDir); };
+$("vPrev").onclick = () => vVai(-1);
+$("vNext").onclick = () => vVai(1);
+$("vRotate").onclick = () => vRuota();
+$("vFit").onclick = () => vCicloZoom();
+$("vZoomIn").onclick = () => vZoomA((vFit ? vFitScale() : vScale) * 1.25);
+$("vZoomOut").onclick = () => vZoomA((vFit ? vFitScale() : vScale) / 1.25);
+$("vFull").onclick = () => setVFull(!vFull);
+$("vNewTab").onclick = () => { if (viewerPath) window.open(`/api/image?path=${encodeURIComponent(viewerPath)}`, "_blank"); };
 $("vDownload").onclick = () => { if (viewerPath) window.location = downloadUrl(viewerPath); };
 $("vDelete").onclick = async () => {
   if (!viewerPath) return;
-  if (!confirm("Cancellare " + viewerPath + " ?")) return;
-  const r = await fetch("/api/file/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: viewerPath }) });
+  const path = viewerPath;
+  if (!confirm("Cancellare " + path + " ?")) return;
+  const r = await fetch("/api/file/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path }) });
   const j = await r.json();
   if (!r.ok) return alert(j.error || "errore");
-  closeViewer(); loadDir(currentDir);
+  const resta = viewerList.filter((p) => p !== path);
+  if (!resta.length) { closeViewer(); loadDir(currentDir); return; }
+  viewerList = resta;
+  await vMostra(viewerList[Math.min(viewerIndex, resta.length - 1)]);
 };
+addEventListener("resize", () => { if (!$("viewer").hidden) vApplica(); });
 addEventListener("keydown", (e) => {
   if ($("viewer").hidden) return;
-  if (e.key === "Escape") { closeViewer(); loadDir(currentDir); }
+  if (e.key === "Escape") { closeViewer(); loadDir(currentDir); return; }
+  if (e.key === "ArrowLeft") vVai(-1);
+  else if (e.key === "ArrowRight") vVai(1);
   else if (e.key === "+" || e.key === "=") $("vZoomIn").click();
   else if (e.key === "-" || e.key === "_") $("vZoomOut").click();
-  else if (e.key === "0") { vFit = true; vScale = 1; applyZoom(); }
+  else if (e.key === "0" || e.key === "f" || e.key === "F") { if (e.key === "0") vAdatta(); else setVFull(!vFull); }
+  else if (e.key === "r" || e.key === "R") vRuota();
 });
 
 /* ====================== COMPATTAZIONE DEL CONTESTO ====================== */

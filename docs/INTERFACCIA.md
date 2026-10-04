@@ -101,3 +101,41 @@ animazione è necessaria per capire lo stato dell'app.
 (`background: #000`, card `#0f131a`, bordi `#2b3240`). Attenzione: quel HTML è generato dal modulo
 Node, quindi le modifiche si vedono **dopo il riavvio** della dashboard (`scripts/restart-dashboard.sh`),
 mentre `dashboard.html` è letto da disco a ogni richiesta.
+
+## 8. Immagini: anteprima in chat e lettore a schermo intero
+
+**Blocco `img` nella chat.** L'anteprima vive in una `figure.imgfig`: testata con nome del file
+(monospaziato, troncato con i puntini), formato e pixel reali; corpo con l'immagine; didascalia
+sotto; riga d'errore in rosso quando il file non è mostrabile. Altezza dell'anteprima limitata a
+`min(62vh, 560px)` — una foto verticale da telefono non deve occupare tre schermate — e larghezza
+tutta la colonna, in proporzione.
+
+Due regole che sono costate un bug, da non dimenticare:
+
+1. l'immagine **non** deve essere nascosta (`hidden` o `display:none`) mentre carica: il browser non
+   scarica un'immagine invisibile, e con `loading="lazy"` il risultato è un vicolo cieco (non carica
+   perché è invisibile, e diventa visibile solo quando ha caricato). Il testo «carico l'anteprima…»
+   resta **sopra** l'immagine finché `onload` non lo toglie;
+2. con `loading="lazy"`, un'anteprima fuori dallo schermo non viene scaricata: è il comportamento
+   voluto (non si scaricano megabyte per foto che nessuno guarda), ma i test devono portare
+   l'elemento nel viewport prima di verificarlo.
+
+**Miniatura nelle card dei file.** Un'immagine al posto dell'icona: 38px (48 su telefono),
+`object-fit: cover`, cliccabile per aprire il lettore, con ripiego sull'icona se il file non è
+leggibile. Attenzione all'ordine: l'elemento va **scelto prima** di appenderlo alla card —
+`ic.replaceWith(thumb)` su un nodo non ancora nel DOM non fa nulla (la miniatura spariva,
+difetto trovato dal test).
+
+**Lettore (lightbox).** `.vlightbox` è un overlay `position: fixed` con tre fasce: barra dei
+comandi (✕, nome, contatore, frecce, ruota, zoom, schermo intero, nuova scheda, scarica, elimina),
+stage, riga dei metadati. Geometria: l'immagine è posizionata con
+`transform: translate(x,y) rotate(r) scale(s)` dentro uno stage `overflow: hidden`, quindi pan e
+zoom seguono il dito senza muovere la pagina; `fit` calcola la scala che la contiene. La rotazione
+avviene attorno all'angolo in alto a sinistra (`transform-origin: 0 0`) e per 90°/180°/270° serve
+una **compensazione** nel translate, altrimenti l'immagine finisce fuori dallo stage. Su telefono la
+barra scorre in orizzontale con bersagli ≥44px; i comandi restano sopra l'overlay.
+
+**Costo e sicurezza.** Nessuna miniatura generata sul server (non ci sono ImageMagick né ffmpeg su
+questa macchina): si serve l'originale. Il prezzo è che una foto da 8 MB si scarica tutta per essere
+guardata in chat: per questo l'anteprima ha un tetto di 40 MB e mostra il percorso utile
+(«aprila dai file») invece di scaricare. Il formato è sempre verificato dal server sui magic number.

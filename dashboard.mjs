@@ -3328,6 +3328,37 @@ function sendFile(res, absPath, { mime, download, noStore = false, headers = {} 
   createReadStream(absPath).pipe(res);
 }
 
+/**
+ * Formato di un'immagine dai PRIMI BYTE del file (magic number), non dall'estensione.
+ * Serve a due cose: non far scaricare al browser un file che finge di essere una foto (un HTML
+ * rinominato .png), e dare il Content-Type giusto all'anteprima. L'SVG è escluso di proposito:
+ * è un documento con scripting, e passa dalla via sanificata del blocco ```svg.
+ */
+function sniffImageMime(buf) {
+  if (buf.length >= 8 && buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+  if (buf.length >= 6 && (buf.subarray(0, 6).toString("latin1") === "GIF87a" || buf.subarray(0, 6).toString("latin1") === "GIF89a")) return "image/gif";
+  if (buf.length >= 12 && buf.subarray(0, 4).toString("latin1") === "RIFF" && buf.subarray(8, 12).toString("latin1") === "WEBP") return "image/webp";
+  if (buf.length >= 2 && buf.subarray(0, 2).toString("latin1") === "BM") return "image/bmp";
+  // AVIF/HEIC: contenitore ISO-BMFF, "ftyp" al byte 4 con brand avif/heic
+  if (buf.length >= 12 && buf.subarray(4, 8).toString("latin1") === "ftyp") {
+    const brand = buf.subarray(8, 12).toString("latin1");
+    if (brand.startsWith("avif")) return "image/avif";
+    if (brand.startsWith("heic") || brand.startsWith("heix") || brand.startsWith("mif1")) return "image/heic";
+  }
+  return null;
+}
+
+/** Vero se il file ha l'aria di un documento SVG (per rimandare al blocco dedicato). */
+function looksLikeSvg(buf) {
+  const testa = buf.subarray(0, 300).toString("utf8").toLowerCase();
+  return testa.includes("<svg") || (testa.includes("<?xml") && testa.includes("svg"));
+}
+
+/** Tetto per l'anteprima di un'immagine in chat: oltre, si mostra il percorso come testo. */
+const IMAGE_MAX_BYTES =
+  Number(process.env.DASH_IMAGE_MAX_BYTES) > 0 ? Number(process.env.DASH_IMAGE_MAX_BYTES) : 40 * 1024 * 1024;
+
 import { statSync as require_statSync } from "node:fs";
 
 /** Legge un file JSONL di sessione e restituisce gli entry del ramo attivo. */
@@ -4363,7 +4394,7 @@ const server = http.createServer(async (req, res) => {
           abs = await safeResolve(richiesto);
         } catch (e) {
           const msg = String(e?.message || e);
-          return json(res, e?.status === 403 ? 403 : 404, {
+          return json(res, e?.code === 403 ? 403 : 404, {
             error: msg === "non trovato" || msg === "percorso fuori dalla root"
               ? `cartella non trovata nella root della dashboard: «${richiesto}» (i percorsi sono relativi a ${ROOT})`
               : msg,
@@ -4799,6 +4830,85 @@ const server = http.createServer(async (req, res) => {
         "Content-Type": "application/octet-stream",
         "Content-Length": st.size,
         "Content-Disposition": contentDisposition(basename(abs)),
+      });
+      createReadStream(abs).pipe(res);
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/image") {
+      // Anteprima di un'immagine VERA: la rotta serve i byte con il Content-Type ricavato dai
+      // magic number e `inline`. `/api/download` resta per il salvataggio su disco (attachment),
+      // perché un `<img src>` con disposition `attachment` non è affidabile in tutti i browser.
+      // `?meta=1` non scarica nulla: dice solo se il file è un'immagine ammessa, con che formato e
+      // quanto pesa — è quello che la chat usa per decidere se mostrare l'anteprima.
+      const richiesto = url.searchParams.get("path") || "";
+      const soloMeta = url.searchParams.get("meta") === "1";
+      let abs;
+      try {
+        abs = await safeResolve(richiesto);
+      } catch (e) {
+        return json(res, e?.code === 403 ? 403 : 404, {
+          error: e?.code === 403 ? "percorso fuori dalla root" : `file non trovato: «${richiesto}»`,
+        });
+      }
+      let st;
+      try {
+        st = await fs.stat(abs);
+      } catch {
+        return json(res, 404, { error: `file non trovato: «${richiesto}»` });
+      }
+      if (!st.isFile()) return json(res, 400, { error: "non è un file" });
+      let testa = Buffer.alloc(0);
+      try {
+        const fh = await fs.open(abs, "r");
+        try {
+          const buf = Buffer.alloc(512);
+          const { bytesRead } = await fh.read(buf, 0, 512, 0);
+          testa = buf.subarray(0, bytesRead);
+        } finally {
+          await fh.close();
+        }
+      } catch (e) {
+        return json(res, 500, { error: `lettura non riuscita: ${e?.message || e}` });
+      }
+      const mime = sniffImageMime(testa);
+      const rel = relative(ROOT, abs);
+      if (!mime) {
+        const perche = looksLikeSvg(testa)
+          ? "è un disegno SVG: per mostrarlo usa il blocco ```svg della chat (passa dal sanitizzatore)"
+          : "il file non è un'immagine (png, jpeg, gif, webp, bmp, avif)";
+        return json(res, 415, { ok: false, error: perche, path: rel, size: st.size });
+      }
+      const troppoGrande = st.size > IMAGE_MAX_BYTES;
+      if (soloMeta) {
+        return json(res, 200, {
+          ok: true,
+          mime,
+          path: rel,
+          name: basename(abs),
+          size: st.size,
+          mtime: st.mtimeMs,
+          tooBig: troppoGrande,
+          maxBytes: IMAGE_MAX_BYTES,
+        });
+      }
+      if (troppoGrande) {
+        return json(res, 413, {
+          ok: false,
+          error: `immagine troppo grande per l'anteprima (${Math.round(st.size / 1024 / 1024)} MB, limite ${Math.round(
+            IMAGE_MAX_BYTES / 1024 / 1024,
+          )} MB): aprila dai file o scaricala`,
+          path: rel,
+          size: st.size,
+        });
+      }
+      res.writeHead(200, {
+        "Content-Type": mime,
+        "Content-Length": st.size,
+        // inline: è un'anteprima, non un download (il nome del file resta nel titolo della card)
+        "Content-Disposition": "inline",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "private, max-age=60",
       });
       createReadStream(abs).pipe(res);
       return;
