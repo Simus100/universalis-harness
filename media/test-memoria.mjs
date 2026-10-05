@@ -448,12 +448,13 @@ await prova("header mobile: due righe snelle, niente testo fuori dalle pill", as
   assert(/\/think/.test(readFileSync("media/commands.mjs", "utf8")), "il thinking non è più raggiungibile: manca il comando /think");
   assert(html.indexOf('class="statusbar"') > html.indexOf('class="hrow hrow-2"'), "il pallino di stato non è nella riga dei controlli");
   assert(/@media \(max-width: 350px\) \{\s*\.tab-txt \{ display: none/.test(html), "manca l'ultimo risparmio (solo icone) per schermi molto stretti");
-  // Riga 2 allineata a destra: modello, features e stato accostati al bordo (scarto misurato 0 px
-  // a 430/390/360/320). Serve anche annullare il `.tools { width: 100% }` preesistente, che
-  // altrimenti teneva il gruppo a sinistra dentro un contenitore largo tutta la riga.
-  assert(/\.hrow-2 \{ justify-content: flex-end; \}/.test(html), "la riga 2 non è allineata a destra");
+  // Riga 2 allineata al CENTRO: modello, features e stato formano un gruppo centrato sotto la
+  // navigazione (margini 49 px a sinistra e 49 a destra misurati a 390, 0 di scarto fra loro).
+  // Serve anche annullare il `.tools { width: 100% }` preesistente, che altrimenti teneva il
+  // gruppo incollato a sinistra dentro un contenitore largo tutta la riga.
+  assert(/\.hrow-2 \{ justify-content: center; \}/.test(html), "la riga 2 non è allineata al centro");
   assert(/\.hrow-2 \.tools \{ flex: 0 1 auto; width: auto/.test(html), "il contenitore dei tools non è stato liberato dalla larghezza 100%");
-  return "2 righe · pill integre · statistiche visibili · riga 2 a destra · thinking su /think";
+  return "2 righe · pill integre · statistiche visibili · riga 2 centrata · thinking su /think";
 });
 
 await prova("il canvas della memoria non collassa su mobile (flex-basis, non solo height)", async () => {

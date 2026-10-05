@@ -1528,10 +1528,10 @@ footer {
    * Il thinking esce dalla barra di proposito: si cambia dal comando /think (o /thinking) e la
    * sua scelta è rara — un comando che c'è già vale più di un selettore fisso in ogni schermata. */
   #thinkSel { display: none; }
-  /* Riga 2 allineata a DESTRA: modello, features e stato formano un gruppo solo, accostato al
-   * bordo come la fila di controlli che è. Lo spacer interno serviva quando il pallino era
-   * spinto a destra da solo e il resto stava a sinistra. */
-  .hrow-2 { justify-content: flex-end; }
+  /* Riga 2 allineata al CENTRO: modello, features e stato formano un gruppo solo, centrato sotto
+   * la navigazione. Lo spacer interno serviva quando il pallino era spinto a destra da solo e il
+   * resto stava a sinistra: qui non ha più senso, la riga si centra da sé. */
+  .hrow-2 { justify-content: center; }
   .hrow-2 .spacer { display: none; }
   /* `.hrow-2 .tools` e non `.tools`: esiste una regola precedente che su mobile dà ai tools
    * larghezza 100% e scorrimento orizzontale (`.tools { flex: 1 1 100%; width: 100% }`), e quella
