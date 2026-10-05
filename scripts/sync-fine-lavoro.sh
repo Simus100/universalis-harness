@@ -10,8 +10,13 @@
 #      personali), **aborta senza committare**. Un controllo che fallisce deve fermare tutto,
 #      non pubblicare a metà: una volta in un commit, un file resta nella storia del repository.
 #   2. mostra l'anteprima (quanti file, quanto pesano).
-#   3. registra e pubblica con `scripts/github-sync.sh` (che resta l'unico punto che fa push).
-#   4. verifica che locale e remoto coincidano, leggendo il commit da GitHub.
+#   3. PRIMA della pubblicazione, il promemoria della memoria: se l'episodio di questa sessione
+#      non ha una decisione registrata, lo dice in chiaro. È l'ultimo momento utile per scrivere
+#      il perché prima che il contesto sparisca — e la parte che i file non contengono.
+#      Avvisa e NON blocca: una decisione è soggettiva, un gate che si aggira per fatica è peggio
+#      di un promemoria che si può ignorare.
+#   4. registra e pubblica con `scripts/github-sync.sh` (che resta l'unico punto che fa push).
+#   5. verifica che locale e remoto coincidano, leggendo il commit da GitHub.
 #
 # Uso:
 #   bash scripts/sync-fine-lavoro.sh "messaggio breve del lavoro"     # pubblica
@@ -69,6 +74,16 @@ if [ -n "$sospetti" ]; then
 fi
 echo "  ✓ controllo di sicurezza: nessun file riservato nell'elenco"
 
+# Promemoria della memoria: non blocca la pubblicazione, ma non si può non vederlo.
+DECISIONE_MANCANTE=0
+echo
+echo "== memoria =="
+if node scripts/memoria-promemoria.mjs 2>/dev/null; then
+  :
+else
+  DECISIONE_MANCANTE=1
+fi
+
 if [ "$MODO" = "anteprima" ]; then
   echo
   echo "anteprima soltanto: non ho committato né pubblicato nulla"
@@ -95,6 +110,12 @@ REMOTO=$(curl -s -H "Authorization: Bearer $TOKEN" \
 printf '  locale: %s\n  remoto: %s\n' "${LOCALE:0:9}" "${REMOTO:0:9}"
 if [ -n "$REMOTO" ] && [ "${LOCALE:0:9}" = "${REMOTO:0:9}" ]; then
   echo "  ✓ pubblicato: https://github.com/$OWNER/$REPO"
+  if [ "$DECISIONE_MANCANTE" = "1" ]; then
+    echo
+    echo "  ⚠ resta una cosa: questa sessione non ha una decisione in memoria."
+    echo "    Il codice è pubblicato, il PERCHÉ della sessione no: chiama memoria_episodio"
+    echo "    con { decisione, perche } — anche dopo il sync, finché la sessione è viva."
+  fi
   exit 0
 fi
 echo "  ✘ locale e remoto NON coincidono: controlla il push (potrebbe esserci un commit non arrivato)"

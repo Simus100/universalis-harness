@@ -25,7 +25,8 @@ Quattro tool, registrati dall'estensione `media/memoria/memoria-tool.mjs`:
 
 - `memoria_grafo` — `azione: cerca | nodo | stato | ricostruisci`. Il primo da provare.
 - `memoria_wiki` — la pagina di un nodo (episodio o artefatto).
-- `memoria_cerca` — frammenti pertinenti con `alta|media|bassa|nessuna` di confidenza.
+- `memoria_cerca` — frammenti pertinenti con `alta|media|bassa|nessuna` di confidenza e la fonte
+  (`memoria` o `documentazione`).
 - `memoria_episodio` — registra la decisione e il perché (l'unica cosa che i file non contengono).
 
 La procedura completa, con i casi in cui **non** usarli, sta nella skill `skills/memoria/SKILL.md`.
@@ -43,7 +44,16 @@ La memoria non si costruisce a mano e non dipende dal fatto che qualcuno si rico
 2. **Compattazione del contesto** (`session_compact`): il riassunto che pi ha appena prodotto —
    quindi **già pagato** — entra nell'episodio invece di sparire con la sessione.
 3. **Decisione registrata** (tool `memoria_episodio`): una riga di decisione e una di motivo.
-4. **A mano**: `node media/memoria/memoria-build.mjs [--forza] [--atlante]`, o il pulsante
+   Indice, grafo e wiki si aggiornano subito — la decisione è cercabile nella stessa sessione, e
+   senza questo l'annotazione non si trovava fino al turno successivo (verificato dal vivo).
+   È l'unico passo non automatico, ed è quello che si dimentica: per questo
+   `scripts/sync-fine-lavoro.sh` lo ricorda a fine pubblicazione (avviso, non blocco).
+4. **Ogni 20 minuti**, e una volta due minuti dopo l'avvio: la dashboard controlla se c'è
+   qualcosa di nuovo (`mtime` + dimensione) e, solo allora, ricostruisce in modo incrementale.
+   Copre i casi in cui nessun hook è scattato — server appena riavviato, sessione chiusa in
+   fretta, lavoro fatto da un'altra istanza — che altrimenti lasciano la memoria indietro **in
+   silenzio**, il modo peggiore di guastarsi perché sembra aggiornata.
+5. **A mano**: `node media/memoria/memoria-build.mjs [--forza] [--atlante]`, o il pulsante
    «ricostruisci» nella scheda **Memoria**.
 
 Le 29 sessioni già presenti sul disco sono state importate in episodi **senza spendere un token**:
@@ -64,6 +74,39 @@ media/memoria/
 **Frammenti, non file**: si indicizza per titolo markdown, da 60 a 1800 caratteri. Un file intero
 è un pagliaio — BM25 normalizza sulla lunghezza e i termini rari si diluiscono. Ogni frammento
 porta con sé il titolo più vicino, che è il suo contesto.
+
+**Quattro tipi di frammento**, perché cercare ha bisogno diversi:
+
+| Tipo | Cosa contiene | Ambito |
+|---|---|---|
+| documento | il testo, per titolo markdown | `harness`, `skill`, `media` |
+| scheda dell'episodio | data, esito, **decisione, perché**, obiettivo, note | `episodio` |
+| scheda di codice | percorso, righe, scopo dichiarato nell'intestazione, nomi definiti | `codice` |
+| obiettivo | i goal della dashboard | `obiettivo` |
+
+Due di queste sono nate da difetti osservati, non da un piano:
+
+- **La scheda dell'episodio.** Decisione e perché vivono nel front-matter, che l'indicizzazione
+  scarta di proposito (è metadato, non deve inquinare il ranking). Il risultato era paradossale:
+  alla domanda «perché la memoria non si pubblica su git» la memoria citava il manuale, mentre la
+  decisione registrata — che dice esattamente quella cosa — non veniva trovata. Ora ogni episodio
+  ha una scheda in testa, con quello che serve a ritrovarlo.
+- **La scheda di codice.** I file di codice non si cercano per prosa, ma il loro commento di testa
+  dice PERCHÉ esistono (spesso con il difetto che hanno risolto). Prima non era cercabile da nessuna
+  parte: «dove sta la logica del browser» trovava il manuale, non `media/browser-tool.mjs`. Costa
+  ~30 KB di indice, meno dell'1%. Il **contenuto** del codice non entra: quello si legge col tool
+  `read`.
+
+**Memoria o documentazione?** Ogni frammento ha un ambito, e gli ambiti si dividono in due famiglie:
+`episodio`, `obiettivo`, `media`, `codice` sono **memoria** (cose successe); `skill` e `harness` sono
+**documentazione** (testi scritti per spiegare). La ricerca dichiara quale delle due ha risposto, e
+se ha trovato solo documentazione la confidenza scende a `bassa` con il motivo in chiaro. Serve a un
+errore osservato: alla domanda «ricetta della carbonara» la memoria rispondeva con tre frammenti
+fuori tema presi dalle skill, con «confidenza media» — i termini c'erano, il fatto no.
+
+**La versione dell'indice invalida il riuso**: se cambia il modo di frammentare, i frammenti vecchi
+non valgono più. Senza questo confronto il riuso per `mtime` li avrebbe tenuti per sempre — è
+successo, con le schede degli episodi che non comparivano perché il file non era cambiato.
 
 **Archivio escluso**: `sessions/` (26 MB di JSONL: rumore e dati personali), `backups/`,
 `backup_export/`, `node_modules/`, `media/memoria/wiki` (derivata: indicizzarla sarebbe

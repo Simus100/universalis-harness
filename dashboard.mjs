@@ -44,7 +44,7 @@ import { createMemoriaExtension } from "./media/memoria/memoria-tool.mjs";
 import { datiVista as memoriaVista, graphQuery as memoriaGraphQuery, schedaNodo as memoriaScheda } from "./media/memoria/memoria-graph.mjs";
 import { leggiWiki as memoriaWiki, linkRotti as memoriaLinkRotti } from "./media/memoria/memoria-wiki.mjs";
 import { ricostruisci as memoriaRicostruisci } from "./media/memoria/memoria-build.mjs";
-import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato } from "./media/memoria/memoria-index.mjs";
+import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato, indiceDaAggiornare as memoriaIndiceDaAggiornare } from "./media/memoria/memoria-index.mjs";
 import { createDecisionMService } from "./media/decision-m-service.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -910,6 +910,16 @@ const SYSTEM_MEDIA_NOTE =
   `e verifica che locale e remoto coincidano. Non aggirarlo con --forza: se un file e' legittimo metti ` +
   `una riga in .gitignore col motivo. Non serve se la sessione non ha modificato nulla di versionato ` +
   `(domande, analisi, sola lettura).\n\n` +
+  `\n\n## Memoria a lungo termine: il «perché» lo scrivi tu\n` +
+  `La memoria dell'harness (episodi, indice, grafo, wiki) si aggiorna da sé: l'episodio di ogni sessione ` +
+  `nasce a fine turno e alla compattazione del contesto. Una cosa NON si scrive da sé, ed è la più ` +
+  `preziosa: la decisione e il perché — un vincolo scoperto, una strada scartata (\`esito: "vicolo-cieco"\` ` +
+  `risparmia il tentativo a chi viene dopo). Registrala con il tool \`memoria_episodio\` ` +
+  `{ decisione, perche, esito, obiettivo } quando una scelta vale la pena di essere ricordata, e comunque ` +
+  `PRIMA di chiudere con il sync: \`scripts/sync-fine-lavoro.sh\` te lo ricorda se te ne dimentichi. ` +
+  `Usa \`memoria_cerca\` e \`memoria_grafo\` per sapere «cosa è già stato fatto o deciso su X»: i frammenti ` +
+  `etichettati \`[skill]\` o \`[harness]\` sono documentazione, non fatti registrati, e «confidenza bassa» ` +
+  `significa che la memoria non lo sa — dillo, non dedurlo.\n\n` +
   `## Goal della dashboard\n` +
   `La scheda "Goal" della dashboard salva i goal in ${GOALS_FILE}. ` +
   `Struttura: { id, title, description, status, steps:[{id,title,done}], checklist:[{id,text,done}], createdAt, updatedAt }. ` +
@@ -5058,4 +5068,35 @@ server.listen(PORT, HOST, () => {
   } else {
     console.log("Decision_M: feature disattivata (DASH_DECISION_M=off)");
   }
+
+  // ---- memoria a lungo termine: aggiornamento periodico ---------------------------------
+  // L'indice e il grafo si aggiornano già a ogni fine turno (hook del tool memoria) e a mano
+  // dal pulsante «ricostruisci». Restano i casi in cui nessuno dei due scatta — server appena
+  // riavviato, sessione chiusa di fretta, lavoro fatto da un'altra istanza — e la memoria
+  // resta indietro in silenzio: è il modo peggiore di guastarsi, perché sembra aggiornata.
+  //
+  // Il costo di questo ciclo è quasi sempre ZERO: `indiceDaAggiornare` guarda mtime+dimensione
+  // dei file e, se non è cambiato nulla, non si ricostruisce niente. Quando serve, la
+  // ricostruzione è incrementale (una manciata di secondi nel caso peggiore).
+  const MEMORIA_REFRESH_MS = 20 * 60 * 1000;
+  let memoriaInCorso = false;
+  const memoriaTick = async () => {
+    if (memoriaInCorso) return;
+    memoriaInCorso = true;
+    try {
+      if (!(await memoriaIndiceDaAggiornare())) return;
+      const e = await memoriaRicostruisci({ silenzioso: true, passi: { indice: true, grafo: true, wiki: true } });
+      if (e.indice?.riletti) {
+        console.log(`[memoria] aggiornata in background: ${e.indice.riletti} file riletti, ${e.grafo?.nodi ?? "?"} nodi, ${e.indice.n_frammenti} frammenti`);
+      }
+      for (const errore of e.errori || []) console.log(`[memoria] errore nell'aggiornamento: ${errore}`);
+    } catch (err) {
+      console.log(`[memoria] aggiornamento periodico non riuscito: ${err?.message || err}`);
+    } finally {
+      memoriaInCorso = false;
+    }
+  };
+  setInterval(() => void memoriaTick(), MEMORIA_REFRESH_MS).unref?.();
+  // Un controllo poco dopo l'avvio: dopo un riavvio la memoria può essere indietro di giorni.
+  setTimeout(() => void memoriaTick(), 2 * 60 * 1000).unref?.();
 });

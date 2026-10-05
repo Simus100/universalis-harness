@@ -23,15 +23,26 @@ import {
   MEM_DIR, INDICE_FILE, ROOT, EPISODI_DIR, CHAR_PER_TOKEN, STOPWORD,
   tokenizza, stimaToken, elencaFile, leggiTesto, leggiJson, scriviJson, meta, relativo, potare, oggi, eCartella,
 } from "./memoria-core.mjs";
+import { parseFrontmatter } from "./memoria-episodio.mjs";
 
 const K1 = 1.5;
 const B = 0.75;
 const MIN_CHUNK = 60;
 const MAX_CHUNK = 1800;
-const VERSIONE = 1;
+/** Tetto della scheda di un file di codice: abbastanza per scopo e nomi, non per il codice. */
+const MAX_CODICE = 1400;
+const VERSIONE = 2;
 
 /** Estensioni indicizzabili: qualunque configurazione venga dal di fuori, non si scavalca. */
 const INDICIZZABILI = [".md", ".txt", ".json"];
+
+/**
+ * Estensioni del CODICE. Non si indicizza il contenuto (una funzione non si cerca per prosa):
+ * si indicizza una scheda — percorso, righe, commento di testa, nomi definiti. Serve a
+ * rispondere a «dove sta la logica del browser» senza aprire venti file, e a portare una
+ * domanda al file giusto.
+ */
+const EST_CODICE = [".mjs", ".js", ".sh", ".html", ".css", ".py"];
 
 /**
  * Nomi che non entrano MAI nell'indice, qualunque cosa dica la configurazione: la memoria
@@ -53,7 +64,28 @@ export const SORGENTI_DEFAULT = [
   { path: "media", est: [".md", ".txt"], ambito: "media", ricorsivo: false },
   { path: "media/memoria/episodi", est: [".md"], ambito: "episodio" },
   { path: "media/goals.json", est: [".json"], ambito: "obiettivo", jsonArray: true },
+  // Codice: schede sintetiche, non il contenuto. Il commento di testa di questi file è scritto
+  // per spiegare PERCHÉ il file esiste — è la cosa più vicina a una decisione che il codice
+  // contenga, e finora non era cercabile da nessuna parte.
+  { path: ".", tipo: "codice", ambito: "codice", ricorsivo: false },
+  { path: "media", tipo: "codice", ambito: "codice", ricorsivo: false },
+  { path: "media/memoria", tipo: "codice", ambito: "codice" },
+  { path: "scripts", tipo: "codice", ambito: "codice" },
 ];
+
+/**
+ * Da dove viene un frammento: dalla **memoria** (cose successe: episodi, obiettivi, file di
+ * lavoro, codice) o dalla **documentazione** (skill e manuali, scritti per spiegare).
+ *
+ * La distinzione esiste per un errore osservato: alla domanda «ricetta della carbonara» la
+ * memoria rispondeva con tre frammenti fuori tema presi dalle skill, con «confidenza media».
+ * I termini c'erano, il fatto no. Sapere da quale dei due lati arriva la risposta è ciò che
+ * permette di dire «non lo so» invece di sembrare sicura.
+ */
+export const AMBITI_MEMORIA = new Set(["episodio", "obiettivo", "media", "codice"]);
+export function tipoDiAmbito(ambito) {
+  return AMBITI_MEMORIA.has(ambito) ? "memoria" : "documentazione";
+}
 
 const SEMPRE_ESCLUSI = [
   "node_modules", ".git", "sessions", "backups", "backup_export", ".pi",
@@ -66,10 +98,18 @@ export async function sorgenti() {
   return { lista: base, esclusi: [...SEMPRE_ESCLUSI, ...(custom?.escludi || [])] };
 }
 
+/** Le estensioni che una sorgente accetta: dichiarate, oppure quelle del suo tipo. Una sola
+ *  funzione, perché l'indicizzazione e il controllo «c'è da aggiornare?» devono guardare la
+ *  stessa lista: se divergono, l'indice risulta da aggiornare per sempre. */
+function estDiSorgente(s) {
+  if (Array.isArray(s?.est) && s.est.length) return s.est;
+  return s?.tipo === "codice" ? EST_CODICE : INDICIZZABILI;
+}
+
 /** Tutti i file che le sorgenti configurate producono, già filtrati dalle regole. */
 async function filesDiSorgente(s) {
   const assoluto = join(ROOT, s.path);
-  const est = Array.isArray(s.est) && s.est.length ? s.est : INDICIZZABILI;
+  const est = estDiSorgente(s);
   const info = await meta(assoluto);
   if (!info) return [];
   if (!info.cartella) return [assoluto];
@@ -84,11 +124,14 @@ async function filesDiSorgente(s) {
  * `media/*.txt` lo comprendeva. Non era una fuga (l'indice non si pubblica), ma quei dati
  * sarebbero finiti nelle risposte del modello: una regola, un posto.
  *
- * ECCEZIONE, ed è importante: `media/memoria/` si gestisce con le regole proprie della memoria
- * (i suoi dati sono esclusi dal versionamento ma gli EPISODI devono essere indicizzati: sono la
- * memoria). Senza l'eccezione, il rispetto del .gitignore si mangerebbe il cuore del sistema.
+ * ECCEZIONE, ed è importante: gli EPISODI si gestiscono a parte. Sono in .gitignore (non si
+ * pubblicano) ma devono essere indicizzati: sono il cuore della memoria. L'eccezione è però
+ * RISTRETTA a `media/memoria/episodi/`, non a tutta `media/memoria/`: con l'eccezione larga
+ * entrava nell'indice anche `atlante.html`, il file generato che contiene i dati dell'intera
+ * memoria — e, rigenerandosi a ogni ricostruzione, teneva l'indice per sempre «da aggiornare»
+ * (misurato: 1 file riletto a ogni giro senza che nulla fosse cambiato).
  */
-const ECCEZIONI_GITIGNORE = ["media/memoria/"];
+const ECCEZIONI_GITIGNORE = ["media/memoria/episodi/"];
 let cacheGitignore = null;
 
 export async function matcherGitignore() {
@@ -135,10 +178,10 @@ function daGitignore(rel, m) {
   return m.regex.some((r) => r.test(rel));
 }
 
-function ammesso(rel, matcher = null) {
+function ammesso(rel, matcher = null, est = INDICIZZABILI) {
   if (daGitignore(rel, matcher)) return false;
   if (NOMI_VIETATI.some((r) => r.test(rel))) return false;
-  return INDICIZZABILI.includes(rel.slice(rel.lastIndexOf(".")));
+  return est.includes(rel.slice(rel.lastIndexOf(".")));
 }
 
 // ---------------------------------------------------------------- chunking
@@ -215,6 +258,102 @@ export function spezza(testo) {
 }
 
 /** Frammenti di un file: i JSON con un array diventano un frammento per elemento (i goal). */
+/**
+ * Il commento di testa: le prime righe di commento del file, unite in un paragrafo. È il posto
+ * dove il codice di questo progetto dice PERCHÉ esiste (spesso con il difetto che ha risolto e
+ * la misura che lo prova). Vale più di qualunque elenco di funzioni.
+ */
+function commentoDiTesta(testo) {
+  const righe = String(testo || "").split("\n").slice(0, 70);
+  const fuori = [];
+  let dentroBlocco = false;
+  for (const riga of righe) {
+    const r = riga.trim();
+    if (dentroBlocco) {
+      fuori.push(r.replace(/^\*\s?/, "").replace(/\*\/$/, "").trim());
+      if (r.includes("*/")) break;
+      continue;
+    }
+    if (!r) {
+      if (fuori.length) break; // il paragrafo di testa è finito
+      continue; // righe vuote prima del commento
+    }
+    if (r.startsWith("/*")) {
+      dentroBlocco = !r.includes("*/");
+      fuori.push(r.replace(/^\/\*+/, "").replace(/\*\/$/, "").trim());
+      if (!dentroBlocco) break;
+      continue;
+    }
+    if (r.startsWith("#!")) continue; // shebang: non dice nulla sul perché del file
+    if (r.startsWith("//") || r.startsWith("#")) {
+      fuori.push(r.replace(/^(\/\/|#)\s?/, "").trim());
+      continue;
+    }
+    break; // primo costrutto: il commento di testa è finito
+  }
+  const paragrafo = fuori.filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+  return paragrafo.length >= 40 ? paragrafo.slice(0, 900) : "";
+}
+
+/**
+ * La scheda di un file di codice: dove sta, quanto è grande, che cosa dice di sé, che cosa
+ * espone. Non è il codice — è la sua carta d'identità. Con ~130 file costa ~30 KB di indice
+ * (meno dell'1% del totale) e rende cercabile ciò che prima si trovava solo aprendo i file.
+ */
+export function sintesiCodice(rel, testo) {
+  const corpo = String(testo ?? "");
+  const righe = corpo.split("\n").length;
+  const nome = rel.slice(rel.lastIndexOf("/") + 1);
+  const testa = corpo.slice(0, 6000);
+  const parti = [`${rel} — ${righe} righe di codice (${Math.max(1, Math.round(corpo.length / 1024))} KB)`];
+
+  const titoloHtml = testa.match(/<title>([^<]{3,140})<\/title>/i)?.[1];
+  if (titoloHtml) parti.push(`titolo della pagina: ${titoloHtml.trim()}`);
+
+  const commento = commentoDiTesta(testa) || testa.match(/<!--([\s\S]{60,600}?)-->/)?.[1]?.replace(/\s+/g, " ").trim();
+  if (commento) parti.push(`scopo dichiarato nel file: ${commento.slice(0, 900)}`);
+
+  const esporta = [...testa.matchAll(/^export\s+(?:async\s+)?(?:function|const|class|let)\s+([A-Za-z0-9_$]{2,40})/gm)].map((m) => m[1]);
+  const definisce = [...testa.matchAll(/^(?:async\s+)?function\s+([A-Za-z0-9_$]{2,40})/gm)].map((m) => m[1]);
+  const nomi = [...new Set([...esporta, ...definisce])].slice(0, 15);
+  if (nomi.length) parti.push(`definisce: ${nomi.join(", ")}`);
+  if (!commento && !titoloHtml && !nomi.length) parti.push(`nessuna intestazione: file di dati o di configurazione`);
+
+  const testoFinale = parti.join("\n").slice(0, MAX_CODICE);
+  return [{ titolo: nome, testo: testoFinale }];
+}
+
+/**
+ * I frammenti di un EPISODIO. Il primo non viene dal corpo ma dal front-matter, e non è un
+ * dettaglio: la decisione e il perché di una sessione vivono LÍ, e il front-matter è metadato
+ * che `spezza` scarta di proposito (non deve inquinare il ranking del corpo). Il risultato era
+ * paradossale e l'ho verificato dal vivo: alla domanda «perché la memoria non si pubblica su
+ * git» la memoria rispondeva citando il manuale, mentre la decisione registrata — che dice
+ * esattamente quella cosa — non veniva trovata.
+ *
+ * Ora ogni episodio ha una SCHEDA in testa: data, esito, decisione, perché, obiettivo. È la
+ * parte della memoria che vale di più, e finalmente è cercabile.
+ */
+export function chunksDiEpisodio(rel, testo) {
+  const { dati, corpo } = parseFrontmatter(testo);
+  const righe = [];
+  const taglia = (v, n) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n);
+  if (dati.titolo) righe.push(`episodio: ${taglia(dati.titolo, 200)}`);
+  if (dati.data) righe.push(`data: ${taglia(dati.data, 20)}`);
+  if (dati.esito) righe.push(`esito: ${taglia(dati.esito, 40)}`);
+  if (dati.decisione) righe.push(`DECISIONE: ${taglia(dati.decisione, 300)}`);
+  if (dati.perche) righe.push(`PERCHÉ: ${taglia(dati.perche, 700)}`);
+  if (dati.obiettivo) righe.push(`obiettivo: ${taglia(dati.obiettivo, 60)}`);
+  if (dati.note) righe.push(`note: ${taglia(dati.note, 600)}`);
+  const fuori = righe.length ? [{ titolo: "Scheda dell'episodio", testo: righe.join("\n") }] : [];
+  return [...fuori, ...spezza(corpo)];
+}
+
+/** I frammenti di un file: uno solo per il codice (la scheda), dal corpo per il resto. */
+function chunksDiCodice(rel, testo) {
+  return sintesiCodice(rel, testo);
+}
+
 function chunksDiFile(rel, testo, jsonArray) {
   if (jsonArray) {
     let dati = null;
@@ -255,7 +394,11 @@ function chunksDiFile(rel, testo, jsonArray) {
  */
 export async function buildIndice({ forza = false, silenzioso = true } = {}) {
   const { lista } = await sorgenti();
-  const precedente = forza ? null : await leggiJson(INDICE_FILE);
+  const precedenteGrezzo = forza ? null : await leggiJson(INDICE_FILE);
+  // Se cambia il MODO in cui si frammenta, i frammenti vecchi non valgono più: senza questo
+  // confronto il riuso per mtime li terrebbe per sempre (è successo: le schede degli episodi
+  // non comparivano perché il file dell'episodio non era cambiato, ma il chunking sí).
+  const precedente = precedenteGrezzo && precedenteGrezzo.versione === VERSIONE ? precedenteGrezzo : null;
   const perFilePrec = new Map();
   if (precedente?.files) for (const f of precedente.files) perFilePrec.set(f.rel, f);
 
@@ -266,9 +409,10 @@ export async function buildIndice({ forza = false, silenzioso = true } = {}) {
 
   for (const s of lista) {
     const files = await filesDiSorgente(s);
+    const est = estDiSorgente(s);
     for (const f of files) {
       const rel = relativo(f);
-      if (!ammesso(rel, matcher)) continue;
+      if (!ammesso(rel, matcher, est)) continue;
       const info = await meta(f);
       if (!info) continue;
       const prec = perFilePrec.get(rel);
@@ -279,7 +423,11 @@ export async function buildIndice({ forza = false, silenzioso = true } = {}) {
       }
       const testo = await leggiTesto(f);
       if (testo === null) continue;
-      const chunks = chunksDiFile(rel, testo, s.jsonArray);
+      const chunks = s.tipo === "codice"
+        ? chunksDiCodice(rel, testo)
+        : s.ambito === "episodio"
+          ? chunksDiEpisodio(rel, testo)
+          : chunksDiFile(rel, testo, s.jsonArray);
       // Anche i file senza frammenti (troppo corti) si REGISTRANO: senza, l'invalidazione
       // li vedrebbe per sempre come «nuovi» e l'indice risulterebbe da aggiornare a ogni
       // controllo. Costano una riga e chiudono un falso allarme perpetuo.
@@ -378,9 +526,10 @@ export async function indiceDaAggiornare() {
   const matcher = await matcherGitignore();
   const { lista } = await sorgenti();
   for (const s of lista) {
+    const est = estDiSorgente(s);
     for (const f of await filesDiSorgente(s)) {
       const rel = relativo(f);
-      if (!ammesso(rel, matcher)) continue;
+      if (!ammesso(rel, matcher, est)) continue;
       const info2 = await meta(f);
       const vecchio = noti.get(rel);
       if (!vecchio || vecchio.mtime !== info2?.mtime || vecchio.size !== info2?.size) return true;
@@ -423,12 +572,14 @@ export function diagnosi(indice, query, classifica) {
   const termini = tokenizza(query);
   const misura = "copertura lessicale dei termini nel corpus — non correttezza, non aggiornamento: verificare la fonte e la sua data";
   if (!classifica?.length || !termini.length) {
-    return { confidenza: "nessuna", copertura: 0, separazione: 0, motivo: "nessun risultato: la memoria non contiene questi termini", misura };
+    return { confidenza: "nessuna", fonte: "nessuna", copertura: 0, separazione: 0, motivo: "nessun risultato: la memoria non contiene questi termini", misura };
   }
   const coperti = new Set();
+  const inTesta = [];
   for (const [docId] of classifica.slice(0, 3)) {
     const doc = indice.frammenti[docId];
     if (!doc) continue;
+    inTesta.push(doc);
     const presenti = new Set(tokenizza(`${doc.titolo} ${doc.testo}`));
     for (const t of termini) if (presenti.has(t)) coperti.add(t);
   }
@@ -436,11 +587,21 @@ export function diagnosi(indice, query, classifica) {
   const punteggi = classifica.slice(0, 5).map(([, p]) => p);
   const separazione = punteggi.length > 1 && punteggi[0] > 0 ? (punteggi[0] - punteggi[punteggi.length - 1]) / punteggi[0] : 1;
 
+  // Da dove arriva la risposta: fatti registrati (memoria) o manuali (documentazione)?
+  const tipi = new Set(inTesta.map((f) => tipoDiAmbito(f.ambito)));
+  const fonte = tipi.size > 1 ? "mista" : (tipi.values().next().value ?? "nessuna");
+
   let confidenza;
   let motivo;
   if (copertura < 0.34) {
     confidenza = "bassa";
     motivo = `solo ${Math.round(copertura * 100)}% dei termini della domanda è coperto: probabilmente la memoria non ha questa conoscenza`;
+  } else if (fonte === "documentazione") {
+    // Il caso che ha reso necessaria questa regola: i termini ci sono, ma solo in skill e
+    // manuali. Il manuale parla dell'argomento, la memoria non ha il fatto: per chi chiede
+    // «cosa è successo / cosa si è deciso» questa è una non-risposta, e va detta.
+    confidenza = "bassa";
+    motivo = `i termini compaiono solo in DOCUMENTAZIONE (skill e manuali), non in episodi, obiettivi o file di lavoro: la memoria non ha il fatto, ha il testo che ne parla`;
   } else if (copertura >= 0.6 && separazione >= 0.15) {
     confidenza = "alta";
     motivo = `${Math.round(copertura * 100)}% dei termini trovati e un frammento stacca gli altri`;
@@ -448,7 +609,8 @@ export function diagnosi(indice, query, classifica) {
     confidenza = "media";
     motivo = `${Math.round(copertura * 100)}% dei termini trovati${separazione < 0.15 ? "; nessun frammento spicca sugli altri" : ""}`;
   }
-  return { confidenza, copertura: Math.round(copertura * 100) / 100, separazione: Math.round(separazione * 100) / 100, motivo, misura };
+  if (fonte === "mista" && confidenza !== "bassa") motivo += "; parte dei frammenti è documentazione";
+  return { confidenza, fonte, copertura: Math.round(copertura * 100) / 100, separazione: Math.round(separazione * 100) / 100, motivo, misura };
 }
 
 /** Ricerca, deduplicata per file (il secondo frammento dello stesso file aggiunge poco). */
@@ -468,6 +630,7 @@ export async function cerca(query, { limite = 12, ambito = null, perFileUnico = 
     risultati.push({
       file: f.file,
       ambito: f.ambito,
+      tipo: tipoDiAmbito(f.ambito),
       titolo: f.titolo,
       testo: f.testo,
       punteggio: Math.round(punteggio * 1000) / 1000,
@@ -507,7 +670,12 @@ export async function pacchetto(query, { budget = 1200, limite = 8, ambito = nul
       `MEMORIA — ${frs.length} frammenti per «${query}»`,
       `confidenza ${esito.diagnosi.confidenza.toUpperCase()}: ${esito.diagnosi.motivo}`,
     ];
-    for (const f of frs) righe.push("", `### ${f.titolo || f.file}  _(${f.file})_`, f.testo);
+    // Se la risposta è solo documentazione, lo si dice PRIMA dei frammenti: chi legge deve
+    // sapere subito che sta leggendo un manuale, non un fatto registrato.
+    if (esito.diagnosi.fonte === "documentazione") {
+      righe.push(`_quello che segue è DOCUMENTAZIONE (scritta per spiegare), non un episodio o una decisione registrata._`);
+    }
+    for (const f of frs) righe.push("", `### ${f.titolo || f.file}  _([${f.ambito}] ${f.file})_`, f.testo);
     righe.push("", `_indice aggiornato al ${String(esito.generato).slice(0, 16).replace("T", " ")} · ${esito.n_frammenti} frammenti in memoria_`);
     return righe.join("\n");
   };

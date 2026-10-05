@@ -32,9 +32,9 @@ import { ricostruisci, aggiornaDopoSessione } from "./memoria-build.mjs";
 const DEBOUNCE_MS = 4000;
 
 const CERCA_DESCRIPTION = [
-  "Cerca nella MEMORIA dell'harness (episodi passati, decisioni, documenti, obiettivi): frammenti pertinenti + giudizio di confidenza.",
+  "Cerca nella MEMORIA dell'harness (episodi passati, decisioni, codice, documenti, obiettivi): frammenti pertinenti + giudizio di confidenza.",
   "Per «cosa è già stato fatto o deciso su X» e per trovare file o note di cui non ricordi il nome. NON per leggere un file che conosci (`read` costa meno).",
-  "Confidenza bassa = la memoria non lo sa: dillo, non dedurlo.",
+  "Confidenza bassa = la memoria non lo sa: dillo, non dedurlo. Ogni frammento dichiara il proprio ambito: `[episodio]`, `[codice]`, `[media]`, `[obiettivo]` sono fatti registrati; `[skill]` e `[harness]` sono DOCUMENTAZIONE (un manuale, non una cosa successa) e in quel caso il pacchetto lo dichiara in testa.",
 ].join("\n");
 
 const CERCA_PARAMETERS = {
@@ -42,7 +42,7 @@ const CERCA_PARAMETERS = {
   properties: {
     query: { type: "string", description: "Cosa cerchi (termini tecnici compresi)." },
     budget: { type: "integer", description: "Tetto di token stimati (200-4000, default 1200)." },
-    ambito: { type: "string", description: "Filtra la fonte: episodio, harness, skill, media, obiettivo." },
+    ambito: { type: "string", description: "Filtra la fonte: episodio, codice, harness, skill, media, obiettivo." },
   },
   required: ["query"],
 };
@@ -254,8 +254,11 @@ export function createMemoriaExtension({ log = () => {}, radice = ROOT } = {}) {
           });
           if (!esito.aggiornato) return errore(esito.motivo || "episodio non trovato");
           // La memoria si aggiorna subito: la decisione appena scritta deve essere trovabile
-          // nella stessa sessione, non domani.
-          const ric = await ricostruisci({ silenzioso: true, passi: { grafo: true, wiki: true, indice: false } }).catch((e) => ({ errori: [String(e?.message || e)] }));
+          // nella stessa sessione, non domani. Anche l'INDICE, non solo grafo e wiki: senza,
+          // `memoria_cerca` non vedeva la scheda dell'episodio appena annotato (verificato dal
+          // vivo: la ricerca rispondeva con la scheda di un modulo di codice). Costa poco —
+          // l'indice è incrementale e rilegge solo il file dell'episodio.
+          const ric = await ricostruisci({ silenzioso: true, passi: { grafo: true, wiki: true, indice: true } }).catch((e) => ({ errori: [String(e?.message || e)] }));
           return {
             content: [
               {

@@ -15,7 +15,12 @@ versionamento: non si pubblica.
 |---|---|---|---|
 | `memoria_grafo` | «cosa c'è intorno a X?» | ~200-400 token | nomi di nodi e relazioni, **nessun testo** |
 | `memoria_wiki` | «dammi il dettaglio di questo nodo» | ~300-600 token | una pagina, con i collegamenti nei due versi |
-| `memoria_cerca` | «dove se ne parla?» | ~800-1200 token | frammenti di testo + confidenza |
+| `memoria_cerca` | «dove se ne parla?» | ~800-1200 token | frammenti di testo + confidenza + **fonte** |
+
+L'indice cerca anche le **schede del codice**: per ogni file di codice c'è un frammento con percorso,
+righe, lo scopo dichiarato nell'intestazione e i nomi definiti (etichettato `[codice]`). Serve a
+rispondere a «dove sta la logica di X» senza aprire quindici file; il contenuto del codice, invece,
+si legge col tool `read`.
 
 **L'ordine non è un consiglio, è l'economia del sistema.** Il grafo costa un quarto di una ricerca e
 spesso basta: se dice che l'episodio giusto esiste ed è collegato a tre file, non serve aprire nulla.
@@ -30,11 +35,16 @@ memoria_cerca  "come si costruisce l'indice" → frammenti di docs e codice, con
 
 ## La confidenza: leggila prima di rispondere
 
-`memoria_cerca` restituisce un giudizio (`alta` / `media` / `bassa` / `nessuna`).
+`memoria_cerca` restituisce un giudizio (`alta` / `media` / `bassa` / `nessuna`) e la **fonte**:
+`memoria` o `documentazione`.
 
 - **bassa o nessuna**: la memoria non ha quella conoscenza. Dillo a chi ha chiesto, non dedurre una
   risposta plausibile. La misura è la **copertura lessicale dei termini**, non la correttezza: una
   confidenza alta significa che se ne parla, non che quello che c'è scritto sia vero o aggiornato.
+- **fonte `documentazione`** (frammenti etichettati `[skill]` o `[harness]`): hai in mano un manuale
+  che spiega l'argomento, non un fatto registrato. Va citato come documentazione, e se la domanda
+  era «cosa è successo / cosa si è deciso», la risposta vera è «la memoria non ha un episodio su
+  questo» — la ricerca lo dice già nel primo rigo.
 - La fonte va sempre guardata: se il frammento è un documento vecchio, la data conta.
 
 ## Registrare una decisione
@@ -49,7 +59,10 @@ Quando chiamarlo:
 - quando si scopre un vincolo (una cosa che non si può fare, e perché);
 - quando una strada si rivela inutile → `esito: "vicolo-cieco"`: risparmia il tentativo a chi verrà
   dopo, ed è il valore più alto che una memoria può dare;
-- prima di chiudere un lavoro lungo, così il lavoro non si perde con la sessione.
+- **prima di chiudere il lavoro**, cioè prima di `scripts/sync-fine-lavoro.sh`: se te ne dimentichi,
+  lo script te lo ricorda a fine pubblicazione (avvisa, non blocca — la decisione è tua).
+  Il motivo è misurato: senza questo passo la memoria resta piena di «cosa è successo» e vuota di
+  «perché», e le decisioni non si ritrovano più.
 
 Quando **non** chiamarlo: a ogni turno, per riassumere la conversazione (lo fa la compattazione),
 o per registrare cose già deducibili dai file (`git log` non ha bisogno di aiuto).

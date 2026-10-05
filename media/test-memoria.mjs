@@ -19,7 +19,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { mkdir, rm } from "node:fs/promises";
 import { normalizza, tokenizza, slug, stimaToken, potare, CHAR_PER_TOKEN } from "./memoria/memoria-core.mjs";
-import { spezza, cerca, cercaBM25, diagnosi, pacchetto, statoMemoria, caricaIndice, indiceDaAggiornare } from "./memoria/memoria-index.mjs";
+import { spezza, cerca, cercaBM25, diagnosi, pacchetto, statoMemoria, caricaIndice, indiceDaAggiornare, chunksDiEpisodio, sintesiCodice, tipoDiAmbito } from "./memoria/memoria-index.mjs";
 import { buildGrafo, graphQuery, schedaNodo, caricaGrafo, datiVista } from "./memoria/memoria-graph.mjs";
 import { buildWiki, leggiWiki, linkRotti } from "./memoria/memoria-wiki.mjs";
 import { componiEpisodio, parseFrontmatter, serializzaFrontmatter, leggiSessione, elencaEpisodi, percorsoEpisodio } from "./memoria/memoria-episodio.mjs";
@@ -110,12 +110,14 @@ if (!soloSistema) {
   console.log("\n[unità] BM25 e diagnosi di confidenza");
 
   const indiceFinto = (() => {
+    // `ambito` non è decorazione: la diagnosi lo usa per dire se la risposta è un fatto
+    // registrato o un manuale. Questi tre frammenti sono di memoria (episodi/artefatti).
     const testi = [
-      { file: "a.md", titolo: "indice bm25", testo: "indice bm25 frammenti ricerca lessicale pesi inversi documenti frequenza" },
-      { file: "b.md", titolo: "atlante", testo: "atlante grafo proiezione prospettica canvas determinismo" },
-      { file: "c.md", titolo: "episodi", testo: "episodio decisione motivazione registrazione memoria" },
+      { file: "a.md", ambito: "media", titolo: "indice bm25", testo: "indice bm25 frammenti ricerca lessicale pesi inversi documenti frequenza" },
+      { file: "b.md", ambito: "media", titolo: "atlante", testo: "atlante grafo proiezione prospettica canvas determinismo" },
+      { file: "c.md", ambito: "episodio", titolo: "episodi", testo: "episodio decisione motivazione registrazione memoria" },
     ];
-    const frammenti = testi.map((t, i) => ({ id: i, file: t.file, titolo: t.titolo, testo: t.testo, n_token: 20, n_token_bm25: tokenizza(t.titolo + " " + t.testo).length }));
+    const frammenti = testi.map((t, i) => ({ id: i, file: t.file, ambito: t.ambito, titolo: t.titolo, testo: t.testo, n_token: 20, n_token_bm25: tokenizza(t.titolo + " " + t.testo).length }));
     const df = new Map();
     const postings = new Map();
     for (const f of frammenti) {
@@ -144,9 +146,13 @@ if (!soloSistema) {
   });
 
   await prova("la diagnosi dice «alta» su un match pieno e ben separato", () => {
+    // I frammenti di questo corpus finto sono di MEMORIA: con l'ambito di documentazione la
+    // confidenza verrebbe (giustamente) abbassata, e questo test non misurerebbe più la
+    // separazione. Il caso «solo documentazione» ha una sua prova, più sotto.
     const c = cercaBM25(indiceFinto, "proiezione prospettica canvas", 5);
     const d = diagnosi(indiceFinto, "proiezione prospettica canvas", c);
     assert(d.confidenza === "alta", `${d.confidenza} (copertura ${d.copertura})`);
+    assert(d.fonte === "memoria", `fonte ${d.fonte}`);
     assert(typeof d.copertura === "number" && !Number.isNaN(d.copertura), "copertura NaN");
   });
 
@@ -370,6 +376,85 @@ await prova("datiVista è completo per l'atlante", async () => {
   return `${v.nodi.length} nodi pronti per il disegno`;
 });
 
+await prova("la scheda di un episodio porta decisione e perché nell'indice", () => {
+  // Il difetto che questo test blocca: decisione e perché stanno nel front-matter, che
+  // l'indicizzazione scarta — quindi la memoria non ritrovava le proprie decisioni.
+  const testo = [
+    "---",
+    'tipo: "episodio"',
+    'titolo: "il grafo non si legge"',
+    'data: "2026-10-05"',
+    'esito: "confermato"',
+    'decisione: "mappa 2D predefinita, orbita come seconda vista"',
+    'perche: "in prospettiva due nodi lontani si sovrappongono e le etichette si accavallano"',
+    "---",
+    "",
+    "## Richieste",
+    "1. il grafo non è leggibile, servono delle etichette che si leggano e una posizione stabile dei nodi fra un'apertura e l'altra della vista",
+    "2. aggiungi anche lo zoom e il trascinamento, perché su mobile non si riesce a esplorare niente così",
+  ].join("\n");
+  const chunks = chunksDiEpisodio("media/memoria/episodi/x.md", testo);
+  const scheda = chunks.find((c) => c.titolo === "Scheda dell'episodio");
+  assert(scheda, "manca la scheda dell'episodio");
+  assert(scheda.testo.includes("DECISIONE: mappa 2D predefinita"), "la decisione non è nella scheda");
+  assert(scheda.testo.includes("PERCHÉ: in prospettiva"), "il perché non è nella scheda");
+  assert(chunks.length > 1 && chunks.some((c) => c.titolo === "Richieste"), "il corpo non è stato indicizzato");
+  return `${chunks.length} frammenti, scheda con decisione e perché`;
+});
+
+await prova("la scheda di codice dice scopo e nomi, senza lo shebang", () => {
+  const codice = [
+    "#!/usr/bin/env bash",
+    "# Pubblica il lavoro della sessione su GitHub.",
+    "# Perché esiste: il timer è spento per scelta, la pubblicazione resta manuale.",
+    "set -euo pipefail",
+    "echo ciao",
+  ].join("\n");
+  const [scheda] = sintesiCodice("scripts/esempio.sh", codice);
+  assert(scheda.testo.includes("Pubblica il lavoro della sessione"), "manca lo scopo dichiarato");
+  assert(!scheda.testo.includes("usr/bin/env bash"), "lo shebang è finito nella scheda");
+
+  const modulo = [
+    "/**",
+    " * Tool browser: pilota Chrome headless con un utente dedicato.",
+    " * Decide di rifiutarsi se la sandbox non è adeguata.",
+    " */",
+    "export function createBrowserTool() {}",
+    "export const VERSIONE = 3;",
+  ].join("\n");
+  const [due] = sintesiCodice("media/browser-tool.mjs", modulo);
+  assert(/browser/i.test(due.testo) && due.testo.includes("sandbox"), "lo scopo del modulo non è nella scheda");
+  assert(due.testo.includes("createBrowserTool") && due.testo.includes("VERSIONE"), "i nomi esportati non sono nella scheda");
+  assert(due.testo.includes("media/browser-tool.mjs"), "la scheda non dice dove sta il file");
+  return "scopo, nomi e percorso; shebang escluso";
+});
+
+await prova("l'ambito dice se la risposta è memoria o documentazione", () => {
+  assert(tipoDiAmbito("episodio") === "memoria" && tipoDiAmbito("codice") === "memoria", "un ambito di memoria è classificato male");
+  assert(tipoDiAmbito("skill") === "documentazione" && tipoDiAmbito("harness") === "documentazione", "un ambito di documentazione è classificato male");
+  return "4 ambiti di memoria, 2 di documentazione";
+});
+
+await prova("solo documentazione = confidenza bassa, e la fonte è dichiarata", () => {
+  // Indice finto: un manuale e un episodio che NON parlano della domanda.
+  const indice = {
+    parametri: { k1: 1.5, b: 0.75 },
+    avgdl: 20,
+    idf: { ricetta: 1.5, dosi: 1.5, carbonara: 2 },
+    postings: { ricetta: [[0, 2]], dosi: [[0, 2]], carbonara: [[0, 2]] },
+    frammenti: [
+      { id: 0, file: "skills/cucina/SKILL.md", ambito: "skill", titolo: "Ricetta", testo: "ricetta dosi carbonara", n_token_bm25: 20 },
+      { id: 1, file: "media/memoria/episodi/x.md", ambito: "episodio", titolo: "Scheda", testo: "altro argomento", n_token_bm25: 20 },
+    ],
+  };
+  const classifica = [[0, 9]];
+  const d = diagnosi(indice, "ricetta dosi carbonara", classifica);
+  assert(d.fonte === "documentazione", `fonte ${d.fonte}`);
+  assert(d.confidenza === "bassa", `confidenza ${d.confidenza}: la documentazione non è una risposta su cosa è successo`);
+  assert(/documentazione/i.test(d.motivo), "il motivo non spiega da dove viene");
+  return d.motivo.slice(0, 60) + "…";
+});
+
 console.log("\n[sistema] ricostruzione e stato");
 
 await prova("la ricostruzione completa non produce errori", async () => {
@@ -391,6 +476,63 @@ await prova("statoMemoria riporta numeri coerenti con i file su disco", async ()
   const episodi = await elencaEpisodi();
   assert(st.episodi === episodi.length, `stato ${st.episodi} vs file ${episodi.length}`);
   return `${st.episodi} episodi, ${st.indice.file} file indicizzati`;
+});
+
+await prova("l'indice contiene le schede del codice e quelle degli episodi", async () => {
+  const indice = await caricaIndice();
+  assert(indice, "indice assente");
+  const codici = indice.frammenti.filter((f) => f.ambito === "codice");
+  const schede = indice.frammenti.filter((f) => f.titolo === "Scheda dell'episodio");
+  assert(codici.length > 50, `solo ${codici.length} schede di codice: i file di codice non sono indicizzati`);
+  assert(schede.length > 20, `solo ${schede.length} schede di episodio`);
+  assert(codici.some((f) => f.testo.includes("scopo dichiarato")), "le schede di codice non riportano lo scopo del file");
+  return `${codici.length} schede di codice, ${schede.length} schede di episodio su ${indice.n_frammenti} frammenti`;
+});
+
+await prova("una decisione registrata si ritrova, e si vede da quale lato arriva", async () => {
+  const p = await pacchetto("perché la memoria non si pubblica su git", { budget: 700 });
+  assert(p.frammenti.some((f) => f.tipo === "memoria"), `nessun frammento di memoria: ${p.diagnosi.motivo}`);
+  assert(p.frammenti.some((f) => f.ambito === "episodio"), "la decisione registrata in un episodio non emerge");
+  assert(/\[[a-z]+\]/.test(p.testo), "i frammenti non dichiarano il proprio ambito");
+  return `${p.frammenti.length} frammenti · confidenza ${p.diagnosi.confidenza} · fonte ${p.diagnosi.fonte}`;
+});
+
+await prova("una domanda fuori dalla memoria non riceve una risposta sicura", async () => {
+  // Termini tecnici che nessun documento di questo progetto contiene (il corpus è quello vero).
+  // Scelta volutamente lontana: una domanda con parole comuni («ricetta», «dosi») può matchare
+  // un documento che le usa in un altro senso, ed è il limite noto del match lessicale — qui si
+  // verifica che almeno NON venga dichiarata una confidenza alta.
+  const p = await pacchetto("altimetro barometrico per droni agricoli calibrazione", { budget: 500 });
+  assert(p.diagnosi.confidenza !== "alta", `confidenza ${p.diagnosi.confidenza} su una domanda fuori dalla memoria`);
+  if (p.diagnosi.fonte === "documentazione") {
+    assert(p.testo.includes("DOCUMENTAZIONE"), "il pacchetto non avverte che sta consegnando documentazione");
+  }
+  return `confidenza ${p.diagnosi.confidenza}, fonte ${p.diagnosi.fonte}`;
+});
+
+await prova("l'episodio si aggiorna a ogni riscrittura e resta cercabile", async () => {
+  const src = readFileSync("media/memoria/memoria-tool.mjs", "utf8");
+  // Il difetto: dopo aver annotato una decisione si ricostruivano grafo e wiki ma NON l'indice,
+  // quindi la scheda dell'episodio appena scritto non era cercabile fino al turno successivo.
+  assert(/passi: \{ grafo: true, wiki: true, indice: true \}/.test(src), "la decisione annotata non entra subito nell'indice");
+  return "grafo + wiki + indice aggiornati alla registrazione";
+});
+
+await prova("il promemoria della memoria avvisa senza bloccare", async () => {
+  const { execFileSync } = await import("node:child_process");
+  let uscita = "";
+  let stato = 0;
+  try {
+    uscita = execFileSync("node", ["scripts/memoria-promemoria.mjs", "--json"], { encoding: "utf8", cwd: process.cwd() });
+  } catch (e) {
+    stato = e.status;
+    uscita = String(e.stdout || "");
+  }
+  const d = JSON.parse(uscita.trim().split("\n").pop());
+  assert(d.episodi > 0, "nessun episodio letto");
+  assert(typeof d.ha_decisione === "boolean", "manca il verdetto");
+  assert((stato === 0) === d.ha_decisione, `uscita ${stato} incoerente con ha_decisione=${d.ha_decisione}`);
+  return `${d.con_decisione}/${d.episodi} episodi con decisione (uscita ${stato}, zero = ha la decisione)`;
 });
 
 await prova("il file dell'atlante è autonomo (nessuna risorsa esterna)", async () => {
@@ -485,6 +627,26 @@ await prova("la vista Memoria non è nel percorso critico di avvio (si carica so
   assert(!/window\.onload[^]*caricaMemoria/.test(html), "la memoria si carica all'avvio: rallenta la dashboard");
   assert(/if \(name === "memoria"\) \{[\s\S]{0,200}caricaMemoria\(\)/.test(html), "la vista non si carica quando la si apre");
   return "caricamento pigro confermato";
+});
+
+await prova("la memoria si aggiorna da sé anche quando nessun hook è scattato", async () => {
+  const src = readFileSync("dashboard.mjs", "utf8");
+  assert(/MEMORIA_REFRESH_MS/.test(src) && /memoriaIndiceDaAggiornare/.test(src), "manca il ciclo di aggiornamento periodico");
+  assert(/setInterval\(\(\) => void memoriaTick\(\), MEMORIA_REFRESH_MS\)/.test(src), "il ciclo non è collegato all'intervallo");
+  assert(/await memoriaIndiceDaAggiornare\(\)/.test(src), "il ciclo non controlla se c'è qualcosa di nuovo: ricostruirebbe a vuoto");
+  assert(/setTimeout\(\(\) => void memoriaTick\(\), 2 \* 60 \* 1000\)/.test(src), "manca il controllo dopo un riavvio");
+  return "controllo ogni 20 minuti + uno due minuti dopo l'avvio";
+});
+
+await prova("il sync di fine lavoro ricorda la decisione, senza imporla", async () => {
+  const sh = readFileSync("scripts/sync-fine-lavoro.sh", "utf8");
+  assert(/memoria-promemoria\.mjs/.test(sh), "lo script di sync non chiama il promemoria");
+  assert(/DECISIONE_MANCANTE=1/.test(sh), "l'esito del promemoria non viene registrato");
+  assert(/non ha una decisione in memoria/.test(sh), "manca il richiamo finale quando la decisione non c'è");
+  const dp = readFileSync("dashboard.mjs", "utf8");
+  assert(/il «perché» lo scrivi tu/.test(dp), "il system prompt non parla della memoria");
+  assert(/memoria_episodio/.test(dp) && /confidenza bassa/.test(dp), "il system prompt non dice di registrare la decisione e di dichiarare la cecità");
+  return "promemoria nel sync + regola nel system prompt";
 });
 
 await prova("i controlli del disegno sono nel markup e collegati", async () => {
