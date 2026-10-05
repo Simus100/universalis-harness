@@ -64,6 +64,21 @@ mano, zero librerie, deterministico: così i **buchi** si vedono — una fascia 
 progetto di cui non si registra nulla. I dati non si pubblicano mai: il repository è pubblico
 ([docs/MEMORIA.md](docs/MEMORIA.md)).
 
+![La scheda Memoria: il grafo del lavoro in mappa 2D — livelli in fasce, progetti in colonne, un nodo scelto con il suo vicinato in evidenza, il pannello con stato, ricerca, filtri e scheda del nodo](docs/images/memoria.jpg)
+
+*La scheda Memoria: la mappa è la lettura da cui si parte — righe = livelli della memoria, colonne =
+progetti, e con un nodo scelto il resto si attenua per lasciare in evidenza solo il suo vicinato*.
+
+**Context engineering, in pratica.** La memoria non è un archivio da rileggere: è la scelta di
+*quanto* contesto pagare per rispondere. Ogni accesso ha un prezzo dichiarato — ~300 token per la
+struttura del grafo, ~500 per la pagina di wiki, qualche centinaio per i frammenti pertinenti — e chi
+legge sa sempre **da dove viene** la risposta (`[episodio]`, `[codice]`, `[media]` = fatti registrati;
+`[skill]`, `[harness]` = documentazione) e **quanto fidarsi** (alta / media / bassa / nessuna).
+Quando la memoria non sa, lo dice: alla domanda «ricetta della carbonara» risponde che i termini
+compaiono solo in documentazione, non in un episodio. Il resto si registra da sé — richieste, file
+toccati, costi, errori, il riassunto della compattazione — così il contesto di ieri non va perso e
+non va ripagato.
+
 **Skill riutilizzabili** nel formato aperto *Agent Skills* (`SKILL.md`): si creano, si importano da
 `.zip` e si usano come procedure stabili, con il modello che le legge solo quando il compito
 corrisponde.

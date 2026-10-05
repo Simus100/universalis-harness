@@ -159,6 +159,8 @@ entrambe.
 vista per guardare la forma della memoria, non per cercarci qualcosa dentro (in prospettiva due nodi
 lontani si sovrappongono: è il limite di ogni grafo 3D).
 
+![La scheda Memoria nella dashboard: mappa 2D con livelli, colonne dei progetti, nodo scelto e pannello laterale](images/memoria.jpg)
+
 Tasti, in entrambe: `M` mappa/orbita, `L` lente (solo il vicinato del nodo scelto, 2 passi),
 `0` adatta, `R` rotazione automatica dell'orbita.
 
