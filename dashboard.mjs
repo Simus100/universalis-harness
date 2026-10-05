@@ -40,6 +40,11 @@ import { zipDirectory } from "./media/zip-write.mjs";
 import { AskError, createAskBroker, normalizeQuestions, sanitizeText } from "./media/ask-broker.mjs";
 import { createAskExtension } from "./media/ask-tool.mjs";
 import { createDecisionMExtension, normalizeQuestions as normalizeDecisionMQuestions } from "./media/decision-m-tool.mjs";
+import { createMemoriaExtension } from "./media/memoria/memoria-tool.mjs";
+import { datiVista as memoriaVista, graphQuery as memoriaGraphQuery, schedaNodo as memoriaScheda } from "./media/memoria/memoria-graph.mjs";
+import { leggiWiki as memoriaWiki, linkRotti as memoriaLinkRotti } from "./media/memoria/memoria-wiki.mjs";
+import { ricostruisci as memoriaRicostruisci } from "./media/memoria/memoria-build.mjs";
+import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato } from "./media/memoria/memoria-index.mjs";
 import { createDecisionMService } from "./media/decision-m-service.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -1090,6 +1095,11 @@ const BROWSER_EXT = createBrowserExtension({
   },
 });
 
+// Memoria a lungo termine: i quattro tool dell'agente (memoria_cerca, memoria_grafo,
+// memoria_wiki, memoria_episodio) e i due hook che la fanno nascere da sé — fine turno di
+// lavoro e compattazione del contesto. Il motore è in media/memoria/ (Node, zero dipendenze).
+const MEMORIA_EXT = createMemoriaExtension({ log: (m) => console.log(m) });
+
 // Frame rate della live view: contenuto di base per non saturare la banda, più alto quando
 // guida l'utente (un click deve vedere subito l'effetto). Il tetto è per-client.
 const BROWSER_FPS_BASE = Number(process.env.DASH_BROWSER_STREAM_FPS) || 3;
@@ -1263,7 +1273,7 @@ const resourceLoader = new DefaultResourceLoader({
   agentDir: getAgentDir(),
   additionalExtensionPaths,
   additionalSkillPaths: [SKILLS_DIR],
-  extensionFactories: [MEDIA_GUARD_EXT, BROWSER_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(DECISION_M_EXT ? [DECISION_M_EXT] : [])],
+  extensionFactories: [MEDIA_GUARD_EXT, BROWSER_EXT, MEMORIA_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(DECISION_M_EXT ? [DECISION_M_EXT] : [])],
   systemPromptOverride: (base) => `${base ?? ""}${SYSTEM_MEDIA_NOTE}${progettoPromptNote()}`,
 });
 await resourceLoader.reload();
@@ -3906,6 +3916,74 @@ const server = http.createServer(async (req, res) => {
         noStore: true,
         headers: { "X-Content-Type-Options": "nosniff" },
       });
+    }
+
+    // ---- memoria a lungo termine ------------------------------------------------
+    // Il modulo del disegno 3D è codice (media/memoria/atlante.mjs), servito dalla stessa
+    // origine perché la vista e il file scaricabile usino ESATTAMENTE lo stesso disegno.
+    if (req.method === "GET" && url.pathname === "/memoria/atlante.mjs") {
+      return sendFile(res, join(__dirname, "media", "memoria", "atlante.mjs"), {
+        mime: "text/javascript; charset=utf-8",
+        noStore: true,
+        headers: { "X-Content-Type-Options": "nosniff" },
+      });
+    }
+
+    // L'atlante come pagina autonoma: si apre in una scheda, si scarica, funziona offline
+    // (dati e codice incorporati). Se non è mai stato generato, lo si genera adesso.
+    if (req.method === "GET" && url.pathname === "/memoria") {
+      const file = join(__dirname, "media", "memoria", "atlante.html");
+      if (!existsSync(file)) {
+        try {
+          const { scriviAtlante } = await import("./media/memoria/memoria-atlante.mjs");
+          await scriviAtlante({ silenzioso: true });
+        } catch (e) {
+          return json(res, 503, { error: `atlante non generabile: ${e?.message || e}` });
+        }
+      }
+      return sendFile(res, file, { mime: "text/html; charset=utf-8", noStore: true });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/memoria") {
+      const [stato, vista] = await Promise.all([
+        memoriaStato().catch((e) => ({ errore: String(e?.message || e) })),
+        memoriaVista().catch((e) => ({ esiste: false, errore: String(e?.message || e) })),
+      ]);
+      return json(res, 200, { stato, vista, link_rotti: vista?.esiste ? await memoriaLinkRotti().catch(() => []) : [] });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/memoria/cerca") {
+      const q = url.searchParams.get("q") || "";
+      if (!q.trim()) return json(res, 400, { error: "manca q" });
+      const budget = Math.min(4000, Math.max(200, Number(url.searchParams.get("budget")) || 1200));
+      const p = await memoriaPacchetto(q, { budget });
+      return json(res, 200, { query: q, budget, token_stimati: p.token_stimati, diagnosi: p.diagnosi || null, frammenti: p.frammenti || [], testo: p.testo });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/memoria/grafo") {
+      const q = (url.searchParams.get("q") || "").trim();
+      if (!q) return json(res, 400, { error: "manca q" });
+      const passi = Math.min(3, Math.max(1, Number(url.searchParams.get("passi")) || 2));
+      const budget = Math.min(2000, Math.max(200, Number(url.searchParams.get("budget")) || 600));
+      const r = await memoriaGraphQuery(q, { passi, budget });
+      return json(res, 200, r);
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/memoria/nodo") {
+      const nodo = (url.searchParams.get("nodo") || "").trim();
+      if (!nodo) return json(res, 400, { error: "manca nodo" });
+      const [scheda, pagina] = await Promise.all([
+        memoriaScheda(nodo).catch((e) => ({ ok: false, testo: String(e?.message || e) })),
+        memoriaWiki(nodo).catch((e) => ({ ok: false, testo: String(e?.message || e) })),
+      ]);
+      return json(res, 200, { scheda, pagina: { ok: pagina.ok, id: pagina.id || null, testo: pagina.testo } });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/memoria/ricostruisci") {
+      // La ricostruzione è dell'utente, non del modello: qui si può chiedere quella completa,
+      // atlante incluso (costosa: qualche secondo su un corpus grande, mai durante una risposta).
+      const esito = await memoriaRicostruisci({ silenzioso: true, atlante: true });
+      return json(res, esito.errori?.length ? 500 : 200, esito);
     }
     const iconMatch = url.pathname.match(/^\/(icon-\d+\.png|apple-touch-icon\.png|favicon\.ico)$/);
     if (req.method === "GET" && iconMatch) {

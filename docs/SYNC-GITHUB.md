@@ -20,8 +20,12 @@ Nel repository **non** sono presenti `.env`, `.session-secret`, `sessions/`, `ba
 `node_modules/`, upload, log né il pacchetto `backup_export/` (verificato via API: tutti `404`).
 Anche con il repository pubblico questi file restano esclusi: sono in `.gitignore`.
 Dal 2026-09-27 sono esclusi anche, per scelta esplicita, i **documenti con dati personali di
-terzi** (`media/CU2026_MACELLONI_SIMONE_estratto.txt`: una Certificazione Unica con codice
-fiscale) e gli esiti di errore delle API di generazione immagini (`media/out_gemini-*.json`).
+terzi** (nel `media/` di questa istanza: un estratto di Certificazione Unica con codice fiscale,
+escluso con il pattern `media/CU2026_*_estratto.txt`) e gli esiti di errore delle API di
+generazione immagini (`media/out_gemini-*.json`).
+Il documento è escluso anche dalla **memoria** (`media/memoria/`), perché il motore legge il
+`.gitignore` e lo applica: una sola dichiarazione di cosa non deve uscire, per il repository e
+per il contesto che finisce nel modello.
 Quei file restano solo sul server: una volta in un commit resterebbero nella storia del
 repository anche dopo una rimozione.
 

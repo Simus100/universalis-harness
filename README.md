@@ -51,6 +51,17 @@ risponde a domande sì/no, scelta e punteggio **senza generare un token** e senz
 fuori. Si accende quando serve e si spegne quando non serve, perché costa ~5,7 GB di RAM; l'agente
 può proporne l'uso e chiederne il consenso, mai deciderlo da solo.
 
+**Memoria a lungo termine, senza rileggere tutto.** L'harness ricorda il lavoro fatto — episodi,
+decisioni, file toccati, obiettivi — e lo rende consultabile a tre costi diversi: il **grafo**
+(struttura: nomi e relazioni, ~300 token), la **wiki** (una pagina per nodo) e la **ricerca** a
+frammenti con un giudizio di confidenza che, quando la memoria non sa, lo dice. Gli episodi nascono
+da sé a fine turno e alla compattazione del contesto — dove il riassunto che il modello ha già pagato
+smette di sparire con la sessione; il *perché* lo scrive l'agente, ed è l'unica cosa che i file non
+contengono. La vista 🧠 **memoria** disegna il grafo in 3D (canvas a proiezione scritta a mano, zero
+librerie, deterministico): altezza = livello, angolo = progetto, raggio = centralità, così i **buchi**
+si vedono — un progetto di cui non si registra nulla è uno spicchio vuoto. I dati non si pubblicano
+mai: il repository è pubblico ([docs/MEMORIA.md](docs/MEMORIA.md)).
+
 **Skill riutilizzabili** nel formato aperto *Agent Skills* (`SKILL.md`): si creano, si importano da
 `.zip` e si usano come procedure stabili, con il modello che le legge solo quando il compito
 corrisponde.

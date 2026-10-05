@@ -1487,6 +1487,43 @@ footer {
   .livechathead .ghost { min-height: 40px; }
   #liveSend { min-width: 64px; }
 }
+
+/* ---------- vista Memoria (atlante del grafo + diagnostica) ----------
+ * Il disegno prende tutto lo spazio disponibile; il pannello laterale tiene ricerca, filtri,
+ * numeri e dettaglio del nodo. Su mobile il pannello scende sotto, come nelle altre viste. */
+#memoriaView { padding: 0; gap: 0; overflow: hidden; flex: 1; min-height: 0; }
+.mem-layout { display: flex; flex: 1 1 auto; min-height: 0; gap: 0; }
+/* `height: 100%` E `min-height`: senza, il canvas di una vista flex collassa a pochi pixel di
+ * altezza (misurato: 40 px, con il disegno illeggibile ridotto a una striscia). Il minimo serve
+ * quando la finestra è bassa o il pannello laterale si allunga. */
+#memCanvas { flex: 1 1 auto; min-width: 0; width: 100%; height: 100%; min-height: 360px; display: block; touch-action: none; cursor: grab; background: #05070c; }
+.mem-aside { width: 320px; flex: 0 0 320px; overflow-y: auto; padding: 12px 14px 28px; border-left: 1px solid var(--border-soft); }
+.mem-aside h3 { margin: 16px 0 8px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted, #64748b); }
+.mem-aside h3:first-child { margin-top: 4px; }
+.mem-pill { display: inline-flex; align-items: center; gap: 6px; margin: 0 6px 6px 0; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border-soft); background: transparent; color: var(--text); font-size: 12px; cursor: pointer; }
+.mem-pill .led { width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: .85; }
+.mem-pill[aria-pressed="false"] { opacity: .45; }
+.mem-numeri { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12.5px; color: var(--muted, #94a3b8); }
+.mem-numeri b { color: #fff; font-variant-numeric: tabular-nums; }
+.mem-cieca { color: #fb7185; }
+.mem-cieca.ok { color: #34d399; }
+.mem-dettaglio { font-size: 12.5px; color: var(--text); line-height: 1.5; }
+.mem-dettaglio .titolo { font-weight: 600; margin-bottom: 2px; }
+.mem-dettaglio .dove { color: var(--muted, #64748b); font-size: 11.5px; margin-bottom: 8px; }
+.mem-dettaglio ul { margin: 6px 0 0; padding-left: 16px; color: var(--muted, #94a3b8); }
+.mem-dettaglio code { background: rgba(148,163,184,.14); border-radius: 4px; padding: 1px 5px; font-size: 11.5px; }
+.mem-vuoto { color: var(--muted, #64748b); font-style: italic; font-size: 12.5px; }
+.mem-legenda { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted, #94a3b8); }
+.mem-legenda i { display: inline-block; width: 18px; height: 2px; border-radius: 2px; margin-right: 7px; vertical-align: middle; }
+.mem-risultati { font-size: 12.5px; }
+.mem-risultati button { display: block; width: 100%; text-align: left; background: transparent; border: 0; border-left: 2px solid transparent; padding: 5px 8px; color: var(--text); cursor: pointer; font-size: 12.5px; }
+.mem-risultati button:hover { border-left-color: var(--accent, #5b9dff); background: rgba(91,157,255,.08); }
+.mem-risultati small { color: var(--muted, #64748b); display: block; }
+@media (max-width: 860px) {
+  .mem-layout { flex-direction: column; }
+  #memCanvas { height: 58vh; }
+  .mem-aside { width: auto; flex: none; border-left: 0; border-top: 1px solid var(--border-soft); }
+}
 </style>
 </head>
 <body data-tab="chat">
@@ -1554,6 +1591,9 @@ footer {
           <button id="featProgetto" class="pill" type="button" style="flex:1;justify-content:center" title="Artefatti: i file prodotti dal lavoro, in media/"><span class="led"></span>📦 progetto</button>
           <button id="featAgenda" class="pill" type="button" style="flex:1;justify-content:center" title="Agenda: cosa sta facendo l'harness e cosa aspetta da te"><span class="led"></span>🗓 agenda</button>
           <button id="featLive" class="pill" type="button" style="flex:1;justify-content:center" title="Live view del browser: guarda cosa fa e, se serve, prendi il controllo"><span class="led"></span>🖥 live</button>
+        </div>
+        <div class="feat-row">
+          <button id="featMemoria" class="pill" type="button" style="flex:1;justify-content:center" title="Memoria a lungo termine: il grafo del lavoro fatto (episodi, decisioni, artefatti) in 3D, con ricerca e diagnostica dei buchi"><span class="led"></span>🧠 memoria</button>
         </div>
       </div>
     </div>
@@ -1688,6 +1728,37 @@ footer {
         <button class="ghost" id="liveStopBtn" type="button" hidden title="Interrompi la risposta">⏹</button>
       </div>
     </div>
+  </div>
+</main>
+
+<main id="memoriaView" hidden>
+  <div class="gtoolbar">
+    <button class="ghost" id="memoriaBack" type="button" title="Torna alla chat">← chat</button>
+    <span class="gcount" id="memoriaHint">—</span>
+    <span style="flex:1"></span>
+    <button class="ghost" id="memoriaLente" type="button" title="Lente: mostra solo il vicinato del nodo selezionato (tasto L nel disegno)">🔍 lente</button>
+    <button class="ghost" id="memoriaGira" type="button" title="Rotazione automatica (tasto R)">↻ gira</button>
+    <button class="ghost" id="memoriaPng" type="button" title="Salva il disegno come immagine PNG">⬇ png</button>
+    <button class="ghost" id="memoriaApri" type="button" title="Apri l'atlante come pagina autonoma (dati e codice incorporati: funziona anche offline)">⧉ atlante</button>
+    <button class="ghost" id="memoriaRic" type="button" title="Rigenera indice, grafo, wiki e atlante dai dati sul disco">↻ ricostruisci</button>
+  </div>
+  <div class="mem-layout">
+    <canvas id="memCanvas"></canvas>
+    <aside class="mem-aside">
+      <h3>Stato della memoria</h3>
+      <div class="mem-numeri" id="memNumeri">—</div>
+      <h3>Cerca nel grafo</h3>
+      <input class="select" id="memCerca" type="search" placeholder="es. sync, browser, memoria…" autocomplete="off" style="width:100%;min-width:0" />
+      <div class="mem-risultati" id="memRisultati"></div>
+      <h3>Livelli</h3>
+      <div id="memStrati"></div>
+      <h3>Aree</h3>
+      <div id="memAree"></div>
+      <h3>Relazioni</h3>
+      <div class="mem-legenda" id="memLegenda"></div>
+      <h3>Nodo selezionato</h3>
+      <div class="mem-dettaglio" id="memDettaglio"><span class="mem-vuoto">Clicca un punto del disegno: apre la sua scheda con i collegamenti in entrambi i versi.</span></div>
+    </aside>
   </div>
 </main>
 
@@ -4723,6 +4794,7 @@ function showTab(name) {
   $("progettoView").hidden = name !== "progetto";
   $("agendaView").hidden = name !== "agenda";
   $("liveView").hidden = name !== "live";
+  $("memoriaView").hidden = name !== "memoria";
   // la live view consuma banda: il flusso si ferma quando si lascia la vista
   if (name !== "live" && liveWatching) stopWatch();
   // il riquadro a schermo intero è un overlay: uscendo dalla vista deve sparire
@@ -4739,6 +4811,13 @@ function showTab(name) {
   if (fp) fp.classList.toggle("on", name === "progetto");
   if (fa) fa.classList.toggle("on", name === "agenda");
   if (fl) fl.classList.toggle("on", name === "live");
+  const fm = $("featMemoria");
+  if (fm) fm.classList.toggle("on", name === "memoria");
+  if (name === "memoria") {
+    // La vista si carica quando la si apre (non all'avvio: la dashboard deve partire leggera).
+    if (!memoriaLoaded) { memoriaLoaded = true; caricaMemoria(); }
+    else if (memoriaAtlante) memoriaAtlante.ridisegna();
+  }
   if (name === "progetto") { if (!progettoLoaded) { progettoLoaded = true; loadProgetto(); } else loadProgetto(); }
   if (name === "agenda") { if (!agendaLoaded) { agendaLoaded = true; loadAgenda(); } else loadAgenda(); }
   if (name === "files" && !filesLoaded) { filesLoaded = true; loadDir(""); }
@@ -4753,6 +4832,227 @@ function showTab(name) {
 $("goalsBack").onclick = () => showTab("chat");
 $("cronBack").onclick = () => showTab("chat");
 $("skillsBack").onclick = () => showTab("chat");
+
+// ---------- memoria a lungo termine: l'atlante del grafo ----------
+// La vista NON parla con il modello: legge lo stesso grafo che usano i tool (media/memoria/)
+// e lo disegna. Serve a te — per vedere cosa la memoria sa e dove è cieca — non all'agente.
+let memoriaAtlante = null;
+let memoriaDati = null;
+let memoriaLoaded = false;
+let memoriaNodoScelto = null;
+
+async function caricaMemoria() {
+  try {
+    const r = await fetch("/api/memoria");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    memoriaDati = await r.json();
+  } catch (e) {
+    $("memNumeri").innerHTML = '<span class="mem-cieca">memoria non leggibile: ' + escHtml(String(e.message || e)) + "</span>";
+    return;
+  }
+  renderMemoriaStato();
+  await disegnaAtlante();
+}
+
+function renderMemoriaStato() {
+  const st = memoriaDati?.stato || {};
+  const v = memoriaDati?.vista || {};
+  const s = v.statistica || {};
+  const cieca = (s.episodi_senza_decisione || 0) > 0 || (s.isolati || 0) > 0;
+  const pezzi = [
+    st.indice ? `<span><b>${st.indice.file}</b> file<br><b>${st.indice.frammenti}</b> frammenti</span>` : "<span>indice assente</span>",
+    st.indice ? `<span><b>${st.episodi}</b> episodi<br><b>${st.indice.kb}</b> KB</span>` : "",
+    v.esiste ? `<span><b>${v.nodi.length}</b> nodi<br><b>${v.archi.length}</b> relazioni</span>` : "",
+    v.esiste ? `<span><b>${Object.keys(v.aree).length}</b> aree<br>${Object.keys(memoriaDati.link_rotti || []).length ? `<span class="mem-cieca">${memoriaDati.link_rotti.length} link rotti</span>` : "link ok"}</span>` : "",
+  ].filter(Boolean);
+  const buchi = v.esiste
+    ? `<div class="mem-cieca ${cieca ? "" : "ok"}" style="margin-top:8px">${cieca
+        ? `${s.episodi_senza_decisione || 0} episodi senza decisione · ${s.isolati || 0} nodi isolati`
+        : "nessun buco rilevato"}</div>`
+      + (st.da_aggiornare ? '<div class="mem-cieca" style="margin-top:4px">ci sono file modificati dopo l\'ultima indicizzazione: ricostruisci</div>' : "")
+    : '<div class="mem-vuoto" style="margin-top:8px">Il grafo non esiste ancora: premi «ricostruisci».</div>';
+  $("memNumeri").innerHTML = pezzi.join("") + buchi;
+  $("memoriaHint").textContent = v.esiste
+    ? `${v.nodi.length} nodi · ${v.esiti ?? ""}${String(v.generato || "").slice(0, 16).replace("T", " ")}`
+    : "memoria non ancora costruita";
+}
+
+async function disegnaAtlante() {
+  const canvas = $("memCanvas");
+  const v = memoriaDati?.vista;
+  if (!v?.esiste) {
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+  if (!memoriaAtlante) {
+    try {
+      const mod = await import("/memoria/atlante.mjs");
+      memoriaAtlante = mod.createAtlante({
+        canvas,
+        dati: v,
+        onSelect: (n) => apriNodoMemoria(n),
+      });
+      costruisciFiltriMemoria(v);
+    } catch (e) {
+      $("memDettaglio").innerHTML = '<span class="mem-cieca">atlante non caricabile: ' + escHtml(String(e.message || e)) + "</span>";
+      return;
+    }
+  } else {
+    memoriaAtlante.aggiorna(v);
+    costruisciFiltriMemoria(v);
+  }
+  $("memoriaHint").textContent = `${v.nodi.length} nodi · ${String(v.generato || "").slice(0, 16).replace("T", " ")}`;
+}
+
+function costruisciFiltriMemoria(v) {
+  const strati = $("memStrati");
+  const aree = $("memAree");
+  strati.innerHTML = "";
+  aree.innerHTML = "";
+  for (const [id, st] of Object.entries(v.strati || {})) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "mem-pill";
+    b.setAttribute("aria-pressed", "true");
+    b.style.color = st.colore;
+    b.innerHTML = '<span class="led"></span>' + escHtml(st.label);
+    b.onclick = () => {
+      memoriaAtlante?.toggleStrato(id);
+      b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
+    };
+    strati.appendChild(b);
+  }
+  const conta = (a) => (v.nodi || []).filter((n) => n.a === a).length;
+  for (const [id, ar] of Object.entries(v.aree || {})) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "mem-pill";
+    b.setAttribute("aria-pressed", "true");
+    b.style.color = ar.colore;
+    b.innerHTML = '<span class="led"></span>' + escHtml(ar.label) + " <em>" + conta(id) + "</em>";
+    b.onclick = () => {
+      memoriaAtlante?.toggleArea(id);
+      b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
+    };
+    aree.appendChild(b);
+  }
+  $("memLegenda").innerHTML = Object.entries(v.colori || {})
+    .map(([, r]) => '<span><i style="background:' + r.colore + '"></i>' + escHtml(r.label) + "</span>")
+    .join("");
+}
+
+async function apriNodoMemoria(n) {
+  memoriaNodoScelto = n;
+  const d = $("memDettaglio");
+  const collegati = (memoriaAtlante?.vicini?.[n.i] || []).slice(0, 12);
+  d.innerHTML =
+    '<div class="titolo">' + escHtml(n.n) + "</div>" +
+    '<div class="dove">' + escHtml((memoriaDati.vista.aree[n.a] || {}).label || n.a) + " · " +
+    escHtml((memoriaDati.vista.strati[n.s] || {}).label || n.s) + (n.d ? " · " + escHtml(n.d) : "") +
+    " · " + (n.g || 0) + " collegamenti</div>" +
+    (n.f ? '<div class="dove"><code>' + escHtml(n.f) + "</code></div>" : "") +
+    '<div class="mem-vuoto">carico la scheda…</div>';
+  try {
+    const r = await fetch("/api/memoria/nodo?nodo=" + encodeURIComponent(n.id));
+    const dati = await r.json();
+    const lista = (dati.scheda?.collegati || [])
+      .map((c) => `<li><b>${escHtml(c.verso === "→" ? (memoriaDati.vista.colori[c.rel] || {}).label || c.rel : (memoriaDati.vista.colori[c.rel] || {}).inversa || c.rel)}</b> ${escHtml(c.nodo.n)}</li>`)
+      .join("");
+    d.innerHTML =
+      '<div class="titolo">' + escHtml(n.n) + "</div>" +
+      '<div class="dove">' + escHtml((memoriaDati.vista.aree[n.a] || {}).label || n.a) + " · " +
+      escHtml((memoriaDati.vista.strati[n.s] || {}).label || n.s) + (n.d ? " · " + escHtml(n.d) : "") +
+      " · " + (n.g || 0) + " collegamenti</div>" +
+      (n.t ? '<div class="dove">' + escHtml(n.t.slice(0, 400)) + "</div>" : "") +
+      (n.f ? '<div class="dove"><code>' + escHtml(n.f) + "</code></div>" : "") +
+      (lista ? "<ul>" + lista + "</ul>" : '<div class="mem-vuoto">Nodo isolato: nella memoria non ha collegamenti.</div>') +
+      (n.f && String(n.f).endsWith(".md") ? '<div style="margin-top:10px"><button class="ghost" type="button" id="memApriFile">apri il file</button></div>' : "");
+    const apri = $("memApriFile");
+    if (apri) apri.onclick = () => openInEditor(n.f);
+  } catch (e) {
+    d.innerHTML += '<div class="mem-cieca">scheda non leggibile: ' + escHtml(String(e.message || e)) + "</div>";
+  }
+  // I collegamenti si possono seguire: il pannello serve a questo, non a fare da etichetta.
+  if (collegati.length && memoriaAtlante) {
+    const elenco = document.createElement("ul");
+    for (const c of collegati) {
+      const altro = memoriaAtlante.nodi[c.verso];
+      const li = document.createElement("li");
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "ghost";
+      b.style.cssText = "font-size:11.5px;padding:2px 6px";
+      b.textContent = altro.n;
+      b.onclick = () => {
+        memoriaAtlante.seleziona(c.verso);
+        apriNodoMemoria(memoriaAtlante.nodi[c.verso]);
+      };
+      li.appendChild(b);
+      elenco.appendChild(li);
+    }
+    d.appendChild(elenco);
+  }
+}
+
+// Ricerca: filtra il disegno mentre si scrive, e con 3+ caratteri chiede al grafo i nodi
+// pertinenti (nome + relazioni) per portarci sopra la selezione.
+let memoriaTimer = null;
+$("memCerca").addEventListener("input", (e) => {
+  const testo = e.target.value.trim();
+  memoriaAtlante?.cerca(testo);
+  clearTimeout(memoriaTimer);
+  memoriaTimer = setTimeout(async () => {
+    if (testo.length < 3) { $("memRisultati").innerHTML = ""; return; }
+    try {
+      const r = await fetch("/api/memoria/grafo?q=" + encodeURIComponent(testo) + "&passi=1&budget=400");
+      const d = await r.json();
+      const nodi = (d.nodi || []).slice(0, 10);
+      $("memRisultati").innerHTML = nodi.length
+        ? nodi.map((n, i) => `<button type="button" data-i="${i}"><b>${escHtml(n.n)}</b><small>${escHtml((memoriaDati.vista.strati[n.s] || {}).label || n.s)}${n.f ? " · " + escHtml(n.f) : ""}</small></button>`).join("")
+        : '<span class="mem-vuoto">nessun nodo con questi termini</span>';
+      [...$("memRisultati").querySelectorAll("button")].forEach((b) => {
+        b.onclick = () => {
+          const n = nodi[Number(b.dataset.i)];
+          const trovato = memoriaAtlante?.selezionaPerId(n.id);
+          if (trovato) apriNodoMemoria(trovato);
+        };
+      });
+    } catch { /* la ricerca non deve rompere la vista */ }
+  }, 260);
+});
+
+$("memoriaBack").onclick = () => showTab("chat");
+$("featMemoria").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("memoria"); };
+$("memoriaLente").onclick = () => memoriaAtlante?.toggleLente();
+$("memoriaGira").onclick = () => memoriaAtlante?.toggleRotazione();
+$("memoriaPng").onclick = () => {
+  const png = memoriaAtlante?.png();
+  if (!png) return;
+  const a = document.createElement("a");
+  a.href = png;
+  a.download = "atlante-memoria-" + new Date().toISOString().slice(0, 10) + ".png";
+  a.click();
+};
+$("memoriaApri").onclick = () => window.open("/memoria", "_blank");
+$("memoriaRic").onclick = async () => {
+  const b = $("memoriaRic");
+  const testo = b.textContent;
+  b.disabled = true;
+  b.textContent = "⏳ ricostruisco…";
+  try {
+    const r = await fetch("/api/memoria/ricostruisci", { method: "POST" });
+    const d = await r.json();
+    if (d.errori?.length) toast("ricostruzione con errori: " + d.errori.join(" | "), "err");
+    memoriaLoaded = true;
+    await caricaMemoria();
+  } catch (e) {
+    toast("ricostruzione non riuscita: " + String(e.message || e), "err");
+  } finally {
+    b.disabled = false;
+    b.textContent = testo;
+  }
+};
 
 function openInEditor(p) {
   let rel = String(p || "");

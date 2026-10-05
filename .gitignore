@@ -32,6 +32,21 @@ media/goals.json
 media/progetto.json
 media/.ask-*
 
+# ---- memoria a lungo termine: i DATI non si pubblicano ----
+# Il codice della memoria (media/memoria/*.mjs) è versionato come tutto il resto: è prodotto.
+# I dati NO, e non per prudenza generica: l'indice contiene estratti di ogni documento e di
+# ogni episodio in un file solo, il grafo contiene nomi di file e di progetti, la wiki li
+# ripete in chiaro e l'atlante è una mappa del lavoro leggibile a colpo d'occhio. In un
+# repository PUBBLICO sarebbe la cosa più pericolosa da pubblicare di tutto il progetto.
+media/memoria/indice.json
+media/memoria/grafo.json
+media/memoria/atlante.html
+media/memoria/stato.json
+media/memoria/dialogo.jsonl
+media/memoria/sorgenti.json
+media/memoria/wiki/
+media/memoria/episodi/
+
 # ---- temporanei ----
 *.tmp
 .tail-fix.tmp
@@ -40,7 +55,7 @@ tre.txt
 piccolo.bin
 
 # documenti con dati personali/di terzi: restano solo sul server (vedi docs/SYNC-GITHUB.md)
-media/CU2026_MACELLONI_SIMONE_estratto.txt
+media/CU2026_*_estratto.txt
 # esiti di errore delle API di generazione immagini (spazzatura di test)
 media/out_gemini-*.json
 

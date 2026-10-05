@@ -30,9 +30,17 @@ MESSAGGIO="${1:-sync $(date '+%Y-%m-%d %H:%M')}"
 # Elementi che NON devono mai finire in un commit pubblicato. Il controllo è volutamente
 # prudente: meglio un falso allarme (si guarda l'elenco e si decide) che un dato personale
 # pubblicato per distrazione.
-RISERVATI='(^|/)\.env$|\.session-secret|\.github-access|\.github-remote|(^|/)sessions/|(^|/)backups/|node_modules/|media/uploads/|password|secret|token|CU2026|out_gemini'
+# `media/memoria/` è elencata per intero: i dati della memoria (indice, grafo, wiki, episodi,
+# atlante) non si pubblicano mai — il repository è pubblico e l'indice concentra gli estratti
+# di tutto il lavoro in un file solo. Il CODICE della memoria (media/memoria/*.mjs) NON è
+# toccato da questo pattern, quindi continua a pubblicarsi normalmente.
+RISERVATI='(^|/)\.env$|\.session-secret|\.github-access|\.github-remote|(^|/)sessions/|(^|/)backups/|node_modules/|media/uploads/|password|secret|token|CU2026|out_gemini|media/memoria/(indice|grafo|atlante|stato|dialogo|sorgenti)\\.(json|html|jsonl)|media/memoria/(wiki|episodi)/'
 
-elenco=$(git status --porcelain | sed -E 's/^.{2} //')
+# `-uall` NON è un dettaglio: senza, git presenta una cartella mai tracciata come una voce sola
+# (`media/nuova/`) e il controllo di sicurezza guarda il NOME DELLA CARTELLA, non i file dentro.
+# Verificato su questa macchina: `media/memoria/` usciva come una riga da 6,3 MB mentre il gate
+# dichiarava «nessun file riservato». Un controllo che non può fallire non è un controllo.
+elenco=$(git status --porcelain -uall | sed -E 's/^.{2} //')
 
 if [ -z "$elenco" ]; then
   echo "niente da pubblicare: nessuna modifica rispetto all'ultimo commit"
