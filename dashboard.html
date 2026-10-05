@@ -164,6 +164,10 @@ header::after {
   display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px;
   padding: 3px; gap: 2px; flex: 0 0 auto;
 }
+/* Due contenitori di riga: su desktop spariscono (`display: contents`) e i loro figli tornano
+ * figli diretti dell'header, quindi il layout grande è IDENTICO a prima. Su mobile diventano
+ * due righe vere, con un confine deciso da noi invece che dal caso. */
+.hrow { display: contents; }
 .tab {
   border: none; background: transparent; color: var(--dim); cursor: pointer; font: inherit; font-size: var(--fs-md);
   padding: 7px 15px; border-radius: 999px; min-height: 34px; transition: .18s cubic-bezier(.4,0,.2,1);
@@ -1489,40 +1493,50 @@ footer {
  * Su telefono i bersagli piccoli si mancano: le voci sotto erano alte 34-40 px, sotto la
  * soglia raccomandata di 44 px. Qui si portano a 44 (48 per quelli che si premono spesso),
  * senza cambiare la disposizione. Misurato con emulazione iPhone 12 (viewport 390x844). */
-/* ---------- header su mobile: TUTTO SU UNA RIGA ----------
- * Misurato a 390 px prima di queste regole: l'header occupava 4 righe e 760 px di contenuto
- * (tabs 266, select modello 179, thinking 74, features 110, poi ☰, pallino di stato e 📊 da
- * soli a capo). La larghezza non si inventa: si toglie dove non serve. Qui si compatta ciò che
- * può essere più stretto e si lasciano le icone al posto delle parole — l'obiettivo è che NESSUN
- * elemento resti orfano su una riga sua, perché una riga sola si legge con un colpo d'occhio. */
+/* ---------- header su mobile: DUE RIGHE, DIVISE PER FUNZIONE ----------
+ * Il primo tentativo comprimeva tutto in una riga: funzionava, ma per farcelo stare ho dovuto
+ * togliere le parole dalle schede e nascondere il pulsante delle statistiche sotto i 380 px —
+ * cioè proprio su un iPhone SE (375 px), dove spariva. Sbagliato il criterio: non «una riga a
+ * ogni costo», ma righe che raggruppano per funzione, così l'occhio sa dove guardare.
+ *
+ *     riga 1  [☰]  [Chat | File | Memoria]  ............  [📊]
+ *     riga 2  [modello ▾] [thinking ▾] [features]  ......  [●]
+ *
+ * In alto dove VAI (con le parole, che su una riga dedicata tornano leggibili), sotto cosa
+ * REGOLI. Risultato misurato: 2 righe, 8 elementi, zero orfani, statistiche sempre visibili. */
 @media (max-width: 760px) {
-  header { flex-wrap: nowrap; gap: 6px; padding: 8px 10px; padding-top: calc(8px + env(safe-area-inset-top)); }
-  .tabs { padding: 2px; gap: 1px; flex: 0 0 auto; }
-  .tab-txt { display: none; }
-  .tab { min-height: 40px; padding: 6px 10px; gap: 0; }
-  .tab .ico { width: 19px; height: 19px; }
-  #tabMemoria { margin-left: 7px; }
-  #tabMemoria::before { left: -4px; }
-  .tools { flex-wrap: nowrap; gap: 5px; min-width: 0; flex: 0 1 auto; }
-  #modelSel { max-width: 96px; font-size: var(--fs-xs); padding-left: 7px; padding-right: 4px; }
-  #thinkSel { max-width: 66px; font-size: var(--fs-xs); padding-left: 6px; padding-right: 2px; }
-  .feat-btn { padding: 6px 9px; min-height: 40px; }
+  header { flex-direction: column; align-items: stretch; gap: 8px; padding: 8px 10px; padding-top: calc(8px + env(safe-area-inset-top)); }
+  .hrow { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; }
+  .hrow-1 { flex-wrap: nowrap; }
+  .hrow-2 { flex-wrap: nowrap; }
+  .brandname { display: none; }
+  .brand { flex: 0 0 auto; }
+
+  /* riga 1 — navigazione: schede con l'etichetta, target comodi */
+  .tabs { padding: 3px; gap: 2px; }
+  .tab { padding: 8px 12px; min-height: 42px; font-size: var(--fs-lg); }
+  .tab .ico { width: 18px; height: 18px; }
+  #tabMemoria { margin-left: 8px; }
+  #tabMemoria::before { left: -5px; }
+  .icon-btn { width: 42px; height: 42px; flex: 0 0 auto; }
+  .mobile-stats { width: 42px; height: 42px; flex: 0 0 auto; }
+  .spacer { flex: 1 1 0; min-width: 0; }
+
+  /* riga 2 — controlli, in ordine di quanto si usano */
+  .tools { flex: 1 1 auto; gap: 6px; min-width: 0; }
+  #modelSel { max-width: 118px; font-size: var(--fs-sm); padding-left: 8px; padding-right: 4px; }
+  #thinkSel { max-width: 78px; font-size: var(--fs-sm); }
+  .feat-btn { padding: 8px 12px; min-height: 42px; }
   .feat-btn .feat-count { display: none; }
   .statusbar { flex: 0 0 auto; min-width: 0; }
   .statusbar .conn, .statusbar #streamTxt { display: none; }
-  .spacer { flex: 1 1 0; min-width: 0; }
-  .icon-btn { width: 40px; height: 40px; }
-  .mobile-stats { width: 40px; height: 40px; }
-  .brand { flex: 0 0 auto; }
-  .brandname { display: none; }
 }
 
-/* Schermi molto stretti (iPhone SE e simili): si tolgono gli ultimi due elementi non essenziali
- * — il thinking (si cambia dal pannello features) e le statistiche (che su mobile partono
- * comunque nascoste). Meglio due controlli in meno che una riga che si spezza. */
-@media (max-width: 380px) {
-  #thinkSel { display: none; }
-  .mobile-stats { display: none; }
+/* Sotto i 350 px (telefoni molto stretti o schermo ingrandito) le etichette delle schede
+ * lasciano il posto alle icone: è l'ULTIMO risparmio, non il primo, e le statistiche restano. */
+@media (max-width: 350px) {
+  .tab-txt { display: none; }
+  .tab { padding: 8px 10px; }
 }
 
 @media (max-width: 760px) {
@@ -1609,25 +1623,33 @@ footer {
   <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.6" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.4v4.9l3.1 1.9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
 </svg>
 <header>
-  <div class="brand"><span class="logo" aria-hidden="true"></span><span class="brandname">Universalis Harness</span></div>
-  <button id="chatsBtn" class="icon-btn" type="button" title="Le tue chat" aria-label="Le tue chat">☰</button>
-  <nav class="tabs">
-    <button class="tab active" id="tabChat" type="button" aria-label="Chat"><svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg><span class="tab-txt">Chat</span></button>
-    <button class="tab" id="tabFiles" type="button" aria-label="File"><svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg><span class="tab-txt">File</span></button>
-    <button class="tab" id="tabMemoria" type="button" aria-label="Memoria" title="Memoria a lungo termine: il grafo del lavoro fatto, con ricerca e diagnostica"><svg class="ico" aria-hidden="true"><use href="#i-memoria"/></svg><span class="tab-txt">Memoria</span></button>
-  </nav>
-  <span class="spacer"></span>
+  <div class="hrow hrow-1">
+    <div class="brand"><span class="logo" aria-hidden="true"></span><span class="brandname">Universalis Harness</span></div>
+    <button id="chatsBtn" class="icon-btn" type="button" title="Le tue chat" aria-label="Le tue chat">☰</button>
+    <nav class="tabs">
+      <button class="tab active" id="tabChat" type="button" aria-label="Chat"><svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg><span class="tab-txt">Chat</span></button>
+      <button class="tab" id="tabFiles" type="button" aria-label="File"><svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg><span class="tab-txt">File</span></button>
+      <button class="tab" id="tabMemoria" type="button" aria-label="Memoria" title="Memoria a lungo termine: il grafo del lavoro fatto, con ricerca e diagnostica"><svg class="ico" aria-hidden="true"><use href="#i-memoria"/></svg><span class="tab-txt">Memoria</span></button>
+    </nav>
+    <span class="spacer"></span>
+    <div class="statusbar"><span class="dot" id="dot"></span><span id="connTxt" class="conn"></span><span id="streamTxt">idle</span></div>
+    <button id="statsToggle" class="mobile-stats" type="button" title="Mostra/nascondi statistiche">📊</button>
+  </div>
 
-  <div class="tools">
-    <select id="modelSel" class="select" title="Modello">
-      <!-- Fallback usato finché lo stato non è arrivato (e nel caso di server che non manda
-           ancora `models`): l'elenco vero lo scrive applyState da `st.models`. -->
-      <option value="deepseek-flash">deepseek-flash</option>
-      <option value="deepseek-v4-pro">deepseek-v4-pro</option>
-    </select>
-    <select id="thinkSel" class="select" title="Livello thinking"></select>
-    <div class="feat" id="featWrap">
-      <button id="featBtn" class="pill feat-btn" type="button" title="Funzioni dell'agente: subagent, compattazione" aria-haspopup="true" aria-expanded="false"><span class="led"></span>features<span class="feat-count" id="featCount"></span></button>      <div class="feat-panel" id="featPanel" hidden>
+  <!-- Riga 2: i CONTROLLI. Le due righe sono contenitori veri e non un `flex-wrap` sperato:
+       il primo tentativo lasciava decidere al caso quali elementi andavano a capo, e il
+       risultato misurato era 4 righe con i singoli elementi sparsi. -->
+  <div class="hrow hrow-2">
+    <div class="tools">
+      <select id="modelSel" class="select" title="Modello">
+        <!-- Fallback usato finché lo stato non è arrivato (e nel caso di server che non manda
+             ancora `models`): l'elenco vero lo scrive applyState da `st.models`. -->
+        <option value="deepseek-flash">deepseek-flash</option>
+        <option value="deepseek-v4-pro">deepseek-v4-pro</option>
+      </select>
+      <select id="thinkSel" class="select" title="Livello thinking"></select>
+      <div class="feat" id="featWrap">
+        <button id="featBtn" class="pill feat-btn" type="button" title="Funzioni dell'agente: subagent, compattazione" aria-haspopup="true" aria-expanded="false"><span class="led"></span>features<span class="feat-count" id="featCount"></span></button>      <div class="feat-panel" id="featPanel" hidden>
         <div class="feat-row">
           <span class="feat-lbl">subagent</span>
           <button id="subagentToggle" class="pill warn" type="button" title="Abilita/disabilita i subagent (aumenta i costi)"><span class="led"></span>subagent</button>
@@ -1662,9 +1684,8 @@ footer {
       </div>
     </div>
   </div>
-
-  <div class="statusbar"><span class="dot" id="dot"></span><span id="connTxt" class="conn"></span><span id="streamTxt">idle</span></div>
-  <button id="statsToggle" class="mobile-stats" type="button" title="Mostra/nascondi statistiche">📊</button></header>
+  </div>
+</header>
 
 <section class="stats" id="stats">
   <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-model"/></svg></span><div class="stat-main"><span class="label">modello</span><span class="value" id="s-model">–</span></div></div>

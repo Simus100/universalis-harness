@@ -431,18 +431,26 @@ await prova("la vista è una scheda accanto a Chat e File, con ritorno alla chat
   return "6 punti di aggancio verificati";
 });
 
-await prova("su mobile l'header sta su una riga e la scheda Memoria è staccata", async () => {
+await prova("su mobile l'header è diviso in due righe per funzione, senza elementi orfani", async () => {
   const html = readFileSync("dashboard.html", "utf8");
-  // Ogni valore qui è stato MISURATO in Chrome a 390/360/320 px prima di scriverlo: l'header
-  // occupava 4 righe e 169 px, con il pulsante delle statistiche orfano su una riga sua.
-  assert(/header \{ flex-wrap: nowrap; gap: 6px/.test(html), "l'header mobile non è a riga singola");
-  assert(/\.tab-txt \{ display: none; \}/.test(html), "su mobile le etichette dei tab non sono nascoste");
-  assert(/#modelSel \{ max-width: 96px/.test(html), "il selettore del modello non è compatto su mobile");
-  assert(/\.statusbar \.conn, \.statusbar #streamTxt \{ display: none; \}/.test(html), "lo stato testuale occupa spazio su mobile");
+  // Ogni valore è stato misurato in Chrome a 430/390/375/360/320 px. Il criterio non è «una riga
+  // a ogni costo» (il primo tentativo comprimeva tutto e faceva sparire il pulsante delle
+  // statistiche sotto i 380 px: cioè su un iPhone SE), ma righe che raggruppano per funzione.
+  //   riga 1  ☰ · schede · pallino di stato · 📊
+  //   riga 2  modello · thinking · features
+  assert(html.includes('id="tabMemoria"'), "manca la scheda Memoria");
+  assert(html.includes('class="hrow hrow-1"') && html.includes('class="hrow hrow-2"'), "l'header non ha le due righe");
+  assert(/\.hrow \{ display: contents; \}/.test(html), "su desktop le due righe non si dissolvono (il layout grande cambierebbe)");
+  const mobile = html.match(/@media \(max-width: 760px\) \{[\s\S]*?header \{ flex-direction: column[^}]*\}/);
+  assert(mobile, "su mobile l'header non diventa una colonna di due righe");
+  assert(/\.hrow \{ display: flex; align-items: center; gap: 8px/.test(html), "le righe non sono allineate");
+  // Il difetto segnalato: il tasto delle statistiche non si vedeva.
+  const nascosto = /mobile-stats[^}]*display: none/.test(html) || /#statsToggle[^}]*display: none/.test(html);
+  assert(!nascosto, "il pulsante delle statistiche viene nascosto su qualche larghezza");
+  assert(/@media \(max-width: 350px\) \{\s*\.tab-txt \{ display: none/.test(html), "manca l'ultimo risparmio (solo icone) per schermi molto stretti");
   const stacco = html.match(/#tabMemoria \{[^}]*margin-left[^}]*\}/);
   assert(stacco, "la scheda Memoria non è staccata dalle altre due");
-  assert(/@media \(max-width: 390px\)/.test(html) || /@media \(max-width: 380px\)/.test(html), "manca la regola per gli schermi molto stretti");
-  return "6 regole verificate (header 67 px su una riga a 390/360/320 px)";
+  return "2 righe · statistiche sempre visibili · etichette delle schede fino a 350 px";
 });
 
 await prova("il canvas della memoria non collassa su mobile (flex-basis, non solo height)", async () => {
