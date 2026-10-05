@@ -261,6 +261,71 @@ produzione. Differenza di versione: produzione `dashboard-2026-09-21.2`.
 
 ---
 
+## 4bis. Seconda istanza limitata (`tester_08`, porta 8423) — creata il 2026-10-05
+
+Ricetta usata per una **seconda** istanza identica a `tester_07` ma separata (dati vuoti, chiave
+API la stessa). Vale come modello per `tester_09`, …: cambiare `08` → `09` e la porta → `8424`.
+
+```bash
+# 1. utente di sistema
+adduser --disabled-password --gecos "pi harness istanza limitata (clone isolato)" tester08
+usermod -s /bin/bash tester08
+
+# 2. disco dedicato (~360 MB) + quota soft 300 MB nel .env
+mkdir -p /var/lib/tester08
+truncate -s 360M /var/lib/tester08/disk.img
+mkfs.ext4 -q -F -L tester08 /var/lib/tester08/disk.img
+echo '/var/lib/tester08/disk.img /home/tester08 ext4 loop,nofail,defaults 0 2' >> /etc/fstab
+mkdir -p /home/tester08 && mount /home/tester08 && chown tester08:tester08 /home/tester08
+
+# 3. codice e configurazione dalla 07, SENZA i suoi dati (- vedi esclusioni sotto)
+rsync -a --exclude 'sessions/' --exclude 'backups/' --exclude 'download/' \
+  --exclude '.env' --exclude '.session-secret' --exclude '.password-provvisoria' \
+  --exclude '.pi/' --exclude '.cache/' --exclude '.config/' --exclude '.local/' --exclude '.npm/' \
+  --exclude '.agent-browser' --exclude 'lost+found/' --exclude 'piccolo.bin' --exclude 'ISTANZA.md' \
+  --exclude 'media/ask-log.jsonl' --exclude 'media/uploads/' \
+  --exclude 'media/memoria/indice.json' --exclude 'media/memoria/grafo.json' \
+  --exclude 'media/memoria/episodi/' --exclude 'media/memoria/atlante.html' --exclude 'media/memoria/wiki/' \
+  --exclude 'media/*-prefs.json' --exclude 'media/features-tester07.md' --exclude 'media/test-token-report.md' \
+  /home/tester07/ /home/tester08/
+mkdir -p /home/tester08/{sessions,download,backups} /home/tester08/media/uploads /home/tester08/media/memoria/episodi
+chown -R tester08:tester08 /home/tester08
+
+# 4. config agente isolata: auth.json è la CHIAVE API (la stessa della 07)
+mkdir -p /var/lib/tester08/agent && rsync -a /var/lib/tester07/agent/ /var/lib/tester08/agent/
+chown -R tester08:tester08 /var/lib/tester08/agent        # ~92 MB, sta FUORI dal disco da 360 MB
+
+# 5. .env (percorsi 08, credenziali proprie) — vedi §4.5, più PI_CODING_AGENT_DIR=/var/lib/tester08/agent
+#    e DASH_SUBAGENT_EXT=/var/lib/tester08/agent/npm/node_modules/pi-subagents/index.ts
+
+# 6. unit (da pi-tester07.service, con sed): porta 8423, User/Group tester08,
+#    RequiresMountsFor=/home/tester08, ReadWritePaths=/home/tester08 /var/lib/tester08/agent
+systemctl daemon-reload && systemctl enable --now pi-tester08
+
+# 7. Caddy: blocco tester08.89-117-59-173.sslip.io -> 127.0.0.1:8423, poi `caddy validate` + reload
+
+# 8. prima memoria dell'istanza (i suoi dati; senza, /memoria risponde 404)
+sudo -u tester08 -H sh -c 'cd /home/tester08 && /home/linuxbrew/.linuxbrew/bin/node media/memoria/memoria-build.mjs --atlante'
+```
+
+**Permessi: il passo che non si può saltare.** I permessi di default di `adduser` **non isolano** le
+istanze sotto `/home`: con `755` e file `644`, `tester08` leggeva le sessioni di `tester07`
+(verificato). Dopo la copia:
+
+```bash
+chmod 700 /home/tester07 /home/tester08                 # nessuno attraversa l'home dell'altro
+chown root:tester07 /var/lib/tester07; chmod 770 /var/lib/tester07
+chown root:tester08 /var/lib/tester08; chmod 770 /var/lib/tester08
+chmod 600 /var/lib/tester07/disk.img /var/lib/tester08/disk.img
+systemctl restart pi-tester07 pi-tester08               # e rileggere /login su 8422 e 8423
+```
+
+Il servizio impiega ~30 s ad aprire la porta (disco loop più lento): attendere prima di dichiararlo
+ko. Verifica minima: `codeHash` di `/api/health` = `sha256sum dashboard.mjs`, `POST /api/model` →
+`403`, quota mostrata in `/api/state`, `sudo -u tester08 ls /home/tester07` → *Permission denied*.
+
+---
+
 ## 5. Variabili d'ambiente riconosciute da `dashboard.mjs`
 
 | variabile | significato |

@@ -1,6 +1,9 @@
 # Istanze dell'harness — stato al 2026-09-27
 
-Tre istanze **separate** sullo stesso server (processo, cartelle dati e credenziali distinti).
+Quattro istanze **separate** sullo stesso server (processo, cartelle dati e credenziali distinti):
+**principale**, **tester_01**, **tester_07** e — dal 2026-10-05 — **tester_08**, che è un secondo
+sottocliente limitato con la stessa configurazione di `tester_07` (vedi la sezione dedicata in
+fondo) ma istanza, dati e credenziali propri.
 La codebase è una copia per istanza: nessuna condivisione di file, quindi una rottura o un
 esperimento su una non tocca le altre — e **una correzione non si propaga da sola**: va portata
 istanza per istanza (vedi *Revisione del codice* in fondo).
@@ -239,3 +242,60 @@ nuovo (ambito dichiarato per frammento); `locked.model = true`, `quota 300 MB / 
 `thinking.max disabilitato` sono ancora attivi sull'ospite; vista Memoria aperta a schermo su
 entrambe (screenshot: gli episodi mostrati sono i LORO).
 Backup pre-intervento: `backups/propagazione-20261005-201614/` con `IMPRONTE.sha256` (148 file).
+
+## 2026-10-05 (secondo) — nuova istanza `tester_08`
+
+Creata **tester_08**: identica a `tester_07` per configurazione (codice, skill, limiti, sandbox,
+config agente con la **stessa chiave API**) ma **istanza separata**: utente di sistema proprio,
+disco proprio, porta propria, credenziali proprie e **dati vuoti** (scelta esplicita: le sessioni,
+i media e la memoria della 07 non passano alla 08).
+
+| | **tester_07** | **tester_08** |
+|---|---|---|
+| cartella | `/home/tester07` | `/home/tester08` |
+| utente di sistema | `tester07` (uid 1002) | **`tester08`** (uid 1003) |
+| utente dashboard | `tester_07` | `tester_08` |
+| porta locale | 8422 | **8423** |
+| servizio | `pi-tester07.service` | `pi-tester08.service` |
+| host pubblico | `tester07.89-117-59-173.sslip.io`, `htester.universalisproduzioni.it` | `tester08.89-117-59-173.sslip.io` |
+| disco | `/var/lib/tester07/disk.img` (360 MB, `LABEL=tester07`) | `/var/lib/tester08/disk.img` (360 MB, `LABEL=tester08`) |
+| quota soft | 300 MB | 300 MB |
+| config agente | `/var/lib/tester07/agent` | `/var/lib/tester08/agent` (92 MB) |
+| `dashboard.mjs` | `0605a50db4bc7b16` | `0605a50db4bc7b16` (identico) |
+
+**Stessa chiave API**: `auth.json` della config agente è stato copiato dalla 07 — stesso contenuto
+(impronta `dc31a9ff…d42c9` in entrambe). Nessuna chiave nuova, nessun consumo separato.
+
+**Dati puliti**: `sessions/` e `backups/` vuote, `media/uploads/` vuota, memoria ricostruita sui
+propri file (145 file, 879 frammenti, **0 episodi**) e nessuno dei file-dato della 07
+(`ask-log.jsonl`, `media/*-prefs.json`, `goals.json`, wiki, `features-tester07.md`).
+
+**Limiti attivi** (identici alla 07): `DASH_LOCK_MODEL=1` → `POST /api/model` risponde **403** e il
+selettore del modello è nascosto; `DASH_THINKING_DISABLED=max`; `DASH_QUOTA_MB=300`; sandbox
+`ProtectSystem=strict` + `NoNewPrivileges` + `ProtectHome=read-only` con `ReadWritePaths=/home/tester08
+/var/lib/tester08/agent`; `DASH_DECISION_M=off` (la riga Decision_M non compare nel menu features).
+Come la 07, **non** ha il tool browser (nessuna regola sudoers) né un timer di backup.
+
+**Verifiche eseguite**: `/api/health.codeHash` = impronta su disco (`0605a50db4bc7b16`) e byte
+identici alla 07; pagina servita = `dashboard.html` su disco; `locked.model=true`,
+`thinking.disabled=['max']`, quota `4,8 MB / 300 MB`; `POST /api/model` → 403; `/api/state`,
+`/api/progetto`, `/api/memoria`, `/memoria`, `/svg-sanitize.mjs`, `/login` rispondono; pagina
+raggiungibile via HTTPS su `tester08.89-117-59-173.sslip.io` (200); principale, tester_01 e tester_07
+non toccate (8420/8421/8422 → 200).
+
+### Isolamento fra le due istanze limitate: due permessi da stringere (fatto)
+
+Trovato e chiuso durante la creazione: gli home e le cartelle di lavoro erano **leggibili fra le due
+istanze**. Con `/home/tester07` a `755` e i file `644`, l'utente `tester08` leggeva davvero le
+**sessioni della 07** (verificato: `cat` di un `.jsonl` riuscito); allo stesso modo `/var/lib/tester07`
+(755) lasciava elencare la config agente dell'altra. Applicato:
+
+| percorso | permessi | perché |
+|---|---|---|
+| `/home/tester07`, `/home/tester08` | `700 owner` | nessuno attraversa l'home dell'altro |
+| `/var/lib/tester07`, `/var/lib/tester08` | `770 root:<utente>` | l'istanza scrive la sua config agente, gli altri non entrano |
+| `disk.img` (entrambe) | `600 root` | l'immagine del disco non è leggibile dagli utenti |
+
+Dopo il cambio: `sudo -u tester08 ls /home/tester07` → *Permission denied* (e viceversa), i servizi
+`pi-tester07` e `pi-tester08` riavviati e attivi, 8422 e 8423 → 200. **La lezione vale per ogni
+istanza futura sotto `/home`**: crearla non basta, i permessi di default di `adduser` non isolano.
