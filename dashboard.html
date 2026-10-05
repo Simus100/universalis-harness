@@ -1528,7 +1528,16 @@ footer {
    * Il thinking esce dalla barra di proposito: si cambia dal comando /think (o /thinking) e la
    * sua scelta è rara — un comando che c'è già vale più di un selettore fisso in ogni schermata. */
   #thinkSel { display: none; }
-  .tools { flex: 0 1 auto; gap: 6px; min-width: 0; flex-wrap: nowrap; }
+  /* Riga 2 allineata a DESTRA: modello, features e stato formano un gruppo solo, accostato al
+   * bordo come la fila di controlli che è. Lo spacer interno serviva quando il pallino era
+   * spinto a destra da solo e il resto stava a sinistra. */
+  .hrow-2 { justify-content: flex-end; }
+  .hrow-2 .spacer { display: none; }
+  /* `.hrow-2 .tools` e non `.tools`: esiste una regola precedente che su mobile dà ai tools
+   * larghezza 100% e scorrimento orizzontale (`.tools { flex: 1 1 100%; width: 100% }`), e quella
+   * vinceva sull'allineamento a destra: il gruppo restava a sinistra dentro un contenitore largo
+   * tutta la riga. Qui si annulla SOLO dentro la riga 2 dell'header, senza toccare il resto. */
+  .hrow-2 .tools { flex: 0 1 auto; width: auto; overflow: visible; gap: 6px; min-width: 0; flex-wrap: nowrap; }
   /* Ordine di lettura: prima «con che modello parlo», poi il menu delle funzioni. */
   #modelSel { order: 1; max-width: 132px; font-size: var(--fs-sm); padding-left: 8px; padding-right: 4px; }
   .tools .feat { order: 2; }
