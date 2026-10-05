@@ -419,14 +419,29 @@ await prova("ogni elemento che la vista Memoria usa esiste nel markup", async ()
   return `${ids.length} elementi verificati`;
 });
 
-await prova("la vista è raggiungibile: markup, showTab e pulsante nel menu", async () => {
+await prova("la vista è una scheda accanto a Chat e File, con ritorno alla chat", async () => {
   const html = readFileSync("dashboard.html", "utf8");
   assert(html.includes('id="memoriaView"'), "manca il contenitore della vista");
   assert(/\$\("memoriaView"\)\.hidden = name !== "memoria"/.test(html), "showTab non gestisce la vista memoria");
-  assert(html.includes('id="featMemoria"'), "manca il pulsante nel menu features");
-  assert(/\$\("featMemoria"\)\.onclick/.test(html), "il pulsante non è collegato");
+  assert(html.includes('id="tabMemoria"'), "manca la scheda nel menu in alto");
+  assert(/\$\("tabMemoria"\)\.onclick = \(\) => showTab\("memoria"\)/.test(html), "la scheda non è collegata");
+  assert(html.includes('id="memoriaBack"'), "manca il ritorno alla chat");
+  assert(/\$\("memoriaBack"\)\.onclick = \(\) => showTab\("chat"\)/.test(html), "il ritorno alla chat non è collegato");
   assert(html.includes('import("/memoria/atlante.mjs")'), "la vista non carica il modulo del disegno");
-  return "4 punti di aggancio verificati";
+  return "6 punti di aggancio verificati";
+});
+
+await prova("la memoria si prende tutto lo spazio al posto della chat", async () => {
+  const html = readFileSync("dashboard.html", "utf8");
+  // Il difetto segnalato dall'utente: la chat (con statistiche e barra di scrittura) restava
+  // visibile sopra la vista, che finiva schiacciata in una finestrella in fondo alla pagina.
+  const regola = html.match(/body\[data-tab="memoria"\][^{]*\{[^}]*\}/);
+  assert(regola, "manca la regola che nasconde la chat sulla scheda memoria");
+  for (const pezzo of ["#stats", "#chatFooter", "#chatView"]) {
+    assert(regola[0].includes(pezzo), `la regola non nasconde ${pezzo}`);
+  }
+  assert(/#memCanvas[^}]*height: 100%/.test(html), "il canvas non prende tutta l'altezza disponibile");
+  return "statistiche, barra di scrittura e chat nascoste; canvas a tutta altezza";
 });
 
 await prova("la vista Memoria non è nel percorso critico di avvio (si carica solo quando si apre)", async () => {

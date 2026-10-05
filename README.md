@@ -57,7 +57,7 @@ decisioni, file toccati, obiettivi — e lo rende consultabile a tre costi diver
 frammenti con un giudizio di confidenza che, quando la memoria non sa, lo dice. Gli episodi nascono
 da sé a fine turno e alla compattazione del contesto — dove il riassunto che il modello ha già pagato
 smette di sparire con la sessione; il *perché* lo scrive l'agente, ed è l'unica cosa che i file non
-contengono. La vista 🧠 **memoria** disegna il grafo in 3D (canvas a proiezione scritta a mano, zero
+contengono. La scheda **Memoria** (accanto a Chat e File) disegna il grafo in 3D — canvas a proiezione scritta a mano, zero
 librerie, deterministico): altezza = livello, angolo = progetto, raggio = centralità, così i **buchi**
 si vedono — un progetto di cui non si registra nulla è uno spicchio vuoto. I dati non si pubblicano
 mai: il repository è pubblico ([docs/MEMORIA.md](docs/MEMORIA.md)).

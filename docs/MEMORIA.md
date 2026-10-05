@@ -44,7 +44,7 @@ La memoria non si costruisce a mano e non dipende dal fatto che qualcuno si rico
    quindi **già pagato** — entra nell'episodio invece di sparire con la sessione.
 3. **Decisione registrata** (tool `memoria_episodio`): una riga di decisione e una di motivo.
 4. **A mano**: `node media/memoria/memoria-build.mjs [--forza] [--atlante]`, o il pulsante
-   «ricostruisci» nella vista 🧠 memoria.
+   «ricostruisci» nella scheda **Memoria**.
 
 Le 29 sessioni già presenti sul disco sono state importate in episodi **senza spendere un token**:
 sono dati, non interpretazioni.
@@ -85,7 +85,8 @@ collegamenti è credibile e falsa.
 | `segue` | episodio → episodio, stessa area, in ordine di data |
 | `cita` | documento → artefatto (percorso fra backtick) |
 
-L'**atlante** (vista 🧠 memoria della dashboard, oppure `/memoria`) disegna il grafo in 3D con
+L'**atlante** (scheda **Memoria**, accanto a Chat e File; oppure `/memoria` come pagina autonoma)
+disegna il grafo in 3D con
 canvas 2D e proiezione prospettica scritta a mano — nessuna libreria, nessuna CDN, e **deterministico**:
 lo stesso grafo produce sempre lo stesso disegno. Gli assi sono la lettura:
 

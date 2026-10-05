@@ -65,7 +65,7 @@ o per registrare cose già deducibili dai file (`git log` non ha bisogno di aiut
 
 ## Guardare il grafo (per te, non per il modello)
 
-La vista 🧠 **memoria** della dashboard disegna il grafo in 3D: altezza = livello (episodio →
+La scheda **Memoria** della dashboard (accanto a Chat e File) disegna il grafo in 3D: altezza = livello (episodio →
 decisione → obiettivo → artefatto), angolo = progetto, raggio = centralità. Serve a **vedere i buchi**:
 
 - **strato Decisione vuoto** → si lavora ma non si registra il perché (chiama `memoria_episodio`);

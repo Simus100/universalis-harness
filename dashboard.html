@@ -677,7 +677,13 @@ body[data-tab="agenda"] #chatFooter,
 body[data-tab="agenda"] #chatView,
 body[data-tab="live"] #stats,
 body[data-tab="live"] #chatFooter,
-body[data-tab="live"] #chatView { display: none !important; }
+body[data-tab="live"] #chatView,
+/* La memoria è una vista a sé: occupa tutto lo spazio, come File e le altre.
+ * Senza questa riga la chat (con la sua barra di scrittura) resta visibile SOPRA di lei, e
+ * l'atlante finiva schiacciato in una finestrella in fondo alla pagina. */
+body[data-tab="memoria"] #stats,
+body[data-tab="memoria"] #chatFooter,
+body[data-tab="memoria"] #chatView { display: none !important; }
 
 /* live view del browser */
 /* Griglia: la prima riga è il browser e ha un minimo garantito, così il log crescente
@@ -1491,7 +1497,7 @@ footer {
 /* ---------- vista Memoria (atlante del grafo + diagnostica) ----------
  * Il disegno prende tutto lo spazio disponibile; il pannello laterale tiene ricerca, filtri,
  * numeri e dettaglio del nodo. Su mobile il pannello scende sotto, come nelle altre viste. */
-#memoriaView { padding: 0; gap: 0; overflow: hidden; flex: 1; min-height: 0; }
+#memoriaView { padding: 0; gap: 0; overflow: hidden; flex: 1 1 auto; min-height: 0; height: 100%; }
 .mem-layout { display: flex; flex: 1 1 auto; min-height: 0; gap: 0; }
 /* `height: 100%` E `min-height`: senza, il canvas di una vista flex collassa a pochi pixel di
  * altezza (misurato: 40 px, con il disegno illeggibile ridotto a una striscia). Il minimo serve
@@ -1533,6 +1539,7 @@ footer {
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 12a7.6 7.6 0 0 1-7.6 7.6H9.2L4.6 22v-4.3A7.6 7.6 0 0 1 12 4.6 7.6 7.6 0 0 1 20 12Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
   <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3.6 8.2A1.7 1.7 0 0 1 5.3 6.5h3.9l1.9 2.4h7.6a1.7 1.7 0 0 1 1.7 1.7v6.2a1.7 1.7 0 0 1-1.7 1.7H5.3a1.7 1.7 0 0 1-1.7-1.7V8.2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
+  <symbol id="i-memoria" viewBox="0 0 24 24"><circle cx="12" cy="6.4" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="5.6" cy="16.4" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="18.4" cy="16.4" r="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10.4 8.6 7.2 14M13.6 8.6l3.2 5.4M8.1 16.4h7.8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
   <symbol id="i-model" viewBox="0 0 24 24"><rect x="8" y="8" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M12 4.4V8M12 16v3.6M4.4 12H8M16 12h3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
   <symbol id="i-think" viewBox="0 0 24 24"><path d="M12 4.4l1.7 5.1 5.1 1.7-5.1 1.7L12 18l-1.7-5.1L5.2 11.2l5.1-1.7L12 4.4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
   <symbol id="i-ctx" viewBox="0 0 24 24"><path d="M5 19.5v-6M12 19.5V6.5M19 19.5v-9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol>
@@ -1548,6 +1555,7 @@ footer {
   <nav class="tabs">
     <button class="tab active" id="tabChat" type="button"><svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg>Chat</button>
     <button class="tab" id="tabFiles" type="button"><svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg>File</button>
+    <button class="tab" id="tabMemoria" type="button" title="Memoria a lungo termine: il grafo del lavoro fatto, con ricerca e diagnostica"><svg class="ico" aria-hidden="true"><use href="#i-memoria"/></svg>Memoria</button>
   </nav>
   <span class="spacer"></span>
 
@@ -1591,9 +1599,6 @@ footer {
           <button id="featProgetto" class="pill" type="button" style="flex:1;justify-content:center" title="Artefatti: i file prodotti dal lavoro, in media/"><span class="led"></span>📦 progetto</button>
           <button id="featAgenda" class="pill" type="button" style="flex:1;justify-content:center" title="Agenda: cosa sta facendo l'harness e cosa aspetta da te"><span class="led"></span>🗓 agenda</button>
           <button id="featLive" class="pill" type="button" style="flex:1;justify-content:center" title="Live view del browser: guarda cosa fa e, se serve, prendi il controllo"><span class="led"></span>🖥 live</button>
-        </div>
-        <div class="feat-row">
-          <button id="featMemoria" class="pill" type="button" style="flex:1;justify-content:center" title="Memoria a lungo termine: il grafo del lavoro fatto (episodi, decisioni, artefatti) in 3D, con ricerca e diagnostica dei buchi"><span class="led"></span>🧠 memoria</button>
         </div>
       </div>
     </div>
@@ -4802,6 +4807,7 @@ function showTab(name) {
   if (name === "live") { openLive(); liveLogSuMisura(); }
   $("tabChat").classList.toggle("active", name === "chat");
   $("tabFiles").classList.toggle("active", name === "files");
+  $("tabMemoria").classList.toggle("active", name === "memoria");
   // goal, cron e skill non sono schede: si aprono dal menu "features"
   const fg = $("featGoals"), fc = $("featCron"), fs = $("featSkills");
   if (fg) fg.classList.toggle("on", name === "goals");
@@ -4811,8 +4817,6 @@ function showTab(name) {
   if (fp) fp.classList.toggle("on", name === "progetto");
   if (fa) fa.classList.toggle("on", name === "agenda");
   if (fl) fl.classList.toggle("on", name === "live");
-  const fm = $("featMemoria");
-  if (fm) fm.classList.toggle("on", name === "memoria");
   if (name === "memoria") {
     // La vista si carica quando la si apre (non all'avvio: la dashboard deve partire leggera).
     if (!memoriaLoaded) { memoriaLoaded = true; caricaMemoria(); }
@@ -5023,7 +5027,7 @@ $("memCerca").addEventListener("input", (e) => {
 });
 
 $("memoriaBack").onclick = () => showTab("chat");
-$("featMemoria").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("memoria"); };
+$("tabMemoria").onclick = () => showTab("memoria");
 $("memoriaLente").onclick = () => memoriaAtlante?.toggleLente();
 $("memoriaGira").onclick = () => memoriaAtlante?.toggleRotazione();
 $("memoriaPng").onclick = () => {
