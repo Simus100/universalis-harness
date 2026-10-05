@@ -172,6 +172,9 @@ header::after {
   border: none; background: transparent; color: var(--dim); cursor: pointer; font: inherit; font-size: var(--fs-md);
   padding: 7px 15px; border-radius: 999px; min-height: 34px; transition: .18s cubic-bezier(.4,0,.2,1);
   display: inline-flex; align-items: center; gap: 6px;
+  /* `nowrap` + `flex: 0 0 auto`: senza, quando lo spazio stringe la pill si comprime e la parola
+   * esce dal rettangolo (visto su mobile con «Memoria»). La pill si allarga, non si deforma. */
+  white-space: nowrap; flex: 0 0 auto;
 }
 .tab:hover { color: var(--text); }
 .tab.active {
@@ -1505,28 +1508,31 @@ footer {
  * In alto dove VAI (con le parole, che su una riga dedicata tornano leggibili), sotto cosa
  * REGOLI. Risultato misurato: 2 righe, 8 elementi, zero orfani, statistiche sempre visibili. */
 @media (max-width: 760px) {
-  header { flex-direction: column; align-items: stretch; gap: 8px; padding: 8px 10px; padding-top: calc(8px + env(safe-area-inset-top)); }
-  .hrow { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; }
-  .hrow-1 { flex-wrap: nowrap; }
-  .hrow-2 { flex-wrap: nowrap; }
+  header { flex-direction: column; align-items: stretch; gap: 6px; padding: 7px 10px; padding-top: calc(7px + env(safe-area-inset-top)); }
+  .hrow { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; }
   .brandname { display: none; }
   .brand { flex: 0 0 auto; }
-
-  /* riga 1 — navigazione: schede con l'etichetta, target comodi */
-  .tabs { padding: 3px; gap: 2px; }
-  .tab { padding: 8px 12px; min-height: 42px; font-size: var(--fs-lg); }
-  .tab .ico { width: 18px; height: 18px; }
-  #tabMemoria { margin-left: 8px; }
-  #tabMemoria::before { left: -5px; }
-  .icon-btn { width: 42px; height: 42px; flex: 0 0 auto; }
-  .mobile-stats { width: 42px; height: 42px; flex: 0 0 auto; }
   .spacer { flex: 1 1 0; min-width: 0; }
 
-  /* riga 2 — controlli, in ordine di quanto si usano */
-  .tools { flex: 1 1 auto; gap: 6px; min-width: 0; }
-  #modelSel { max-width: 118px; font-size: var(--fs-sm); padding-left: 8px; padding-right: 4px; }
-  #thinkSel { max-width: 78px; font-size: var(--fs-sm); }
-  .feat-btn { padding: 8px 12px; min-height: 42px; }
+  /* riga 1 — NAVIGAZIONE: ☰ · schede · 📊. Tre cose, tutte con il loro nome.
+   * Il pallino di stato è sceso in riga 2: qui rubava spazio a ciò che si tocca di più. */
+  .tabs { padding: 2px; gap: 1px; }
+  .tab { padding: 7px 11px; min-height: 40px; font-size: var(--fs-md); gap: 5px; }
+  .tab .ico { width: 17px; height: 17px; }
+  #tabMemoria { margin-left: 7px; }
+  #tabMemoria::before { left: -4px; }
+  .icon-btn { width: 40px; height: 40px; flex: 0 0 auto; }
+  .mobile-stats { width: 40px; height: 40px; flex: 0 0 auto; }
+
+  /* riga 2 — CONTROLLI: modello · features · stato.
+   * Il thinking esce dalla barra di proposito: si cambia dal comando /think (o /thinking) e la
+   * sua scelta è rara — un comando che c'è già vale più di un selettore fisso in ogni schermata. */
+  #thinkSel { display: none; }
+  .tools { flex: 0 1 auto; gap: 6px; min-width: 0; flex-wrap: nowrap; }
+  /* Ordine di lettura: prima «con che modello parlo», poi il menu delle funzioni. */
+  #modelSel { order: 1; max-width: 132px; font-size: var(--fs-sm); padding-left: 8px; padding-right: 4px; }
+  .tools .feat { order: 2; }
+  .feat-btn { padding: 7px 11px; min-height: 40px; }
   .feat-btn .feat-count { display: none; }
   .statusbar { flex: 0 0 auto; min-width: 0; }
   .statusbar .conn, .statusbar #streamTxt { display: none; }
@@ -1632,7 +1638,6 @@ footer {
       <button class="tab" id="tabMemoria" type="button" aria-label="Memoria" title="Memoria a lungo termine: il grafo del lavoro fatto, con ricerca e diagnostica"><svg class="ico" aria-hidden="true"><use href="#i-memoria"/></svg><span class="tab-txt">Memoria</span></button>
     </nav>
     <span class="spacer"></span>
-    <div class="statusbar"><span class="dot" id="dot"></span><span id="connTxt" class="conn"></span><span id="streamTxt">idle</span></div>
     <button id="statsToggle" class="mobile-stats" type="button" title="Mostra/nascondi statistiche">📊</button>
   </div>
 
@@ -1683,7 +1688,9 @@ footer {
         </div>
       </div>
     </div>
-  </div>
+    <span class="spacer"></span>
+    <div class="statusbar"><span class="dot" id="dot"></span><span id="connTxt" class="conn"></span><span id="streamTxt">idle</span></div>
+    </div>
   </div>
 </header>
 

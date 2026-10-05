@@ -431,26 +431,24 @@ await prova("la vista è una scheda accanto a Chat e File, con ritorno alla chat
   return "6 punti di aggancio verificati";
 });
 
-await prova("su mobile l'header è diviso in due righe per funzione, senza elementi orfani", async () => {
+await prova("header mobile: due righe snelle, niente testo fuori dalle pill", async () => {
   const html = readFileSync("dashboard.html", "utf8");
-  // Ogni valore è stato misurato in Chrome a 430/390/375/360/320 px. Il criterio non è «una riga
-  // a ogni costo» (il primo tentativo comprimeva tutto e faceva sparire il pulsante delle
-  // statistiche sotto i 380 px: cioè su un iPhone SE), ma righe che raggruppano per funzione.
-  //   riga 1  ☰ · schede · pallino di stato · 📊
-  //   riga 2  modello · thinking · features
-  assert(html.includes('id="tabMemoria"'), "manca la scheda Memoria");
+  // Misurato a 430/390/375/360 px: header 117 px, 2 righe, nessun overflow.
+  //   riga 1  ☰ · Chat | File | Memoria · 📊
+  //   riga 2  modello · features · pallino di stato
   assert(html.includes('class="hrow hrow-1"') && html.includes('class="hrow hrow-2"'), "l'header non ha le due righe");
-  assert(/\.hrow \{ display: contents; \}/.test(html), "su desktop le due righe non si dissolvono (il layout grande cambierebbe)");
-  const mobile = html.match(/@media \(max-width: 760px\) \{[\s\S]*?header \{ flex-direction: column[^}]*\}/);
-  assert(mobile, "su mobile l'header non diventa una colonna di due righe");
-  assert(/\.hrow \{ display: flex; align-items: center; gap: 8px/.test(html), "le righe non sono allineate");
-  // Il difetto segnalato: il tasto delle statistiche non si vedeva.
-  const nascosto = /mobile-stats[^}]*display: none/.test(html) || /#statsToggle[^}]*display: none/.test(html);
-  assert(!nascosto, "il pulsante delle statistiche viene nascosto su qualche larghezza");
+  assert(/\.hrow \{ display: contents; \}/.test(html), "su desktop le due righe non si dissolvono");
+  // Il difetto segnalato: la parola usciva dal rettangolo della pill.
+  const tab = html.match(/\.tab \{[\s\S]*?\}/);
+  assert(tab && /white-space: nowrap/.test(tab[0]) && /flex: 0 0 auto/.test(tab[0]), "le pill dei tab possono ancora comprimersi e far uscire il testo");
+  // Il difetto precedente, che non deve tornare: statistiche nascoste su qualche larghezza.
+  assert(!/mobile-stats[^}]*display: none/.test(html) && !/#statsToggle[^}]*display: none/.test(html), "il pulsante delle statistiche viene nascosto");
+  // Il thinking esce dalla barra mobile di proposito: si cambia con /think.
+  assert(/#thinkSel \{ display: none; \}/.test(html), "il thinking occupa ancora la barra mobile");
+  assert(/\/think/.test(readFileSync("media/commands.mjs", "utf8")), "il thinking non è più raggiungibile: manca il comando /think");
+  assert(html.indexOf('class="statusbar"') > html.indexOf('class="hrow hrow-2"'), "il pallino di stato non è nella riga dei controlli");
   assert(/@media \(max-width: 350px\) \{\s*\.tab-txt \{ display: none/.test(html), "manca l'ultimo risparmio (solo icone) per schermi molto stretti");
-  const stacco = html.match(/#tabMemoria \{[^}]*margin-left[^}]*\}/);
-  assert(stacco, "la scheda Memoria non è staccata dalle altre due");
-  return "2 righe · statistiche sempre visibili · etichette delle schede fino a 350 px";
+  return "2 righe · pill integre · statistiche visibili · thinking su /think";
 });
 
 await prova("il canvas della memoria non collassa su mobile (flex-basis, non solo height)", async () => {
