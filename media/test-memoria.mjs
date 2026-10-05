@@ -431,6 +431,30 @@ await prova("la vista è una scheda accanto a Chat e File, con ritorno alla chat
   return "6 punti di aggancio verificati";
 });
 
+await prova("su mobile l'header sta su una riga e la scheda Memoria è staccata", async () => {
+  const html = readFileSync("dashboard.html", "utf8");
+  // Ogni valore qui è stato MISURATO in Chrome a 390/360/320 px prima di scriverlo: l'header
+  // occupava 4 righe e 169 px, con il pulsante delle statistiche orfano su una riga sua.
+  assert(/header \{ flex-wrap: nowrap; gap: 6px/.test(html), "l'header mobile non è a riga singola");
+  assert(/\.tab-txt \{ display: none; \}/.test(html), "su mobile le etichette dei tab non sono nascoste");
+  assert(/#modelSel \{ max-width: 96px/.test(html), "il selettore del modello non è compatto su mobile");
+  assert(/\.statusbar \.conn, \.statusbar #streamTxt \{ display: none; \}/.test(html), "lo stato testuale occupa spazio su mobile");
+  const stacco = html.match(/#tabMemoria \{[^}]*margin-left[^}]*\}/);
+  assert(stacco, "la scheda Memoria non è staccata dalle altre due");
+  assert(/@media \(max-width: 390px\)/.test(html) || /@media \(max-width: 380px\)/.test(html), "manca la regola per gli schermi molto stretti");
+  return "6 regole verificate (header 67 px su una riga a 390/360/320 px)";
+});
+
+await prova("il canvas della memoria non collassa su mobile (flex-basis, non solo height)", async () => {
+  const html = readFileSync("dashboard.html", "utf8");
+  // Il difetto misurato: `flex: 1 1 auto` ignora `height: 58vh` in un contenitore in colonna,
+  // e il canvas restava a 360 px (il suo min-height) invece di 490.
+  assert(/#memCanvas \{ flex: 0 0 auto; height: 58vh/.test(html), "il canvas mobile non dichiara la base flessibile");
+  const atlante = readFileSync("media/memoria/memoria-atlante.mjs", "utf8");
+  assert(/#tela \{ flex: 0 0 auto; height: 60vh/.test(atlante), "l'atlante autonomo ha lo stesso difetto su mobile");
+  return "vista e atlante corretti";
+});
+
 await prova("la memoria si prende tutto lo spazio al posto della chat", async () => {
   const html = readFileSync("dashboard.html", "utf8");
   // Il difetto segnalato dall'utente: la chat (con statistiche e barra di scrittura) restava

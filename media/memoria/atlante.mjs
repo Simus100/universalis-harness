@@ -316,7 +316,10 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     // suoi vicini prima di tutto) e si scarta quella che finirebbe sopra un'altra.
     ctx.font = "12px ui-sans-serif, system-ui, sans-serif";
     const occupati = [];
-    const MAX_ETICHETTE = 16;
+    // Su schermo stretto (telefono) le etichette si accavallano al disegno e fra loro: se ne
+    // mostrano la metà. Verificato su 390 px: con 16 etichette il grafo diventava una macchia
+    // di testo proprio dove serviva leggere i nodi.
+    const MAX_ETICHETTE = canvas.clientWidth < 520 ? 8 : 16;
     for (const e of etichette.sort((a, b) => b.rilevanza - a.rilevanza)) {
       if (occupati.length >= MAX_ETICHETTE && !e.scelto && !e.vicinoAlScelto) break;
       const testo = e.n.n.length > 22 ? e.n.n.slice(0, 21).replace(/[-–—\s]\S*$/, "") + "…" : e.n.n;
@@ -334,7 +337,9 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     if (vista.selezionato === null) {
       ctx.fillStyle = "rgba(148,163,184,0.55)";
       ctx.font = "12px ui-sans-serif, system-ui, sans-serif";
-      ctx.fillText("trascina per ruotare · rotella o pizzico per avvicinare · L lente a 2 passi · R rotazione", 16, canvas.clientHeight - 14);
+      // Istruzioni brevi dove non c'è spazio per quelle lunghe (il testo finiva sopra i nodi).
+      const lungo = canvas.clientWidth >= 620;
+      ctx.fillText(lungo ? "trascina per ruotare · rotella o pizzico per avvicinare · L lente a 2 passi · R rotazione" : "trascina · pizzico · L lente", 12, canvas.clientHeight - 12);
       return;
     }
     const n = nodi[vista.selezionato];

@@ -64,7 +64,11 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
   footer code { background: rgba(148,163,184,.12); border-radius: 4px; padding: 1px 6px; color: #cbd5e1; }
   @media (max-width: 860px) {
     main { flex-direction: column; height: auto; }
-    #tela { height: 60vh; }
+    /* flex: 0 0 auto NON è ridondante accanto a height: 60vh. In un contenitore in colonna
+     * flex: 1 imposta flex-basis 0%, che VINCE sull'altezza dichiarata: misurato su 390 px il
+     * canvas restava da 150 px (la sua altezza intrinseca) invece di 506, con il disegno ridotto
+     * a una striscia. La dimensione principale va dichiarata come base, non come height. */
+    #tela { flex: 0 0 auto; height: 60vh; min-height: 300px; }
     aside { width: auto; flex: none; border-left: 0; border-top: 1px solid rgba(148,163,184,.16); }
   }
 </style>

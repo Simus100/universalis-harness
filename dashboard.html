@@ -174,6 +174,13 @@ header::after {
   background: var(--grad); color: #08111f; font-weight: 700;
   box-shadow: 0 4px 14px rgba(91,157,255,.35);
 }
+/* Chat e File sono due modi di guardare la stessa cosa; la memoria è un'altra cosa.
+ * Il distacco è voluto e piccolo: quel tanto che basta perché non si legga come «il terzo file». */
+#tabMemoria { margin-left: 9px; position: relative; }
+#tabMemoria::before {
+  content: ""; position: absolute; left: -5px; top: 50%; transform: translateY(-50%);
+  width: 1px; height: 16px; background: var(--border); pointer-events: none;
+}
 
 .spacer { flex: 1; }
 
@@ -1482,6 +1489,42 @@ footer {
  * Su telefono i bersagli piccoli si mancano: le voci sotto erano alte 34-40 px, sotto la
  * soglia raccomandata di 44 px. Qui si portano a 44 (48 per quelli che si premono spesso),
  * senza cambiare la disposizione. Misurato con emulazione iPhone 12 (viewport 390x844). */
+/* ---------- header su mobile: TUTTO SU UNA RIGA ----------
+ * Misurato a 390 px prima di queste regole: l'header occupava 4 righe e 760 px di contenuto
+ * (tabs 266, select modello 179, thinking 74, features 110, poi ☰, pallino di stato e 📊 da
+ * soli a capo). La larghezza non si inventa: si toglie dove non serve. Qui si compatta ciò che
+ * può essere più stretto e si lasciano le icone al posto delle parole — l'obiettivo è che NESSUN
+ * elemento resti orfano su una riga sua, perché una riga sola si legge con un colpo d'occhio. */
+@media (max-width: 760px) {
+  header { flex-wrap: nowrap; gap: 6px; padding: 8px 10px; padding-top: calc(8px + env(safe-area-inset-top)); }
+  .tabs { padding: 2px; gap: 1px; flex: 0 0 auto; }
+  .tab-txt { display: none; }
+  .tab { min-height: 40px; padding: 6px 10px; gap: 0; }
+  .tab .ico { width: 19px; height: 19px; }
+  #tabMemoria { margin-left: 7px; }
+  #tabMemoria::before { left: -4px; }
+  .tools { flex-wrap: nowrap; gap: 5px; min-width: 0; flex: 0 1 auto; }
+  #modelSel { max-width: 96px; font-size: var(--fs-xs); padding-left: 7px; padding-right: 4px; }
+  #thinkSel { max-width: 66px; font-size: var(--fs-xs); padding-left: 6px; padding-right: 2px; }
+  .feat-btn { padding: 6px 9px; min-height: 40px; }
+  .feat-btn .feat-count { display: none; }
+  .statusbar { flex: 0 0 auto; min-width: 0; }
+  .statusbar .conn, .statusbar #streamTxt { display: none; }
+  .spacer { flex: 1 1 0; min-width: 0; }
+  .icon-btn { width: 40px; height: 40px; }
+  .mobile-stats { width: 40px; height: 40px; }
+  .brand { flex: 0 0 auto; }
+  .brandname { display: none; }
+}
+
+/* Schermi molto stretti (iPhone SE e simili): si tolgono gli ultimi due elementi non essenziali
+ * — il thinking (si cambia dal pannello features) e le statistiche (che su mobile partono
+ * comunque nascoste). Meglio due controlli in meno che una riga che si spezza. */
+@media (max-width: 380px) {
+  #thinkSel { display: none; }
+  .mobile-stats { display: none; }
+}
+
 @media (max-width: 760px) {
   .tab { min-height: 44px; }
   .feat-btn { min-height: 44px; }
@@ -1498,6 +1541,19 @@ footer {
  * Il disegno prende tutto lo spazio disponibile; il pannello laterale tiene ricerca, filtri,
  * numeri e dettaglio del nodo. Su mobile il pannello scende sotto, come nelle altre viste. */
 #memoriaView { padding: 0; gap: 0; overflow: hidden; flex: 1 1 auto; min-height: 0; height: 100%; }
+/* Etichetta lunga dove c'è spazio, corta dove non c'è: l'icona resta sempre, così il pulsante
+ * non diventa mai un quadrato senza significato. Vale per la barra della memoria. */
+.lbl-stretto { display: none; }
+#memoriaView .gtoolbar { gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
+@media (max-width: 760px) {
+  .lbl-largo { display: none; }
+  .lbl-stretto { display: inline; }
+  #memoriaView .gtoolbar .ghost { padding: 7px 9px; min-height: 38px; font-size: var(--fs-sm); flex: 0 0 auto; }
+  /* I numeri della memoria su mobile si tolgono dalla barra: sono già nel pannello «Stato della
+   * memoria» subito sotto, e ripeterli costava la riga intera (era l'ultimo elemento a capo). */
+  #memoriaHint { display: none; }
+  #memoriaView .gtoolbar { padding: 8px 10px; gap: 5px; }
+}
 .mem-layout { display: flex; flex: 1 1 auto; min-height: 0; gap: 0; }
 /* `height: 100%` E `min-height`: senza, il canvas di una vista flex collassa a pochi pixel di
  * altezza (misurato: 40 px, con il disegno illeggibile ridotto a una striscia). Il minimo serve
@@ -1527,7 +1583,10 @@ footer {
 .mem-risultati small { color: var(--muted, #64748b); display: block; }
 @media (max-width: 860px) {
   .mem-layout { flex-direction: column; }
-  #memCanvas { height: 58vh; }
+  /* flex: 0 0 auto accanto a height: 58vh NON è ridondante: con flex: 1 1 auto l'altezza
+   * dichiarata veniva ignorata e il canvas restava a 360 px (il suo min-height), mentre
+   * lo schermo ne aveva 490. Misurato: 360 px con flex 1 1 auto, 490 con flex 0 0 auto. */
+  #memCanvas { flex: 0 0 auto; height: 58vh; min-height: 300px; }
   .mem-aside { width: auto; flex: none; border-left: 0; border-top: 1px solid var(--border-soft); }
 }
 </style>
@@ -1553,9 +1612,9 @@ footer {
   <div class="brand"><span class="logo" aria-hidden="true"></span><span class="brandname">Universalis Harness</span></div>
   <button id="chatsBtn" class="icon-btn" type="button" title="Le tue chat" aria-label="Le tue chat">☰</button>
   <nav class="tabs">
-    <button class="tab active" id="tabChat" type="button"><svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg>Chat</button>
-    <button class="tab" id="tabFiles" type="button"><svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg>File</button>
-    <button class="tab" id="tabMemoria" type="button" title="Memoria a lungo termine: il grafo del lavoro fatto, con ricerca e diagnostica"><svg class="ico" aria-hidden="true"><use href="#i-memoria"/></svg>Memoria</button>
+    <button class="tab active" id="tabChat" type="button" aria-label="Chat"><svg class="ico" aria-hidden="true"><use href="#i-chat"/></svg><span class="tab-txt">Chat</span></button>
+    <button class="tab" id="tabFiles" type="button" aria-label="File"><svg class="ico" aria-hidden="true"><use href="#i-folder"/></svg><span class="tab-txt">File</span></button>
+    <button class="tab" id="tabMemoria" type="button" aria-label="Memoria" title="Memoria a lungo termine: il grafo del lavoro fatto, con ricerca e diagnostica"><svg class="ico" aria-hidden="true"><use href="#i-memoria"/></svg><span class="tab-txt">Memoria</span></button>
   </nav>
   <span class="spacer"></span>
 
@@ -1738,14 +1797,14 @@ footer {
 
 <main id="memoriaView" hidden>
   <div class="gtoolbar">
-    <button class="ghost" id="memoriaBack" type="button" title="Torna alla chat">← chat</button>
+    <button class="ghost" id="memoriaBack" type="button" title="Torna alla chat">←<span class="lbl-largo"> chat</span></button>
     <span class="gcount" id="memoriaHint">—</span>
     <span style="flex:1"></span>
-    <button class="ghost" id="memoriaLente" type="button" title="Lente: mostra solo il vicinato del nodo selezionato (tasto L nel disegno)">🔍 lente</button>
-    <button class="ghost" id="memoriaGira" type="button" title="Rotazione automatica (tasto R)">↻ gira</button>
-    <button class="ghost" id="memoriaPng" type="button" title="Salva il disegno come immagine PNG">⬇ png</button>
-    <button class="ghost" id="memoriaApri" type="button" title="Apri l'atlante come pagina autonoma (dati e codice incorporati: funziona anche offline)">⧉ atlante</button>
-    <button class="ghost" id="memoriaRic" type="button" title="Rigenera indice, grafo, wiki e atlante dai dati sul disco">↻ ricostruisci</button>
+    <button class="ghost" id="memoriaLente" type="button" title="Lente: mostra solo il vicinato del nodo selezionato (tasto L nel disegno)">🔍<span class="lbl-largo"> lente</span></button>
+    <button class="ghost" id="memoriaGira" type="button" title="Rotazione automatica (tasto R)">↻<span class="lbl-largo"> gira</span></button>
+    <button class="ghost" id="memoriaPng" type="button" title="Salva il disegno come immagine PNG">⬇<span class="lbl-largo"> png</span></button>
+    <button class="ghost" id="memoriaApri" type="button" title="Apri l'atlante come pagina autonoma (dati e codice incorporati: funziona anche offline)">⧉<span class="lbl-largo"> atlante</span></button>
+    <button class="ghost" id="memoriaRic" type="button" title="Rigenera indice, grafo, wiki e atlante dai dati sul disco">⟳<span class="lbl-largo"> ricostruisci</span><span class="lbl-stretto"> rigenera</span></button>
   </div>
   <div class="mem-layout">
     <canvas id="memCanvas"></canvas>
