@@ -22,11 +22,11 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Atlante della memoria · Universalis Harness</title>
-<meta name="description" content="Il grafo della memoria a lungo termine dell'harness: episodi, decisioni, obiettivi e artefatti, esplorabili in 3D.">
+<meta name="description" content="Il grafo della memoria a lungo termine dell'harness: episodi, decisioni, obiettivi e artefatti, come mappa 2D leggibile o in orbita 3D.">
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: #05070c; color: #e2e8f0;
+  body { margin: 0; background: #05070c; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column;
          font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   header { padding: 18px 20px 12px; border-bottom: 1px solid rgba(148,163,184,.16); }
   h1 { margin: 0; font-size: 19px; letter-spacing: -.01em; }
@@ -35,7 +35,15 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
   .numeri b { color: #fff; font-variant-numeric: tabular-nums; }
   .cieca { color: #fb7185; }
   .cieca.ok { color: #34d399; }
-  main { display: flex; height: calc(100vh - 108px); min-height: 420px; }
+  /* Barra dei controlli del disegno: gli stessi comandi della vista nella dashboard, così le due
+   * letture (integrata e autonoma) non divergono. */
+  .barra { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 8px 14px; border-bottom: 1px solid rgba(148,163,184,.16); background: #080d16; }
+  .barra button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 6px 12px; border-radius: 9px;
+                  border: 1px solid rgba(148,163,184,.28); background: #0e1420; color: #cbd5e1; font-size: 13px; cursor: pointer; }
+  .barra button:hover { border-color: rgba(148,163,184,.5); color: #fff; }
+  .barra button[aria-pressed=true] { border-color: #5b9dff; color: #fff; }
+  .barra .nota { margin-left: auto; color: #64748b; font-size: 11.5px; }
+  main { display: flex; flex: 1 1 auto; min-height: 0; }
   #tela { flex: 1; min-width: 0; display: block; touch-action: none; cursor: grab; }
   aside { width: 306px; flex: 0 0 306px; overflow-y: auto; padding: 14px 16px 24px;
           border-left: 1px solid rgba(148,163,184,.16); background: #0a0f18; }
@@ -52,6 +60,9 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
   .pill[aria-pressed=false] { opacity: .45; }
   .legenda { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: #94a3b8; }
   .legenda i { display: inline-block; width: 18px; height: 2px; border-radius: 2px; margin-right: 7px; vertical-align: middle; }
+  .legenda button { display: flex; align-items: center; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 7px; color: #cbd5e1; font-size: 12px; cursor: pointer; min-height: 26px; }
+  .legenda button:hover { background: rgba(148,163,184,.12); }
+  .legenda button[aria-pressed=false] { opacity: .45; }
   #dettaglio { font-size: 12.5px; color: #cbd5e1; }
   #dettaglio .titolo { font-size: 14px; color: #fff; font-weight: 600; margin-bottom: 2px; }
   #dettaglio .dove { color: #64748b; font-size: 11.5px; margin-bottom: 8px; }
@@ -63,7 +74,9 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
   footer { padding: 10px 20px 14px; color: #64748b; font-size: 11.5px; border-top: 1px solid rgba(148,163,184,.14); }
   footer code { background: rgba(148,163,184,.12); border-radius: 4px; padding: 1px 6px; color: #cbd5e1; }
   @media (max-width: 860px) {
-    main { flex-direction: column; height: auto; }
+    main { flex-direction: column; }
+    .barra { padding: 8px 10px; }
+    .barra .nota { display: none; }
     /* flex: 0 0 auto NON è ridondante accanto a height: 60vh. In un contenitore in colonna
      * flex: 1 imposta flex-basis 0%, che VINCE sull'altezza dichiarata: misurato su 390 px il
      * canvas restava da 150 px (la sua altezza intrinseca) invece di 506, con il disegno ridotto
@@ -85,6 +98,14 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
     <span class="${meta.cieca ? "cieca" : "cieca ok"}">${meta.cieca ? `${meta.senza_decisione} episodi senza decisione · ${meta.isolati} nodi isolati` : "nessun buco rilevato"}</span>
   </div>
 </header>
+<div class="barra">
+  <button id="bModo" type="button" aria-pressed="false">🗺 mappa</button>
+  <button id="bAdatta" type="button" title="Rivedi tutto il grafo (doppio clic sul disegno)">⤢ adatta</button>
+  <button id="bOut" type="button" aria-label="Allontana" title="Allontana">−</button>
+  <button id="bIn" type="button" aria-label="Avvicina" title="Avvicina">＋</button>
+  <button id="bLente" type="button" title="Mostra solo il vicinato del nodo selezionato">🔍 lente</button>
+  <span class="nota">trascina per esplorare · rotella o pizzico per lo zoom · doppio clic per rivedere tutto · tasti M (mappa/orbita), L (lente), 0 (adatta)</span>
+</div>
 <main>
   <canvas id="tela"></canvas>
   <aside>
@@ -101,8 +122,9 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
   </aside>
 </main>
 <footer>
-  Trascina per ruotare · rotella o pizzico per avvicinare · <code>L</code> lente a 2 passi · <code>R</code> rotazione automatica.
-  Il disegno è deterministico: lo stesso grafo produce sempre lo stesso atlante.
+  La <strong>mappa</strong> (predefinita) mette gli strati in fasce e le aree in colonne: i nomi si leggono, la
+  posizione non cambia, e con un nodo scelto si accende solo il suo vicinato. L'<strong>orbita</strong> è la lettura
+  3D d'insieme. Il disegno è deterministico: lo stesso grafo produce sempre lo stesso atlante.
 </footer>
 <script type="module">
 ${codice}
@@ -157,8 +179,33 @@ for (const [id, ar] of Object.entries(D.aree)) {
   };
   document.getElementById("fAree").appendChild(b);
 }
-document.getElementById("legenda").innerHTML = Object.entries(D.colori)
-  .map(([, r]) => '<span><i style="background:' + r.colore + '"></i>' + esc(r.label) + "</span>").join("");
+document.getElementById("legenda").innerHTML = "";
+for (const [id, r] of Object.entries(D.colori)) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.setAttribute("aria-pressed", "true");
+  b.innerHTML = '<i style="background:' + r.colore + '"></i>' + esc(r.label);
+  b.onclick = () => {
+    atlante.toggleRelazione(id);
+    b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
+  };
+  document.getElementById("legenda").appendChild(b);
+}
+
+// Controlli del disegno, gli stessi della vista integrata.
+const bModo = document.getElementById("bModo");
+function aggiornaModo() {
+  const modo = atlante.vista.modo;
+  bModo.innerHTML = modo === "mappa" ? "🗺 mappa" : "🧊 orbita";
+  bModo.setAttribute("aria-pressed", modo === "orbita" ? "true" : "false");
+  bModo.title = modo === "mappa" ? "Clic per l'orbita 3D" : "Clic per la mappa 2D";
+}
+bModo.onclick = () => { atlante.toggleModo(); aggiornaModo(); };
+document.getElementById("bAdatta").onclick = () => atlante.adatta();
+document.getElementById("bIn").onclick = () => atlante.zoom(1.25);
+document.getElementById("bOut").onclick = () => atlante.zoom(0.8);
+document.getElementById("bLente").onclick = () => atlante.toggleLente();
+aggiornaModo();
 
 document.getElementById("cerca").addEventListener("input", (e) => {
   atlante.cerca(e.target.value.trim());

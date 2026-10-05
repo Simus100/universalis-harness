@@ -487,6 +487,155 @@ await prova("la vista Memoria non è nel percorso critico di avvio (si carica so
   return "caricamento pigro confermato";
 });
 
+await prova("i controlli del disegno sono nel markup e collegati", async () => {
+  const html = readFileSync("dashboard.html", "utf8");
+  for (const id of ["memoriaModo", "memoriaAdatta", "memoriaZoomIn", "memoriaZoomOut"]) {
+    assert(html.includes(`id="${id}"`), `manca il pulsante ${id}`);
+  }
+  assert(/\$\("memoriaModo"\)\.onclick = \(\) => \{ memoriaAtlante\?\.toggleModo/.test(html), "il pulsante mappa/orbita non è collegato");
+  assert(/memoriaAtlante\?\.zoom\(1\.25\)/.test(html) && /memoriaAtlante\?\.zoom\(0\.8\)/.test(html), "i pulsanti di zoom non sono collegati");
+  assert(/memoriaAtlante\?\.adatta\(\)/.test(html), "il pulsante «adatta» non è collegato");
+  assert(/toggleRelazione\(id\)/.test(html), "la legenda delle relazioni non è cliccabile");
+  return "modo, adatta, −, ＋ e legenda cliccabile";
+});
+
+await prova("il modulo del disegno offre due letture e i loro controlli", async () => {
+  const src = readFileSync("media/memoria/atlante.mjs", "utf8");
+  for (const nome of ["geometriaMappa", "toggleModo", "impostaModo", "adatta", "zoom", "toggleRelazione", "contaVisibili"]) {
+    assert(src.includes(nome), `manca ${nome} nel modulo del disegno`);
+  }
+  assert(/modo = "mappa"/.test(src), "la mappa non è la lettura predefinita");
+  assert(/pointerdown/.test(src) && /pointermove/.test(src), "il disegno non risponde al puntatore");
+  return "mappa/orbita, adatta, zoom, relazioni, lente";
+});
+
+// ---------------------------------------------------------------- sistema: il disegno del grafo
+
+console.log("\n[sistema] disegno del grafo (mappa 2D e orbita, senza browser)");
+
+/**
+ * Canvas finto: il modulo del disegno gira nel browser, quindi qui si simula il minimo che gli
+ * serve (contesto 2D, misura del testo, ciclo di animazione fermo) e si guarda COSA disegna.
+ * Serve a verificare le due promesse che a occhio si vedono solo con uno screenshot: stesso
+ * grafo → stesso disegno, e nessuna etichetta sopra un'altra.
+ */
+function canvasFinto(w = 1440, h = 620) {
+  const testi = [];
+  const gradiente = { addColorStop() {} };
+  const ctx = {
+    font: "", lineWidth: 1, lineJoin: "", strokeStyle: "", fillStyle: "", globalAlpha: 1, textAlign: "left",
+    createRadialGradient: () => gradiente,
+    measureText: (t) => ({ width: String(t).length * 6.2 }),
+    fillText: (t, x, y) => testi.push({ t: String(t), x, y }),
+    strokeText() {}, fillRect() {}, clearRect() {}, beginPath() {}, moveTo() {}, lineTo() {},
+    quadraticCurveTo() {}, arc() {}, rect() {}, roundRect() {}, fill() {}, stroke() {},
+    setLineDash() {}, setTransform() {},
+  };
+  const canvas = {
+    clientWidth: w, clientHeight: h, width: w, height: h, style: {},
+    getContext: () => ctx,
+    addEventListener() {}, removeEventListener() {}, setPointerCapture() {},
+    getBoundingClientRect: () => ({ left: 0, top: 0, width: w, height: h }),
+    toDataURL: () => "data:image/png;base64,",
+  };
+  canvas.testi = testi;
+  return canvas;
+}
+
+function apriAmbienteBrowser() {
+  const prima = {
+    devicePixelRatio: globalThis.devicePixelRatio,
+    document: globalThis.document,
+    requestAnimationFrame: globalThis.requestAnimationFrame,
+    addEventListener: globalThis.addEventListener,
+    removeEventListener: globalThis.removeEventListener,
+  };
+  globalThis.devicePixelRatio = 1;
+  globalThis.document = { hidden: false };
+  globalThis.requestAnimationFrame = () => 0; // il ciclo non gira: un disegno, poi stop
+  globalThis.cancelAnimationFrame = () => {};
+  globalThis.addEventListener = () => {};
+  globalThis.removeEventListener = () => {};
+  return () => {
+    for (const [k, v] of Object.entries(prima)) {
+      if (v === undefined) delete globalThis[k];
+      else globalThis[k] = v;
+    }
+  };
+}
+
+await prova("la mappa è la lettura predefinita e non cambia con lo schermo", async () => {
+  const chiudi = apriAmbienteBrowser();
+  try {
+    const { createAtlante } = await import("./memoria/atlante.mjs");
+    const v = await datiVista();
+    assert(v.esiste, "grafo assente: niente da disegnare");
+    const a = createAtlante({ canvas: canvasFinto(1600, 900), dati: v });
+    const b = createAtlante({ canvas: canvasFinto(390, 506), dati: v });
+    assert(a.vista.modo === "mappa" && b.vista.modo === "mappa", "la vista non parte in mappa");
+    const posizioni = (at) => at.nodi.map((n) => n.posM.join(",")).join("|");
+    assert(posizioni(a) === posizioni(b), "la mappa cambia con lo schermo: non è deterministica");
+    const c = createAtlante({ canvas: canvasFinto(1600, 900), dati: v });
+    assert(posizioni(c) === posizioni(a), "due aperture danno due disegni diversi");
+    assert(/^mappa$/.test(a.vista.modo) && typeof a.toggleModo === "function", "i controlli non sono esposti");
+    a.toggleModo();
+    assert(a.vista.modo === "orbita", "non si passa all'orbita");
+    a.toggleModo();
+    assert(a.vista.modo === "mappa", "non si torna alla mappa");
+    return `${a.nodi.length} nodi: stessa mappa su 1600×900 e 390×506`;
+  } finally {
+    chiudi();
+  }
+});
+
+await prova("nella mappa nessun nodo si sovrappone e nessuna etichetta sta sopra un'altra", async () => {
+  const chiudi = apriAmbienteBrowser();
+  try {
+    const { createAtlante } = await import("./memoria/atlante.mjs");
+    const v = await datiVista();
+    const canvas = canvasFinto(1440, 620);
+    const at = createAtlante({ canvas, dati: v });
+
+    let minima = Infinity;
+    for (let i = 0; i < at.nodi.length; i++) {
+      for (let j = i + 1; j < at.nodi.length; j++) {
+        const [x1, y1] = at.nodi[i].posM;
+        const [x2, y2] = at.nodi[j].posM;
+        minima = Math.min(minima, Math.hypot(x1 - x2, y1 - y2));
+      }
+    }
+    assert(minima > 8, `due nodi a ${minima.toFixed(1)} px: si toccano`);
+
+    // Etichette dei nodi: fuori restano le intestazioni (in alto, a sinistra) e il piede.
+    const etichette = canvas.testi.filter((t) => t.y > 30 && t.y < 590 && t.x > 80);
+    assert(etichette.length > 5, `solo ${etichette.length} etichette disegnate: la mappa è muta`);
+    const box = (t) => ({ x: t.x - 2, y: t.y - 10, w: t.t.length * 6.2 + 8, h: 15 });
+    for (let i = 0; i < etichette.length; i++) {
+      for (let j = i + 1; j < etichette.length; j++) {
+        const a = box(etichette[i]);
+        const b = box(etichette[j]);
+        const sopra = !(a.x > b.x + b.w || a.x + a.w < b.x || a.y > b.y + b.h || a.y + a.h < b.y);
+        assert(!sopra, `«${etichette[i].t}» finisce sopra «${etichette[j].t}»`);
+      }
+    }
+
+    // Ricerca e zoom: le stesse leve della dashboard.
+    const totale = at.contaVisibili();
+    at.cerca("memoria");
+    assert(at.contaVisibili() < totale && at.contaVisibili() > 0, "la ricerca non filtra nulla");
+    at.cerca("");
+    const prima = at.vista.k;
+    at.zoom(1.25);
+    assert(at.vista.k > prima, "lo zoom non cambia la scala");
+    at.adatta();
+    at.seleziona(0);
+    assert(at.vista.selezionato === 0, "la selezione non è registrata");
+    return `${etichette.length} etichette senza sovrapposizioni, nodi a ≥${minima.toFixed(0)} px`;
+  } finally {
+    chiudi();
+  }
+});
+
 // ---------------------------------------------------------------- sistema: dashboard
 
 console.log("\n[sistema] dashboard (le rotte devono esserci e non rompersi)");

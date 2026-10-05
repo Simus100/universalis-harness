@@ -57,10 +57,12 @@ decisioni, file toccati, obiettivi — e lo rende consultabile a tre costi diver
 frammenti con un giudizio di confidenza che, quando la memoria non sa, lo dice. Gli episodi nascono
 da sé a fine turno e alla compattazione del contesto — dove il riassunto che il modello ha già pagato
 smette di sparire con la sessione; il *perché* lo scrive l'agente, ed è l'unica cosa che i file non
-contengono. La scheda **Memoria** (accanto a Chat e File) disegna il grafo in 3D — canvas a proiezione scritta a mano, zero
-librerie, deterministico): altezza = livello, angolo = progetto, raggio = centralità, così i **buchi**
-si vedono — un progetto di cui non si registra nulla è uno spicchio vuoto. I dati non si pubblicano
-mai: il repository è pubblico ([docs/MEMORIA.md](docs/MEMORIA.md)).
+contengono. La scheda **Memoria** (accanto a Chat e File) disegna il grafo come **mappa 2D** — righe = livelli
+(episodio → decisione → obiettivo → artefatto), colonne = progetti — con pan/zoom, nomi leggibili e
+focus sul vicinato; una seconda lettura in **orbita 3D** mostra la forma d'insieme. Canvas scritto a
+mano, zero librerie, deterministico: così i **buchi** si vedono — una fascia o una colonna vuota è un
+progetto di cui non si registra nulla. I dati non si pubblicano mai: il repository è pubblico
+([docs/MEMORIA.md](docs/MEMORIA.md)).
 
 **Skill riutilizzabili** nel formato aperto *Agent Skills* (`SKILL.md`): si creano, si importano da
 `.zip` e si usano come procedure stabili, con il modello che le legge solo quando il compito

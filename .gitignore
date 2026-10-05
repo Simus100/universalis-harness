@@ -46,6 +46,9 @@ media/memoria/dialogo.jsonl
 media/memoria/sorgenti.json
 media/memoria/wiki/
 media/memoria/episodi/
+# Screenshot di verifica del grafo (contengono i nomi dei nodi e i titoli degli episodi: sono
+# dati della memoria, con la stessa regola di sopra). Restano sul server, non nel repo.
+media/grafo-*.png
 
 # ---- temporanei ----
 *.tmp

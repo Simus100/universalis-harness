@@ -1582,6 +1582,9 @@ footer {
    * memoria» subito sotto, e ripeterli costava la riga intera (era l'ultimo elemento a capo). */
   #memoriaHint { display: none; }
   #memoriaView .gtoolbar { padding: 8px 10px; gap: 5px; }
+  /* I controlli del disegno su telefono: 40 px di lato, sotto il minimo comodo da dito ma
+   * questi si toccano di rado, e sette pulsanti a 44 px non entrano in una riga. */
+  #memoriaView .gtoolbar .ghost.icona { padding: 7px 10px; min-width: 40px; justify-content: center; }
 }
 .mem-layout { display: flex; flex: 1 1 auto; min-height: 0; gap: 0; }
 /* `height: 100%` E `min-height`: senza, il canvas di una vista flex collassa a pochi pixel di
@@ -1606,6 +1609,11 @@ footer {
 .mem-vuoto { color: var(--muted, #64748b); font-style: italic; font-size: 12.5px; }
 .mem-legenda { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--muted, #94a3b8); }
 .mem-legenda i { display: inline-block; width: 18px; height: 2px; border-radius: 2px; margin-right: 7px; vertical-align: middle; }
+/* Le relazioni si accendono e si spengono come gli strati: pulsanti, non voci di legenda.
+ * Con una sola relazione accesa il grafo dice una cosa sola per volta. */
+.mem-legenda button { display: flex; align-items: center; width: 100%; text-align: left; background: transparent; border: 1px solid transparent; border-radius: 7px; padding: 4px 7px; color: var(--text); font-size: 12px; cursor: pointer; min-height: 26px; }
+.mem-legenda button:hover { background: var(--panel-4, rgba(148,163,184,.12)); }
+.mem-legenda button[aria-pressed="false"] { opacity: .45; }
 .mem-risultati { font-size: 12.5px; }
 .mem-risultati button { display: block; width: 100%; text-align: left; background: transparent; border: 0; border-left: 2px solid transparent; padding: 5px 8px; color: var(--text); cursor: pointer; font-size: 12.5px; }
 .mem-risultati button:hover { border-left-color: var(--accent, #5b9dff); background: rgba(91,157,255,.08); }
@@ -1837,8 +1845,12 @@ footer {
     <button class="ghost" id="memoriaBack" type="button" title="Torna alla chat">←<span class="lbl-largo"> chat</span></button>
     <span class="gcount" id="memoriaHint">—</span>
     <span style="flex:1"></span>
+    <button class="ghost" id="memoriaModo" type="button" title="Cambia lettura del grafo: mappa (2D, leggibile) o orbita (3D, d'insieme) — tasto M">🗺<span class="lbl-largo"> mappa</span></button>
+    <button class="ghost icona" id="memoriaAdatta" type="button" title="Rivedi tutto il grafo (doppio clic sul disegno) — tasto 0">⤢</button>
+    <button class="ghost icona" id="memoriaZoomOut" type="button" title="Allontana">−</button>
+    <button class="ghost icona" id="memoriaZoomIn" type="button" title="Avvicina">＋</button>
     <button class="ghost" id="memoriaLente" type="button" title="Lente: mostra solo il vicinato del nodo selezionato (tasto L nel disegno)">🔍<span class="lbl-largo"> lente</span></button>
-    <button class="ghost" id="memoriaGira" type="button" title="Rotazione automatica (tasto R)">↻<span class="lbl-largo"> gira</span></button>
+    <button class="ghost" id="memoriaGira" type="button" title="Rotazione automatica dell'orbita (tasto R)">↻<span class="lbl-largo"> gira</span></button>
     <button class="ghost" id="memoriaPng" type="button" title="Salva il disegno come immagine PNG">⬇<span class="lbl-largo"> png</span></button>
     <button class="ghost" id="memoriaApri" type="button" title="Apri l'atlante come pagina autonoma (dati e codice incorporati: funziona anche offline)">⧉<span class="lbl-largo"> atlante</span></button>
     <button class="ghost" id="memoriaRic" type="button" title="Rigenera indice, grafo, wiki e atlante dai dati sul disco">⟳<span class="lbl-largo"> ricostruisci</span><span class="lbl-stretto"> rigenera</span></button>
@@ -1858,7 +1870,7 @@ footer {
       <h3>Relazioni</h3>
       <div class="mem-legenda" id="memLegenda"></div>
       <h3>Nodo selezionato</h3>
-      <div class="mem-dettaglio" id="memDettaglio"><span class="mem-vuoto">Clicca un punto del disegno: apre la sua scheda con i collegamenti in entrambi i versi.</span></div>
+      <div class="mem-dettaglio" id="memDettaglio"><span class="mem-vuoto">Clicca un punto del disegno: apre la sua scheda con i collegamenti in entrambi i versi. In mappa: trascina per spostarti, rotella o pizzico per lo zoom, doppio clic per rivedere tutto.</span></div>
     </aside>
   </div>
 </main>
@@ -5002,7 +5014,27 @@ async function disegnaAtlante() {
     memoriaAtlante.aggiorna(v);
     costruisciFiltriMemoria(v);
   }
+  aggiornaControlliMemoria();
   $("memoriaHint").textContent = `${v.nodi.length} nodi · ${String(v.generato || "").slice(0, 16).replace("T", " ")}`;
+}
+
+/**
+ * I controlli del disegno si adattano alla modalità: in mappa contano pan e zoom, in orbita
+ * l'angolo. Tenere a schermo un pulsante che non fa nulla è peggio che non averlo — l'utente
+ * crede che sia rotto.
+ */
+function aggiornaControlliMemoria() {
+  const modo = memoriaAtlante?.vista?.modo || "mappa";
+  const b = $("memoriaModo");
+  if (b) {
+    b.innerHTML = modo === "mappa" ? '🗺<span class="lbl-largo"> mappa</span>' : '🧊<span class="lbl-largo"> orbita</span>';
+    b.title = modo === "mappa"
+      ? "Stai vedendo la mappa 2D: strati in fasce, aree in colonne, pan e zoom. Clic per l'orbita 3D (tasto M)"
+      : "Stai vedendo l'orbita 3D. Clic per la mappa 2D leggibile (tasto M)";
+    b.setAttribute("aria-pressed", modo === "orbita" ? "true" : "false");
+  }
+  const gira = $("memoriaGira");
+  if (gira) gira.hidden = modo !== "orbita";
 }
 
 function costruisciFiltriMemoria(v) {
@@ -5037,9 +5069,21 @@ function costruisciFiltriMemoria(v) {
     };
     aree.appendChild(b);
   }
-  $("memLegenda").innerHTML = Object.entries(v.colori || {})
-    .map(([, r]) => '<span><i style="background:' + r.colore + '"></i>' + escHtml(r.label) + "</span>")
-    .join("");
+  // Relazioni: pulsanti che accendono e spengono un tipo di legame. Con tutte le relazioni
+  // accese il grafo è una rete sopraffina; spegnendone qualcuna si legge il resto.
+  const legenda = $("memLegenda");
+  legenda.innerHTML = "";
+  for (const [id, r] of Object.entries(v.colori || {})) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-pressed", "true");
+    b.innerHTML = '<i style="background:' + r.colore + '"></i>' + escHtml(r.label);
+    b.onclick = () => {
+      memoriaAtlante?.toggleRelazione(id);
+      b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
+    };
+    legenda.appendChild(b);
+  }
 }
 
 async function apriNodoMemoria(n) {
@@ -5124,6 +5168,10 @@ $("memCerca").addEventListener("input", (e) => {
 
 $("memoriaBack").onclick = () => showTab("chat");
 $("tabMemoria").onclick = () => showTab("memoria");
+$("memoriaModo").onclick = () => { memoriaAtlante?.toggleModo(); aggiornaControlliMemoria(); };
+$("memoriaAdatta").onclick = () => memoriaAtlante?.adatta();
+$("memoriaZoomIn").onclick = () => memoriaAtlante?.zoom(1.25);
+$("memoriaZoomOut").onclick = () => memoriaAtlante?.zoom(0.8);
 $("memoriaLente").onclick = () => memoriaAtlante?.toggleLente();
 $("memoriaGira").onclick = () => memoriaAtlante?.toggleRotazione();
 $("memoriaPng").onclick = () => {

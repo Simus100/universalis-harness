@@ -57,7 +57,7 @@ media/memoria/
   grafo.json       nodi {id,s,n,f,a,g,d,t} + archi {a,b,r} + aree + strati + colori
   wiki/            una pagina per nodo + index.md (l'indice che dichiara i buchi)
   episodi/         un file per sessione, riscritto (upsert), non accodato
-  atlante.html     la vista 3D autonoma (dati e codice incorporati, funziona da file://)
+  atlante.html     la vista autonoma del grafo (dati e codice incorporati, funziona da file://)
   dialogo.jsonl    (facoltativo) domande e risposte della memoria, per la diagnostica
 ```
 
@@ -86,17 +86,34 @@ collegamenti è credibile e falsa.
 | `cita` | documento → artefatto (percorso fra backtick) |
 
 L'**atlante** (scheda **Memoria**, accanto a Chat e File; oppure `/memoria` come pagina autonoma)
-disegna il grafo in 3D con
-canvas 2D e proiezione prospettica scritta a mano — nessuna libreria, nessuna CDN, e **deterministico**:
-lo stesso grafo produce sempre lo stesso disegno. Gli assi sono la lettura:
+disegna il grafo in **due letture**, con lo stesso codice e gli stessi dati: canvas 2D, nessuna
+libreria, nessuna CDN, e **deterministico** — lo stesso grafo produce sempre lo stesso disegno, in
+entrambe.
 
-- **altezza** = livello della memoria: episodio → decisione → obiettivo → artefatto;
-- **angolo** = progetto (le aree, cioè le cartelle di progetto se ne hai dichiarate);
-- **raggio** = centralità: gli hub al centro, le foglie in periferia;
-- `L` = lente: mostra solo il vicinato del nodo scelto (2 passi).
+**Mappa** (predefinita): ortogonale, pensata per leggere e per cercare.
 
-Serve a **vedere i buchi**: strato Decisione vuoto = si lavora senza registrare il perché;
-spicchio vuoto = un progetto che non produce memoria; nodi isolati = artefatti senza contesto.
+- **righe** = livello della memoria: episodio → decisione → obiettivo → artefatto;
+- **colonne** = progetto (le aree, cioè le cartelle dichiarate), con i nomi in testa;
+- nessuna rotazione: la posizione di un nodo non cambia fra un'apertura e l'altra (una mappa che
+  si ridisegna diversa non si impara);
+- pan e zoom come in una mappa geografica (trascina, rotella, pizzico; pulsanti `−`, `＋`,
+  «adatta»), e doppio tocco/clic per rivedere tutto;
+- i **nomi si leggono**: le etichette che finirebbero una sopra l'altra si arrendono alla più
+  rilevante (nodo scelto, suoi vicini, risultati della ricerca, poi il grado);
+- con un nodo scelto il resto si attenua e si legge il suo **vicinato**, con la relazione scritta
+  accanto al nome («ha toccato», «è citato da»…);
+- la ricerca accende un **alone** sui nodi trovati, i filtri di strato/area/relazione si accendono
+  e spengono dal pannello (una relazione per volta è il modo per capire una rete).
+
+**Orbita**: la lettura 3D d'insieme — altezza = livello, angolo = progetto, raggio = centralità. Una
+vista per guardare la forma della memoria, non per cercarci qualcosa dentro (in prospettiva due nodi
+lontani si sovrappongono: è il limite di ogni grafo 3D).
+
+Tasti, in entrambe: `M` mappa/orbita, `L` lente (solo il vicinato del nodo scelto, 2 passi),
+`0` adatta, `R` rotazione automatica dell'orbita.
+
+Serve a **vedere i buchi**: fascia Decisione vuota = si lavora senza registrare il perché; colonna
+vuota = un progetto che non produce memoria; nodi isolati = artefatti senza contesto.
 
 ## Privacy (la regola non negoziabile)
 
