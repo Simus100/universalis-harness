@@ -1,6 +1,6 @@
-verifica live del servizio pi-dashboard — 2026-09-21T22:01:52+02:00
-processo: vecchio pid 425758 -> nuovo pid 426864 (active)
-versione in esecuzione: dashboard-2026-09-21.2
+verifica live del servizio pi-dashboard — 2026-10-05T17:08:19+02:00
+processo: vecchio pid 249436 -> nuovo pid 256901 (active)
+versione in esecuzione: dashboard-2026-09-27.1
 endpoint nuovi: abort, messages/edit, messages/regenerate, sessions/search, sessions/export,
                 search/files, manifest.webmanifest, sw.js, icon-192.png, auth in /api/state
 controlli: 40 ok, 4 falliti  (dettaglio in media/last-restart.log)

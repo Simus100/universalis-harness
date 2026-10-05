@@ -199,3 +199,43 @@ pagina servita è identica a quella su disco; la copia di prova dell'ospite ha m
 modello e riga Decision_M nascosti, vista progetto e live view con ingrandimento e schermo intero.
 Riavvio: `systemctl restart pi-tester01 pi-tester07` (tester_07 impiega ~25 s ad aprire la porta:
 il suo disco dedicato è più lento).
+
+## 2026-10-05 — memoria a lungo termine portata alle due istanze
+
+Portata la memoria (indice BM25, grafo, wiki, atlante) e la scheda **Memoria** dalla principale a
+`tester_01` e `tester_07`. Prima di questo passaggio le istanze non avevano né i moduli, né il tool,
+né gli hook: erano ferme al codice del 4 ottobre.
+
+**Cosa è stato copiato** (per entrambe): i 9 moduli `media/memoria/*.mjs`, `dashboard.mjs`,
+`dashboard.html`, la skill `skills/memoria/SKILL.md`, e una regola di esclusione `.gitignore`
+(vedi sotto). Poi la prima ricostruzione **dentro l'istanza** e l'import delle sessioni già su
+disco in episodi (`aggiornaDopoSessione`, nessun token speso: sono dati).
+
+**La memoria è per istanza, e non per convenzione**: `ROOT` in `memoria-core.mjs` è ricavato dal
+percorso del modulo, quindi ogni istanza indicizza i **propri** file. Nessun dato attraversa le
+istanze.
+
+**Metodo.**
+- `tester_01`: **copia diretta** (una sola riga propria, la versione vecchia del codice). Risultato:
+  186 file, 1139 frammenti, 2 episodi importati, grafo 4 nodi.
+- `tester_07`: **fusione a tre vie** con base `64f1975` (l'antenato più vicino, trovato confrontando
+  i commit con il suo file: 147 righe di differenza, tutte sue). `git merge-file` ha prodotto
+  **1 solo conflitto** — la sezione del prompt — perché le sue personalizzazioni non toccano le zone
+  nuove della memoria. Risoluzione: sezione memoria **tenuta** (riscritta senza il riferimento a
+  `scripts/sync-fine-lavoro.sh`, che l'ospite non ha) e sezione GitHub **non** ripristinata.
+  Conservate e verificate per conteggio: `LOCK_MODEL` 5, `THINKING_DISABLED` 8, `QUOTA_MB` 5,
+  `quotaInfo` 2, `ensureQuota` 4, `quotaChanged` 5, `refreshQuota` 5, `fmtBytes` 4 (identiche al
+  file precedente). Le uniche righe della principale assenti nel file finale sono la sezione GitHub
+  e le 7 righe che le sue personalizzazioni **sostituiscono** di proposito.
+- **Esclusioni**: nessuna delle due istanze aveva un `.gitignore`. Poiché è quello il meccanismo che
+  tiene fuori dall'indice i file dichiarati, ne è stato creato uno minimo in ciascuna
+  (`sessions/`, `backups/`, `node_modules/`, `download/`, `media/uploads/`, `*.log`, i dati della
+  memoria) con la stessa eccezione del codice: `media/memoria/episodi/` resta indicizzata.
+- **Permessi**: su `tester_07` i file sono di proprietà `tester07` (il servizio gira con quell'utente)
+  e la ricostruzione è stata eseguita con `sudo -u tester07`, non come root.
+
+**Verifiche**: `/api/memoria` e `/memoria` rispondono su 8421 e 8422; la ricerca usa il formato
+nuovo (ambito dichiarato per frammento); `locked.model = true`, `quota 300 MB / 15,6 MB usati` e
+`thinking.max disabilitato` sono ancora attivi sull'ospite; vista Memoria aperta a schermo su
+entrambe (screenshot: gli episodi mostrati sono i LORO).
+Backup pre-intervento: `backups/propagazione-20261005-201614/` con `IMPRONTE.sha256` (148 file).

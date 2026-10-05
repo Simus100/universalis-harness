@@ -49,6 +49,8 @@ media/memoria/episodi/
 # Screenshot di verifica del grafo (contengono i nomi dei nodi e i titoli degli episodi: sono
 # dati della memoria, con la stessa regola di sopra). Restano sul server, non nel repo.
 media/grafo-*.png
+# Screenshot delle istanze tester (contengono i dati della memoria di ALTRI utenti: mai pubblicarli)
+media/memoria-tester*.png
 
 # ---- temporanei ----
 *.tmp

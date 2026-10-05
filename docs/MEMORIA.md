@@ -8,6 +8,13 @@ La memoria è il **contesto storico** dell'harness: episodi (cosa è successo in
 decisioni (il perché), artefatti (i file toccati), obiettivi (i goal della dashboard). Vive in
 `media/memoria/` e **non si pubblica mai** (vedi *Privacy*, sotto).
 
+**È per istanza.** Le istanze dell'harness sono copie separate del codice (`docs/ISTANZE.md`) e
+ognuna indicizza i **propri** file: `ROOT` si ricava dal percorso del modulo
+(`memoria-core.mjs`), non da una costante, quindi nessun dato attraversa le istanze. Il rovescio
+della medaglia: un aggiornamento della memoria **non si propaga da solo**, va portato istanza per
+istanza — l'ultima propagazione (5 ottobre 2026, tester_01 e tester_07) è documentata in
+`docs/ISTANZE.md` con metodo, file copiati e verifiche.
+
 Si consulta in tre modi, con costi diversi — è la scelta che rende utile il sistema:
 
 | Modo | Risponde a | Costo | Forma |
