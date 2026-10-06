@@ -1213,6 +1213,16 @@ footer {
   background-size: 22px 22px; background-position: 0 0, 11px 11px;
 }
 .vstage.panning { cursor: grabbing; }
+/* Lettore PDF: pagine impilate in verticale? No: UNA pagina, con scorrimento nativo del
+   contenitore, così pinch e rotella funzionano come su una pagina web qualsiasi. */
+.pstage {
+  position: relative; flex: 1; min-height: 0; overflow: auto; background: #05060a;
+  padding: 12px 10px; text-align: center; -webkit-overflow-scrolling: touch;
+}
+.pstage img {
+  display: block; margin: 0 auto; max-width: none; border-radius: 2px;
+  box-shadow: 0 6px 26px rgba(0, 0, 0, .55); user-select: none;
+}
 .vstage img {
   position: absolute; left: 0; top: 0; max-width: none; max-height: none;
   transform-origin: 0 0; will-change: transform; user-select: none;
@@ -1911,6 +1921,23 @@ footer {
   <div class="vinfo" id="vInfo"></div>
 </div>
 
+<div class="vlightbox" id="pdfViewer" hidden>
+  <div class="vbar">
+    <button class="ghost" id="pBack" type="button" title="Chiudi (Esc)">✕</button>
+    <span class="vtitle"><span id="pName"></span><span class="vcount" id="pCount"></span></span>
+    <span style="flex:1"></span>
+    <button class="ghost" id="pPrev" type="button" title="Pagina precedente (←)" aria-label="Pagina precedente">←</button>
+    <button class="ghost" id="pNext" type="button" title="Pagina successiva (→)" aria-label="Pagina successiva">→</button>
+    <button class="ghost" id="pZoomOut" type="button" title="Riduci (−)">−</button>
+    <button class="ghost" id="pFit" type="button" title="Adatta alla finestra">adatta</button>
+    <button class="ghost" id="pZoomIn" type="button" title="Ingrandisci (＋)">＋</button>
+    <button class="ghost" id="pDownload" type="button" title="Scarica il PDF">⬇</button>
+    <button class="ghost" id="pFull" type="button" title="Schermo intero">⛶</button>
+  </div>
+  <div class="pstage" id="pStage"><img id="pImg" alt="pagina del documento" draggable="false" /></div>
+  <div class="vinfo" id="pInfo"></div>
+</div>
+
 <footer id="chatFooter">
   <div class="hintbar" id="editBar" hidden>
     <span>✎ stai modificando il tuo ultimo messaggio — l'invio lo riscrive da lì</span>
@@ -2342,6 +2369,17 @@ const SVG_FENCE_LANG = "svg";
  *  chi legge, niente immagini che spariscono o cambiano sotto), e il formato viene verificato dai
  *  magic number prima di servire i byte. */
 const IMG_FENCE_LANGS = new Set(["img", "image", "foto"]);
+/** Linguaggi del blocco che contiene il PERCORSO di un documento PDF da mostrare in chat.
+ *  Come per le immagini: solo file locali, formato verificato dai magic number dal server, e
+ *  le pagine arrivano da /api/pdf (mai un visualizzatore di terze parti). */
+const PDF_FENCE_LANGS = new Set(["pdf", "documento"]);
+
+/** Card del blocco: un solo punto decide chi disegna cosa (il tipo lo assegna la scansione). */
+function makeBlockCard(tipo, code, err) {
+  if (tipo === "svg") return makeSvgCard(code, err);
+  if (tipo === "pdf") return makePdfCard(code, err);
+  return makeImgCard(code, err);
+}
 /** Elementi che l'anteprima accetta (secondo controllo, oltre al sanitizzatore). */
 const SVG_PREVIEW_TAGS = new Set([
   "svg", "g", "defs", "title", "desc", "path", "rect", "circle", "ellipse", "line",
@@ -2436,8 +2474,12 @@ function flushSvgBlocks(bubble, tail, final = false) {
         tail.pending.scannedTo = Math.max(tail.pending.bodyStart, svgScanFloor(tail.text));
         if (!final) return;
         const corpo = tail.text.slice(tail.pending.bodyStart);
-        if (tail.pending.tipo === "img") bubble.appendChild(makeImgCard(corpo, "blocco immagine non chiuso (manca la fence ``` di chiusura)"));
-        else bubble.appendChild(makeSvgCard(corpo, "blocco SVG non chiuso (manca la fence ``` di chiusura)"));
+        const perche = tail.pending.tipo === "img"
+          ? "blocco immagine non chiuso (manca la fence ``` di chiusura)"
+          : tail.pending.tipo === "pdf"
+            ? "blocco documento non chiuso (manca la fence ``` di chiusura)"
+            : "blocco SVG non chiuso (manca la fence ``` di chiusura)";
+        bubble.appendChild(makeBlockCard(tail.pending.tipo, corpo, perche));
         tail.el.textContent = tail.text.slice(0, tail.pending.fenceStart);
         tail.text = "";
         tail.pending = null;
@@ -2450,7 +2492,7 @@ function flushSvgBlocks(bubble, tail, final = false) {
       const before = tail.text.slice(0, tail.pending.fenceStart);
       const rest = tail.text.slice(close.end);
       tail.el.textContent = before;
-      bubble.appendChild(tail.pending.tipo === "img" ? makeImgCard(code, null) : makeSvgCard(code, null));
+      bubble.appendChild(makeBlockCard(tail.pending.tipo, code, null));
       tail.el = newTextSpan(bubble, rest);
       tail.text = rest;
       tail.pending = null;
@@ -2464,7 +2506,7 @@ function flushSvgBlocks(bubble, tail, final = false) {
       tail.el.textContent = tail.text;
       return;
     }
-    if (open.lang !== SVG_FENCE_LANG && !IMG_FENCE_LANGS.has(open.lang)) {
+    if (open.lang !== SVG_FENCE_LANG && !IMG_FENCE_LANGS.has(open.lang) && !PDF_FENCE_LANGS.has(open.lang)) {
       // blocco di codice di altro linguaggio: si salta l'intero blocco, così un ```svg
       // citato dentro un blocco js non viene scambiato per un disegno
       const close = findCloseFence(tail.text, open.bodyStart);
@@ -2475,7 +2517,7 @@ function flushSvgBlocks(bubble, tail, final = false) {
     tail.pending = {
       fenceStart: open.start,
       bodyStart: open.bodyStart,
-      tipo: open.lang === SVG_FENCE_LANG ? "svg" : "img",
+      tipo: open.lang === SVG_FENCE_LANG ? "svg" : PDF_FENCE_LANGS.has(open.lang) ? "pdf" : "img",
     };
     tail.el.textContent = tail.text; // in attesa: il blocco resta visibile come testo
   }
@@ -2718,6 +2760,136 @@ function makeImgCard(code, forcedError) {
           btnDl.disabled = false;
           img.onclick = null;
         }
+      } catch (e2) {
+        if (fig.isConnected) fallisci(`errore di rete: ${e2?.message || e2}`);
+      }
+    })();
+
+  return fig;
+}
+
+/**
+ * Card di un documento PDF: il blocco ```pdf contiene un PERCORSO e, dalle righe successive,
+ * una didascalia.
+ *
+ *     ```pdf
+ *     media/cartella/fattura.pdf
+ *     La fattura di marzo, con il dettaglio delle voci
+ *     ```
+ *
+ * Mostra la PRIMA pagina resa dal server (PNG) e dice quante pagine sono: il documento si apre poi
+ * nel lettore a pagine. Un PDF che non contiene testo (una scansione) lo dichiara: in quel caso
+ * l'agente lo guarda come immagine, pagina per pagina.
+ */
+function makePdfCard(code, forcedError) {
+  const righe = String(code || "")
+    .split("\n")
+    .map((r) => r.trim())
+    .filter(Boolean);
+  let percorso = (righe.shift() || "").replace(/^[`'"](.*)[`'"]$/s, "$1").trim();
+  const didascalia = righe.join(" ").trim();
+  const fig = document.createElement("figure");
+  fig.className = "imgfig";
+
+  const head = document.createElement("div");
+  head.className = "imghead";
+  const lbl = document.createElement("span");
+  lbl.className = "imglbl";
+  lbl.textContent = "documento";
+  const nome = document.createElement("span");
+  nome.className = "imgnome";
+  nome.textContent = percorso.split("/").pop() || "(percorso mancante)";
+  nome.title = percorso;
+  const meta = document.createElement("span");
+  meta.className = "imgmeta";
+  const acts = document.createElement("div");
+  acts.className = "imgacts";
+  head.append(lbl, nome, meta, acts);
+
+  const box = document.createElement("div");
+  box.className = "imgbox";
+  const wait = document.createElement("span");
+  wait.className = "imgwait";
+  wait.textContent = "carico la prima pagina…";
+  box.appendChild(wait);
+  const img = document.createElement("img");
+  img.loading = "lazy";
+  img.decoding = "async";
+  img.alt = didascalia || `prima pagina di ${nome.textContent}`;
+  box.appendChild(img);
+
+  const cap = document.createElement("div");
+  cap.className = "imgcap";
+  cap.textContent = didascalia;
+  cap.hidden = !didascalia;
+  const err = document.createElement("div");
+  err.className = "imgerr";
+  if (didascalia) box.setAttribute("aria-label", didascalia);
+  fig.append(head, box, cap, err);
+
+  const mkBtn = (testo, titolo, fn, disabled) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = testo;
+    b.title = titolo;
+    b.disabled = !!disabled;
+    b.onclick = fn;
+    acts.appendChild(b);
+    return b;
+  };
+  const btnApri = mkBtn("⤢ apri il documento", "Leggi il PDF pagina per pagina", () => openPdfViewer(percorso), true);
+  const btnDl = mkBtn("⬇ scarica", "Scarica il PDF originale", () => {
+    if (percorso) window.location = downloadUrl(percorso);
+  }, true);
+  const btnTesto = mkBtn("≡ testo", "Mostra il percorso del documento per farlo leggere all'agente", () => {}, true);
+  btnTesto.remove();
+  const btnCopia = mkBtn("⧉ copia percorso", "Copia il percorso negli appunti", async () => {
+    const okk = await copyText(percorso);
+    btnCopia.textContent = okk ? "✓ percorso copiato" : "✗ non copiato";
+    setTimeout(() => (btnCopia.textContent = "⧉ copia percorso"), 1500);
+  });
+  const fallisci = (messaggio) => {
+    fig.classList.add("err");
+    err.textContent = messaggio;
+    wait.remove();
+    btnApri.disabled = true;
+    img.removeAttribute("src");
+  };
+
+  if (forcedError) fallisci(forcedError);
+  else if (!percorso) fallisci("il blocco ```pdf non contiene un percorso di file");
+  else
+    (async () => {
+      try {
+        const r = await fetch(`/api/pdf?meta=1&path=${encodeURIComponent(percorso)}`);
+        const j = await r.json().catch(() => ({}));
+        if (!fig.isConnected) return;
+        if (!r.ok || !j.pdf) {
+          fallisci(j.error || `non riesco ad aprire «${percorso}» come PDF`);
+          btnDl.disabled = false;
+          return;
+        }
+        percorso = j.path || percorso;
+        const pagine = j.pagine ? `${j.pagine} ${j.pagine === 1 ? "pagina" : "pagine"}` : "documento";
+        meta.textContent = `${pagine} · ${fmtSize(j.size)}`;
+        btnDl.disabled = false;
+        if (!j.leggibile) {
+          // es. strumenti di sistema assenti su questo server: il file resta scaricabile
+          fallisci(j.error || "documento non leggibile su questo server");
+          btnApri.disabled = false;
+          return;
+        }
+        btnApri.disabled = false;
+        if (j.testoDisponibile === false) {
+          meta.textContent = `${pagine} · ${fmtSize(j.size)} · senza testo: si legge come immagine`;
+        }
+        img.onload = () => {
+          wait.remove();
+          img.onclick = () => openPdfViewer(percorso);
+        };
+        img.onerror = () => fallisci(`non riesco a rendere la prima pagina di «${nome.textContent}»`);
+        img.onclick = () => openPdfViewer(percorso);
+        img.src = `/api/pdf?path=${encodeURIComponent(percorso)}&pagina=1&dpi=90`;
       } catch (e2) {
         if (fig.isConnected) fallisci(`errore di rete: ${e2?.message || e2}`);
       }
@@ -3307,6 +3479,7 @@ function fileCard(info) {
   openBtn.onclick = () => {
     if (isDir) { showTab("files"); loadDir(path); }
     else if (isImage(path)) openViewer(path);
+    else if (isPdf(path)) openPdfViewer(path);
     else openInEditor(path);
   };
   const dlName = isDir ? name + ".zip" : name;
@@ -5305,7 +5478,7 @@ async function loadDir(rel) {
     for (const e of data.entries) {
       const isDir = e.type === "dir";
       const full = jr(currentDir, e.name);
-      const icon = isDir ? "📁" : e.type === "link" ? "🔗" : isImage(e.name) ? "🖼" : "📄";
+      const icon = isDir ? "📁" : e.type === "link" ? "🔗" : isImage(e.name) ? "🖼" : isPdf(e.name) ? "🧾" : "📄";
       const meta = isDir ? "" : fmtSize(e.size);
       // le cartelle portano la stella del progetto (vedi stellaProgetto)
       el.appendChild(frow(icon, e.name, e.type, () => (isDir ? loadDir(full) : openFile(full)), meta, isDir ? stellaProgetto(full) : null));
@@ -5315,8 +5488,10 @@ async function loadDir(rel) {
 const refreshDir = () => loadDir(currentDir);
 
 async function openFile(rel, line) {
-  // le immagini non si aprono nell'editor di testo: vanno al lettore immagini
+  // le immagini vanno al lettore immagini, i PDF al lettore a pagine: nessuno dei due
+  // si apre nell'editor di testo (che mostrerebbe byte illeggibili)
   if (!line && isImage(rel)) return openViewer(rel);
+  if (!line && isPdf(rel)) return openPdfViewer(rel);
   try {
     const r = await fetch("/api/file?path=" + encodeURIComponent(rel));
     const j = await r.json();
@@ -5402,6 +5577,134 @@ const IMG_MIME = {
 };
 const imgMime = (p) => IMG_MIME[String(p).split(".").pop().toLowerCase()] || "";
 const isImage = (p) => !!imgMime(p);
+/** Vero se il nome è un PDF: la verifica vera (magic number) la fa il server. */
+const isPdf = (p) => /\.pdf$/i.test(String(p || ""));
+
+/* ===================== LETTORE PDF (a pagine) =====================
+ * Apre un PDF a tutto schermo: UNA pagina alla volta, resa dal server in PNG (/api/pdf),
+ * con navigazione, zoom e scorrimento nativo (pinch compreso, perché l'immagine è larga quanto
+ * serve e il contenitore scorre). Serve a leggere un documento senza installare nulla e senza
+ * affidarlo a un visualizzatore di terze parti: il file non esce dalla root della dashboard.
+ * Se il documento non ha testo (una scansione) l'anteprima resta valida: è un'immagine.
+ */
+let pDoc = { path: "", pagine: 0, pagina: 1, zoom: 1, dpi: 110 };
+
+async function openPdfViewer(rel, pagina = 1) {
+  $("pdfViewer").hidden = false;
+  document.body.classList.add("v-open");
+  pDoc = { path: rel, pagine: 0, pagina: Math.max(1, pagina | 0), zoom: 1, dpi: 110 };
+  $("pName").textContent = String(rel).split("/").pop();
+  $("pName").title = rel;
+  $("pCount").textContent = "";
+  $("pInfo").textContent = "carico il documento…";
+  $("pImg").removeAttribute("src");
+  try {
+    const r = await fetch(`/api/pdf?meta=1&path=${encodeURIComponent(rel)}`);
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.pdf) {
+      $("pInfo").innerHTML = `<b style="color:var(--red)">${escHtml(j.error || "non è un documento PDF leggibile")}</b>`;
+      return;
+    }
+    pDoc.path = j.path || rel;
+    pDoc.pagine = Number(j.pagine) || 0;
+    pDoc.senzaTesto = j.testoDisponibile === false;
+    if (!j.leggibile) {
+      $("pInfo").innerHTML = `<b style="color:var(--red)">${escHtml(j.error || "documento non leggibile")}</b>`;
+      return;
+    }
+    if (pDoc.pagina > (pDoc.pagine || 1)) pDoc.pagina = 1;
+    await pMostra();
+  } catch (e) {
+    $("pInfo").innerHTML = `<b style="color:var(--red)">errore nel caricamento: ${escHtml(String(e?.message || e))}</b>`;
+  }
+}
+
+/** Mostra la pagina corrente alla larghezza dello schermo moltiplicata per lo zoom. */
+async function pMostra() {
+  const img = $("pImg");
+  const stage = $("pStage");
+  const base = Math.max(200, (stage.clientWidth || 800) - 22);
+  img.style.width = Math.round(base * pDoc.zoom) + "px";
+  // il dpi cresce con lo zoom: ingrandire mostra più dettaglio, non pixel allargati
+  pDoc.dpi = Math.min(200, Math.max(70, Math.round(110 * pDoc.zoom)));
+  $("pCount").textContent = pDoc.pagine ? `${pDoc.pagina} di ${pDoc.pagine}` : "";
+  $("pInfo").textContent = "carico la pagina…";
+  const url = `/api/pdf?path=${encodeURIComponent(pDoc.path)}&pagina=${pDoc.pagina}&dpi=${pDoc.dpi}`;
+  img.onload = () => {
+    const senzaTesto = pDoc.senzaTesto ? " · senza testo: si legge come immagine" : "";
+    $("pInfo").innerHTML =
+      `pagina <b>${pDoc.pagina}</b> di <b>${pDoc.pagine || "?"}</b> · ${pDoc.dpi} dpi · ` +
+      `<span title="${escHtml(pDoc.path)}">${escHtml(pDoc.path)}</span>${senzaTesto}`;
+    // la pagina successiva si prepara in anticipo: con le frecce il cambio è immediato
+    if (pDoc.pagina < pDoc.pagine) {
+      const pre = new Image();
+      pre.src = `/api/pdf?path=${encodeURIComponent(pDoc.path)}&pagina=${pDoc.pagina + 1}&dpi=${pDoc.dpi}`;
+    }
+  };
+  img.onerror = () => {
+    $("pInfo").innerHTML = '<b style="color:var(--red)">non riesco a rendere questa pagina</b>';
+  };
+  img.src = url;
+  stage.scrollTop = 0;
+}
+
+function pVai(delta) {
+  if (!pDoc.pagine) return;
+  const n = Math.min(pDoc.pagine, Math.max(1, pDoc.pagina + delta));
+  if (n === pDoc.pagina) return;
+  pDoc.pagina = n;
+  pMostra();
+}
+
+function pZoom(fattore) {
+  const nuova = Math.min(3, Math.max(0.5, pDoc.zoom * fattore));
+  if (Math.abs(nuova - pDoc.zoom) < 0.01) return;
+  pDoc.zoom = nuova;
+  pMostra();
+}
+
+function pAdatta() {
+  pDoc.zoom = 1;
+  pMostra();
+}
+
+function closePdfViewer() {
+  $("pdfViewer").hidden = true;
+  document.body.classList.remove("v-open");
+  $("pImg").removeAttribute("src");
+}
+
+$("pBack").onclick = closePdfViewer;
+$("pPrev").onclick = () => pVai(-1);
+$("pNext").onclick = () => pVai(1);
+$("pZoomIn").onclick = () => pZoom(1.25);
+$("pZoomOut").onclick = () => pZoom(0.8);
+$("pFit").onclick = pAdatta;
+$("pDownload").onclick = () => {
+  if (pDoc.path) window.location = downloadUrl(pDoc.path);
+};
+$("pFull").onclick = () => {
+  const el = $("pdfViewer");
+  try {
+    if (!document.fullscreenElement) el.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  } catch {
+    /* su alcuni browser mobili non è permesso: pazienza, il pannello è già a tutto schermo */
+  }
+};
+
+addEventListener("keydown", (e) => {
+  if ($("pdfViewer").hidden) return;
+  if (e.key === "Escape") {
+    closePdfViewer();
+    return;
+  }
+  if (e.key === "ArrowLeft" || e.key === "PageUp") pVai(-1);
+  else if (e.key === "ArrowRight" || e.key === "PageDown") pVai(1);
+  else if (e.key === "+" || e.key === "=") pZoom(1.25);
+  else if (e.key === "-" || e.key === "_") pZoom(0.8);
+  else if (e.key === "0" || e.key === "f" || e.key === "F") pAdatta();
+});
 
 /* ===================== LETTORE IMMAGINI (lightbox) =====================
  * Cosa fa: apre un'immagine a tutto schermo, mostra i metadati veri (pixel, peso, formato, data),

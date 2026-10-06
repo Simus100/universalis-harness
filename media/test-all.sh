@@ -82,6 +82,14 @@ echo
 echo "########## 9/10 non-regressione (file manager, allegati, interruttori) ##########"
 bash media/test-regression.sh || rc=1
 
+echo "########## 9b/10 documenti PDF (server: pagine, testo, ricerca, degradazione) ##########"
+node media/test-pdf.mjs || rc=1
+echo
+
+echo "########## 9c/10 documenti PDF (browser vero: card in chat e lettore a pagine) ##########"
+node media/test-pdf-ui.mjs || rc=1
+echo
+
 bash media/test-api.sh stop >/dev/null 2>&1
 echo
 echo "########## nota ##########"
