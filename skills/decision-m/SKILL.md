@@ -46,6 +46,15 @@ Brier 0,179. Nella stessa fixture su una RTX 5060 Ti (Q8_0) si legge 0,95: sono 
 decisione** di differenza su 20, e il confronto intreccia quantizzazione, hardware e modello —
 non concludere che la CPU "sbaglia di più".
 
+Misura ripetibile su questa macchina (7 ottobre 2026): le **risposte attese** sono scritte dentro
+`media/decision-m-batteria.json` (campo `attesa` per ogni domanda, con certezza e motivo) e
+`node media/decision-m-valuta.mjs <esiti.json> [...]` calcola l'accuratezza senza giudizio manuale. Sul
+4B Q4_K_M: **80,0%** (28/35 punti giudicabili; 82,9% contando le risposte "quasi" corrette), contro il
+**74,3%** dello stesso modello usato in modo generativo. Attenzione al rovescio: sui **23 punti ad alta
+certezza** è avanti il generativo (87,0% contro 82,6%), e i due errori peggiori del decisore arrivano con
+confidenza 0,00 — nessuna soglia li intercetta. Numeri, grafici e limiti in
+`media/decision-m-paragone-report.md` (versione HTML: `media/decision-m-paragone-report.html`).
+
 ## Come si usano le domande
 
 Tre forme, le stesse di una System One API:
@@ -101,6 +110,7 @@ Le quattro forme che funzionano bene:
 |---|---|---|
 | Incollare il log intero nello stato | 4 minuti per una decisione | estrai le 5-10 righe che contano |
 | Una domanda per volta sullo stesso stato | paghi il prefill N volte | una chiamata con tutte le domande |
+| Chiedere due cose legate ("contraddice la policy?" e "serve correggere?") | risponde bene alla prima e si contraddice sulla seconda (`contraddice` 99% ma `serve_correzione` 0,01) | deduci la dipendente nel codice: al decisore si chiede solo ciò che non si può calcolare. Una domanda in meno è anche prefill in meno |
 | Trattare 0,55 come "sì" | decisione arbitraria su un modello incerto | soglie + via di mezzo, o chiedi |
 | Chiedere testo al decisore | non c'è testo, ci sono lettere | usa un modello generativo |
 | Lasciare il servizio acceso a fine lavoro | ~5,7 GB occupati per niente | `decision_m_service action="stop"` |

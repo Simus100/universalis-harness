@@ -4,7 +4,7 @@
 **Modello (entrambi i bracci):** `spark-x2.5-4b-rizzo-flow-lora-q4_k_m.gguf` — stesso GGUF, stessa macchina
 **Batteria:** `media/decision-m-batteria.json` — 12 casi, **36 decisioni tipizzate**
 **Esiti grezzi:** `media/decision-m-paragone-esiti-decisore.json` · `media/decision-m-paragone-esiti-generativo.json`
-**Strumenti:** `media/decision-m-batteria.mjs` (braccio decisore) · `media/decision-m-paragone-generativo.mjs` (braccio generativo, nuovo)
+**Strumenti:** `media/decision-m-batteria.mjs` (braccio decisore) · `media/decision-m-paragone-generativo.mjs` (braccio generativo, nuovo) · `media/decision-m-valuta.mjs` (valutazione automatica contro le attese)
 **Versione HTML (grafici inline, si apre offline):** `media/decision-m-paragone-report.html`
 
 ---
@@ -14,8 +14,9 @@
 Sugli stessi 36 task il decisore ha generato **0 token contro 1.022** del modello generativo — ma ha letto
 **817 token in ingresso in più** (4.961 contro 4.144). Il risparmio totale è quindi solo del **4%** in token:
 il vantaggio vero non è "meno token", è **zero token in uscita**, la voce che ogni listino fa pagare 3–5 volte.
-Il prezzo è il tempo: **6,2 s per decisione** contro 8,3 s, e una qualità che su questa batteria è risultata
-**leggermente peggiore** del generativo (5 errori contro 7, su 30 punti giudicabili — differenza non significativa).
+Il prezzo è il tempo: **6,2 s per decisione** contro 8,3 s, e una qualità **misurata** (le risposte attese sono
+nella batteria) che vede avanti il decisore sul totale (**80,0% contro 74,3%**) ma il generativo sui punti ad
+alta certezza (**87,0% contro 82,6%**): la differenza è troppo piccola per dire che uno dei due «sa decidere» meglio.
 
 **La raccomandazione:** usare il decisore dove il volume è alto, il rischio basso e il **formato** deve essere
 garantito (instradamento, triage, punteggi, guardie). Non aspettarsi un risparmio di token in ingresso: quello
@@ -130,22 +131,56 @@ precedente: 4.923 token di stato = 236,8 s per una sola chiamata al decisore).
 
 ---
 
-## 4. Il prezzo in qualità: chi ha deciso meglio
+## 4. Il prezzo in qualità: accuratezza misurata, non giudicata
 
-Giudizio sui punti con risposta attesa desumibile dallo stato (**30 punti**, esclusi gli ambigui e i
-non giudicabili; è un giudizio soggettivo, dichiarato):
+Le **risposte attese sono ora scritte nella batteria** (campo `attesa` per ogni domanda, con la certezza del
+giudizio e il motivo) e `media/decision-m-valuta.mjs` le confronta in automatico con le risposte dei due
+bracci. Regole dichiarate: `boolean` e `choice` corrette se coincidono (etichette confrontate senza
+maiuscole); per gli `score` il decisore risponde con un livello atteso frazionario e il generativo con
+un'etichetta, quindi si misura la distanza dal livello atteso (**≤ 0,5 corretta · ≤ 1,0 «quasi» · oltre
+sbagliata**); le attese a `null` sono escluse e dichiarate.
 
 | | decisore | generativo |
 |---|---:|---:|
-| errori netti | **5** | 7 |
-| errori che il decisore fa e il generativo no | `contraddice_policy` su `rag-filtering` (no, 0,48 — la policy è a 14 giorni e il testo dice 30); coerenza su `citation-verification` (contraddice ✅ ma «non serve correggere») | — |
-| errori che il generativo fa e il decisore no | — | `azione_attesa=no` su `composite-scoring` (il cliente ha un pannello graffiato: una sostituzione la chiede); `manca_strumento=no` su `agent-skill-selection` (nel roster non c'è nulla per una trascrizione); `base_giuridica=false` su `compliance-checklist` (il testo la indica: esecuzione del contratto) |
-| errori comuni | `trasferimenti=no` su `compliance-checklist` (il testo dice esplicitamente che i dati non escono dall'UE: il decisore lo nega con 0,00, il generativo con false); `skill=bookforge` su `agent-skill-selection` (doveva essere «nessuna») | idem |
+| punti giudicabili | 35 | 35 |
+| risposte corrette | **28 (80,0%)** | 26 (74,3%) |
+| di cui «quasi» (mezzo livello di distanza) | 1 | 2 |
+| **con le «quasi» dentro** | **82,9%** | 80,0% |
+| **solo attese ad alta certezza** (23 punti) | 82,6% (19/23) | **87,0% (20/23)** |
+| per tipo — boolean | 16/20 | 15/20 |
+| per tipo — choice | 6/7 | 5/7 |
+| per tipo — score | 6/8 (+1 quasi) | 6/8 (+2 quasi) |
 
-Il generativo vince su due punti in cui il decisore era risultato **internamente incoerente** (riconosce la
-contraddizione ma non la correzione): è il difetto noto del decisore, documentato nell'audit del 4 ottobre — *la
-coerenza fra domande correlate va imposta dal codice, non chiesta al modello*. Sui casi di **ragionamento
-composito** (recensione con tono misto, roster di skill) il generativo ha invece sbagliato più spesso.
+I punti **non giudicabili** sono 1 (`realtime-control.azione`: dipende dalle costanti fisiche del gioco, che lo
+stato non fornisce); le attese con certezza **media** sono 10 e con certezza **bassa** 2 — pesano meno, ma
+restano contate e visibili nel file.
+
+### Gli errori, uno per uno (`node media/decision-m-valuta.mjs …` li ristampa in ogni momento)
+
+| punto | certezza | decisore | generativo | chi ha ragione |
+|---|---|---|---|---|
+| `compliance-checklist.trasferimenti` | alta | no (0,00) ✘ | false ✘ | nessuno: il testo dichiara che i dati non escono dall'UE |
+| `agent-skill-selection.skill` | alta | bookforge (42%) ✘ | bookforge ✘ | nessuno: doveva essere «nessuna» |
+| `rag-filtering.contraddice_policy` | alta | no (0,48) ✘ | true ✔ | generativo (policy a 14 giorni, testo a 30) |
+| `citation-verification.serve_correzione` | alta | no (0,01) ✘ | true ✔ | generativo (contraddice ⇒ va corretta) |
+| `agent-skill-selection.manca_strumento` | alta | sì (0,53) ✔ | false ✘ | decisore |
+| `guardrail-input.danno_se_obbedisce` | media | 1,74 (≈ «Grave») ✘ | «Molto grave» ✔ | generativo (distanza 1,26 dal livello atteso) |
+| `tool-dispatch.percorso_esplicito` | media | no (0,27) ✘ | false ✘ | nessuno — **punto controverso**: se «percorso» richiede la cartella e non basta il nome del file, l'attesa è mia e i bracci avrebbero ragione entrambi |
+| `compliance-checklist.base_giuridica` | media | sì (0,63) ✔ | false ✘ | decisore |
+| `composite-scoring.azione_attesa` | media | sì (0,86) ✔ | false ✘ | decisore |
+| `intent-router.intento` | media | analisi ✔ | azione_esterna ✘ | decisore (l'intento principale è l'analisi; il recupero fatture è la seconda richiesta) |
+
+**Il quadro che esce dai numeri automatici è meno netto di quello che sembrava a occhio:**
+
+- sul totale vince il decisore (80,0% contro 74,3%), ma **sui 23 punti ad alta certezza — quelli su cui il
+giudizio non è discutibile — è avanti il generativo** (87,0% contro 82,6%);
+- gli errori esclusivi del decisore sono di **coerenza** (`contraddice` ⇒ `serve_correzione`): riconosce il
+fatto e poi non ne trae la conseguenza. È il difetto strutturale documentato: *la coerenza fra domande
+correlate va imposta nel codice*;
+- gli errori esclusivi del generativo sono di **composizione** (tono misto di una recensione, roster di
+strumenti, base giuridica indicata senza l'etichetta «base giuridica»);
+- **tre errori sono comuni**; su due di questi il decisore sbaglia con confidenza altissima (0,00 e 0,004),
+che nessuna soglia intercetta. È il rischio dell'overconfidence già notato nell'audit del 4 ottobre.
 
 L'altra differenza non è nei numeri ma nella forma: il generativo, con `temperature 0` e
 `response_format: json_object`, ha risposto **12/12 volte con JSON valido e tutte le chiavi** — più affidabile di
@@ -200,9 +235,15 @@ node media/decision-m-batteria.mjs --out media/decision-m-paragone-esiti-decisor
   -m /root/rizzo-flow/models/rizzo-flow/spark-x2.5-4b-rizzo-flow-lora-q4_k_m.gguf \
   --host 127.0.0.1 --port 8018 -t 6 -c 2048 --jinja
 node media/decision-m-paragone-generativo.mjs --out media/decision-m-paragone-esiti-generativo.json
+
+# valutazione automatica contro le attese scritte nella batteria
+node media/decision-m-valuta.mjs media/decision-m-paragone-esiti-decisore.json \
+                                    media/decision-m-paragone-esiti-generativo.json \
+                                    --out media/decision-m-valutazione.json
 ```
 
 **Limiti dichiarati:** un solo giro per braccio (variabilità della macchina ~6% sul tempo, non stimata sui token);
-giudizio di qualità manuale su 30 dei 36 punti; confronto fra due runtime diversi (l'unica variabile
-volutamente cambiata è la forma della risposta); proiezioni lineari a 1.000 decisioni, non misurate; nessun
-modello frontier né listino API coinvolti.
+le **risposte attese sono un mio giudizio**, scritto nella batteria con la certezza dichiarata (23 alta · 10 media ·
+2 bassa · 1 non giudicabile) e ispezionabile — l'accuratezza è automatica, il metro no; confronto fra due runtime
+diversi (l'unica variabile volutamente cambiata è la forma della risposta); proiezioni lineari a 1.000 decisioni,
+non misurate; nessun modello frontier né listino API coinvolti.

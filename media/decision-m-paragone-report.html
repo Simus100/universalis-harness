@@ -116,13 +116,14 @@
   <p class="lead">Sugli stessi 36 task il decisore ha generato <b>0 token</b> contro <b>1.022</b> del modello
   generativo, ma ha letto <b>817 token in ingresso in più</b>. Sul totale il risparmio è del <b>4%</b>: il
   vantaggio vero non è «meno token», è <b>zero token in uscita</b> — la voce che ogni listino fa pagare
-  3–5 volte. Il prezzo è il tempo, e su questa batteria la qualità non è migliorata.</p>
+  3–5 volte. Il prezzo è il tempo, e sulla qualità la differenza fra i due è di pochi punti
+  (<b>80,0%</b> contro <b>74,3%</b>), con il generativo avanti proprio sui punti meno discutibili.</p>
 
   <div class="kpis">
     <div class="kpi"><div class="lbl">token generati</div><div class="val verde">0 <span style="font-size:16px;color:var(--dim2)">vs</span> 1.022</div><div class="sotto">decisore vs generativo, su 36 decisioni</div></div>
     <div class="kpi"><div class="lbl">token totali</div><div class="val blu">−4,0%</div><div class="sotto">4.961 vs 5.166: quasi pari</div></div>
     <div class="kpi"><div class="lbl">secondi per decisione</div><div class="val giallo">6,2 <span style="font-size:16px;color:var(--dim2)">vs</span> 8,3</div><div class="sotto">−26% per il decisore</div></div>
-    <div class="kpi"><div class="lbl">errori sui punti giudicabili</div><div class="val viola">5 <span style="font-size:16px;color:var(--dim2)">vs</span> 7</div><div class="sotto">su 30 punti: differenza non significativa</div></div>
+    <div class="kpi"><div class="lbl">accuratezza misurata</div><div class="val viola">80,0% <span style="font-size:16px;color:var(--dim2)">vs</span> 74,3%</div><div class="sotto">35 punti con attesa scritta; ad alta certezza 82,6% vs 87,0%</div></div>
   </div>
 
   <div class="callout"><b>Perché il risparmio non si vede nel totale.</b> Il wire tipizzato porta con sé
@@ -232,35 +233,57 @@
 </section>
 
 <section id="qualita">
-  <h2><span class="n">5</span>Il prezzo in qualità</h2>
-  <p>Giudizio sui punti con risposta attesa desumibile dallo stato: <b>30 punti</b> (esclusi gli ambigui e i
-  non giudicabili). È un giudizio soggettivo, dichiarato: <b>5 errori al decisore, 7 al generativo</b> — su
-  questo campione la differenza è una manciata di punti, non è una classifica.</p>
+  <h2><span class="n">5</span>Il prezzo in qualità, misurato</h2>
+  <p>Le <b>risposte attese</b> sono ora scritte nella batteria (una per domanda, con la certezza del giudizio e il
+  motivo) e <code>media/decision-m-valuta.mjs</code> le confronta <b>in automatico</b> con le risposte dei due
+  bracci: niente più giudizio a occhio, a posteriori. Regole dichiarate: <code>boolean</code> e <code>choice</code>
+  corrette se coincidono; per gli <code>score</code> si misura la distanza dal livello atteso
+  (<b>≤ 0,5 corretta · ≤ 1,0 «quasi» · oltre sbagliata</b>); le attese <code>null</code> sono escluse e dichiarate.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">accuratezza — decisore</div><div class="val verde">80,0%</div><div class="sotto">28 corrette su 35 giudicabili · 82,9% contando le «quasi»</div></div>
+    <div class="kpi"><div class="lbl">accuratezza — generativo</div><div class="val blu">74,3%</div><div class="sotto">26 corrette su 35 giudicabili · 80,0% contando le «quasi»</div></div>
+    <div class="kpi"><div class="lbl">solo attese ad alta certezza (23)</div><div class="val giallo">82,6% <span style="font-size:16px;color:var(--dim2)">vs</span> 87,0%</div><div class="sotto">qui è avanti il <b>generativo</b>, non il decisore</div></div>
+    <div class="kpi"><div class="lbl">errori comuni</div><div class="val viola">3</div><div class="sotto">su due di questi il decisore sbaglia con confidenza ~0,00</div></div>
+  </div>
 
   <table class="tab">
-    <caption>Dove i due bracci si separano (le stesse 36 domande, giudizio sul contenuto)</caption>
-    <thead><tr><th>punto</th><th>decisore</th><th>generativo</th><th>chi ha ragione</th></tr></thead>
+    <caption>Errori e punto di rottura, uno per uno. La colonna «certezza» è la fiducia nella mia attesa, non nella risposta.</caption>
+    <thead><tr><th>punto</th><th>certezza</th><th>decisore</th><th>generativo</th><th>chi ha ragione</th></tr></thead>
     <tbody>
-      <tr><td><code>rag-filtering</code> · <code>contraddice_policy</code></td><td class="ko">no (0,48)</td><td class="ok">true</td><td>generativo (la policy è a 14 giorni, il testo dice 30)</td></tr>
-      <tr><td><code>citation-verification</code> · <code>serve_correzione</code></td><td class="ko">no (0,01)</td><td class="ok">true</td><td>generativo (contraddice ⇒ va corretta: il decisore è incoerente)</td></tr>
-      <tr><td><code>composite-scoring</code> · <code>azione_attesa</code> e <code>tono</code></td><td class="ok">sì (0,86) · Misto</td><td class="ko">false · Positivo</td><td>decisore (pannello graffiato: una sostituzione la chiede)</td></tr>
-      <tr><td><code>agent-skill-selection</code> · <code>manca_strumento</code></td><td class="ok">sì (0,53)</td><td class="ko">false</td><td>decisore (nel roster non c'è nulla per una trascrizione)</td></tr>
-      <tr><td><code>compliance-checklist</code> · <code>base_giuridica</code></td><td class="ok">sì (0,63)</td><td class="ko">false</td><td>decisore (il testo indica l'esecuzione del contratto)</td></tr>
-      <tr><td><code>compliance-checklist</code> · <code>trasferimenti</code></td><td class="ko">no (0,00)</td><td class="ko">false</td><td><b>nessuno</b> (il testo dichiara che i dati non escono dall'UE)</td></tr>
-      <tr><td><code>agent-skill-selection</code> · <code>skill</code></td><td class="ko">bookforge (42%)</td><td class="ko">bookforge</td><td><b>nessuno</b> (doveva essere «nessuna»)</td></tr>
-      <tr><td><code>tool-dispatch</code> · <code>percorso_esplicito</code></td><td class="ko">no (0,27)</td><td class="ko">false</td><td><b>nessuno</b></td></tr>
+      <tr><td><code>compliance-checklist.trasferimenti</code></td><td class="neu">alta</td><td class="ko">no (0,00)</td><td class="ko">false</td><td><b>nessuno</b>: il testo dichiara che i dati non escono dall'UE</td></tr>
+      <tr><td><code>agent-skill-selection.skill</code></td><td class="neu">alta</td><td class="ko">bookforge (42%)</td><td class="ko">bookforge</td><td><b>nessuno</b>: doveva essere «nessuna»</td></tr>
+      <tr><td><code>rag-filtering.contraddice_policy</code></td><td class="neu">alta</td><td class="ko">no (0,48)</td><td class="ok">true</td><td>generativo (policy a 14 giorni, testo a 30)</td></tr>
+      <tr><td><code>citation-verification.serve_correzione</code></td><td class="neu">alta</td><td class="ko">no (0,01)</td><td class="ok">true</td><td>generativo: contraddice ⇒ va corretta (il decisore è <b>incoerente</b>)</td></tr>
+      <tr><td><code>agent-skill-selection.manca_strumento</code></td><td class="neu">alta</td><td class="ok">sì (0,53)</td><td class="ko">false</td><td>decisore</td></tr>
+      <tr><td><code>guardrail-input.danno_se_obbedisce</code></td><td class="neu">media</td><td class="ko">1,74 (≈ «Grave»)</td><td class="ok">Molto grave</td><td>generativo (distanza 1,26 dal livello atteso)</td></tr>
+      <tr><td><code>tool-dispatch.percorso_esplicito</code></td><td class="neu">media</td><td class="ko">no (0,27)</td><td class="ko">false</td><td><b>nessuno</b> — punto <b>controverso</b>: se «percorso» richiede la cartella e non basta il nome del file, l'attesa è sbagliata e i bracci hanno ragione entrambi</td></tr>
+      <tr><td><code>compliance-checklist.base_giuridica</code></td><td class="neu">media</td><td class="ok">sì (0,63)</td><td class="ko">false</td><td>decisore (il testo indica l'esecuzione del contratto)</td></tr>
+      <tr><td><code>composite-scoring.azione_attesa</code></td><td class="neu">media</td><td class="ok">sì (0,86)</td><td class="ko">false</td><td>decisore (pannello graffiato: una sostituzione la chiede)</td></tr>
+      <tr><td><code>intent-router.intento</code></td><td class="neu">media</td><td class="ok">analisi</td><td class="ko">azione_esterna</td><td>decisore (l'intento principale è l'analisi)</td></tr>
     </tbody>
   </table>
 
+  <div class="callout"><b>Il quadro è meno netto di quello che sembrava a occhio.</b> Sul totale vince il decisore
+  (80,0% contro 74,3%), ma <b>sui 23 punti ad alta certezza — quelli su cui il giudizio non è discutibile — è
+  avanti il generativo</b> (87,0% contro 82,6%). La differenza fra i due bracci è di pochi punti: non c'è un
+  «modello che sa decidere» e uno che non sa.</div>
+
   <div class="callout warn"><b>Il difetto che resta al decisore</b> è la coerenza fra domande correlate:
   riconosce che la fonte <i>contraddice</i> l'affermazione (99%) e poi risponde che <i>non</i> serve correggerla
-  (0,01). Non è un errore di lettura: è un errore di composizione, e va imposto dal codice, non chiesto al modello.</div>
+  (0,01). Non è un errore di lettura, è di composizione: va imposto dal codice, non chiesto al modello.
+  E due dei tre errori comuni arrivano con confidenza <b>0,00 e 0,004</b>: nessuna soglia li intercetta.</div>
 
   <div class="callout good"><b>Una sorpresa del braccio generativo:</b> vincolato a
   <code>response_format: json_object</code>, <code>temperature 0</code> e <code>max_tokens 320</code>, ha
   risposto <b>12/12 volte con JSON valido e tutte le chiavi</b> — più affidabile di quanto un audit precedente
   suggerisse (là 2 richieste su 4 erano state troncate). Con questo vincolo di formato il generativo locale è
   un'alternativa legittima, non un ripiego.</div>
+
+  <p class="nota">Distribuzione delle attese: <b>23 alta · 10 media · 2 bassa · 1 non giudicabile</b>
+  (<code>realtime-control.azione</code>: dipende dalle costanti fisiche del gioco, che lo stato non fornisce).
+  Per tipo, il decisore prende 16/20 sui <code>boolean</code>, 6/7 sulle <code>choice</code>, 6/8 sugli
+  <code>score</code>; il generativo 15/20, 5/7 e 6/8.</p>
 </section>
 
 <section id="scala">
@@ -328,6 +351,11 @@
     </tbody>
   </table>
 
+  <p>La qualità non è giudicata a posteriori: ogni domanda della batteria porta il campo <code>attesa</code>
+  (valore, certezza, motivo) e <code>media/decision-m-valuta.mjs</code> confronta le risposte dei due bracci con
+  quelle attese. Il metro resta un mio giudizio — ma è <b>scritto, ispezionabile e riproducibile</b>, non un
+  «mi sembra meglio».</p>
+
   <p>Il prompt del braccio generativo <b>contiene le stesse opzioni</b> che riceve il decisore (etichette e
   descrizioni): non è il prompt «compatto» che favorirebbe il generativo sui token di input. I due bracci non
   sono girati insieme: Decision_M è stato spento prima di avviare il generativo, perché 5,6 + 2,0 GB non stanno
@@ -340,14 +368,21 @@ node media/decision-m-batteria.mjs --out media/decision-m-paragone-esiti-decisor
 /root/rizzo-flow/runtimes/llama-b11081-linux-x64-cpu/llama-server \
   -m /root/rizzo-flow/models/rizzo-flow/spark-x2.5-4b-rizzo-flow-lora-q4_k_m.gguf \
   --host 127.0.0.1 --port 8018 -t 6 -c 2048 --jinja
-node media/decision-m-paragone-generativo.mjs --out media/decision-m-paragone-esiti-generativo.json</pre>
+node media/decision-m-paragone-generativo.mjs --out media/decision-m-paragone-esiti-generativo.json
+
+# valutazione automatica contro le attese scritte nella batteria
+node media/decision-m-valuta.mjs media/decision-m-paragone-esiti-decisore.json \
+                                    media/decision-m-paragone-esiti-generativo.json \
+                                    --out media/decision-m-valutazione.json</pre>
 
   <h3>Limiti dichiarati</h3>
   <ul>
     <li><b>Un solo giro</b> per braccio su 12 casi: misura di fattibilità, non benchmark. La stessa batteria
     ripetuta sul decisore ha dato 236,0 s e 221,8 s — variabilità ~6% sul tempo, non stimata sui token.</li>
-    <li><b>Giudizio di qualità manuale</b> su 30 dei 36 punti: i numeri di errore sono indicatori, non
-    intervalli di confidenza.</li>
+    <li><b>Le risposte attese sono un mio giudizio</b>, scritto nella batteria con la certezza dichiarata
+    (23 alta · 10 media · 2 bassa · 1 non giudicabile): l'accuratezza è automatica, il metro no. Un punto è
+    dichiaratamente controverso (<code>tool-dispatch.percorso_esplicito</code>).</li>
+    <li><b>35 punti</b> giudicabili: i numeri di accuratezza sono indicatori, non intervalli di confidenza.</li>
     <li><b>Due runtime diversi</b>: l'unica variabile cambiata volutamente è la forma della risposta.</li>
     <li><b>Proiezioni lineari</b> a 1.000 decisioni: non misurate. Nessun modello frontier né listino API
     coinvolti.</li>
@@ -359,6 +394,7 @@ node media/decision-m-paragone-generativo.mjs --out media/decision-m-paragone-es
   Dati grezzi: <code>media/decision-m-paragone-esiti-decisore.json</code> ·
   <code>media/decision-m-paragone-esiti-generativo.json</code> — strumenti:
   <code>media/decision-m-batteria.mjs</code>, <code>media/decision-m-paragone-generativo.mjs</code> —
+  valutazione automatica: <code>media/decision-m-valuta.mjs</code> → <code>media/decision-m-valutazione.json</code> —
   versione Markdown dello stesso report: <code>media/decision-m-paragone-report.md</code>.
   Batteria: 12 casi / 36 decisioni tipizzate · 7 ottobre 2026.
 </footer>
