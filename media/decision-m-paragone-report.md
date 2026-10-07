@@ -5,6 +5,7 @@
 **Batteria:** `media/decision-m-batteria.json` — 12 casi, **36 decisioni tipizzate**
 **Esiti grezzi:** `media/decision-m-paragone-esiti-decisore.json` · `media/decision-m-paragone-esiti-generativo.json`
 **Strumenti:** `media/decision-m-batteria.mjs` (braccio decisore) · `media/decision-m-paragone-generativo.mjs` (braccio generativo, nuovo)
+**Versione HTML (grafici inline, si apre offline):** `media/decision-m-paragone-report.html`
 
 ---
 

@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision_M — quante risorse costa una decisione? Confronto misurato</title>
+<style>
+  :root{
+    --bg:#08111f; --card:#121c30; --card2:#172033; --line:#243149;
+    --txt:#eef2f9; --dim:#c6cfdd; --dim2:#8b97ac;
+    --blu:#5b9dff; --azzurro:#38bdf8; --viola:#8b5cff; --verde:#34d399; --giallo:#fbbf24; --rosso:#fb7185;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px}
+  a{color:var(--blu);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  header{padding:44px 0 8px}
+  .badge{display:inline-block;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;
+    color:var(--verde);border:1px solid rgba(52,211,153,.35);background:rgba(52,211,153,.08);
+    padding:5px 12px;border-radius:999px}
+  h1{font-size:clamp(26px,4.4vw,44px);line-height:1.08;margin:16px 0 12px;letter-spacing:-.02em;font-weight:800}
+  .sub{color:var(--dim);font-size:16px;max-width:800px;margin:0}
+  .meta{display:flex;flex-wrap:wrap;gap:9px;margin:20px 0 0}
+  .chip{background:rgba(255,255,255,.045);border:1px solid var(--line);padding:6px 12px;border-radius:999px;
+    font-size:12.5px;color:var(--dim)}
+  .chip b{color:var(--txt);font-weight:600}
+
+  nav{position:sticky;top:0;z-index:10;background:rgba(8,17,31,.9);backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);margin:26px 0 8px}
+  nav .inner{max-width:1080px;margin:0 auto;padding:9px 20px;display:flex;gap:6px;overflow-x:auto}
+  nav a{font-size:13px;color:var(--dim2);padding:6px 11px;border-radius:9px;white-space:nowrap;border:1px solid transparent}
+  nav a:hover{color:var(--txt);background:rgba(255,255,255,.05);border-color:var(--line);text-decoration:none}
+
+  section{margin:46px 0;scroll-margin-top:70px}
+  h2{font-size:clamp(19px,2.4vw,26px);margin:0 0 6px;letter-spacing:-.01em}
+  h2 .n{font-size:12px;color:var(--verde);border:1px solid rgba(52,211,153,.35);border-radius:7px;
+    padding:2px 7px;font-weight:800;margin-right:8px;vertical-align:2px}
+  h3{font-size:16px;margin:26px 0 6px;color:var(--txt)}
+  p{margin:9px 0;color:var(--dim)}
+  p.lead{color:var(--txt);font-size:16.5px}
+  .nota{font-size:13px;color:var(--dim2)}
+  ul{color:var(--dim);padding-left:20px}
+  li{margin:5px 0}
+  code{background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:5px;padding:1px 5px;
+    font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  pre{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;
+    font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--dim)}
+  pre b{color:var(--txt);font-weight:600}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:22px 0 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
+  .kpi .lbl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim2);font-weight:700}
+  .kpi .val{font-size:27px;font-weight:800;letter-spacing:-.02em;margin:6px 0 2px}
+  .kpi .val.blu{color:var(--azzurro)} .kpi .val.verde{color:var(--verde)}
+  .kpi .val.viola{color:var(--viola)} .kpi .val.giallo{color:var(--giallo)} .kpi .val.rosso{color:var(--rosso)}
+  .kpi .sotto{font-size:12.5px;color:var(--dim2)}
+
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 0 0;margin:18px 0;overflow:hidden}
+  .box .titolo{padding:13px 16px 0;font-size:15px;font-weight:700}
+  .box .sottotitolo{padding:2px 16px 10px;font-size:12.5px;color:var(--dim2)}
+  .box svg{display:block;width:100%;height:auto;background:#0b1526}
+
+  .tab{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px}
+  .tab caption{caption-side:top;text-align:left;font-size:12.5px;color:var(--dim2);padding:0 0 8px}
+  .tab th,.tab td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+  .tab th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim2);
+    border-bottom:1px solid #2e3d59;font-weight:700}
+  .tab td.num,.tab th.num{text-align:right;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .tab tbody tr:hover{background:rgba(255,255,255,.025)}
+  .tab tfoot td{font-weight:700;color:var(--txt);border-top:1px solid #2e3d59;border-bottom:none}
+  .ok{color:var(--verde)} .ko{color:var(--rosso)} .neu{color:var(--giallo)}
+
+  .callout{border-left:3px solid var(--azzurro);background:rgba(56,189,248,.07);border-radius:0 12px 12px 0;
+    padding:12px 16px;margin:18px 0;font-size:14px;color:var(--dim)}
+  .callout.warn{border-left-color:var(--giallo);background:rgba(251,191,36,.07)}
+  .callout.good{border-left-color:var(--verde);background:rgba(52,211,153,.07)}
+  .callout b{color:var(--txt)}
+
+  footer{border-top:1px solid var(--line);margin-top:56px;padding-top:18px;font-size:12.5px;color:var(--dim2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="badge">misura, non stima</span>
+  <h1>Il decisore locale azzera i token generati, non quelli letti</h1>
+  <p class="sub">Stessi 36 task, stesso modello: come <b>decisore tipizzato</b> (Decision_M / Rizzo Flow)
+  e come <b>modello generativo</b>. Confronto mele-contro-mele su token, tempo e qualità.</p>
+  <div class="meta">
+    <span class="chip">modello <b>Spark-X2.5-4B rizzo-flow Q4_K_M</b></span>
+    <span class="chip">batteria <b>12 casi · 36 decisioni</b></span>
+    <span class="chip">7 ottobre 2026</span>
+    <span class="chip">VPS <b>6 vCPU Intel Broadwell · 11,7 GiB RAM · nessuna GPU</b></span>
+    <span class="chip">un solo giro di misura</span>
+  </div>
+</header>
+
+<nav><div class="inner">
+  <a href="#sintesi">Sintesi</a>
+  <a href="#token">Il paragone dei token</a>
+  <a href="#casi">Caso per caso</a>
+  <a href="#tempo">Il tempo</a>
+  <a href="#qualita">Il prezzo in qualità</a>
+  <a href="#scala">Su 1.000 decisioni</a>
+  <a href="#fare">Cosa farne</a>
+  <a href="#metodo">Metodo e limiti</a>
+</div></nav>
+
+<section id="sintesi">
+  <h2><span class="n">1</span>La risposta in quattro numeri</h2>
+  <p class="lead">Sugli stessi 36 task il decisore ha generato <b>0 token</b> contro <b>1.022</b> del modello
+  generativo, ma ha letto <b>817 token in ingresso in più</b>. Sul totale il risparmio è del <b>4%</b>: il
+  vantaggio vero non è «meno token», è <b>zero token in uscita</b> — la voce che ogni listino fa pagare
+  3–5 volte. Il prezzo è il tempo, e su questa batteria la qualità non è migliorata.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">token generati</div><div class="val verde">0 <span style="font-size:16px;color:var(--dim2)">vs</span> 1.022</div><div class="sotto">decisore vs generativo, su 36 decisioni</div></div>
+    <div class="kpi"><div class="lbl">token totali</div><div class="val blu">−4,0%</div><div class="sotto">4.961 vs 5.166: quasi pari</div></div>
+    <div class="kpi"><div class="lbl">secondi per decisione</div><div class="val giallo">6,2 <span style="font-size:16px;color:var(--dim2)">vs</span> 8,3</div><div class="sotto">−26% per il decisore</div></div>
+    <div class="kpi"><div class="lbl">errori sui punti giudicabili</div><div class="val viola">5 <span style="font-size:16px;color:var(--dim2)">vs</span> 7</div><div class="sotto">su 30 punti: differenza non significativa</div></div>
+  </div>
+
+  <div class="callout"><b>Perché il risparmio non si vede nel totale.</b> Il wire tipizzato porta con sé
+  struttura e opzioni formattate: costa ~20% di token in ingresso <i>in più</i> di un JSON chiesto in prosa.
+  Quello che azzera è l'uscita, e in uscita cambia il prezzo.</div>
+</section>
+
+<section id="token">
+  <h2><span class="n">2</span>Il paragone dei token</h2>
+
+  <table class="tab">
+    <caption>Stessi 12 casi, 36 decisioni. Token contati dai <code>usage</code> dei due servizi.</caption>
+    <thead><tr><th>metrica (36 decisioni)</th><th class="num">decisore</th><th class="num">generativo</th><th class="num">differenza</th></tr></thead>
+    <tbody>
+      <tr><td>token in ingresso</td><td class="num">4.961</td><td class="num">4.144</td><td class="num ko">+817 (+19,7%)</td></tr>
+      <tr><td>token generati</td><td class="num ok">0</td><td class="num">1.022</td><td class="num ok">−1.022 (−100%)</td></tr>
+      <tr><td><b>token totali</b></td><td class="num"><b>4.961</b></td><td class="num"><b>5.166</b></td><td class="num ok"><b>−205 (−4,0%)</b></td></tr>
+      <tr><td>token in ingresso per decisione</td><td class="num">137,8</td><td class="num">115,1</td><td class="num ko">+22,7</td></tr>
+      <tr><td>token generati per decisione</td><td class="num ok">0</td><td class="num">28,4</td><td class="num ok">−28,4</td></tr>
+      <tr><td>token totali per decisione</td><td class="num">137,8</td><td class="num">143,5</td><td class="num">−5,7</td></tr>
+      <tr><td>casi con risposta inutilizzabile</td><td class="num">0/12</td><td class="num">0/12</td><td class="num">pari</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <div class="titolo">Token per decisione: l'uscita è la sola differenza</div>
+    <div class="sottotitolo">media su 36 decisioni · barre da zero, scala lineare</div>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" role="img" aria-label="Token per decisione: decisore 137,8 in ingresso e 0 generati; generativo 115,1 in ingresso e 28,4 generati">
+      <title>Token per decisione</title>
+      <desc>Barre impilate: il decisore tipizzato legge 137,8 token e ne genera 0 (totale 137,8); lo stesso modello in modalità generativa legge 115,1 token e ne genera 28,4 (totale 143,5).</desc>
+      <text x="238" y="62" font-size="13" fill="#eef2f9" text-anchor="end">decisore tipizzato</text>
+      <text x="238" y="78" font-size="11" fill="#8b97ac" text-anchor="end">totale 137,8 · 0 generati</text>
+      <rect x="250" y="48" width="427" height="34" rx="3" fill="#38bdf8"/>
+      <text x="262" y="70" font-size="12" fill="#0a0e15">137,8 in ingresso</text>
+      <text x="685" y="70" font-size="12" fill="#34d399">0 generati</text>
+
+      <text x="238" y="128" font-size="13" fill="#eef2f9" text-anchor="end">generativo (stesso modello)</text>
+      <text x="238" y="144" font-size="11" fill="#8b97ac" text-anchor="end">totale 143,5 · 28,4 generati</text>
+      <rect x="250" y="114" width="357" height="34" rx="3" fill="#38bdf8"/>
+      <rect x="607" y="114" width="88" height="34" rx="3" fill="#fb7185"/>
+      <text x="262" y="136" font-size="12" fill="#0a0e15">115,1 in ingresso</text>
+      <text x="615" y="136" font-size="12" fill="#0a0e15">28,4 gen.</text>
+
+      <line x1="250" y1="176" x2="730" y2="176" stroke="#243149" stroke-width="1"/>
+      <text x="250" y="196" font-size="12" fill="#c6cfdd">token per decisione</text>
+      <text x="730" y="196" font-size="11" fill="#8b97ac" text-anchor="end">i due segmenti sono confrontabili: stessa scala</text>
+
+      <rect x="250" y="222" width="12" height="12" fill="#38bdf8"/>
+      <text x="268" y="232" font-size="12" fill="#c6cfdd">token in ingresso</text>
+      <rect x="420" y="222" width="12" height="12" fill="#fb7185"/>
+      <text x="438" y="232" font-size="12" fill="#c6cfdd">token generati</text>
+    </svg>
+  </div>
+
+  <p>Il decisore risponde con una <b>distribuzione di probabilità</b> su poche lettere di risposta: non ha
+  un posto dove mettere il ragionamento, e per questo non produce testo. Il generativo, quando il caso è
+  meno banale, lo spazio lo usa: <code>rag-filtering</code> ha generato 234 token per 3 decisioni e
+  <code>agent-skill-selection</code> 136 per 2 — da soli, <b>metà dei 1.022 token</b> del braccio generativo.</p>
+</section>
+
+<section id="casi">
+  <h2><span class="n">3</span>Caso per caso</h2>
+  <table class="tab">
+    <caption>Token e tempo per ciascuno dei 12 casi. Il decisore non genera mai nulla: la colonna è 0 su tutte le righe.</caption>
+    <thead><tr><th>caso</th><th class="num">dom.</th><th class="num">in — decisore</th><th class="num">in — generativo</th><th class="num">generati — decisore</th><th class="num">generati — generativo</th><th class="num">s — decisore</th><th class="num">s — generativo</th></tr></thead>
+    <tbody>
+      <tr><td><code>support-triage</code></td><td class="num">4</td><td class="num">480</td><td class="num">418</td><td class="num ok">0</td><td class="num">96</td><td class="num">21,9</td><td class="num">28,7</td></tr>
+      <tr><td><code>confidence-gated-refund</code></td><td class="num">3</td><td class="num">406</td><td class="num">334</td><td class="num ok">0</td><td class="num">62</td><td class="num">18,7</td><td class="num">20,6</td></tr>
+      <tr><td><code>intent-router</code></td><td class="num">3</td><td class="num">402</td><td class="num">353</td><td class="num ok">0</td><td class="num">64</td><td class="num">18,1</td><td class="num">22,7</td></tr>
+      <tr><td><code>tool-dispatch</code></td><td class="num">3</td><td class="num">425</td><td class="num">348</td><td class="num ok">0</td><td class="num">72</td><td class="num">19,0</td><td class="num">23,3</td></tr>
+      <tr><td><code>rag-filtering</code></td><td class="num">3</td><td class="num">413</td><td class="num">306</td><td class="num ok">0</td><td class="num ko">234</td><td class="num">22,5</td><td class="num ko">42,2</td></tr>
+      <tr><td><code>reranking</code></td><td class="num">3</td><td class="num">450</td><td class="num">340</td><td class="num ok">0</td><td class="num">44</td><td class="num">21,0</td><td class="num">19,5</td></tr>
+      <tr><td><code>citation-verification</code></td><td class="num">3</td><td class="num">411</td><td class="num">361</td><td class="num ok">0</td><td class="num">54</td><td class="num">17,6</td><td class="num">21,2</td></tr>
+      <tr><td><code>guardrail-input</code></td><td class="num">3</td><td class="num">406</td><td class="num">356</td><td class="num ok">0</td><td class="num">56</td><td class="num">17,7</td><td class="num">22,1</td></tr>
+      <tr><td><code>compliance-checklist</code></td><td class="num">4</td><td class="num">489</td><td class="num">371</td><td class="num ok">0</td><td class="num">94</td><td class="num">19,7</td><td class="num">28,9</td></tr>
+      <tr><td><code>composite-scoring</code></td><td class="num">3</td><td class="num">369</td><td class="num">317</td><td class="num ok">0</td><td class="num">72</td><td class="num">15,5</td><td class="num">22,3</td></tr>
+      <tr><td><code>agent-skill-selection</code></td><td class="num">2</td><td class="num">392</td><td class="num">354</td><td class="num ok">0</td><td class="num ko">136</td><td class="num">16,8</td><td class="num">31,2</td></tr>
+      <tr><td><code>realtime-control</code></td><td class="num">2</td><td class="num">318</td><td class="num">286</td><td class="num ok">0</td><td class="num">38</td><td class="num">13,2</td><td class="num">16,6</td></tr>
+    </tbody>
+    <tfoot><tr><td>totale</td><td class="num">36</td><td class="num">4.961</td><td class="num">4.144</td><td class="num">0</td><td class="num">1.022</td><td class="num">221,8</td><td class="num">299,2</td></tr></tfoot>
+  </table>
+</section>
+
+<section id="tempo">
+  <h2><span class="n">4</span>Il tempo</h2>
+  <div class="box">
+    <div class="titolo">Secondi per decisione</div>
+    <div class="sottotitolo">media su 36 decisioni · scala indipendente dal grafico dei token</div>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 190" role="img" aria-label="Secondi per decisione: 6,2 per il decisore, 8,3 per il generativo">
+      <title>Secondi per decisione</title>
+      <desc>Barre: decisore tipizzato 6,2 secondi per decisione, stesso modello in modalità generativa 8,3 secondi per decisione.</desc>
+      <text x="238" y="52" font-size="13" fill="#eef2f9" text-anchor="end">decisore tipizzato</text>
+      <text x="238" y="68" font-size="11" fill="#8b97ac" text-anchor="end">221,8 s in totale · 49% prefill</text>
+      <rect x="250" y="38" width="310" height="28" rx="3" fill="#34d399"/>
+      <text x="262" y="57" font-size="12" fill="#0a0e15">6,2 s</text>
+
+      <text x="238" y="118" font-size="13" fill="#eef2f9" text-anchor="end">generativo (stesso modello)</text>
+      <text x="238" y="134" font-size="11" fill="#8b97ac" text-anchor="end">299,2 s in totale</text>
+      <rect x="250" y="104" width="415" height="28" rx="3" fill="#8b97ac"/>
+      <text x="262" y="123" font-size="12" fill="#0a0e15">8,3 s</text>
+      <text x="250" y="172" font-size="11" fill="#8b97ac">Il decisore è più veloce del 26%, ma resta a 591 decisioni/ora: il tempo è il vero costo di questa strada.</text>
+    </svg>
+  </div>
+  <p>Metà del tempo del decisore è <b>prefill</b> (108,3 s su 221,8): è il costo dello stato, pagato una volta
+  per chiamata. Il generativo paga lo stesso prefill <i>più</i> la generazione. Su stati lunghi la distanza si
+  allarga per entrambi: in un audit precedente, un solo stato da ~4.900 token è costato 236,8 s al decisore.</p>
+</section>
+
+<section id="qualita">
+  <h2><span class="n">5</span>Il prezzo in qualità</h2>
+  <p>Giudizio sui punti con risposta attesa desumibile dallo stato: <b>30 punti</b> (esclusi gli ambigui e i
+  non giudicabili). È un giudizio soggettivo, dichiarato: <b>5 errori al decisore, 7 al generativo</b> — su
+  questo campione la differenza è una manciata di punti, non è una classifica.</p>
+
+  <table class="tab">
+    <caption>Dove i due bracci si separano (le stesse 36 domande, giudizio sul contenuto)</caption>
+    <thead><tr><th>punto</th><th>decisore</th><th>generativo</th><th>chi ha ragione</th></tr></thead>
+    <tbody>
+      <tr><td><code>rag-filtering</code> · <code>contraddice_policy</code></td><td class="ko">no (0,48)</td><td class="ok">true</td><td>generativo (la policy è a 14 giorni, il testo dice 30)</td></tr>
+      <tr><td><code>citation-verification</code> · <code>serve_correzione</code></td><td class="ko">no (0,01)</td><td class="ok">true</td><td>generativo (contraddice ⇒ va corretta: il decisore è incoerente)</td></tr>
+      <tr><td><code>composite-scoring</code> · <code>azione_attesa</code> e <code>tono</code></td><td class="ok">sì (0,86) · Misto</td><td class="ko">false · Positivo</td><td>decisore (pannello graffiato: una sostituzione la chiede)</td></tr>
+      <tr><td><code>agent-skill-selection</code> · <code>manca_strumento</code></td><td class="ok">sì (0,53)</td><td class="ko">false</td><td>decisore (nel roster non c'è nulla per una trascrizione)</td></tr>
+      <tr><td><code>compliance-checklist</code> · <code>base_giuridica</code></td><td class="ok">sì (0,63)</td><td class="ko">false</td><td>decisore (il testo indica l'esecuzione del contratto)</td></tr>
+      <tr><td><code>compliance-checklist</code> · <code>trasferimenti</code></td><td class="ko">no (0,00)</td><td class="ko">false</td><td><b>nessuno</b> (il testo dichiara che i dati non escono dall'UE)</td></tr>
+      <tr><td><code>agent-skill-selection</code> · <code>skill</code></td><td class="ko">bookforge (42%)</td><td class="ko">bookforge</td><td><b>nessuno</b> (doveva essere «nessuna»)</td></tr>
+      <tr><td><code>tool-dispatch</code> · <code>percorso_esplicito</code></td><td class="ko">no (0,27)</td><td class="ko">false</td><td><b>nessuno</b></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><b>Il difetto che resta al decisore</b> è la coerenza fra domande correlate:
+  riconosce che la fonte <i>contraddice</i> l'affermazione (99%) e poi risponde che <i>non</i> serve correggerla
+  (0,01). Non è un errore di lettura: è un errore di composizione, e va imposto dal codice, non chiesto al modello.</div>
+
+  <div class="callout good"><b>Una sorpresa del braccio generativo:</b> vincolato a
+  <code>response_format: json_object</code>, <code>temperature 0</code> e <code>max_tokens 320</code>, ha
+  risposto <b>12/12 volte con JSON valido e tutte le chiavi</b> — più affidabile di quanto un audit precedente
+  suggerisse (là 2 richieste su 4 erano state troncate). Con questo vincolo di formato il generativo locale è
+  un'alternativa legittima, non un ripiego.</div>
+</section>
+
+<section id="scala">
+  <h2><span class="n">6</span>Su 1.000 decisioni (proiezione, non misura)</h2>
+  <table class="tab">
+    <caption>Proiezione lineare dai numeri misurati. La riga del costo è un'ipotesi di prezzo, non un dato.</caption>
+    <thead><tr><th>1.000 decisioni</th><th class="num">decisore</th><th class="num">generativo</th></tr></thead>
+    <tbody>
+      <tr><td>token in ingresso</td><td class="num">137.800</td><td class="num">115.100</td></tr>
+      <tr><td><b>token generati</b></td><td class="num ok"><b>0</b></td><td class="num"><b>28.400</b></td></tr>
+      <tr><td>totale token</td><td class="num">137.800</td><td class="num">143.500</td></tr>
+      <tr><td>costo in «unità di input» <span class="nota">(ipotesi: output = 4× input)</span></td><td class="num ok">137.800</td><td class="num ko">228.700 (+66%)</td></tr>
+      <tr><td>tempo su questa CPU</td><td class="num ok">1,7 h</td><td class="num">2,3 h</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">Quella riga di costo è l'unica parte di questo report che <b>non</b> è misurata:
+  serve solo a mostrare che, quando l'output costa 4 volte l'input, il confronto cambia segno. Con entrambi i
+  modelli <b>locali</b> quella colonna vale zero per entrambi, e il risparmio diventa <b>tempo</b> e
+  <b>formato garantito</b>, non denaro.</div>
+
+  <h3>L'ordine di grandezza che conta davvero</h3>
+  <table class="tab">
+    <caption>Questa stessa sessione di lavoro, dal registro dell'harness</caption>
+    <thead><tr><th></th><th class="num">token in</th><th class="num">token out</th><th class="num">costo</th></tr></thead>
+    <tbody>
+      <tr><td>preparazione e scrittura (assistente in chat, <code>deepseek-flash</code>)</td><td class="num">53.867</td><td class="num">16.661</td><td class="num">$ 0,0398</td></tr>
+      <tr><td>le 36 decisioni — braccio generativo</td><td class="num">4.144</td><td class="num">1.022</td><td class="num nota">locale</td></tr>
+      <tr><td>le 36 decisioni — braccio decisore</td><td class="num">4.961</td><td class="num ok">0</td><td class="num ok">0 €</td></tr>
+    </tbody>
+  </table>
+  <p>Il punto non è che il decisore costa meno del lavoro assistito: è che <b>sposta il costo delle decisioni
+  ripetitive fuori dal modello generativo</b>. In un flusso reale (un agente che instrada 10.000 richieste al
+  giorno) la voce che cresce è quella delle decisioni, non quella della preparazione.</p>
+</section>
+
+<section id="fare">
+  <h2><span class="n">7</span>Cosa farne</h2>
+  <ul>
+    <li><b>Decisore come filtro e instradatore</b>, non come oracolo: il risparmio è strutturale (uscita a zero),
+    la qualità non è superiore al generativo su questa batteria.</li>
+    <li><b>Non aspettarsi risparmi in ingresso</b>: il wire tipizzato costa ~20% in più. Il guadagno è zero
+    output, formato impossibile da sbagliare, dato che non esce dalla macchina.</li>
+    <li><b>Soglie, non decisioni secche</b> — e la coerenza fra domande correlate va imposta nel codice.</li>
+    <li><b>Stato corto</b>: metà del tempo è prefill; accorciare lo stato è l'unica leva gratuita che migliora
+    anche la qualità.</li>
+    <li><b>Volume basso e ragionamento → generativo locale</b>, con <code>json_object</code> e
+    <code>max_tokens</code> ragionevoli: ha risposto 12/12. Il decisore conviene quando le decisioni sono
+    tante, brevi e ripetitive.</li>
+    <li><b>Con un modello via API</b> la convenienza del decisore cresce: rifare il conto con i prezzi del
+    fornitore, non con questa proiezione.</li>
+  </ul>
+</section>
+
+<section id="metodo">
+  <h2><span class="n">8</span>Metodo, riproducibilità, limiti</h2>
+  <table class="tab">
+    <caption>Due bracci, stesso modello e stessa macchina: l'unica variabile è la forma della risposta</caption>
+    <thead><tr><th></th><th>braccio A — decisore</th><th>braccio B — generativo</th></tr></thead>
+    <tbody>
+      <tr><td>runtime</td><td><code>rizzo serve --device cpu --port 8017</code></td><td><code>llama-server --port 8018 -c 2048 -t 6 --jinja</code></td></tr>
+      <tr><td>richiesta</td><td><code>POST /v1/systemone</code> — stato + domande tipizzate</td><td><code>POST /v1/chat/completions</code> — stato + domande in prosa, <code>temperature 0</code>, <code>json_object</code>, <code>max_tokens 320</code></td></tr>
+      <tr><td>risposta</td><td>probabilità per domanda</td><td>un oggetto JSON con le etichette</td></tr>
+      <tr><td>token misurati</td><td><code>usage.input_tokens</code> / <code>output_tokens</code></td><td><code>usage.prompt_tokens</code> / <code>completion_tokens</code></td></tr>
+      <tr><td>RAM del servizio</td><td>5,6 GB</td><td>~2,0 GB</td></tr>
+    </tbody>
+  </table>
+
+  <p>Il prompt del braccio generativo <b>contiene le stesse opzioni</b> che riceve il decisore (etichette e
+  descrizioni): non è il prompt «compatto» che favorirebbe il generativo sui token di input. I due bracci non
+  sono girati insieme: Decision_M è stato spento prima di avviare il generativo, perché 5,6 + 2,0 GB non stanno
+  nella RAM disponibile — nessuna contesa di CPU fra i due.</p>
+
+<pre># braccio A — decisore (Decision_M acceso)
+node media/decision-m-batteria.mjs --out media/decision-m-paragone-esiti-decisore.json
+
+# braccio B — generativo (Decision_M SPENTO: la RAM non tiene entrambi)
+/root/rizzo-flow/runtimes/llama-b11081-linux-x64-cpu/llama-server \
+  -m /root/rizzo-flow/models/rizzo-flow/spark-x2.5-4b-rizzo-flow-lora-q4_k_m.gguf \
+  --host 127.0.0.1 --port 8018 -t 6 -c 2048 --jinja
+node media/decision-m-paragone-generativo.mjs --out media/decision-m-paragone-esiti-generativo.json</pre>
+
+  <h3>Limiti dichiarati</h3>
+  <ul>
+    <li><b>Un solo giro</b> per braccio su 12 casi: misura di fattibilità, non benchmark. La stessa batteria
+    ripetuta sul decisore ha dato 236,0 s e 221,8 s — variabilità ~6% sul tempo, non stimata sui token.</li>
+    <li><b>Giudizio di qualità manuale</b> su 30 dei 36 punti: i numeri di errore sono indicatori, non
+    intervalli di confidenza.</li>
+    <li><b>Due runtime diversi</b>: l'unica variabile cambiata volutamente è la forma della risposta.</li>
+    <li><b>Proiezioni lineari</b> a 1.000 decisioni: non misurate. Nessun modello frontier né listino API
+    coinvolti.</li>
+    <li>La macchina è una VPS a 6 vCPU senza GPU: i tempi non sono trasferibili ad altro hardware.</li>
+  </ul>
+</section>
+
+<footer>
+  Dati grezzi: <code>media/decision-m-paragone-esiti-decisore.json</code> ·
+  <code>media/decision-m-paragone-esiti-generativo.json</code> — strumenti:
+  <code>media/decision-m-batteria.mjs</code>, <code>media/decision-m-paragone-generativo.mjs</code> —
+  versione Markdown dello stesso report: <code>media/decision-m-paragone-report.md</code>.
+  Batteria: 12 casi / 36 decisioni tipizzate · 7 ottobre 2026.
+</footer>
+
+</div>
+</body>
+</html>
