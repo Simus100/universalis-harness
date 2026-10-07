@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 430" role="img" aria-label="Confronto dei token fra decisore tipizzato e modello generativo">
+  <title>Il decisore azzera i token generati ma non quelli letti</title>
+  <desc>Due pannelli a barre. Sopra, token per decisione: il decisore tipizzato legge 137,8 token e ne genera 0, per un totale di 137,8; lo stesso modello in modalità generativa legge 115,1 token e ne genera 28,4, per un totale di 143,5. Sotto, secondi per decisione: 6,2 per il decisore e 8,3 per il generativo. Barre da zero, scale lineari; i due pannelli hanno scale indipendenti. Dati: 12 casi, 36 decisioni, modello Spark-X2.5-4B rizzo-flow Q4_K_M, 7 ottobre 2026.</desc>
+  <rect x="0" y="0" width="760" height="430" fill="#08111f"/>
+
+  <text x="30" y="40" font-size="17" font-weight="bold" fill="#eef2f9">Il decisore azzera i token generati, non quelli letti</text>
+  <text x="30" y="61" font-size="12" fill="#8b97ac">token per decisione · 12 casi, 36 decisioni · stesso modello 4B Q4_K_M, batteria decision-m-batteria.json · 7 ottobre 2026</text>
+
+  <text x="30" y="100" font-size="13" font-weight="bold" fill="#c6cfdd">Token per decisione</text>
+
+  <text x="238" y="126" font-size="13" fill="#eef2f9" text-anchor="end">decisore tipizzato</text>
+  <text x="238" y="142" font-size="11" fill="#8b97ac" text-anchor="end">totale 137,8 · 0 generati</text>
+  <rect x="250" y="112" width="427" height="34" rx="3" fill="#38bdf8"/>
+  <text x="262" y="134" font-size="12" fill="#0a0e15">137,8 token in ingresso</text>
+  <text x="685" y="134" font-size="12" fill="#34d399">0 generati</text>
+
+  <text x="238" y="180" font-size="13" fill="#eef2f9" text-anchor="end">generativo (stesso modello)</text>
+  <text x="238" y="196" font-size="11" fill="#8b97ac" text-anchor="end">totale 143,5 · 28,4 generati</text>
+  <rect x="250" y="166" width="357" height="34" rx="3" fill="#38bdf8"/>
+  <rect x="607" y="166" width="88" height="34" rx="3" fill="#fb7185"/>
+  <text x="262" y="188" font-size="12" fill="#0a0e15">115,1 in ingresso</text>
+  <text x="615" y="188" font-size="12" fill="#0a0e15">28,4 gen.</text>
+
+  <text x="30" y="242" font-size="12" fill="#8b97ac">In ingresso il decisore paga 817 token in più (struttura e opzioni del wire tipizzato); in uscita non paga nulla. Sul totale: 4.961 contro 5.166 token (−4%).</text>
+
+  <text x="30" y="290" font-size="13" font-weight="bold" fill="#c6cfdd">Secondi per decisione</text>
+
+  <text x="238" y="312" font-size="13" fill="#eef2f9" text-anchor="end">decisore tipizzato</text>
+  <rect x="250" y="298" width="310" height="26" rx="3" fill="#34d399"/>
+  <text x="262" y="316" font-size="12" fill="#0a0e15">6,2 s</text>
+
+  <text x="238" y="350" font-size="13" fill="#eef2f9" text-anchor="end">generativo (stesso modello)</text>
+  <rect x="250" y="336" width="415" height="26" rx="3" fill="#8b97ac"/>
+  <text x="262" y="354" font-size="12" fill="#0a0e15">8,3 s</text>
+
+  <rect x="30" y="390" width="12" height="12" fill="#38bdf8"/>
+  <text x="48" y="400" font-size="12" fill="#c6cfdd">token in ingresso</text>
+  <rect x="170" y="390" width="12" height="12" fill="#fb7185"/>
+  <text x="188" y="400" font-size="12" fill="#c6cfdd">token generati</text>
+  <rect x="310" y="390" width="12" height="12" fill="#34d399"/>
+  <text x="328" y="400" font-size="12" fill="#c6cfdd">secondi per decisione</text>
+
+  <text x="30" y="422" font-size="11" fill="#8b97ac">Barre da zero, scala lineare. I due pannelli hanno scale indipendenti. Un solo giro di misura: variabilità del tempo su questa macchina ~6%.</text>
+</svg>

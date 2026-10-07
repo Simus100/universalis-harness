@@ -1,0 +1,259 @@
+{
+  "quando": "2026-10-07T22:16:48.418Z",
+  "servizio": "http://127.0.0.1:8018",
+  "max_tokens": 320,
+  "aggregati": {
+    "casi": 12,
+    "casi_con_problemi": 0,
+    "decisioni": 36,
+    "prompt_tokens_totali": 4144,
+    "completion_tokens_totali": 1022,
+    "token_totali": 5166,
+    "prompt_tokens_per_decisione": 115.1,
+    "completion_tokens_per_decisione": 28.4,
+    "secondi_totali": 299.2,
+    "secondi_per_decisione": 8.3
+  },
+  "esiti": [
+    {
+      "caso": "support-triage",
+      "categoria": "workflow control",
+      "decisioni": 4,
+      "prompt_tokens": 418,
+      "completion_tokens": 96,
+      "secondi": 28.68,
+      "prompt_ms": 16700.38,
+      "predicted_ms": 11935.151,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "coda": "billing",
+        "gravita": "Serio",
+        "rimborso": true,
+        "frustrazione": "Infastidito"
+      },
+      "testo_grezzo": "{\n  \"coda\": \"billing\",\n  \"gravita\": \"Serio\",\n  \"rimborso\": true,\n  \"frustrazione\": \"Infastidito\"\n}"
+    },
+    {
+      "caso": "confidence-gated-refund",
+      "categoria": "workflow control",
+      "decisioni": 3,
+      "prompt_tokens": 334,
+      "completion_tokens": 62,
+      "secondi": 20.63,
+      "prompt_ms": 12752.601,
+      "predicted_ms": 7586.025,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "agire_senza_umano": false,
+        "rischio": "Alto",
+        "eccezione_motivata": false
+      },
+      "testo_grezzo": "{\"agire_senza_umano\": false, \"rischio\": \"Alto\", \"eccezione_motivata\": false}"
+    },
+    {
+      "caso": "intent-router",
+      "categoria": "workflow control",
+      "decisioni": 3,
+      "prompt_tokens": 353,
+      "completion_tokens": 64,
+      "secondi": 22.71,
+      "prompt_ms": 14466.924,
+      "predicted_ms": 7975.639,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "intento": "azione_esterna",
+        "difficolta": "Semplice",
+        "servono_dati_esterni": true
+      },
+      "testo_grezzo": "{\"intento\": \"azione_esterna\", \"difficolta\": \"Semplice\", \"servono_dati_esterni\": true}"
+    },
+    {
+      "caso": "tool-dispatch",
+      "categoria": "workflow control",
+      "decisioni": 3,
+      "prompt_tokens": 348,
+      "completion_tokens": 72,
+      "secondi": 23.31,
+      "prompt_ms": 13831.217,
+      "predicted_ms": 9161.009,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "strumento": "read_file",
+        "percorso_esplicito": false,
+        "serve_conferma": true
+      },
+      "testo_grezzo": "{\n  \"strumento\": \"read_file\",\n  \"percorso_esplicito\": false,\n  \"serve_conferma\": true\n}"
+    },
+    {
+      "caso": "rag-filtering",
+      "categoria": "safety and quality",
+      "decisioni": 3,
+      "prompt_tokens": 306,
+      "completion_tokens": 234,
+      "secondi": 42.2,
+      "prompt_ms": 11545.875,
+      "predicted_ms": 30421.76,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "utile": true,
+        "istruzioni_ostili": true,
+        "contraddice_policy": true
+      },
+      "testo_grezzo": "{\n  \"utile\": true,\n  \"istruzioni_ostili\": true,\n  \"contraddice_policy\": true\n}"
+    },
+    {
+      "caso": "reranking",
+      "categoria": "retrieval and knowledge",
+      "decisioni": 3,
+      "prompt_tokens": 340,
+      "completion_tokens": 44,
+      "secondi": 19.5,
+      "prompt_ms": 13720.097,
+      "predicted_ms": 5496.627,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "cand_a": true,
+        "cand_b": false,
+        "cand_c": true
+      },
+      "testo_grezzo": "{\"cand_a\": true, \"cand_b\": false, \"cand_c\": true}"
+    },
+    {
+      "caso": "citation-verification",
+      "categoria": "retrieval and knowledge",
+      "decisioni": 3,
+      "prompt_tokens": 361,
+      "completion_tokens": 54,
+      "secondi": 21.18,
+      "prompt_ms": 14215.241,
+      "predicted_ms": 6713.522,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "rapporto": "contraddice",
+        "serve_correzione": true,
+        "certezza": "Chiara"
+      },
+      "testo_grezzo": "{\"rapporto\": \"contraddice\", \"serve_correzione\": true, \"certezza\": \"Chiara\"}"
+    },
+    {
+      "caso": "guardrail-input",
+      "categoria": "safety and quality",
+      "decisioni": 3,
+      "prompt_tokens": 356,
+      "completion_tokens": 56,
+      "secondi": 22.1,
+      "prompt_ms": 14345.069,
+      "predicted_ms": 7449.401,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "injection": true,
+        "danno_se_obbedisce": "Molto grave",
+        "azione": "bloccare"
+      },
+      "testo_grezzo": "{\"injection\": true, \"danno_se_obbedisce\": \"Molto grave\", \"azione\": \"bloccare\"}"
+    },
+    {
+      "caso": "compliance-checklist",
+      "categoria": "safety and quality",
+      "decisioni": 4,
+      "prompt_tokens": 371,
+      "completion_tokens": 94,
+      "secondi": 28.86,
+      "prompt_ms": 15930.225,
+      "predicted_ms": 12589.444,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "finalita_dichiarata": true,
+        "base_giuridica": false,
+        "trasferimenti": false,
+        "esito": "conforme"
+      },
+      "testo_grezzo": "{\n  \"finalita_dichiarata\": true,\n  \"base_giuridica\": false,\n  \"trasferimenti\": false,\n  \"esito\": \"conforme\"\n}"
+    },
+    {
+      "caso": "composite-scoring",
+      "categoria": "data and operations",
+      "decisioni": 3,
+      "prompt_tokens": 317,
+      "completion_tokens": 72,
+      "secondi": 22.27,
+      "prompt_ms": 12948.296,
+      "predicted_ms": 9000.648,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "gravita_difetto": "Estetico",
+        "tono": "Positivo",
+        "azione_attesa": false
+      },
+      "testo_grezzo": "{\n  \"gravita_difetto\": \"Estetico\",\n  \"tono\": \"Positivo\",\n  \"azione_attesa\": false\n}"
+    },
+    {
+      "caso": "agent-skill-selection",
+      "categoria": "real-time and agents",
+      "decisioni": 2,
+      "prompt_tokens": 354,
+      "completion_tokens": 136,
+      "secondi": 31.2,
+      "prompt_ms": 13935.132,
+      "predicted_ms": 17034.375,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "skill": "bookforge",
+        "manca_strumento": false
+      },
+      "testo_grezzo": "{\n  \"skill\": \"bookforge\",\n  \"manca_strumento\": false\n}"
+    },
+    {
+      "caso": "realtime-control",
+      "categoria": "real-time and agents",
+      "decisioni": 2,
+      "prompt_tokens": 286,
+      "completion_tokens": 38,
+      "secondi": 16.57,
+      "prompt_ms": 11493.925,
+      "predicted_ms": 4794.46,
+      "troncato": false,
+      "json_valido": true,
+      "mancanti": [],
+      "etichette_fuori_elenco": [],
+      "risposta": {
+        "azione": "continua",
+        "pericolo_immediato": false
+      },
+      "testo_grezzo": "{\"azione\": \"continua\", \"pericolo_immediato\": false}"
+    }
+  ]
+}
