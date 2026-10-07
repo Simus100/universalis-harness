@@ -24,6 +24,13 @@ const LATENZA_BREVE = "~12 s per richiesta su uno stato breve (~350 caratteri, 3
 const LATENZA_LUNGA = "~4 minuti per uno stato da 5.000 token";
 const RAM = "~5,7 GB di RAM";
 
+/**
+ * Le soglie del portiere, in un posto solo (le usa anche media/decision-m-portiere.mjs):
+ * fra `no` e `si` NON si decide. Una probabilità non e' un si'/no: e' una fascia.
+ */
+export const SOGLIE = { si: 0.9, no: 0.5, scelta_netta: 0.4 };
+export const fascia = (p) => (p >= SOGLIE.si ? "SICURO_SI" : p <= SOGLIE.no ? "SICURO_NO" : "DUBBIO");
+
 const DECIDE_DESCRIPTION = [
   "Interroga Decision_M, il decisore tipizzato locale (modello Spark-X2.5-4B su CPU): dato uno stato, risponde a domande `boolean`/`choice`/`score` con una DISTRIBUZIONE DI PROBABILITÀ, senza generare testo.",
   "",
@@ -158,10 +165,14 @@ function formatAnswers(body) {
           .join(", ")
       : null;
     if (a?.type === "noul") {
-      lines.push(`- ${id} (sì/no): P(vero) = ${Number(a.noul).toFixed(4)}` + (dist ? ` [${dist}]` : ""));
+      lines.push(
+        `- ${id} (sì/no): P(vero) = ${Number(a.noul).toFixed(4)} → ${fascia(Number(a.noul))}` + (dist ? ` [${dist}]` : ""),
+      );
     } else if (a?.type === "choice") {
       const conf = Number.isFinite(a.confidence) ? `, confidence ${Number(a.confidence).toFixed(3)}` : "";
-      lines.push(`- ${id} (scelta) = «${a.choice}»${conf}` + (dist ? ` — ${dist}` : ""));
+      const netta =
+        Number.isFinite(a.confidence) && a.confidence < SOGLIE.scelta_netta ? " → SCELTA_INCERTA" : " → SCELTA_NETTA";
+      lines.push(`- ${id} (scelta) = «${a.choice}»${conf}${netta}` + (dist ? ` — ${dist}` : ""));
     } else if (a?.type === "score") {
       const legend = a.legend ? `, livelli: ${Object.entries(a.legend).map(([k, v]) => `${k}=${v}`).join(" / ")}` : "";
       lines.push(`- ${id} (punteggio) = ${Number(a.score).toFixed(3)}${legend}` + (dist ? ` — ${dist}` : ""));
@@ -198,7 +209,7 @@ export function createDecisionMExtension({ service, log = (m) => console.log(m) 
       "Usa `decision_m` quando serve un giudizio ripetibile con una probabilità (instradare, scegliere fra azioni, dare un punteggio su una rubrica), non quando serve una spiegazione o del testo.",
       "Tieni lo stato corto (poche centinaia di token) e fai più domande sullo stesso stato: il costo cresce con la lunghezza, non con il numero di domande.",
       "Se `decision_m` risponde che il servizio è spento, NON riprovare: chiedi all'utente con `ask_user` se accendere Decision_M (occupa ~5,7 GB di RAM) e solo con il suo consenso usa `decision_m_service` con action=\"start\". Se rifiuta, decidi tu e dì che lo hai fatto senza il modello locale.",
-      "Le probabilità di Decision_M non sono calibrate: usale per ordinare o con soglie prudenti, non come frequenze esatte.",
+      "Le probabilità non sono calibrate: leggi SEMPRE la fascia. Sopra 0,9 (SICURO_SI) si può agire, sotto 0,5 (SICURO_NO) si può lasciar stare, in mezzo è DUBBIO: lì non decidere da solo, chiedi a un umano o passa a un modello generativo. Su domande correlate la coerenza va imposta nel codice (media/decision-m-portiere.mjs): il modello non la garantisce.",
     ],
     parameters: DECIDE_PARAMETERS,
     async execute(toolCallId, params, signal, _onUpdate, _ctx) {
@@ -232,6 +243,7 @@ export function createDecisionMExtension({ service, log = (m) => console.log(m) 
           formatAnswers(body),
           `token: ${usage.input_tokens ?? "?"} in ingresso, ${usage.output_tokens ?? 0} generati` +
             (timing.prefill_seconds ? ` · prefill ${Number(timing.prefill_seconds).toFixed(1)} s` : ""),
+          `fasce (soglie ${SOGLIE.si} / ${SOGLIE.no}): SICURO_SI = puoi agire · SICURO_NO = puoi lasciar stare · DUBBIO = non decidere da solo.`,
           "Probabilità non calibrate: ordinale e soglie prudenti sì, frequenze esatte no.",
         ].join("\n");
         return { content: [{ type: "text", text }], details: { model: body?.model, usage, timing, answers: body?.answers } };

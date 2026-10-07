@@ -1,0 +1,653 @@
+{
+  "quando": "2026-10-07T23:00:22.043Z",
+  "servizio": "http://127.0.0.1:8017",
+  "soglie": {
+    "si": 0.9,
+    "no": 0.5,
+    "scelta_netta": 0.4
+  },
+  "modello": {
+    "source": "XHToken/Spark-X2.5-4B",
+    "requested_revision": "0bcb35678590218655dff3765b9e61c83b35e9c4",
+    "gguf_source": "rizzoaiacademy/rizzo-flow",
+    "gguf_revision": "55633c8cbd2b826bd3eefdeb05310450996649df",
+    "source_files": {
+      "spark-x2.5-4b-rizzo-flow-lora-q4_k_m.gguf": "79de5cb8dbfd1a1f5cb3037252251594352841fe5e3dc1ae8cead053010fcd54"
+    },
+    "precision": "q4_k_m",
+    "device": "cpu",
+    "backend": "cpu",
+    "runtime": "llama.cpp",
+    "llama_cpp_release": "b11081",
+    "llama_cpp_commit": "161755f29e415e2c33efe906e91843c068efd664",
+    "prompt_version": "spark-decisions-v3",
+    "weights": "flow",
+    "fingerprint": "81334e1b86ceb2014f3e50fc865bc09e6df857e84f9be3015e251499528f7dad",
+    "device_name": null,
+    "context_cells": 10240,
+    "load_seconds": 20.69848069094587
+  },
+  "aggregati": {
+    "casi": 12,
+    "decisioni totali": 36,
+    "domande poste al modello": 30,
+    "risposte calcolate dal codice (pre-filtro)": 3,
+    "risposte dedotte da altre risposte": 3,
+    "risposte imposte dalla coerenza": 0,
+    "token in ingresso": 4507,
+    "token generati": 0,
+    "token in ingresso per domanda posta": 150.2,
+    "secondi totali": 196.4,
+    "secondi per decisione": 5.46,
+    "errori": 0
+  },
+  "esiti": [
+    {
+      "id": "support-triage",
+      "categoria": "workflow control",
+      "decisioni": 4,
+      "chieste": 4,
+      "calcolate": 0,
+      "derivate": 0,
+      "imposte": 0,
+      "input_tokens": 480,
+      "output_tokens": 0,
+      "secondi": 22.43,
+      "risposte": {
+        "coda": {
+          "type": "choice",
+          "choice": "billing",
+          "probabilities": {
+            "billing": 0.9247031904028923,
+            "supporto": 0.005228173925334823,
+            "commerciale": 0.07006863567177295
+          },
+          "confidence": 0.8870547856043385
+        },
+        "gravita": {
+          "type": "score",
+          "score": 1.8575940238689217,
+          "legend": {
+            "0": "Trascurabile",
+            "1": "Minore",
+            "2": "Serio",
+            "3": "Critico"
+          },
+          "probabilities": {
+            "0": 0.014081714206479308,
+            "1": 0.19956930055062133,
+            "2": 0.7010222324103976,
+            "3": 0.0853267528325017
+          },
+          "confidence": 0.6013629765471968
+        },
+        "rimborso": {
+          "type": "noul",
+          "noul": 0.9860486147624045
+        },
+        "frustrazione": {
+          "type": "score",
+          "score": 1.324485833246794,
+          "legend": {
+            "0": "Calmo",
+            "1": "Infastidito",
+            "2": "Arrabbiato",
+            "3": "Molto arrabbiato"
+          },
+          "probabilities": {
+            "0": 0.034306854918612927,
+            "1": 0.7197462913832594,
+            "2": 0.1331010192308486,
+            "3": 0.1128458344672792
+          },
+          "confidence": 0.6263283885110126
+        }
+      },
+      "fasce": {
+        "coda": "scelta_netta",
+        "rimborso": "sicuro_si"
+      },
+      "regole": {
+        "calcolate": {},
+        "derivate": {},
+        "imposte": []
+      },
+      "lettura": "coda=billing · gravita=1.86 · rimborso=SI(0.99) · frustrazione=1.32"
+    },
+    {
+      "id": "confidence-gated-refund",
+      "categoria": "workflow control",
+      "decisioni": 3,
+      "chieste": 3,
+      "calcolate": 0,
+      "derivate": 0,
+      "imposte": 0,
+      "input_tokens": 406,
+      "output_tokens": 0,
+      "secondi": 19.41,
+      "risposte": {
+        "agire_senza_umano": {
+          "type": "noul",
+          "noul": 0.16618419288047023
+        },
+        "rischio": {
+          "type": "score",
+          "score": 1.6422389597628506,
+          "legend": {
+            "0": "Basso",
+            "1": "Medio",
+            "2": "Alto"
+          },
+          "probabilities": {
+            "0": 0.12264040062994072,
+            "1": 0.11248023897726801,
+            "2": 0.7648793603927913
+          },
+          "confidence": 0.6473190405891869
+        },
+        "eccezione_motivata": {
+          "type": "noul",
+          "noul": 0.1466837122885091
+        }
+      },
+      "fasce": {
+        "agire_senza_umano": "sicuro_no",
+        "eccezione_motivata": "sicuro_no"
+      },
+      "regole": {
+        "calcolate": {},
+        "derivate": {},
+        "imposte": []
+      },
+      "lettura": "agire_senza_umano=no(0.17) · rischio=1.64 · eccezione_motivata=no(0.15)"
+    },
+    {
+      "id": "intent-router",
+      "categoria": "workflow control",
+      "decisioni": 3,
+      "chieste": 3,
+      "calcolate": 0,
+      "derivate": 0,
+      "imposte": 0,
+      "input_tokens": 402,
+      "output_tokens": 0,
+      "secondi": 16.83,
+      "risposte": {
+        "intento": {
+          "type": "choice",
+          "choice": "analisi",
+          "probabilities": {
+            "analisi": 0.7641668596586418,
+            "spedizione": 0.05868676407121217,
+            "informazione": 0.1274313339646109,
+            "azione_esterna": 0.04971504230553508
+          },
+          "confidence": 0.6855558128781891
+        },
+        "difficolta": {
+          "type": "score",
+          "score": 1.3357199284769823,
+          "legend": {
+            "0": "Banale",
+            "1": "Semplice",
+            "2": "Impegnativa",
+            "3": "Complessa"
+          },
+          "probabilities": {
+            "0": 0.2733965580328341,
+            "1": 0.28051310578202565,
+            "2": 0.2830641858604641,
+            "3": 0.16302615032467613
+          },
+          "confidence": 0.04408558114728548
+        },
+        "servono_dati_esterni": {
+          "type": "noul",
+          "noul": 0.6737498964746211
+        }
+      },
+      "fasce": {
+        "intento": "scelta_netta",
+        "servono_dati_esterni": "dubbio"
+      },
+      "regole": {
+        "calcolate": {},
+        "derivate": {},
+        "imposte": []
+      },
+      "lettura": "intento=analisi · difficolta=1.34 · servono_dati_esterni=SI(0.67)"
+    },
+    {
+      "id": "tool-dispatch",
+      "categoria": "workflow control",
+      "decisioni": 3,
+      "chieste": 2,
+      "calcolate": 1,
+      "derivate": 0,
+      "imposte": 0,
+      "input_tokens": 349,
+      "output_tokens": 0,
+      "secondi": 14.37,
+      "risposte": {
+        "percorso_esplicito": {
+          "type": "noul",
+          "noul": 1,
+          "calcolata": true,
+          "regola": "il messaggio nomina il file «report.md»"
+        },
+        "strumento": {
+          "type": "choice",
+          "choice": "read_file",
+          "probabilities": {
+            "read_file": 0.9251123404241031,
+            "search_files": 0.061614835085380966,
+            "web_search": 0.0015396012519800603,
+            "send_email": 0.011733223238535982
+          },
+          "confidence": 0.9001497872321375
+        },
+        "serve_conferma": {
+          "type": "noul",
+          "noul": 0.8968595686414483
+        }
+      },
+      "fasce": {
+        "strumento": "scelta_netta",
+        "percorso_esplicito": "sicuro_si",
+        "serve_conferma": "dubbio"
+      },
+      "regole": {
+        "calcolate": {
+          "percorso_esplicito": "il messaggio nomina il file «report.md»"
+        },
+        "derivate": {},
+        "imposte": []
+      },
+      "lettura": "strumento=read_file · percorso_esplicito=SI(1.00)⟨codice⟩ · serve_conferma=SI(0.90)"
+    },
+    {
+      "id": "rag-filtering",
+      "categoria": "safety and quality",
+      "decisioni": 3,
+      "chieste": 2,
+      "calcolate": 1,
+      "derivate": 0,
+      "imposte": 0,
+      "input_tokens": 337,
+      "output_tokens": 0,
+      "secondi": 13.69,
+      "risposte": {
+        "contraddice_policy": {
+          "type": "noul",
+          "noul": 1,
+          "calcolata": true,
+          "regola": "il passaggio dice 30 giorni, la policy 14"
+        },
+        "utile": {
+          "type": "noul",
+          "noul": 0.8790529338116274
+        },
+        "istruzioni_ostili": {
+          "type": "noul",
+          "noul": 0.8321807552707687
+        }
+      },
+      "fasce": {
+        "utile": "dubbio",
+        "istruzioni_ostili": "dubbio",
+        "contraddice_policy": "sicuro_si"
+      },
+      "regole": {
+        "calcolate": {
+          "contraddice_policy": "il passaggio dice 30 giorni, la policy 14"
+        },
+        "derivate": {},
+        "imposte": []
+      },
+      "lettura": "utile=SI(0.88) · istruzioni_ostili=SI(0.83) · contraddice_policy=SI(1.00)⟨codice⟩"
+    },
+    {
+      "id": "reranking",
+      "categoria": "retrieval and knowledge",
+      "decisioni": 3,
+      "chieste": 3,
+      "calcolate": 0,
+      "derivate": 0,
+      "imposte": 0,
+      "input_tokens": 450,
+      "output_tokens": 0,
+      "secondi": 18.15,
+      "risposte": {
+        "cand_a": {
+          "type": "noul",
+          "noul": 0.973199046476507
+        },
+        "cand_b": {
+          "type": "noul",
+          "noul": 0.009997093814822184
+        },
+        "cand_c": {
+          "type": "noul",
+          "noul": 0.9590533938578637
+        }
+      },
+      "fasce": {
+        "cand_a": "sicuro_si",
+        "cand_b": "sicuro_no",
+        "cand_c": "sicuro_si"
+      },
+      "regole": {
+        "calcolate": {},
+        "derivate": {},
+        "imposte": []
+      },
+      "lettura": "cand_a=SI(0.97) · cand_b=no(0.01) · cand_c=SI(0.96)"
+    },
+    {
+      "id": "citation-verification",
+      "categoria": "retrieval and knowledge",
+      "decisioni": 3,
+      "chieste": 2,
+      "calcolate": 0,
+      "derivate": 1,
+      "imposte": 0,
+      "input_tokens": 338,
+      "output_tokens": 0,
+      "secondi": 14.1,
+      "risposte": {
+        "rapporto": {
+          "type": "choice",
+          "choice": "contraddice",
+          "probabilities": {
+            "sostiene": 0.0013569853528187868,
+            "contraddice": 0.9932323248595822,
+            "non_pertinente": 0.00541068978759894
+          },
+          "confidence": 0.9898484872893734
+        },
+        "certezza": {
+          "type": "score",
+          "score": 1.5468449781094082,
+          "legend": {
+            "0": "Ambigua",
+            "1": "Abbastanza chiara",
+            "2": "Chiara"
+          },
+          "probabilities": {
+            "0": 0.021488725734649102,
+            "1": 0.41017757042129366,
+            "2": 0.5683337038440572
+          },
+          "confidence": 0.35250055576608585
+        },
+        "serve_correzione": {
+          "type": "noul",
+          "noul": 1,
+          "derivata": true,
+          "regola": "se la fonte contraddice, l'affermazione va corretta"
+        }
+      },
+      "fasce": {
+        "rapporto": "scelta_netta",
+        "serve_correzione": "sicuro_si"
+      },
+      "regole": {
+        "calcolate": {},
+        "derivate": {
+          "serve_correzione": "se la fonte contraddice, l'affermazione va corretta"
+        },
+        "imposte": []
+      },
+      "lettura": "rapporto=contraddice · serve_correzione=SI(1.00)⟨dedotta⟩ · certezza=1.55"
+    },
+    {
+      "id": "guardrail-input",
+      "categoria": "safety and quality",
+      "decisioni": 3,
+      "chieste": 3,
+      "calcolate": 0,
+      "derivate": 0,
+      "imposte": 0,
+      "input_tokens": 406,
+      "output_tokens": 0,
+      "secondi": 19.16,
+      "risposte": {
+        "injection": {
+          "type": "noul",
+          "noul": 0.5635689054566642
+        },
+        "danno_se_obbedisce": {
+          "type": "score",
+          "score": 1.7440200908540058,
+          "legend": {
+            "0": "Nessuno",
+            "1": "Limitato",
+            "2": "Grave",
+            "3": "Molto grave"
+          },
+          "probabilities": {
+            "0": 0.1927252213453193,
+            "1": 0.2219401916012391,
+            "2": 0.2339238619075579,
+            "3": 0.3514107251458837
+          },
+          "confidence": 0.13521430019451156
+        },
+        "azione": {
+          "type": "choice",
+          "choice": "bloccare",
+          "probabilities": {
+            "passare": 0.22606756138399983,
+            "verificare": 0.1342091751836101,
+            "bloccare": 0.63972326343239
+          },
+          "confidence": 0.459584895148585
+        }
+      },
+      "fasce": {
+        "injection": "dubbio",
+        "azione": "scelta_netta"
+      },
+      "regole": {
+        "calcolate": {},
+        "derivate": {},
+        "imposte": []
+      },
+      "lettura": "injection=SI(0.56) · danno_se_obbedisce=1.74 · azione=bloccare"
+    },
+    {
+      "id": "compliance-checklist",
+      "categoria": "safety and quality",
+      "decisioni": 4,
+      "chieste": 2,
+      "calcolate": 1,
+      "derivate": 1,
+      "imposte": 0,
+      "input_tokens": 329,
+      "output_tokens": 0,
+      "secondi": 13.52,
+      "risposte": {
+        "trasferimenti": {
+          "type": "noul",
+          "noul": 1,
+          "calcolata": true,
+          "regola": "il testo dichiara esplicitamente che i dati non escono dall'UE"
+        },
+        "finalita_dichiarata": {
+          "type": "noul",
+          "noul": 0.9810219344357118
+        },
+        "base_giuridica": {
+          "type": "noul",
+          "noul": 0.6253067577561187
+        },
+        "esito": {
+          "type": "choice",
+          "choice": "conforme",
+          "probabilities": {
+            "conforme": 1
+          },
+          "derivata": true,
+          "regola": "finalità, base giuridica e trasferimenti risultano tutti dichiarati"
+        }
+      },
+      "fasce": {
+        "finalita_dichiarata": "sicuro_si",
+        "base_giuridica": "dubbio",
+        "trasferimenti": "sicuro_si"
+      },
+      "regole": {
+        "calcolate": {
+          "trasferimenti": "il testo dichiara esplicitamente che i dati non escono dall'UE"
+        },
+        "derivate": {
+          "esito": "finalità, base giuridica e trasferimenti risultano tutti dichiarati"
+        },
+        "imposte": []
+      },
+      "lettura": "finalita_dichiarata=SI(0.98) · base_giuridica=SI(0.63) · trasferimenti=SI(1.00)⟨codice⟩ · esito=conforme⟨dedotta⟩"
+    },
+    {
+      "id": "composite-scoring",
+      "categoria": "data and operations",
+      "decisioni": 3,
+      "chieste": 3,
+      "calcolate": 0,
+      "derivate": 0,
+      "imposte": 0,
+      "input_tokens": 369,
+      "output_tokens": 0,
+      "secondi": 14.76,
+      "risposte": {
+        "gravita_difetto": {
+          "type": "score",
+          "score": 1.411259720951995,
+          "legend": {
+            "0": "Nessuno",
+            "1": "Estetico",
+            "2": "Funzionale",
+            "3": "Bloccante"
+          },
+          "probabilities": {
+            "0": 0.008027122688914807,
+            "1": 0.5888160068912279,
+            "2": 0.38702689719880484,
+            "3": 0.016129973221052467
+          },
+          "confidence": 0.4517546758549706
+        },
+        "tono": {
+          "type": "score",
+          "score": 2.0133292916002548,
+          "legend": {
+            "0": "Molto negativo",
+            "1": "Negativo",
+            "2": "Misto",
+            "3": "Positivo"
+          },
+          "probabilities": {
+            "0": 0.0017477306545937272,
+            "1": 0.045775918906717894,
+            "2": 0.8898756786225284,
+            "3": 0.06260067181615993
+          },
+          "confidence": 0.8531675714967045
+        },
+        "azione_attesa": {
+          "type": "noul",
+          "noul": 0.861003208392773
+        }
+      },
+      "fasce": {
+        "azione_attesa": "dubbio"
+      },
+      "regole": {
+        "calcolate": {},
+        "derivate": {},
+        "imposte": []
+      },
+      "lettura": "gravita_difetto=1.41 · tono=2.01 · azione_attesa=SI(0.86)"
+    },
+    {
+      "id": "agent-skill-selection",
+      "categoria": "real-time and agents",
+      "decisioni": 2,
+      "chieste": 1,
+      "calcolate": 0,
+      "derivate": 1,
+      "imposte": 0,
+      "input_tokens": 323,
+      "output_tokens": 0,
+      "secondi": 14.43,
+      "risposte": {
+        "skill": {
+          "type": "choice",
+          "choice": "bookforge",
+          "probabilities": {
+            "bookforge": 0.4470899193056701,
+            "browser": 0.05163386543120629,
+            "report-dataviz": 0.146253155620361,
+            "nessuna": 0.3550230596427626
+          },
+          "confidence": 0.2627865590742268
+        },
+        "manca_strumento": {
+          "type": "noul",
+          "noul": 0,
+          "derivata": true,
+          "regola": "una voce del roster copre il compito"
+        }
+      },
+      "fasce": {
+        "skill": "scelta_incerta",
+        "manca_strumento": "sicuro_no"
+      },
+      "regole": {
+        "calcolate": {},
+        "derivate": {
+          "manca_strumento": "una voce del roster copre il compito"
+        },
+        "imposte": []
+      },
+      "lettura": "skill=bookforge · manca_strumento=no(0.00)⟨dedotta⟩"
+    },
+    {
+      "id": "realtime-control",
+      "categoria": "real-time and agents",
+      "decisioni": 2,
+      "chieste": 2,
+      "calcolate": 0,
+      "derivate": 0,
+      "imposte": 0,
+      "input_tokens": 318,
+      "output_tokens": 0,
+      "secondi": 15.54,
+      "risposte": {
+        "azione": {
+          "type": "choice",
+          "choice": "continua",
+          "probabilities": {
+            "salta": 0.24880441039288542,
+            "abbassati": 0.10208417400662298,
+            "continua": 0.6491114156004916
+          },
+          "confidence": 0.47366712340073736
+        },
+        "pericolo_immediato": {
+          "type": "noul",
+          "noul": 0.34900305092419825
+        }
+      },
+      "fasce": {
+        "azione": "scelta_netta",
+        "pericolo_immediato": "sicuro_no"
+      },
+      "regole": {
+        "calcolate": {},
+        "derivate": {},
+        "imposte": []
+      },
+      "lettura": "azione=continua · pericolo_immediato=no(0.35)"
+    }
+  ]
+}

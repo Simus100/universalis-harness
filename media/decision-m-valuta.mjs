@@ -140,7 +140,13 @@ for (const file of fileEsiti) {
   const rapporto = {
     file,
     quando: d.quando ?? null,
-    etichetta: file.includes("generativo") ? "generativo" : file.includes("decisore") ? "decisore" : "braccio sconosciuto",
+    etichetta: file.includes("generativo")
+      ? "generativo"
+      : file.includes("portiere")
+        ? "portiere (codice + modello)"
+        : file.includes("decisore")
+          ? "decisore (modello nudo)"
+          : "braccio sconosciuto",
     punti_giudicabili: tot,
     corrette,
     quasi,

@@ -4,7 +4,7 @@
 **Modello (entrambi i bracci):** `spark-x2.5-4b-rizzo-flow-lora-q4_k_m.gguf` — stesso GGUF, stessa macchina
 **Batteria:** `media/decision-m-batteria.json` — 12 casi, **36 decisioni tipizzate**
 **Esiti grezzi:** `media/decision-m-paragone-esiti-decisore.json` · `media/decision-m-paragone-esiti-generativo.json`
-**Strumenti:** `media/decision-m-batteria.mjs` (braccio decisore) · `media/decision-m-paragone-generativo.mjs` (braccio generativo, nuovo) · `media/decision-m-valuta.mjs` (valutazione automatica contro le attese)
+**Strumenti:** `media/decision-m-batteria.mjs` (braccio decisore) · `media/decision-m-paragone-generativo.mjs` (braccio generativo, nuovo) · `media/decision-m-valuta.mjs` (valutazione automatica contro le attese) · `media/decision-m-portiere.mjs` (la policy nel codice)
 **Versione HTML (grafici inline, si apre offline):** `media/decision-m-paragone-report.html`
 
 ---
@@ -18,8 +18,10 @@ Il prezzo è il tempo: **6,2 s per decisione** contro 8,3 s, e una qualità **mi
 nella batteria) che vede avanti il decisore sul totale (**80,0% contro 74,3%**) ma il generativo sui punti ad
 alta certezza (**87,0% contro 82,6%**): la differenza è troppo piccola per dire che uno dei due «sa decidere» meglio.
 
-**La raccomandazione:** usare il decisore dove il volume è alto, il rischio basso e il **formato** deve essere
-garantito (instradamento, triage, punteggi, guardie). Non aspettarsi un risparmio di token in ingresso: quello
+**La raccomandazione:** usare il decisore **dentro un portiere**, cioè con la policy nel codice (pre-filtri,
+deduzioni, soglie a fasce: §6) — così l'accuratezza sale all'**88,6%** con 30 domande invece di 36 e il 9% di
+token in meno. Da solo, "modello nudo", compra solo il formato garantito: usarlo dove il volume è alto, il
+rischio basso e la **forma** della risposta conta (instradamento, triage, punteggi, guardie). Non aspettarsi un risparmio di token in ingresso: quello
 lo paga comunque, e pure un po' di più — perché il wire tipizzato costa qualche token di struttura in più
 di un JSON chiesto in prosa.
 
@@ -207,10 +209,65 @@ la voce che cresce è quella delle decisioni, non quella della preparazione: è 
 
 ---
 
-## 6. Raccomandazioni
+## 6. Il portiere: la coerenza nel codice (stesso giorno, stessa macchina)
 
-1. **Usare il decisore come filtro/instradatore, non come oracolo**: il risparmio è reale e strutturale in uscita,
-   ma la qualità non è superiore al generativo su questa batteria.
+Il "portiere" (`media/decision-m-portiere.mjs`) è la policy che sta **fra** il modello e la decisione, in tre
+mosse — e il modello resta quello di prima:
+
+1. **pre-filtro** — se la risposta sta già nel testo (una regex, un confronto con una costante di dominio), non
+   si chiede al modello: si calcola;
+2. **deduzione** — se la risposta è funzione di un'altra risposta ("contraddice" ⇒ "serve correzione"), non si
+   chiede: si deriva (il rimedio all'incoerenza che costava 1 punto);
+3. **coerenza** — se il modello contraddice i propri dati su domande correlate, il vincolo impone il valore.
+
+In più ogni probabilità viene letta a **fasce** (SICURO_SÌ ≥ 0,9 · SICURO_NO ≤ 0,5 · in mezzo **DUBBIO**, dove
+non si decide), le stesse soglie che ora usa anche il tool `decision_m` in chat.
+
+| | modello nudo | **portiere (codice + modello)** | generativo |
+|---|---:|---:|---:|
+| accuratezza | 80,0% (28/35) | **88,6% (31/35)** | 74,3% |
+| con le «quasi» corrette | 82,9% | **91,4%** | 80,0% |
+| solo attese ad alta certezza | 82,6% | **91,3%** | 87,0% |
+| domande poste al modello | 36 | **30** | n/d |
+| token in ingresso | 4.961 | **4.507 (−9,2%)** | 4.144 |
+| secondi totali | 221,8 | **196,4 (−11,4%)** | 299,2 |
+| secondi per decisione | 6,2 | **5,5** | 8,3 |
+| risposte calcolate dal codice | 0 | 3 | — |
+| risposte dedotte da un'altra risposta | 0 | 3 | — |
+| risposte imposte dalla coerenza | 0 | 0 | — |
+
+**Da dove vengono i 3 punti guadagnati** (e il punto perso):
+
+| punto | come è stato risolto |
+|---|---|
+| `tool-dispatch.percorso_esplicito` | regex sul messaggio: il nome del file è nel testo |
+| `rag-filtering.contraddice_policy` | confronto numerico: il testo dice 30 giorni, la policy 14 |
+| `compliance-checklist.trasferimenti` | pattern sul testo («non sono trasferiti fuori dall'Unione europea») — era l'errore con confidenza **0,00** |
+| `citation-verification.serve_correzione` | dedotta da `rapporto`: se la fonte contraddice, l'affermazione va corretta |
+| `agent-skill-selection.manca_strumento` ✘ | **la deduzione propaga l'errore**: la regola `manca_strumento = (skill ≠ nessuna)` diventa falsa perché il modello ha sbagliato `skill` a monte |
+
+**Le due lezioni, in una riga ciascuna:**
+
+- *dedurre conviene solo se la fonte è affidabile*: una regola che legge **il testo** guadagna; una regola che
+  legge **un'altra risposta del modello** eredita i suoi errori;
+- *le regole di coerenza non hanno dovuto correggere nulla* (0 imposizioni) perché in questo giro il modello era
+  già coerente: servono come rete, non come guadagno. Il valore si vede sui casi in cui l'incoerenza *c'era*
+  — `citation-verification` — e lì la domanda è stata tolta di mezzo per deduzione.
+
+**Gli errori che restano sono di comprensione, non di coerenza:** `guardrail-input.danno_se_obbedisce` (1,74
+contro «Molto grave») e `agent-skill-selection.skill` («bookforge» invece di «nessuna»). Il codice non li
+aggiusta: per quelli serve un modello migliore o un caso d'uso più stretto.
+
+**Il costo del portiere è onesto: sei regole da scrivere e mantenere.** Non è magia: è codice leggibile, che si
+può sbagliare e correggere — a differenza di un errore del modello con confidenza 0,00, che non si vede.
+
+---
+
+## 7. Raccomandazioni
+
+1. **Mettere il decisore dentro il portiere, sempre** (§6): pre-filtri e deduzioni valgono +8,6 punti di
+   accuratezza e meno token, e le fasce impediscono di leggere 0,72 come «sì». Il modello nudo non è la
+   configurazione da usare.
 2. **Non aspettarsi risparmi in ingresso**: il wire tipizzato costa ~20% di token in più di un JSON in prosa.
    Il guadagno è (a) zero output, (b) formato impossibile da sbagliare, (c) dato che non esce dalla macchina.
 3. **Soglie, non decisioni secche** — e la coerenza fra domande correlate va imposta nel codice (i due errori del
@@ -224,7 +281,7 @@ la voce che cresce è quella delle decisioni, non quella della preparazione: è 
 
 ---
 
-## 7. Riproducibilità e limiti
+## 8. Riproducibilità e limiti
 
 ```bash
 # braccio A — decisore (Decision_M acceso)
@@ -236,7 +293,10 @@ node media/decision-m-batteria.mjs --out media/decision-m-paragone-esiti-decisor
   --host 127.0.0.1 --port 8018 -t 6 -c 2048 --jinja
 node media/decision-m-paragone-generativo.mjs --out media/decision-m-paragone-esiti-generativo.json
 
-# valutazione automatica contro le attese scritte nella batteria
+# con il portiere: pre-filtri, deduzioni, coerenza (Decision_M acceso)
+node media/decision-m-portiere.mjs --out media/decision-m-paragone-esiti-portiere.json
+
+# valutazione automatica contro le attese scritte nella batteria (uno o più bracci)
 node media/decision-m-valuta.mjs media/decision-m-paragone-esiti-decisore.json \
                                     media/decision-m-paragone-esiti-generativo.json \
                                     --out media/decision-m-valutazione.json

@@ -50,7 +50,7 @@ Misura ripetibile su questa macchina (7 ottobre 2026): le **risposte attese** so
 `media/decision-m-batteria.json` (campo `attesa` per ogni domanda, con certezza e motivo) e
 `node media/decision-m-valuta.mjs <esiti.json> [...]` calcola l'accuratezza senza giudizio manuale. Sul
 4B Q4_K_M: **80,0%** (28/35 punti giudicabili; 82,9% contando le risposte "quasi" corrette), contro il
-**74,3%** dello stesso modello usato in modo generativo. Attenzione al rovescio: sui **23 punti ad alta
+**74,3%** dello stesso modello usato in modo generativo, e **88,6%** con il portiere (la policy nel codice). Attenzione al rovescio: sui **23 punti ad alta
 certezza** è avanti il generativo (87,0% contro 82,6%), e i due errori peggiori del decisore arrivano con
 confidenza 0,00 — nessuna soglia li intercetta. Numeri, grafici e limiti in
 `media/decision-m-paragone-report.md` (versione HTML: `media/decision-m-paragone-report.html`).
@@ -81,6 +81,13 @@ Tre forme, le stesse di una System One API:
 ## La policy la scrivi tu nel codice
 
 Il modello **non** esegue l'azione: risponde. La decisione operativa resta tua o dell'utente.
+**La versione pronta di questa policy è `media/decision-m-portiere.mjs`**: pre-filtri (ciò che sta nel
+testo si calcola), deduzioni (ciò che deriva da un'altra risposta non si chiede), coerenza (i vincoli fra
+domande correlate) e lettura a **fasce**. Misurata sulla batteria: accuratezza dall'80,0% all'**88,6%**
+con **30 domande invece di 36** e il 9% di token in ingresso in meno. Le fasce — `SICURO_SI` ≥ 0,9 ·
+`SICURO_NO` ≤ 0,5 · in mezzo `DUBBIO`, dove non si decide — sono le stesse che ora restituisce il tool
+`decision_m` in chat: una probabilità non va mai letta come un sì/no.
+
 Le quattro forme che funzionano bene:
 
 1. **soglia con via di mezzo**: sopra 0,9 agisci, sotto 0,5 lascia stare, in mezzo chiedi o passa a un umano;
@@ -111,6 +118,7 @@ Le quattro forme che funzionano bene:
 | Incollare il log intero nello stato | 4 minuti per una decisione | estrai le 5-10 righe che contano |
 | Una domanda per volta sullo stesso stato | paghi il prefill N volte | una chiamata con tutte le domande |
 | Chiedere due cose legate ("contraddice la policy?" e "serve correggere?") | risponde bene alla prima e si contraddice sulla seconda (`contraddice` 99% ma `serve_correzione` 0,01) | deduci la dipendente nel codice: al decisore si chiede solo ciò che non si può calcolare. Una domanda in meno è anche prefill in meno |
+| Dedurre una risposta da un'altra risposta del modello | la regola Eredita l'errore a monte: `manca_strumento` dedotto da uno `skill` sbagliato diventa sbagliato anche lui | deduci solo da ciò che il modello non può sbagliare — il testo, una costante di dominio; il resto si chiede |
 | Trattare 0,55 come "sì" | decisione arbitraria su un modello incerto | soglie + via di mezzo, o chiedi |
 | Chiedere testo al decisore | non c'è testo, ci sono lettere | usa un modello generativo |
 | Lasciare il servizio acceso a fine lavoro | ~5,7 GB occupati per niente | `decision_m_service action="stop"` |
@@ -122,4 +130,6 @@ Le quattro forme che funzionano bene:
 - Dalla dashboard: `POST /api/decision_m` (interruttore), `GET /api/decision_m` (stato), `POST /api/decision_m/decide` (prova autenticata).
 - Varianti disponibili: `4b q4_k_m` (2,5 GB, quella accesa), `4b q8_0` (4,4 GB), `1.7b q8_0` (1,8 GB, ~2× più veloce e molto meno accurato: 0,546 contro 0,648 sul benchmark degli autori).
 - Un caso singolo dalla riga di comando, senza passare dalla chat: `node media/decision-m-caso.mjs caso.json` (JSON con `state` e `questions`; `--template` stampa un modello, `-` legge da stdin per i casi che non devono finire in un file del repository).
+- Portiere e fasce: `node media/decision-m-portiere.mjs --out file.json` gira la batteria con la policy nel codice; `node media/decision-m-portiere.mjs --fascia 0.72` mostra la lettura a fasce senza il servizio. Le soglie stanno in un posto solo (`media/decision-m-tool.mjs`, esportate `SOGLIE` e `fascia`).
+- Accuratezza automatica: `node media/decision-m-valuta.mjs esiti1.json [esiti2.json]` confronta le risposte con le `attesa` scritte nella batteria.
 - Per soglie operative, la calibrazione va fatta sui **propri** dati (`rizzo calibrate` nel repo): le temperature sono legate al runtime e alla variante quantizzata.

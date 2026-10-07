@@ -106,6 +106,7 @@
   <a href="#casi">Caso per caso</a>
   <a href="#tempo">Il tempo</a>
   <a href="#qualita">Il prezzo in qualità</a>
+  <a href="#portiere">Il portiere</a>
   <a href="#scala">Su 1.000 decisioni</a>
   <a href="#fare">Cosa farne</a>
   <a href="#metodo">Metodo e limiti</a>
@@ -117,7 +118,9 @@
   generativo, ma ha letto <b>817 token in ingresso in più</b>. Sul totale il risparmio è del <b>4%</b>: il
   vantaggio vero non è «meno token», è <b>zero token in uscita</b> — la voce che ogni listino fa pagare
   3–5 volte. Il prezzo è il tempo, e sulla qualità la differenza fra i due è di pochi punti
-  (<b>80,0%</b> contro <b>74,3%</b>), con il generativo avanti proprio sui punti meno discutibili.</p>
+  (<b>80,0%</b> contro <b>74,3%</b>), con il generativo avanti proprio sui punti meno discutibili. Mettendo la
+  policy nel codice — il <b>portiere</b> (§6) — l'accuratezza sale all'<b>88,6%</b> con 6 domande in meno al
+  modello: quello è il guadagno vero, e non viene dal modello.</p>
 
   <div class="kpis">
     <div class="kpi"><div class="lbl">token generati</div><div class="val verde">0 <span style="font-size:16px;color:var(--dim2)">vs</span> 1.022</div><div class="sotto">decisore vs generativo, su 36 decisioni</div></div>
@@ -286,8 +289,66 @@
   <code>score</code>; il generativo 15/20, 5/7 e 6/8.</p>
 </section>
 
+<section id="portiere">
+  <h2><span class="n">6</span>Il portiere: la coerenza nel codice</h2>
+  <p>Il «portiere» (<code>media/decision-m-portiere.mjs</code>) è la policy che sta <b>fra</b> il modello e la
+  decisione, in tre mosse — il modello resta quello di prima: <b>pre-filtro</b> (se la risposta sta già nel
+  testo, non si chiede: si calcola), <b>deduzione</b> (se è funzione di un'altra risposta, non si chiede: si
+  deriva), <b>coerenza</b> (se il modello contraddice i propri dati, il vincolo impone il valore). E ogni
+  probabilità viene letta a <b>fasce</b>: SICURO_SÌ ≥ 0,9 · SICURO_NO ≤ 0,5 · in mezzo <b>DUBBIO</b>, dove non si
+  decide. Le stesse soglie le usa da oggi il tool <code>decision_m</code> in chat.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">accuratezza con il portiere</div><div class="val verde">88,6%</div><div class="sotto">31/35 · contro 80,0% del modello nudo e 74,3% del generativo</div></div>
+    <div class="kpi"><div class="lbl">alta certezza (23 punti)</div><div class="val giallo">91,3%</div><div class="sotto">modello nudo 82,6% · generativo 87,0%</div></div>
+    <div class="kpi"><div class="lbl">domande poste al modello</div><div class="val blu">30 <span style="font-size:16px;color:var(--dim2)">su 36</span></div><div class="sotto">3 calcolate dal codice, 3 dedotte</div></div>
+    <div class="kpi"><div class="lbl">token in ingresso / tempo</div><div class="val viola">−9,2% <span style="font-size:16px;color:var(--dim2)">/</span> −11,4%</div><div class="sotto">4.507 token e 196,4 s contro 4.961 e 221,8 s</div></div>
+  </div>
+
+  <table class="tab">
+    <caption>Stesso modello, stessa macchina, stessa batteria: l'unica differenza è la policy attorno al modello</caption>
+    <thead><tr><th></th><th class="num">modello nudo</th><th class="num">portiere</th><th class="num">generativo</th></tr></thead>
+    <tbody>
+      <tr><td>accuratezza</td><td class="num">80,0% (28/35)</td><td class="num ok"><b>88,6% (31/35)</b></td><td class="num">74,3%</td></tr>
+      <tr><td>con le «quasi» corrette</td><td class="num">82,9%</td><td class="num ok"><b>91,4%</b></td><td class="num">80,0%</td></tr>
+      <tr><td>solo attese ad alta certezza</td><td class="num">82,6%</td><td class="num ok"><b>91,3%</b></td><td class="num">87,0%</td></tr>
+      <tr><td>domande poste al modello</td><td class="num">36</td><td class="num ok">30</td><td class="num">n/d</td></tr>
+      <tr><td>token in ingresso</td><td class="num">4.961</td><td class="num ok">4.507</td><td class="num">4.144</td></tr>
+      <tr><td>secondi totali (per decisione)</td><td class="num">221,8 (6,2)</td><td class="num ok">196,4 (5,5)</td><td class="num">299,2 (8,3)</td></tr>
+      <tr><td>risposte calcolate dal codice</td><td class="num">0</td><td class="num">3</td><td class="num">—</td></tr>
+      <tr><td>risposte dedotte da un'altra risposta</td><td class="num">0</td><td class="num">3</td><td class="num">—</td></tr>
+      <tr><td>risposte imposte dalla coerenza</td><td class="num">0</td><td class="num">0</td><td class="num">—</td></tr>
+    </tbody>
+  </table>
+
+  <table class="tab">
+    <caption>Da dove vengono i 3 punti guadagnati — e il punto perso</caption>
+    <thead><tr><th>punto</th><th>come è stato risolto</th></tr></thead>
+    <tbody>
+      <tr><td><code>tool-dispatch.percorso_esplicito</code></td><td class="ok">regex sul messaggio: il nome del file è nel testo</td></tr>
+      <tr><td><code>rag-filtering.contraddice_policy</code></td><td class="ok">confronto numerico: il testo dice 30 giorni, la policy 14</td></tr>
+      <tr><td><code>compliance-checklist.trasferimenti</code></td><td class="ok">pattern sul testo — era l'errore con confidenza <b>0,00</b></td></tr>
+      <tr><td><code>citation-verification.serve_correzione</code></td><td class="ok">dedotta da <code>rapporto</code>: se contraddice, va corretta</td></tr>
+      <tr><td><code>agent-skill-selection.manca_strumento</code></td><td class="ko"><b>la deduzione propaga l'errore</b>: la regola diventa falsa perché il modello ha sbagliato <code>skill</code> a monte</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout"><b>Le due lezioni.</b> (1) Dedurre conviene solo se la fonte è affidabile: una regola che
+  legge <b>il testo</b> guadagna; una che legge <b>un'altra risposta del modello</b> ne eredita gli errori.
+  (2) Le regole di coerenza non hanno dovuto correggere nulla in questo giro (0 imposizioni): sono una rete, non
+  un guadagno — servono sui casi in cui l'incoerenza c'è davvero.</div>
+
+  <div class="callout warn"><b>Gli errori che restano sono di comprensione, non di coerenza:</b>
+  <code>guardrail-input.danno_se_obbedisce</code> (1,74 contro «Molto grave») e
+  <code>agent-skill-selection.skill</code> («bookforge» invece di «nessuna»). Il codice non li aggiusta: per
+  quelli serve un modello migliore o un caso d'uso più stretto.</div>
+
+  <p class="nota">Il costo del portiere è <b>sei regole da scrivere e mantenere</b>: codice leggibile, che si può
+  sbagliare e correggere — a differenza di un errore del modello con confidenza 0,00, che non si vede.</p>
+</section>
+
 <section id="scala">
-  <h2><span class="n">6</span>Su 1.000 decisioni (proiezione, non misura)</h2>
+  <h2><span class="n">7</span>Su 1.000 decisioni (proiezione, non misura)</h2>
   <table class="tab">
     <caption>Proiezione lineare dai numeri misurati. La riga del costo è un'ipotesi di prezzo, non un dato.</caption>
     <thead><tr><th>1.000 decisioni</th><th class="num">decisore</th><th class="num">generativo</th></tr></thead>
@@ -320,7 +381,7 @@
 </section>
 
 <section id="fare">
-  <h2><span class="n">7</span>Cosa farne</h2>
+  <h2><span class="n">8</span>Cosa farne</h2>
   <ul>
     <li><b>Decisore come filtro e instradatore</b>, non come oracolo: il risparmio è strutturale (uscita a zero),
     la qualità non è superiore al generativo su questa batteria.</li>
@@ -338,7 +399,7 @@
 </section>
 
 <section id="metodo">
-  <h2><span class="n">8</span>Metodo, riproducibilità, limiti</h2>
+  <h2><span class="n">9</span>Metodo, riproducibilità, limiti</h2>
   <table class="tab">
     <caption>Due bracci, stesso modello e stessa macchina: l'unica variabile è la forma della risposta</caption>
     <thead><tr><th></th><th>braccio A — decisore</th><th>braccio B — generativo</th></tr></thead>
@@ -370,6 +431,9 @@ node media/decision-m-batteria.mjs --out media/decision-m-paragone-esiti-decisor
   --host 127.0.0.1 --port 8018 -t 6 -c 2048 --jinja
 node media/decision-m-paragone-generativo.mjs --out media/decision-m-paragone-esiti-generativo.json
 
+# con il portiere: pre-filtri, deduzioni, coerenza
+node media/decision-m-portiere.mjs --out media/decision-m-paragone-esiti-portiere.json
+
 # valutazione automatica contro le attese scritte nella batteria
 node media/decision-m-valuta.mjs media/decision-m-paragone-esiti-decisore.json \
                                     media/decision-m-paragone-esiti-generativo.json \
@@ -393,7 +457,7 @@ node media/decision-m-valuta.mjs media/decision-m-paragone-esiti-decisore.json \
 <footer>
   Dati grezzi: <code>media/decision-m-paragone-esiti-decisore.json</code> ·
   <code>media/decision-m-paragone-esiti-generativo.json</code> — strumenti:
-  <code>media/decision-m-batteria.mjs</code>, <code>media/decision-m-paragone-generativo.mjs</code> —
+  <code>media/decision-m-batteria.mjs</code>, <code>media/decision-m-paragone-generativo.mjs</code>, <code>media/decision-m-portiere.mjs</code> —
   valutazione automatica: <code>media/decision-m-valuta.mjs</code> → <code>media/decision-m-valutazione.json</code> —
   versione Markdown dello stesso report: <code>media/decision-m-paragone-report.md</code>.
   Batteria: 12 casi / 36 decisioni tipizzate · 7 ottobre 2026.
