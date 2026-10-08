@@ -43,7 +43,7 @@ import { createDecisionMExtension, normalizeQuestions as normalizeDecisionMQuest
 import { createMemoriaExtension } from "./media/memoria/memoria-tool.mjs";
 import { datiVista as memoriaVista, graphQuery as memoriaGraphQuery, schedaNodo as memoriaScheda } from "./media/memoria/memoria-graph.mjs";
 import { leggiWiki as memoriaWiki, linkRotti as memoriaLinkRotti } from "./media/memoria/memoria-wiki.mjs";
-import { ricostruisci as memoriaRicostruisci } from "./media/memoria/memoria-build.mjs";
+import { ricostruisci as memoriaRicostruisci, aggiornaDopoSessione as memoriaArchiviaSessione } from "./media/memoria/memoria-build.mjs";
 import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato, indiceDaAggiornare as memoriaIndiceDaAggiornare } from "./media/memoria/memoria-index.mjs";
 import { createDecisionMService } from "./media/decision-m-service.mjs";
 
@@ -1470,6 +1470,77 @@ async function refreshExtensionRuntime() {
   }
 }
 
+/**
+ * L'ARCHIVIO DELLA CHAT CHE SI CHIUDE.
+ *
+ * Aprire una nuova chat (o passare a un'altra) chiude quella di prima: da quel momento il suo
+ * contenuto vive solo nel file JSONL in `sessions/`, che è dato grezzo — chi lo legge è solo
+ * l'archiviazione. Qui si chiude il cerchio: si scrive (o si riscrive) l'EPISODIO di quella
+ * sessione e si ricostruiscono indice, grafo, wiki e atlante, così la memoria è al passo NEL
+ * momento in cui la chat vecchia sparisce dalla vista.
+ *
+ * Tre scelte che non sono dettagli:
+ *   - IN BACKGROUND, in coda: il cambio di chat resta istantaneo e non si accavallano due
+ *     ricostruzioni (l'atlante e gli indici si scrivono su file: due scritture insieme sono un
+ *     guasto, non una velocità in più). Chi aspetta l'esito è solo il broadcast finale.
+ *   - NON BLOCCA MAI IL CAMBIO: se l'archivio fallisce (disco pieno, sessione illeggibile) la chat
+ *     nuova si apre lo stesso e l'errore si logga; la memoria resta indietro e lo DICHIARA
+ *     (`stato.da_aggiornare`, il badge nella scheda Memoria).
+ *   - NIENTE RUMORE: le chat mai usate (nessuna richiesta) non producono episodio. L'archivio
+ *     non deve riempire la memoria di sessioni vuote.
+ */
+let codaArchivio = Promise.resolve();
+
+function archiviaSessione(sessionManager, motivo = "chat chiusa") {
+  const file = sessionManager?.getSessionFile?.() || null;
+  if (!file) return codaArchivio;
+  const cartellaProgetto = progetto?.attiva || "";
+  codaArchivio = codaArchivio
+    .catch(() => {})
+    .then(async () => {
+      const t0 = Date.now();
+      const esito = await memoriaArchiviaSessione({ sessioneFile: file, progetto: cartellaProgetto, atlante: true });
+      const g = esito.grafo || null;
+      const riassunto = {
+        motivo,
+        sessione: basename(file),
+        episodi: esito.episodi ?? 0,
+        nodi: g?.nodi ?? null,
+        archi: g?.archi ?? null,
+        atlante: esito.atlante?.kb ?? null,
+        ms: Date.now() - t0,
+        errori: esito.errori || [],
+      };
+      const quanti = riassunto.episodi === 1 ? "sessione archiviata" : "sessioni archiviate";
+      if (riassunto.errori.length) console.error(`[memoria] archivio della chat incompleto: ${riassunto.errori.join(" | ")}`);
+      else console.log(`[memoria] ${motivo}: ${riassunto.episodi} ${quanti}, ${riassunto.nodi ?? "?"} nodi, atlante ${riassunto.atlante ?? "?"} KB in ${riassunto.ms} ms`);
+      // La dashboard lo scopre subito: la scheda Memoria, se è aperta, si ridisegna (vedi
+      // l'ascoltatore dell'evento «memoria» in dashboard.html) e l'utente vede che l'archivio
+      // è avvenuto — senza doverlo dedurre da un grafo che cambia da solo.
+      broadcast("memoria", riassunto);
+      return riassunto;
+    })
+    .catch((e) => {
+      console.error(`[memoria] archivio di ${motivo} non riuscito: ${e?.message || e}`);
+      broadcast("memoria", { motivo, errore: String(e?.message || e) });
+    });
+  return codaArchivio;
+}
+
+/**
+ * L'atlante si scrive UNA volta per volta: è un file da ~120 KB con dati e codice incorporati, e
+ * due richieste insieme (due schede aperte, un ricaricamento mentre il giro periodico scrive)
+ * non devono scriverlo in parallelo. La coda rende la seconda attesa della prima.
+ */
+let codaAtlante = Promise.resolve();
+function atlanteFresco() {
+  codaAtlante = codaAtlante.catch(() => {}).then(async () => {
+    const { scriviAtlante } = await import("./media/memoria/memoria-atlante.mjs");
+    return scriviAtlante({ silenzioso: true });
+  });
+  return codaAtlante;
+}
+
 /** Passa a un'altra sessione (nuova o esistente). */
 async function switchSession(sessionManager) {
   const old = session;
@@ -1486,6 +1557,12 @@ async function switchSession(sessionManager) {
   await refreshExtensionRuntime();
   await attachSession(sessionManager);
   if (old && old !== session) {
+    // La chat che si chiude si ARCHIVIA prima di essere lasciata andare: episodio + indice +
+    // grafo + wiki + atlante. Se si riapre la STESSA sessione non c'è niente da archiviare: il
+    // file è identico e riscrivere l'episodio sarebbe solo lavoro sprecato.
+    const fileVecchio = old.sessionManager?.getSessionFile?.() || null;
+    const fileNuovo = session.sessionManager?.getSessionFile?.() || null;
+    if (fileVecchio && fileVecchio !== fileNuovo) archiviaSessione(old.sessionManager, "chat chiusa");
     try {
       old.dispose();
     } catch {
@@ -4139,12 +4216,24 @@ const server = http.createServer(async (req, res) => {
     // (dati e codice incorporati). Se non è mai stato generato, lo si genera adesso.
     if (req.method === "GET" && url.pathname === "/memoria") {
       const file = join(__dirname, "media", "memoria", "atlante.html");
-      if (!existsSync(file)) {
+      const grafoFile = join(__dirname, "media", "memoria", "grafo.json");
+      // Non basta che il file ESISTA: l'atlante ha i dati incorporati, quindi è uno snapshot, e
+      // uno snapshot servito a oltranza mostra il grafo del giorno prima dichiarando una data
+      // che nessuno confronta. Si rigenera quando il GRAFO è più recente di lui (o quando manca).
+      let daGenerare = true;
+      try {
+        const [atl, gra] = await Promise.all([fs.stat(file), fs.stat(grafoFile)]);
+        daGenerare = atl.mtimeMs < gra.mtimeMs;
+      } catch {
+        daGenerare = true;
+      }
+      if (daGenerare) {
         try {
-          const { scriviAtlante } = await import("./media/memoria/memoria-atlante.mjs");
-          await scriviAtlante({ silenzioso: true });
+          await atlanteFresco();
         } catch (e) {
-          return json(res, 503, { error: `atlante non generabile: ${e?.message || e}` });
+          // Se la rigenerazione fallisce si serve quello che c'è: un atlante vecchio è meglio di
+          // una pagina di errore, e il campo `generato` in pagina dice di quando è.
+          if (!existsSync(file)) return json(res, 503, { error: `atlante non generabile: ${e?.message || e}` });
         }
       }
       return sendFile(res, file, { mime: "text/html; charset=utf-8", noStore: true });
@@ -4589,6 +4678,10 @@ const server = http.createServer(async (req, res) => {
       const found = list.find((s) => s.id === id);
       if (!found) return json(res, 404, { error: "sessione non trovata" });
       if (session?.sessionId === id) await switchSession(newSessionManager());
+      // L'archivio legge il file della sessione per scriverne l'episodio: si aspetta la coda
+      // prima di cancellarlo, altrimenti si archiverebbe un file che non c'è più (o un episodio
+      // a metà). È l'unico punto in cui l'archivio non è davvero in background, per necessità.
+      await codaArchivio.catch(() => {});
       await fs.unlink(found.path).catch(() => {});
       broadcast("state", getState());
       broadcast("sessions", await getSessionsPayload());
@@ -5452,7 +5545,7 @@ server.listen(PORT, HOST, () => {
     memoriaInCorso = true;
     try {
       if (!(await memoriaIndiceDaAggiornare())) return;
-      const e = await memoriaRicostruisci({ silenzioso: true, passi: { indice: true, grafo: true, wiki: true } });
+      const e = await memoriaRicostruisci({ silenzioso: true, passi: { indice: true, grafo: true, wiki: true }, atlante: true });
       if (e.indice?.riletti) {
         console.log(`[memoria] aggiornata in background: ${e.indice.riletti} file riletti, ${e.grafo?.nodi ?? "?"} nodi, ${e.indice.n_frammenti} frammenti`);
       }

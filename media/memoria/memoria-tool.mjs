@@ -258,7 +258,7 @@ export function createMemoriaExtension({ log = () => {}, radice = ROOT } = {}) {
           // `memoria_cerca` non vedeva la scheda dell'episodio appena annotato (verificato dal
           // vivo: la ricerca rispondeva con la scheda di un modulo di codice). Costa poco —
           // l'indice è incrementale e rilegge solo il file dell'episodio.
-          const ric = await ricostruisci({ silenzioso: true, passi: { grafo: true, wiki: true, indice: true } }).catch((e) => ({ errori: [String(e?.message || e)] }));
+          const ric = await ricostruisci({ silenzioso: true, passi: { grafo: true, wiki: true, indice: true }, atlante: true }).catch((e) => ({ errori: [String(e?.message || e)] }));
           return {
             content: [
               {

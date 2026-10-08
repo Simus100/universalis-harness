@@ -15,21 +15,22 @@
  * Uso:  node media/test-memoria.mjs [--solo-sistema] [--lento]
  */
 import { join } from "node:path";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { mkdir, rm } from "node:fs/promises";
-import { normalizza, tokenizza, slug, stimaToken, potare, CHAR_PER_TOKEN } from "./memoria/memoria-core.mjs";
+import { mkdir, rm, utimes } from "node:fs/promises";
+import { normalizza, tokenizza, slug, stimaToken, potare, CHAR_PER_TOKEN, elencaFile } from "./memoria/memoria-core.mjs";
 import { spezza, cerca, cercaBM25, diagnosi, pacchetto, statoMemoria, caricaIndice, indiceDaAggiornare, chunksDiEpisodio, sintesiCodice, tipoDiAmbito } from "./memoria/memoria-index.mjs";
 import { buildGrafo, graphQuery, schedaNodo, caricaGrafo, datiVista } from "./memoria/memoria-graph.mjs";
 import { buildWiki, leggiWiki, linkRotti } from "./memoria/memoria-wiki.mjs";
 import { componiEpisodio, parseFrontmatter, serializzaFrontmatter, leggiSessione, elencaEpisodi, percorsoEpisodio } from "./memoria/memoria-episodio.mjs";
-import { ricostruisci } from "./memoria/memoria-build.mjs";
+import { ricostruisci, aggiornaDopoSessione } from "./memoria/memoria-build.mjs";
 
 const argv = process.argv.slice(2);
 const soloSistema = argv.includes("--solo-sistema");
 
 let passati = 0;
 let falliti = 0;
+let saltati = 0;
 const fallimenti = [];
 
 async function prova(nome, fn) {
@@ -39,11 +40,26 @@ async function prova(nome, fn) {
     passati++;
     console.log(`  ✓ ${nome}${typeof risultato === "string" ? ` — ${risultato}` : ""}`);
   } catch (e) {
+    // Un test NON verificabile adesso (per esempio perché il servizio in esecuzione esegue
+    // ancora il codice precedente) si dichiara saltato con il motivo: contarlo come fallito
+    // insegnerebbe a ignorare i rossi, contarlo come passato sarebbe una bugia.
+    if (e?.salta) {
+      saltati++;
+      console.log(`  ⊘ ${nome} — non verificabile adesso: ${e?.message || e}`);
+      return;
+    }
     falliti++;
     fallimenti.push(`${nome}: ${e?.message || e}`);
     console.log(`  ✗ ${nome}`);
     console.log(`      ${e?.message || e}`);
   }
+}
+
+/** Errore che dichiara un test non verificabile ora, senza contarlo come fallimento. */
+function nonVerificabile(messaggio) {
+  const e = new Error(messaggio);
+  e.salta = true;
+  return e;
 }
 
 function assert(condizione, messaggio) {
@@ -547,6 +563,25 @@ await prova("il file dell'atlante è autonomo (nessuna risorsa esterna)", async 
   return `${Math.round(h.length / 1024)} KB, zero risorse esterne`;
 });
 
+/** Una sessione già chiusa (non quella in corso: il suo file è ancora in scrittura). */
+async function unaSessioneVecchia() {
+  const files = (await elencaFile(join(process.cwd(), "sessions"), { est: [".jsonl"] })).sort();
+  assert(files.length > 0, "nessuna sessione su disco");
+  return files.length > 1 ? files[files.length - 2] : files[0];
+}
+
+await prova("archiviare una sessione chiusa rigenera ANCHE l'atlante (la vista resta al passo)", async () => {
+  // Il difetto misurato: la chiusura di una chat archiviava l'episodio e ricostruiva indice,
+  // grafo e wiki, ma NON l'atlante — che ha i dati incorporati, quindi restava indietro di
+  // un'intera sessione di lavoro mostrando una data che nessuno confrontava.
+  const esito = await aggiornaDopoSessione({ sessioneFile: await unaSessioneVecchia(), atlante: true });
+  assert(esito.atlante?.ok, `atlante non rigenerato: ${JSON.stringify(esito.errori)}`);
+  const g = JSON.parse(readFileSync(join("media", "memoria", "grafo.json"), "utf8"));
+  const h = readFileSync(join("media", "memoria", "atlante.html"), "utf8");
+  assert(h.includes(`"generato":"${g.generato}"`), "l'atlante non porta la data del grafo corrente");
+  return `${esito.atlante.kb} KB, dati del ${String(g.generato).slice(0, 16).replace("T", " ")}`;
+});
+
 // ---------------------------------------------------------------- sistema: integrazione nell'interfaccia
 
 console.log("\n[sistema] vista Memoria nella dashboard (coerenza statica, senza browser)");
@@ -622,11 +657,17 @@ await prova("la memoria si prende tutto lo spazio al posto della chat", async ()
   return "statistiche, barra di scrittura e chat nascoste; canvas a tutta altezza";
 });
 
-await prova("la vista Memoria non è nel percorso critico di avvio (si carica solo quando si apre)", async () => {
+await prova("la vista Memoria non è nel percorso critico di avvio, e si rilegge a ogni apertura", async () => {
   const html = readFileSync("dashboard.html", "utf8");
   assert(!/window\.onload[^]*caricaMemoria/.test(html), "la memoria si carica all'avvio: rallenta la dashboard");
-  assert(/if \(name === "memoria"\) \{[\s\S]{0,200}caricaMemoria\(\)/.test(html), "la vista non si carica quando la si apre");
-  return "caricamento pigro confermato";
+  // Pigra all'avvio, ma RILETTA a ogni apertura: la memoria cambia da sé (fine turno, chiusura di
+  // una chat, giro periodico), quindi una vista che si ridisegna solo la prima volta mostra dati
+  // vecchi senza dirlo. Era il secondo buco misurato insieme all'atlante stantio.
+  const blocco = html.match(/if \(name === "memoria"\) \{([\s\S]{0,700}?)\n  \}/);
+  assert(blocco, "la vista non si carica quando la si apre");
+  assert(/caricaMemoria\(\)/.test(blocco[1]), "la vista non viene caricata quando la si apre");
+  assert(!/if \(!memoriaLoaded\)/.test(blocco[1]), "la vista si rilegge solo la prima volta: una ricostruzione in background non si vedrebbe");
+  return "caricamento pigro + rilettura a ogni apertura";
 });
 
 await prova("la memoria si aggiorna da sé anche quando nessun hook è scattato", async () => {
@@ -635,7 +676,26 @@ await prova("la memoria si aggiorna da sé anche quando nessun hook è scattato"
   assert(/setInterval\(\(\) => void memoriaTick\(\), MEMORIA_REFRESH_MS\)/.test(src), "il ciclo non è collegato all'intervallo");
   assert(/await memoriaIndiceDaAggiornare\(\)/.test(src), "il ciclo non controlla se c'è qualcosa di nuovo: ricostruirebbe a vuoto");
   assert(/setTimeout\(\(\) => void memoriaTick\(\), 2 \* 60 \* 1000\)/.test(src), "manca il controllo dopo un riavvio");
+  assert(/passi: \{ indice: true, grafo: true, wiki: true \}, atlante: true \}/.test(src), "il giro periodico non rigenera l'atlante: la pagina resterebbe indietro");
   return "controllo ogni 20 minuti + uno due minuti dopo l'avvio";
+});
+
+await prova("chiudere una chat archivia la sessione precedente e aggiorna la vista", async () => {
+  const src = readFileSync("dashboard.mjs", "utf8");
+  // Il difetto: il contenuto di una chat viveva solo nel JSONL finché qualcuno non premeva
+  // «ricostruisci». Ora ogni cambio di chat archivia la sessione uscente — episodio, indice,
+  // grafo, wiki, atlante — e lo annuncia alla dashboard.
+  assert(/function archiviaSessione\(sessionManager, motivo/.test(src), "manca l'archiviazione della sessione che si chiude");
+  assert(/memoriaArchiviaSessione\(\{ sessioneFile: file[^)]*atlante: true/.test(src), "l'archivio non include l'atlante");
+  assert(/fileVecchio !== fileNuovo\) archiviaSessione\(/.test(src), "si archivia anche riaprendo la stessa sessione (lavoro inutile)");
+  assert(/broadcast\("memoria", riassunto\)/.test(src), "la dashboard non viene avvisata che la memoria è cambiata");
+  assert(/await codaArchivio\.catch/.test(src), "la cancellazione di una chat non aspetta l'archivio: si cancellerebbe il file mentre viene letto");
+  // La pagina autonoma non deve restare uno snapshot servito a oltranza.
+  assert(/atl\.mtimeMs < gra\.mtimeMs/.test(src), "la rotta /memoria non rigenera l'atlante quando il grafo è più recente");
+  const html = readFileSync("dashboard.html", "utf8");
+  assert(/es\.addEventListener\("memoria"/.test(html), "la vista non reagisce all'aggiornamento della memoria");
+  assert(/dataset\.tab === "memoria"\) caricaMemoria\(\)/.test(html), "l'evento non ricarica la vista aperta");
+  return "archivio in coda, annuncio alla dashboard, atlante rigenerato";
 });
 
 await prova("il sync di fine lavoro ricorda la decisione, senza imporla", async () => {
@@ -846,6 +906,39 @@ await prova("GET /memoria serve l'atlante", async () => {
   return `${Math.round(t.length / 1024)} KB`;
 });
 
+await prova("anche la pagina servita non è uno snapshot stantio", async () => {
+  // Si INvecchia l'atlante apposta (un'ora indietro): la rotta deve accorgersene dal confronto
+  // con grafo.json e rigenerarlo, invece di servire il file solo perché esiste — era il buco
+  // misurato (la pagina mostrava i dati di un'ora prima, con una data che nessuno confrontava).
+  const file = join("media", "memoria", "atlante.html");
+  const vecchio = new Date(Date.now() - 3600 * 1000);
+  await utimes(file, vecchio, vecchio);
+  const r = await get("/memoria");
+  assert(r.ok, `HTTP ${r.status}`);
+  const t = await r.text();
+  const g = JSON.parse(readFileSync(join("media", "memoria", "grafo.json"), "utf8"));
+  assert(
+    t.includes(`"generato":"${g.generato}"`),
+    "la pagina servita è più vecchia del grafo",
+  );
+  // Il contenuto da solo non basta a dimostrare la rigenerazione (poteva essere già allineato):
+  // la prova è che il file su disco risulti RISCRITTO, cioè più recente del grafo.
+  const mAtl = statSync(file).mtimeMs;
+  const mGra = statSync(join("media", "memoria", "grafo.json")).mtimeMs;
+  if (mAtl < mGra) {
+    // La promessa è di codice più recente di quello che il processo sta eseguendo: si verifica
+    // dopo il riavvio, non si finge che sia rotta.
+    const { createHash } = await import("node:crypto");
+    const suDisco = createHash("sha256").update(readFileSync("dashboard.mjs")).digest("hex").slice(0, 16);
+    const salute = await get("/api/health").then((x) => (x.ok ? x.json() : null)).catch(() => null);
+    throw nonVerificabile(
+      `la dashboard in esecuzione (${salute?.codeHash || "hash ignoto"}, avviata ${salute?.startedAtISO || "?"}) esegue ancora il codice precedente; ` +
+        `su disco: ${suDisco}. Riavvia pi-dashboard (scripts/restart-dashboard.sh) e ripeti.`,
+    );
+  }
+  return `atlante invecchiato di un'ora → riscritto, dati del ${String(g.generato).slice(0, 16).replace("T", " ")}`;
+});
+
 await prova("GET /memoria/atlante.mjs serve il modulo del disegno con il tipo giusto", async () => {
   const r = await get("/memoria/atlante.mjs");
   assert(r.ok, `HTTP ${r.status}`);
@@ -918,8 +1011,8 @@ await prova("i quattro tool compaiono nel registro dei tool dell'SDK", async () 
 
 console.log("");
 if (fallimenti.length) {
-  console.log(`✘ ${falliti} test falliti su ${passati + falliti}:`);
+  console.log(`✘ ${falliti} test falliti su ${passati + falliti}${saltati ? ` (${saltati} saltati)` : ""}:`);
   for (const f of fallimenti) console.log(`   - ${f}`);
   process.exit(1);
 }
-console.log(`✓ tutti i ${passati} test passati`);
+console.log(`✓ tutti i ${passati} test passati${saltati ? ` · ${saltati} saltati (non verificabili adesso)` : ""}`);

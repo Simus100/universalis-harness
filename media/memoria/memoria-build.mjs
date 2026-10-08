@@ -60,11 +60,24 @@ export async function ricostruisci({ forza = false, silenzioso = true, atlante =
   return esito;
 }
 
-/** Il lavoro di fine sessione: prima l'episodio (dati), poi indice/grafo/wiki incrementali. */
-export async function aggiornaDopoSessione({ sessioneFile = null, progetto = "", silenzioso = true } = {}) {
+/**
+ * Il lavoro di archiviazione di una sessione: prima l'episodio (i dati), poi indice/grafo/wiki
+ * incrementali — e, su richiesta, anche l'atlante.
+ *
+ * `atlante: true` serve ai due momenti in cui la vista deve restare al passo con i dati: la
+ * CHIUSURA di una chat (il grafo cambia perché nasce un episodio — vedi `switchSession` in
+ * dashboard.mjs) e il giro periodico della dashboard. Senza, atlante.html resta com'era: ha i
+ * dati INCORPORATI, quindi non è una vista che si aggiorna da sé — è uno snapshot, e uno snapshot
+ * che invecchia in silenzio è peggio di uno assente, perché dichiara una data che nessuno guarda.
+ * Il costo è una manciata di millisecondi su ~120 KB (misurato: nessun impatto percepibile).
+ *
+ * Le sessioni SENZA richieste non producono episodio: una chat aperta e mai usata non entra
+ * nella memoria (nessun rumore) e la funzione lo dichiara con `episodi: 0`.
+ */
+export async function aggiornaDopoSessione({ sessioneFile = null, progetto = "", silenzioso = true, atlante = false } = {}) {
   const { episodiDaSessioni } = await import("./memoria-episodio.mjs");
   const episodi = await episodiDaSessioni({ sessioneFile, progetto }).catch((e) => [{ errore: String(e?.message || e) }]);
-  const esito = await ricostruisci({ silenzioso, passi: { indice: true, grafo: true, wiki: true } });
+  const esito = await ricostruisci({ silenzioso, passi: { indice: true, grafo: true, wiki: true }, atlante });
   return { episodi: episodi.length, ...esito };
 }
 

@@ -4397,6 +4397,18 @@ es.addEventListener("goals", (e) => {
   try { goals = JSON.parse(e.data).goals || []; } catch { goals = []; }
   if (document.body.dataset.tab === "goals") renderGoals();
 });
+// La memoria si è mossa: una chat è stata chiusa (il suo episodio è stato archiviato), è finito
+// un turno di lavoro, è passato il giro periodico o si è premuto «ricostruisci». Prima lo si
+// scopriva solo ricaricando la pagina — cioè la vista mentiva per omissione. La vista aperta si
+// rilegge, e la chiusura di una chat si annuncia: è il momento in cui l'utente vuole sapere che
+// il contenuto NON si è perso.
+es.addEventListener("memoria", (e) => {
+  let d = {};
+  try { d = JSON.parse(e.data) || {}; } catch { /* payload illeggibile: si aggiorna comunque */ }
+  if (document.body.dataset.tab === "memoria") caricaMemoria();
+  if (d.errore || d.errori?.length) toast("🗄 archivio della chat incompleto: " + (d.errore || d.errori.join(" | ")), "err");
+  else if (d.motivo === "chat chiusa" && d.episodi) toast(`🗄 chat precedente archiviata: ${d.episodi} episod${d.episodi === 1 ? "io" : "i"}, ${d.nodi ?? "?"} nodi in memoria`, "ok");
+});
 es.addEventListener("schedule", (e) => {
   try {
     const d = JSON.parse(e.data);
@@ -5099,9 +5111,12 @@ function showTab(name) {
   if (fa) fa.classList.toggle("on", name === "agenda");
   if (fl) fl.classList.toggle("on", name === "live");
   if (name === "memoria") {
-    // La vista si carica quando la si apre (non all'avvio: la dashboard deve partire leggera).
-    if (!memoriaLoaded) { memoriaLoaded = true; caricaMemoria(); }
-    else if (memoriaAtlante) memoriaAtlante.ridisegna();
+    // La vista si carica quando la si apre (non all'avvio: la dashboard deve partire leggera),
+    // e si RILEGGE a ogni apertura: la memoria cambia da sé a fine turno, alla chiusura di una
+    // chat e col giro periodico, quindi quello che si vedeva dieci minuti fa può essere vecchio.
+    // Il disegno è deterministico: ricaricare non fa «saltare» il grafo sotto gli occhi.
+    memoriaLoaded = true;
+    caricaMemoria();
   }
   if (name === "progetto") { if (!progettoLoaded) { progettoLoaded = true; loadProgetto(); } else loadProgetto(); }
   if (name === "agenda") { if (!agendaLoaded) { agendaLoaded = true; loadAgenda(); } else loadAgenda(); }

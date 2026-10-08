@@ -51,7 +51,8 @@ memoria_cerca  "come si costruisce l'indice" → frammenti di docs e codice, con
 
 `memoria_episodio` è l'unica cosa che i file non contengono: **la decisione e il perché**. Il resto
 dell'episodio (date, richieste, file toccati, comandi, costo, esito tecnico) è già registrato
-automaticamente a fine turno e alla compattazione del contesto.
+automaticamente a fine turno, alla compattazione del contesto e alla chiusura della chat (una
+nuova chat archivia la precedente: episodio + indice + grafo + wiki + atlante).
 
 Quando chiamarlo:
 

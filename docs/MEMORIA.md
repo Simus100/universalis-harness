@@ -55,13 +55,31 @@ La memoria non si costruisce a mano e non dipende dal fatto che qualcuno si rico
    senza questo l'annotazione non si trovava fino al turno successivo (verificato dal vivo).
    È l'unico passo non automatico, ed è quello che si dimentica: per questo
    `scripts/sync-fine-lavoro.sh` lo ricorda a fine pubblicazione (avviso, non blocco).
-4. **Ogni 20 minuti**, e una volta due minuti dopo l'avvio: la dashboard controlla se c'è
-   qualcosa di nuovo (`mtime` + dimensione) e, solo allora, ricostruisce in modo incrementale.
-   Copre i casi in cui nessun hook è scattato — server appena riavviato, sessione chiusa in
-   fretta, lavoro fatto da un'altra istanza — che altrimenti lasciano la memoria indietro **in
-   silenzio**, il modo peggiore di guastarsi perché sembra aggiornata.
-5. **A mano**: `node media/memoria/memoria-build.mjs [--forza] [--atlante]`, o il pulsante
+4. **Chiusura di una chat** (nuova chat, passaggio a un'altra, cancellazione di quella attiva):
+   la sessione che si chiude viene **archiviata** — episodio riscritto dai dati del suo JSONL — e
+   indice/grafo/wiki/**atlante** si ricostruiscono subito, in background, in coda. È il momento in
+   cui il contenuto della chat smette di essere «una conversazione» e diventa memoria durevole:
+   la dashboard lo annuncia (🗄) e la scheda Memoria, se è aperta, si ridisegna da sé. Le chat mai
+   usate non producono episodio (una sessione vuota non è lavoro).
+5. **Ogni 20 minuti**, e una volta due minuti dopo l'avvio: la dashboard controlla se c'è
+   qualcosa di nuovo (`mtime` + dimensione) e, solo allora, ricostruisce in modo incrementale,
+   atlante compreso. Copre i casi in cui nessun hook è scattato — server appena riavviato,
+   sessione chiusa in fretta, lavoro fatto da un'altra istanza — che altrimenti lasciano la
+   memoria indietro **in silenzio**, il modo peggiore di guastarsi perché sembra aggiornata.
+6. **A mano**: `node media/memoria/memoria-build.mjs [--forza] [--atlante]`, o il pulsante
    «ricostruisci» nella scheda **Memoria**.
+
+### L'atlante è uno snapshot: perché non basta scriverlo una volta
+
+`media/memoria/atlante.html` non è una vista che legge i dati: ha **dati e codice incorporati**,
+perché deve aprirsi in una scheda, scaricarsi e funzionare offline. Perciò non si aggiorna da
+sé, e due cose lo tengono al passo:
+
+- ogni ricostruzione che cambia il grafo (chiusura di chat, giro periodico, «ricostruisci») lo
+  riscrive (`atlante: true` in `aggiornaDopoSessione`);
+- la rotta `GET /memoria` lo rigenera quando `grafo.json` è **più recente** di lui, invece di
+  servirlo solo perché esiste. Era il buco misurato: la pagina mostrava i dati di un'ora prima
+  dichiarando una data che nessuno confrontava.
 
 Le 29 sessioni già presenti sul disco sono state importate in episodi **senza spendere un token**:
 sono dati, non interpretazioni.

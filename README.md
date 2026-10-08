@@ -57,7 +57,9 @@ può proporne l'uso e chiederne il consenso, mai deciderlo da solo.
 decisioni, file toccati, obiettivi — e lo rende consultabile a tre costi diversi: il **grafo**
 (struttura: nomi e relazioni, ~300 token), la **wiki** (una pagina per nodo) e la **ricerca** a
 frammenti con un giudizio di confidenza che, quando la memoria non sa, lo dice. Gli episodi nascono
-da sé a fine turno e alla compattazione del contesto — dove il riassunto che il modello ha già pagato
+da sé a fine turno, alla compattazione del contesto e alla **chiusura di una chat** (aprirne una nuova
+archivia la precedente: episodio, indice, grafo, wiki e atlante si aggiornano subito) — dove il
+riassunto che il modello ha già pagato
 smette di sparire con la sessione; il *perché* lo scrive l'agente, ed è l'unica cosa che i file non
 contengono. La scheda **Memoria** (accanto a Chat e File) disegna il grafo come **mappa 2D** — righe = livelli
 (episodio → decisione → obiettivo → artefatto), colonne = progetti — con pan/zoom, nomi leggibili e
