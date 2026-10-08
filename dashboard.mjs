@@ -1614,6 +1614,12 @@ const clients = new Set();
  */
 const SSE_REPLAY_MAX = 500; // numero massimo di eventi conservati
 const SSE_REPLAY_MAX_BYTES = 256 * 1024; // tetto di RAM per il buffer
+// Battito del canale SSE (commento, nessun campo `id`: non deve spostare il Last-Event-ID del
+// replay). Serve perché il canale può restare MUTO per minuti — modello che pensa, tool lento —
+// e una connessione muta è quella che reti e NAT chiudono per inattività; è anche il battito su
+// cui il client misura il silenzio per accorgersi di uno stream morto in modo silenzioso
+// (half-open: socket aperto, nessun dato, nessun evento `error`).
+const SSE_HEARTBEAT_MS = 20000;
 const SSE_NO_REPLAY = new Set(["browser_frame"]);
 let sseSeq = 0;
 let sseReplayBytes = 0;
@@ -4332,7 +4338,21 @@ const server = http.createServer(async (req, res) => {
           })}\n\n`,
         );
       }
-      req.on("close", () => clients.delete(res));
+      // Heartbeat: tiene viva la catena (proxy/NAT) e dà al watchdog del client un battito da
+      // confrontare col silenzio. Si spegne quando il client va via.
+      const battito = setInterval(() => {
+        if (res.writableEnded || res.destroyed) { clearInterval(battito); return; }
+        try {
+          res.write(": ka\n\n");
+        } catch {
+          clearInterval(battito);
+        }
+      }, SSE_HEARTBEAT_MS);
+      battito.unref?.();
+      req.on("close", () => {
+        clearInterval(battito);
+        clients.delete(res);
+      });
       return;
     }
 

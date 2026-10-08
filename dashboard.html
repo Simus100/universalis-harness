@@ -4121,7 +4121,110 @@ function setConnState(lost) {
     : "";
 }
 
-const es = new EventSource("/events");
+/* ----------------------------------------------------------------------------------------
+ * Connessione SSE — creata da UNA funzione, e RICREABILE su sospetto di morte silenziosa.
+ *
+ * Perché serve: se lo stream muore in modo silenzioso (half-open: il socket resta aperto ma
+ * non arriva più nulla) il browser NON emette `error`, quindi non ritenta da solo e la chat
+ * resta congelata per sempre: il testo si ferma a metà, l'indicatore continua a dire
+ * «working…» col pulsante ⏹ stop a schermo, e l'ultimo pezzo della risposta non arriva più
+ * (difetto segnalato: «non vedo l'ultimo pezzo… rimane come se pensasse… devo fare F5»).
+ *
+ * Le due difese:
+ *   1. `streamLost` — segna una caduta vera (errore di trasporto) e obbliga al riallineamento
+ *      dalla verità del server, invece di fidarsi dei delta che sono andati persi.
+ *   2. watchdog di inattività — il server manda un battito (`: ka`) ogni 20 s: se il silenzio
+ *      supera SSE_SILENCE_MS mentre un turno è in corso (o dopo una caduta), si chiede lo
+ *      stato via HTTP e, se il turno è ancora vivo, si ricrea la connessione.
+ * I listener sono registrati una volta in `esHandlers` e riapplicati a ogni nuova connessione.
+ * ---------------------------------------------------------------------------------------- */
+let es = null;
+let lastEventAt = Date.now();
+let streamLost = false;      // stream caduto: ciò che è a schermo può essere incompleto
+const esHandlers = [];
+const SSE_SILENCE_MS = 45000;   // 2 battiti mancati (il battito è di 20 s) = stream sospetto
+const WATCHDOG_MS = 5000;
+
+/** Registra un listener sulla connessione corrente, aggiornando il battito a ogni evento. */
+function esOn(type, fn) {
+  const wrapped = (e) => { lastEventAt = Date.now(); fn(e); };
+  esHandlers.push([type, wrapped]);
+  es.addEventListener(type, wrapped);
+}
+
+/** Ricrea la connessione applicando gli stessi listener (per lo stream morto in silenzio). */
+function connectEvents() {
+  const vecchia = es;
+  es = new EventSource("/events");
+  for (const [t, f] of esHandlers) es.addEventListener(t, f);
+  if (vecchia) { try { vecchia.close(); } catch {} }
+  lastEventAt = Date.now();
+}
+
+es = new EventSource("/events");
+
+/**
+ * Riallinea il DOM alla verità del server, senza mai cancellare testo più fresco di quello
+ * salvato. Il vincolo è quello documentato accanto all'evento `state`: a turno in corso il
+ * ridisegno cancellerebbe la risposta appena arrivata, quindi si ridisegna solo se il turno è
+ * finito oppure se il testo salvato è almeno lungo quanto quello a schermo.
+ */
+function applyServerTruth(st) {
+  if (typeof st.streaming === "boolean") setStatus(st.streaming);
+  let ridisegnato = false;
+  if (Array.isArray(st.messages)) {
+    const salvato = st.messages.filter((m) => m.role === "assistant").map((m) => m.content || "").join("");
+    const aSchermo = currentAssistantText();
+    if (!st.streaming || salvato.length >= aSchermo.length) {
+      const cambiata = !!(st.sessionId && st.sessionId !== currentSessionId);
+      if (st.sessionId) currentSessionId = st.sessionId;
+      currentMessages = st.messages;
+      localMsgs = 0;
+      loadedSessionId = st.sessionId || loadedSessionId;
+      chat.setAttribute("aria-busy", "false");
+      if (cambiata) resetCur();
+      renderMessages(currentMessages);
+      ridisegnato = true;
+    }
+  }
+  if (!st.streaming) {
+    streamLost = false;
+    setConnState(false);
+  }
+  return ridisegnato;
+}
+
+/** Chiede lo stato al server e riallinea. Ritorna true se il server dice «turno in corso». */
+async function resyncFromServer() {
+  let st = null;
+  try {
+    const r = await fetch("/api/state");
+    if (!r.ok) return false;
+    st = await r.json();
+  } catch {
+    return false;
+  }
+  applyServerTruth(st);
+  return !!st.streaming;
+}
+
+/* Watchdog: se il canale tace oltre la soglia mentre un turno è in corso (o dopo una caduta),
+   la chat è probabilmente congelata. Si chiede la verità al server e, se il turno è ancora
+   vivo, si ricrea la connessione: senza questo, lo stream half-open resta morto per sempre. */
+setInterval(() => {
+  const silenzio = Date.now() - lastEventAt;
+  if (silenzio < SSE_SILENCE_MS) return;
+  const inCorso = $("dot").classList.contains("on");
+  if (!inCorso && !streamLost) return;
+  resyncFromServer().then((ancoraInCorso) => {
+    // readyState 2 = CLOSED: questa connessione non ritenterà mai più da sola (close() esplicito,
+    // o il browser ha rinunciato). Senza ricrearla, il turno SUCCESSIVO non arriverebbe più.
+    // Negli altri casi si ricrea solo se il turno è ancora in corso e il silenzio persiste
+    // (stream zombie: socket aperto, nessun dato, nessun `error`).
+    if (es.readyState === 2) connectEvents();
+    else if (ancoraInCorso && Date.now() - lastEventAt >= SSE_SILENCE_MS) connectEvents();
+  });
+}, WATCHDOG_MS);
 /** Messaggi della conversazione attiva: arrivano dalla GET iniziale / si aggiornano quando lo
  *  stato li include, e vengono ricostruiti nella chat da renderMessages(). */
 let currentMessages = [];
@@ -4202,7 +4305,7 @@ function reloadMessages() {
   return loadingPromise;
 }
 
-es.addEventListener("state", (e) => {
+esOn("state", (e) => {
   const st = JSON.parse(e.data);
   // Prima di tutto le domande pendenti/esiti: lo stato del server è la verità, e la card
   // deve essere disegnata nello stesso passaggio che ridisegna i messaggi.
@@ -4236,34 +4339,41 @@ es.addEventListener("state", (e) => {
   }
   renderStats(st);
   if (!cambiata) {
+    // Dopo una caduta dello stream il DOM può essere indietro (i delta finali non sono mai
+    // arrivati, e a turno finito il server non manda più lo snapshot): si riallinea dalla
+    // verità del server invece di fidarsi di quello che è a schermo.
+    if (streamLost) {
+      if (conMessaggi) applyServerTruth(st);
+      else void resyncFromServer();
+    }
     // Con una risposta appena scritta dallo stream il DOM è più aggiornato della lista nota:
     // ridisegnarlo la cancellerebbe. Si aggiornano solo i pulsanti dell'ultima bolla.
     // Se il turno è ANCORA in corso non si aggiungono azioni: finirebbero in mezzo al
     // messaggio, sopra il testo che deve ancora arrivare.
-    if (localMsgs > 0) { if (!$("dot").classList.contains("on")) refreshTailActions(); }
+    else if (localMsgs > 0) { if (!$("dot").classList.contains("on")) refreshTailActions(); }
     else renderMessages(currentMessages);
   }
   // la lista è già in sessionsData (evento "sessions"): basta ridisegnarla, nessun refetch
   renderSessions();
 });
 
-es.addEventListener("sessions", (e) => {
+esOn("sessions", (e) => {
   sessionsData = JSON.parse(e.data);
   // si ridisegna anche a drawer chiuso: altrimenti il badge "● attiva" resta quello vecchio
   // e l'utente, riaprendo la lista, vede la chat sbagliata marcata come attiva.
   renderSessions();
 });
-es.addEventListener("text_delta", (e) => appendText(JSON.parse(e.data).delta));
-es.addEventListener("thinking_delta", (e) => appendThinking(JSON.parse(e.data).delta));
+esOn("text_delta", (e) => appendText(JSON.parse(e.data).delta));
+esOn("thinking_delta", (e) => appendThinking(JSON.parse(e.data).delta));
 // La card del tool entra DENTRO il messaggio in corso, nell'ordine reale: prima veniva
 // appesa in fondo alla chat, fuori dal messaggio. Con un turno pieno di `bash` l'utente
 // vedeva solo una colonna di «🔧 bash …» e il testo/pensiero restava sopra, fuori vista
 // (sembrava bloccato; il refresh lo ricostruiva perché legge la sessione salvata).
-es.addEventListener("tool_start", (e) => {
+esOn("tool_start", (e) => {
   let d; try { d = JSON.parse(e.data); } catch { d = {}; }
   appendToolCard(d);
 });
-es.addEventListener("tool_end", (e) => {
+esOn("tool_end", (e) => {
   let d; try { d = JSON.parse(e.data); } catch { d = {}; }
   endToolCard(d);
   // il file appena scritto/letto si può scaricare SUBITO: niente più card solo dopo il reload
@@ -4271,7 +4381,7 @@ es.addEventListener("tool_end", (e) => {
 });
 // Domande interattive: il server è la verità (pendenti ed esiti), la card a schermo si adegua.
 // La domanda viene inserita nel messaggio in corso, all'altezza in cui l'agente l'ha posta.
-es.addEventListener("ask_request", (e) => {
+esOn("ask_request", (e) => {
   let d; try { d = JSON.parse(e.data); } catch { return; }
   askPending.set(d.id, d);
   updateWaitingText();
@@ -4280,14 +4390,14 @@ es.addEventListener("ask_request", (e) => {
   if (existing) askDedupe(d.id, existing);
   else if (cur.wrap || $("dot").classList.contains("on")) appendAskCard(d);
 });
-es.addEventListener("ask_resolved", (e) => {
+esOn("ask_resolved", (e) => {
   let d; try { d = JSON.parse(e.data); } catch { return; }
   askDone.set(d.id, d);
   askPending.delete(d.id);
   askCardResolve(d.id, d);
   updateWaitingText();
 });
-es.addEventListener("status", (e) => {
+esOn("status", (e) => {
   const d = JSON.parse(e.data);
   if (d.compacting !== undefined) { compacting = !!d.compacting; renderCompactBtn(); }
   if (d.streaming === undefined) return;
@@ -4304,7 +4414,7 @@ es.addEventListener("status", (e) => {
  * idempotente (niente testo duplicato dal replay) e i tool restano al loro posto.
  * `text`/`thinking` restano accettati per compatibilità (client o test più vecchi).
  */
-es.addEventListener("stream_snapshot", (e) => {
+esOn("stream_snapshot", (e) => {
   let d;
   try { d = JSON.parse(e.data); } catch { return; }
   if (Array.isArray(d.segments)) { renderStreamSegments(d.segments); return; }
@@ -4316,20 +4426,23 @@ es.addEventListener("stream_snapshot", (e) => {
   if (testo) segs.push({ kind: "text", text: testo });
   renderStreamSegments(segs);
 });
-es.addEventListener("open", () => setConnState(false));
+esOn("open", () => { if (!streamLost) setConnState(false); });
 // EventSource emette un evento chiamato «error» anche per i guasti di TRASPORTO: in quel caso
 // e.data è undefined e non c'è nessun errore applicativo da mostrare. Trattarlo come errore del
 // modello era il difetto n.1: mandava la UI in idle e azzerava cur.assistant, così le card dei
 // tool continuavano ad arrivare mentre testo e thinking sparivano fino al refresh della pagina.
-es.addEventListener("error", (e) => {
-  if (e.data === undefined) { setConnState(true); return; }
+esOn("error", (e) => {
+  // Guasto di TRASPORTO (e.data non è definito): la connessione è caduta davvero e i delta
+  // finali possono essere andati persi. `streamLost` obbliga al riallineamento quando lo
+  // stream torna (o quando se ne accorge il watchdog).
+  if (e.data === undefined) { streamLost = true; setConnState(true); return; }
   try { $("err").textContent = JSON.parse(e.data).message; } catch {}
   setStatus(false);
 });
-es.addEventListener("files_touch", () => { if (document.body.dataset.tab === "files") refreshDir(); });
+esOn("files_touch", () => { if (document.body.dataset.tab === "files") refreshDir(); });
 // Il progetto è cambiato (anche da un'altra scheda/dispositivo): la vista 📦 e le stelle nel
 // file manager si riallineano senza ricaricare la pagina.
-es.addEventListener("progetto", (e) => {
+esOn("progetto", (e) => {
   try {
     progettoCache = JSON.parse(e.data);
   } catch {
@@ -4340,7 +4453,7 @@ es.addEventListener("progetto", (e) => {
 });
 
 /* live view del browser: frame, url, stato e controllo */
-es.addEventListener("browser_frame", (e) => {
+esOn("browser_frame", (e) => {
   if (document.body.dataset.tab !== "live") return; // non renderizzare se non si sta guardando
   try {
     liveRenderFrame(JSON.parse(e.data));
@@ -4348,7 +4461,7 @@ es.addEventListener("browser_frame", (e) => {
 });
 
 /* la risposta dell'agente arriva anche nella chat live, così si capisce cosa sta facendo */
-es.addEventListener("text_delta", (e) => {
+esOn("text_delta", (e) => {
   if (document.body.dataset.tab !== "live") return;
   try {
     const d = JSON.parse(e.data).delta;
@@ -4357,13 +4470,13 @@ es.addEventListener("text_delta", (e) => {
     liveChatRender();
   } catch {}
 });
-es.addEventListener("tool_start", (e) => {
+esOn("tool_start", (e) => {
   if (document.body.dataset.tab !== "live") return;
   try {
     liveChatPush("tool", JSON.parse(e.data).toolName + "…");
   } catch {}
 });
-es.addEventListener("status", (e) => {
+esOn("status", (e) => {
   if (document.body.dataset.tab !== "live") return;
   try {
     const st = JSON.parse(e.data);
@@ -4371,29 +4484,29 @@ es.addEventListener("status", (e) => {
     else liveSetStreaming(false);
   } catch {}
 });
-es.addEventListener("error", (e) => {
+esOn("error", (e) => {
   if (document.body.dataset.tab !== "live") return;
   try {
     liveChatPush("err", JSON.parse(e.data).message || "errore");
   } catch {}
 });
-es.addEventListener("browser_url", (e) => {
+esOn("browser_url", (e) => {
   try {
     const j = JSON.parse(e.data);
     const bar = $("liveUrlBar");
     if (j.url && bar && document.activeElement !== bar) bar.value = j.url;
   } catch {}
 });
-es.addEventListener("browser_live", (e) => {
+esOn("browser_live", (e) => {
   try { applyLive(JSON.parse(e.data).state, null); } catch {}
 });
-es.addEventListener("browser_control", (e) => {
+esOn("browser_control", (e) => {
   try { applyLive(null, JSON.parse(e.data).mode); } catch {}
 });
-es.addEventListener("browser_live_error", (e) => {
+esOn("browser_live_error", (e) => {
   try { $("liveStats").textContent = "⚠ " + (JSON.parse(e.data).message || "errore live view"); } catch {}
 });
-es.addEventListener("goals", (e) => {
+esOn("goals", (e) => {
   try { goals = JSON.parse(e.data).goals || []; } catch { goals = []; }
   if (document.body.dataset.tab === "goals") renderGoals();
 });
@@ -4402,14 +4515,14 @@ es.addEventListener("goals", (e) => {
 // scopriva solo ricaricando la pagina — cioè la vista mentiva per omissione. La vista aperta si
 // rilegge, e la chiusura di una chat si annuncia: è il momento in cui l'utente vuole sapere che
 // il contenuto NON si è perso.
-es.addEventListener("memoria", (e) => {
+esOn("memoria", (e) => {
   let d = {};
   try { d = JSON.parse(e.data) || {}; } catch { /* payload illeggibile: si aggiorna comunque */ }
   if (document.body.dataset.tab === "memoria") caricaMemoria();
   if (d.errore || d.errori?.length) toast("🗄 archivio della chat incompleto: " + (d.errore || d.errori.join(" | ")), "err");
   else if (d.motivo === "chat chiusa" && d.episodi) toast(`🗄 chat precedente archiviata: ${d.episodi} episod${d.episodi === 1 ? "io" : "i"}, ${d.nodi ?? "?"} nodi in memoria`, "ok");
 });
-es.addEventListener("schedule", (e) => {
+esOn("schedule", (e) => {
   try {
     const d = JSON.parse(e.data);
     crons = d.schedules || [];
@@ -4417,7 +4530,7 @@ es.addEventListener("schedule", (e) => {
   } catch { /* ignore */ }
   if (document.body.dataset.tab === "cron") renderCrons();
 });
-es.addEventListener("schedule_run", (e) => {
+esOn("schedule_run", (e) => {
   let ev;
   try { ev = JSON.parse(e.data); } catch { return; }
   if (ev.status === "start") {
