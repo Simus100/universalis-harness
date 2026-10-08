@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La Radura delle Lanterne</title>
+<style>
+  html,body{margin:0;height:100%;background:#0d1013;color:#e9e4da;
+    font-family:"DejaVu Sans",system-ui,sans-serif;
+    display:flex;align-items:center;justify-content:center;overflow:hidden}
+  #wrap{position:relative}
+  canvas{display:block;border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.65);background:#26401f}
+  #hint{position:absolute;bottom:-26px;left:0;right:0;text-align:center;
+    font-size:12px;color:#6d7681;letter-spacing:.03em}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv" width="960" height="576"></canvas>
+  <div id="hint">frecce / WASD per muoverti · E per interagire · M audio · R ricomincia</div>
+</div>
+<script>
+(() => {
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ *  La Radura delle Lanterne — mini avventura top-down, un solo file.
+ *  Nessun asset esterno: tutti i tile e i personaggi sono disegnati
+ *  con le primitive di canvas. Nessuna dipendenza, nessuna build.
+ * ------------------------------------------------------------------ */
+
+const T = 32, VW = 960, VH = 576;
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+window.__errors = [];
+window.addEventListener('error', e => window.__errors.push(String(e.message)));
+
+/* ---------------------------------- mappa -------------------------- *
+ *  # albero (solido)   . erba        , erba fiorita   = sentiero
+ *  ~ acqua (solida)    m muro        D porta         l lanterna
+ *  P partenza  1 Vecchio  2 Bambino  K chiave d'ambra
+ * ------------------------------------------------------------------ */
+const RAW = [
+"############################################",
+"#..........................................#",
+"#..........................mmmmmmmmm.......#",
+"#..........................mpppppppm.......#",
+"#..........................mpppppppm.......#",
+"#..........................mpppppppm.......#",
+"#..........................mmmmmDmmm.......#",
+"#............................,..=..........#",
+"#....###......................l.=..........#",
+"#...#...#.....................,.=..........#",
+"#...#...#......................=.....,.....#",
+"#...#.K.#.........,,...........=...........#",
+"#...#...#.....###..............=.......###.#",
+"#...#.#.#....#...#............==......#...#",
+"#...........,#...#,..P.1......=......##...#",
+"#............#...#............=......#..#.#",
+"#.....2......###..............=......#..#.#",
+"#...........,.................=......####.#",
+"#............,,...............=,...........#",
+"#.........~~~.................=............#",
+"#........~~~~~...............==...l........#",
+"#.........~~~.................==...........#",
+"#...........,,.................,=..........#",
+"#...............................,=.........#",
+"#................................,=........#",
+"############################################"
+];
+
+const W = Math.max(...RAW.map(r => r.length)), H = RAW.length;
+const grid = RAW.map(r => r.padEnd(W, '.').split(''));
+for (let x = 0; x < W; x++) { grid[0][x] = '#'; grid[H-1][x] = '#'; }
+for (let y = 0; y < H; y++) { grid[y][0] = '#'; grid[y][W-1] = '#'; }
+
+/* ------------------------------ entità e stato --------------------- */
+const player = { x: 0, y: 0, dir: 'down', moving: false, bob: 0, speed: 132 };
+const npcs = [], items = [], lanterns = [], doorBlocks = [];
+const particles = [];
+let time = 0, shake = 0;
+
+const quest = { told: false, key: false, hint: false, opened: false, won: false };
+
+for (let y = 0; y < H; y++) {
+  for (let x = 0; x < W; x++) {
+    const c = grid[y][x], cx = x*T + T/2, cy = y*T + T/2;
+    if (c === 'P') { player.x = cx; player.y = cy; grid[y][x] = '.'; }
+    else if (c === '1') { npcs.push({ id:'vecchio', x:cx, y:cy, dir:'down',
+        robe:'#7a5c9e', trim:'#5b4276', skin:'#e8bd94', hair:'#e6e6e6', name:'Vecchio Miro' }); grid[y][x] = '.'; }
+    else if (c === '2') { npcs.push({ id:'bimbo', x:cx, y:cy, dir:'right',
+        robe:'#d98b3a', trim:'#a9691f', skin:'#f0c9a0', hair:'#8a4b26', name:'Nilo' }); grid[y][x] = '.'; }
+    else if (c === 'K') { items.push({ id:'chiave', x:cx, y:cy, taken:false }); grid[y][x] = '.'; }
+    else if (c === 'D') { doorBlocks.push({ x, y, cx, cy }); }
+    else if (c === 'l') { lanterns.push({ x:cx, y:cy, seed: hash(x, y) }); }
+  }
+}
+const doorOpen = new Set();
+
+/* ------------------------------- utilità --------------------------- */
+function hash(x, y) {
+  let n = (x*374761393 + y*668265263) | 0;
+  n = (n ^ (n >> 13)) * 1274126177 | 0;
+  return ((n ^ (n >> 16)) >>> 0) / 4294967296;
+}
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+
+function isSolid(gx, gy) {
+  if (gx < 0 || gy < 0 || gx >= W || gy >= H) return true;
+  const c = grid[gy][gx];
+  if (c === '#' || c === '~' || c === 'm') return true;
+  if (c === 'D') return !doorOpen.has(gx + ',' + gy);
+  return false;
+}
+function blocked(cx, cy, hw, hh) {
+  const x0 = cx - hw, x1 = cx + hw, y0 = cy - hh, y1 = cy + hh;
+  for (let gy = Math.floor(y0/T); gy <= Math.floor(y1/T); gy++)
+    for (let gx = Math.floor(x0/T); gx <= Math.floor(x1/T); gx++)
+      if (isSolid(gx, gy)) return true;
+  return false;
+}
+
+/* -------------------------------- audio ---------------------------- */
+let actx = null, muted = false;
+function ac() { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); return actx; }
+function tone(freq, dur, type, vol, when) {
+  if (muted) return;
+  try {
+    const a = ac(), o = a.createOscillator(), g = a.createGain();
+    o.type = type || 'square'; o.frequency.value = freq;
+    o.connect(g); g.connect(a.destination);
+    const t = a.currentTime + (when || 0);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol || 0.05, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t); o.stop(t + dur + 0.03);
+  } catch (err) { /* audio non disponibile: il gioco continua */ }
+}
+const sfx = {
+  tick:    () => tone(560 + Math.random()*60, 0.035, 'square', 0.018),
+  pickup:  () => { [660, 880, 1320].forEach((f, i) => tone(f, 0.18, 'triangle', 0.07, i*0.07)); },
+  door:    () => { tone(180, 0.5, 'sawtooth', 0.05); tone(240, 0.5, 'sine', 0.05, 0.12); },
+  win:     () => { [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.7, 'triangle', 0.06, i*0.12)); },
+  bump:    () => tone(90, 0.08, 'sine', 0.04)
+};
+
+/* ------------------------------ particelle ------------------------- */
+function burst(x, y, n, colors, power) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random()*Math.PI*2, s = (0.3 + Math.random()) * (power || 90);
+    particles.push({ x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s - 40,
+      life: 0.6 + Math.random()*0.6, max: 1.2, size: 2 + Math.random()*3,
+      color: colors[(Math.random()*colors.length) | 0] });
+  }
+}
+function updateParticles(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 220*dt; p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+/* ------------------------------- dialogo --------------------------- */
+let dialog = null;
+function say(speaker, lines, onEnd) {
+  dialog = { speaker, lines, i: 0, typed: 0, onEnd: onEnd || null };
+  tone(400, 0.08, 'sine', 0.03);
+}
+function advanceDialog() {
+  if (!dialog) return;
+  const full = dialog.lines[dialog.i].length;
+  if (dialog.typed < full) { dialog.typed = full; return; }
+  dialog.i++;
+  if (dialog.i >= dialog.lines.length) {
+    const cb = dialog.onEnd; dialog = null;
+    if (cb) cb();
+  } else { dialog.typed = 0; sfx.tick(); }
+}
+
+/* -------------------------- testo del momento ---------------------- */
+function objective() {
+  if (quest.won) return "La Radura è salva";
+  if (!quest.told) return "Parla con il Vecchio Miro";
+  if (!quest.key) return "Trova la Chiave d'Ambra (sud-ovest)";
+  if (!quest.opened) return "Apri la porta della torre (nord-est)";
+  return "Entra nella torre";
+}
+
+function talkTo(npc) {
+  if (npc.id === 'vecchio') {
+    if (!quest.told) {
+      say(npc.name, [
+        "Benvenuto nella Radura, viandante.",
+        "Le lanterne si spengono una a una: qualcuno ha preso la Chiave d'Ambra.",
+        "Senza di lei, la porta della torre resterà chiusa per sempre.",
+        "Cercala a sud-ovest, oltre i sassi. Nilo ti saprà dire di più."
+      ], () => { quest.told = true; });
+    } else if (!quest.key) {
+      say(npc.name, ["La chiave è ancora là fuori, oltre i sassi a sud-ovest.", "Segui il sentiero e non entrare nell'acqua."]);
+    } else if (!quest.opened) {
+      say(npc.name, ["La Chiave d'Ambra! Sento di nuovo il suo calore.", "Va' alla torre, a nord-est: la porta cederà al tuo tocco."]);
+    } else {
+      say(npc.name, ["Le lanterne ardono di nuovo. Grazie, viandante."]);
+    }
+  } else {
+    if (quest.won) { say(npc.name, ["Sei entrato nella torre! Le lanterne brillano fino al cielo."]); }
+    else if (!quest.key) {
+      say(npc.name, [
+        "Ciao! Cerchi la chiave, vero?",
+        "L'ho vista luccicare laggiù a sud-ovest, dove gli alberi fanno un cerchio.",
+        "Attento all'acqua: non si attraversa."
+      ], () => { quest.hint = true; });
+    } else {
+      say(npc.name, ["L'hai trovata! Corri alla torre, seguendo il sentiero!"]);
+    }
+  }
+}
+
+function pickUp(it) {
+  it.taken = true;
+  if (it.id === 'chiave') {
+    quest.key = true;
+    burst(it.x, it.y, 26, ['#f2b23c', '#ffe08a', '#fff3cf'], 130);
+    sfx.pickup();
+    say('', ["Hai raccolto la Chiave d'Ambra.", "Un calore dolce ti sale lungo la mano."]);
+  }
+}
+
+function openDoor(d) {
+  doorOpen.add(d.x + ',' + d.y);
+  quest.opened = true;
+  burst(d.cx, d.cy - 6, 22, ['#c9a06a', '#8b5a2b', '#e0cfae'], 110);
+  shake = 6; sfx.door();
+  say('', ["La porta si apre cigolando.", "Dentro, una scala sale verso la luce."]);
+}
+
+/* ---------------------------- interazione -------------------------- */
+function nearestNpc(r) {
+  let best = null, bd = r*r;
+  for (const n of npcs) {
+    const d = (n.x - player.x)**2 + (n.y - player.y)**2;
+    if (d < bd) { bd = d; best = n; }
+  }
+  return best;
+}
+function nearestItem(r) {
+  let best = null, bd = r*r;
+  for (const it of items) {
+    if (it.taken) continue;
+    const d = (it.x - player.x)**2 + (it.y - player.y)**2;
+    if (d < bd) { bd = d; best = it; }
+  }
+  return best;
+}
+function nearestDoor(r) {
+  let best = null, bd = r*r;
+  for (const d of doorBlocks) {
+    const dd = (d.cx - player.x)**2 + (d.cy - player.y)**2;
+    if (dd < bd) { bd = dd; best = d; }
+  }
+  return best;
+}
+function faceNpc(n) {
+  const dx = n.x - player.x, dy = n.y - player.y;
+  if (Math.abs(dx) > Math.abs(dy)) { player.dir = dx < 0 ? 'right' : 'left'; n.dir = dx < 0 ? 'left' : 'right'; }
+  else { player.dir = dy < 0 ? 'down' : 'up'; n.dir = dy < 0 ? 'up' : 'down'; }
+}
+
+function interact() {
+  if (quest.won) return;
+  if (dialog) { advanceDialog(); return; }
+  const n = nearestNpc(58);
+  if (n) { faceNpc(n); talkTo(n); return; }
+  const it = nearestItem(44);
+  if (it) { pickUp(it); return; }
+  const d = nearestDoor(50);
+  if (d && quest.key && !doorOpen.has(d.x + ',' + d.y)) { openDoor(d); return; }
+  if (d && !quest.key) { say('', ["La porta è chiusa: serve la Chiave d'Ambra."]); }
+}
+
+/* ------------------------------- update ---------------------------- */
+const keys = new Set();
+
+function update(dt) {
+  time += dt;
+
+  if (dialog) {
+    const full = dialog.lines[dialog.i].length;
+    const before = Math.floor(dialog.typed);
+    dialog.typed = Math.min(full, dialog.typed + dt*46);
+    if (Math.floor(dialog.typed) > before && Math.floor(dialog.typed) % 3 === 0) sfx.tick();
+  }
+
+  let dx = 0, dy = 0;
+  if (!dialog && !quest.won) {
+    if (keys.has('arrowleft') || keys.has('a')) dx -= 1;
+    if (keys.has('arrowright') || keys.has('d')) dx += 1;
+    if (keys.has('arrowup') || keys.has('w')) dy -= 1;
+    if (keys.has('arrowdown') || keys.has('s')) dy += 1;
+  }
+  if (dx && dy) { dx *= 0.7071; dy *= 0.7071; }
+  player.moving = !!(dx || dy);
+
+  if (dx || dy) {
+    const sp = player.speed;
+    const nx = player.x + dx*sp*dt;
+    if (!blocked(nx, player.y, 9, 8)) player.x = nx;
+    const ny = player.y + dy*sp*dt;
+    if (!blocked(player.x, ny, 9, 8)) player.y = ny;
+    player.dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down');
+    player.bob += dt*9;
+  }
+
+  // passare la soglia aperta: si entra nella torre
+  const d = nearestDoor(46);
+  if (d && doorOpen.has(d.x + ',' + d.y) && player.y < d.cy - 18 && !quest.won) {
+    quest.won = true; shake = 5; sfx.win();
+    burst(player.x, player.y - 10, 40, ['#f2b23c', '#ffe08a', '#fff3cf', '#8fd0ff'], 170);
+    burst(d.cx, d.cy - 10, 30, ['#f2b23c', '#ffe08a'], 150);
+  }
+
+  updateParticles(dt);
+  if (shake > 0) shake = Math.max(0, shake - dt*14);
+  cam.x += ((clamp(player.x - VW/2, 0, W*T - VW)) - cam.x) * Math.min(1, dt*6);
+  cam.y += ((clamp(player.y - VH/2, 0, H*T - VH)) - cam.y) * Math.min(1, dt*6);
+  cam.x = clamp(cam.x, 0, W*T - VW);
+  cam.y = clamp(cam.y, 0, H*T - VH);
+}
+const cam = { x: 0, y: 0 };
+
+/* ------------------------------ disegno ---------------------------- */
+function roundRect(c, x, y, w, h, r) {
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
+}
+
+function drawGround(c, gx, gy, sx, sy) {
+  const kind = grid[gy][gx], r1 = hash(gx, gy), r2 = hash(gx*3 + 7, gy*5 + 11);
+
+  if (kind === '~') {
+    c.fillStyle = '#2f6fa8'; c.fillRect(sx, sy, T, T);
+    c.fillStyle = 'rgba(120,190,235,.35)';
+    for (let i = 0; i < 3; i++) {
+      const yy = sy + 7 + i*9 + Math.sin(time*1.6 + gx*0.7 + i)*1.6;
+      c.fillRect(sx + 4 + ((i*11 + gx*5) % 20), yy, 12, 1.6);
+    }
+    return;
+  }
+  if (kind === 'p') {
+    c.fillStyle = '#9a9384'; c.fillRect(sx, sy, T, T);
+    c.fillStyle = 'rgba(74,68,60,.35)';
+    c.fillRect(sx, sy + 15, T, 1.6);
+    c.fillRect(sx + 16, sy, 1.6, 15);
+    c.fillRect(sx + (r1 > 0.5 ? 8 : 24), sy + 17, 1.6, 15);
+    c.fillStyle = 'rgba(255,255,255,.06)';
+    c.fillRect(sx + 2, sy + 2, 12, 12);
+    return;
+  }
+  if (kind === '=') {
+    c.fillStyle = '#b39468'; c.fillRect(sx, sy, T, T);
+    c.fillStyle = 'rgba(120,95,60,.35)';
+    c.fillRect(sx + 2 + r1*26, sy + 3 + r2*24, 3, 2);
+    c.fillRect(sx + 6 + r2*20, sy + 14 + r1*14, 2, 2);
+    return;
+  }
+
+  // erba
+  const tone0 = r1 < 0.34 ? '#3f7d4a' : r1 < 0.67 ? '#458750' : '#397244';
+  c.fillStyle = tone0; c.fillRect(sx, sy, T, T);
+  c.strokeStyle = 'rgba(28,74,42,.55)'; c.lineWidth = 1;
+  c.beginPath();
+  c.moveTo(sx + 6 + r1*18, sy + 26); c.lineTo(sx + 6 + r1*18 + (r2 - 0.5)*4, sy + 20);
+  c.moveTo(sx + 20 - r2*10, sy + 28); c.lineTo(sx + 20 - r2*10 + (r1 - 0.5)*4, sy + 22);
+  c.stroke();
+
+  if (kind === ',' || kind === '.' && r2 > 0.93) {
+    const fx = sx + 8 + r1*14, fy = sy + 8 + r2*14;
+    c.fillStyle = r1 > 0.5 ? '#f0ece4' : '#f2c94c';
+    c.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const a = i*Math.PI/2 + 0.4;
+      c.arc(fx + Math.cos(a)*2.6, fy + Math.sin(a)*2.6, 1.5, 0, 7);
+    }
+    c.fill();
+    c.fillStyle = '#dba13c'; c.beginPath(); c.arc(fx, fy, 1.2, 0, 7); c.fill();
+  }
+}
+
+function drawTree(c, sx, sy, gx, gy) {
+  const r = hash(gx, gy);
+  c.fillStyle = 'rgba(12,26,16,.30)';
+  c.beginPath(); c.ellipse(sx + 16 + 3, sy + 27, 12, 5, 0, 0, 7); c.fill();
+  c.fillStyle = '#6b4a2f';
+  c.fillRect(sx + 13, sy + 16, 6, 14);
+  const dark = r > 0.5 ? '#2c5f3a' : '#285634';
+  c.fillStyle = dark;
+  c.beginPath(); c.arc(sx + 16, sy + 12, 12.5, 0, 7); c.fill();
+  c.fillStyle = r > 0.5 ? '#356b43' : '#2f6240';
+  c.beginPath(); c.arc(sx + 11, sy + 9, 8, 0, 7); c.arc(sx + 21, sy + 10, 7.5, 0, 7); c.fill();
+}
+
+function drawWall(c, sx, sy, gx, gy) {
+  c.fillStyle = '#8a8578'; c.fillRect(sx, sy, T, T);
+  c.fillStyle = '#79746a';
+  const off = (gy % 2) * 16;
+  c.fillRect(sx, sy + 15, T, 2);
+  c.fillRect(sx + ((off + 8) % T), sy, 2, 15);
+  c.fillRect(sx + ((off + 24) % T), sy + 17, 2, 15);
+  c.fillStyle = 'rgba(255,255,255,.10)'; c.fillRect(sx, sy, T, 2);
+  c.fillStyle = 'rgba(0,0,0,.18)'; c.fillRect(sx, sy + T - 3, T, 3);
+}
+
+function drawDoor(c, sx, sy, open) {
+  if (open) {
+    c.fillStyle = '#b39468'; c.fillRect(sx, sy, T, T);
+    c.fillStyle = '#1a1410'; c.fillRect(sx + 4, sy + 2, 24, 30);
+    c.fillStyle = 'rgba(255,196,120,.35)'; c.fillRect(sx + 8, sy + 6, 4, 22);
+    c.fillStyle = '#5a4632'; c.fillRect(sx, sy, T, 3);
+    return;
+  }
+  c.fillStyle = '#8b5a2b'; c.fillRect(sx + 2, sy + 1, 28, 31);
+  c.fillStyle = '#754a22';
+  c.fillRect(sx + 6, sy + 1, 2, 31); c.fillRect(sx + 16, sy + 1, 2, 31); c.fillRect(sx + 25, sy + 1, 2, 31);
+  c.fillStyle = 'rgba(255,255,255,.12)'; c.fillRect(sx + 2, sy + 1, 28, 2);
+  c.fillStyle = '#e0cfae';
+  c.beginPath(); c.arc(sx + 22, sy + 17, 2.6, 0, 7); c.fill();
+}
+
+function drawLantern(c, l, sx, sy) {
+  const pulse = 0.82 + 0.18*Math.sin(time*2.2 + l.seed*6);
+  const g = c.createRadialGradient(sx + 16, sy + 12, 2, sx + 16, sy + 12, 46*pulse);
+  g.addColorStop(0, 'rgba(255,196,110,.42)');
+  g.addColorStop(1, 'rgba(255,196,110,0)');
+  c.fillStyle = g;
+  c.beginPath(); c.arc(sx + 16, sy + 12, 46*pulse, 0, 7); c.fill();
+  c.fillStyle = '#5a4632'; c.fillRect(sx + 14, sy + 12, 4, 20);
+  c.fillStyle = '#3d3122'; c.fillRect(sx + 9, sy + 24, 14, 4);
+  c.fillStyle = '#6b533a'; c.fillRect(sx + 8, sy + 2, 16, 4);
+  c.fillStyle = '#ffc670'; c.fillRect(sx + 11, sy + 6, 10, 8);
+  c.fillStyle = 'rgba(255,245,210,.9)'; c.fillRect(sx + 13, sy + 8, 6, 4);
+}
+
+function drawKey(c, it) {
+  const bob = Math.sin(time*2.4)*3, x = it.x, y = it.y + bob;
+  const g = c.createRadialGradient(x, y, 1, x, y, 26);
+  g.addColorStop(0, 'rgba(255,214,120,.45)'); g.addColorStop(1, 'rgba(255,214,120,0)');
+  c.fillStyle = g; c.beginPath(); c.arc(x, y, 26, 0, 7); c.fill();
+  c.save(); c.translate(x, y); c.rotate(Math.sin(time*1.1)*0.25);
+  c.fillStyle = '#f2b23c'; c.strokeStyle = '#a9761c'; c.lineWidth = 1.2;
+  c.beginPath(); c.arc(0, -6, 5, 0, 7); c.fill(); c.stroke();
+  c.fillRect(-1.6, -2, 3.2, 14);
+  c.fillRect(1.6, 6, 5, 2.6);
+  c.fillRect(1.6, 10, 4, 2.6);
+  c.fillStyle = 'rgba(255,255,255,.7)'; c.beginPath(); c.arc(-1.6, -7.6, 1.6, 0, 7); c.fill();
+  c.restore();
+}
+
+function drawChar(c, e, pal, isPlayer) {
+  const x = e.x, y = e.y, bob = (e.moving ? Math.sin(e.bob)*1.6 : 0) + (e.idleBob ? Math.sin(time*1.8 + 1)*0.8 : 0);
+  c.fillStyle = 'rgba(10,22,14,.30)';
+  c.beginPath(); c.ellipse(x, y + 9, 11, 4.5, 0, 0, 7); c.fill();
+
+  const bodyY = y - 6 + bob;
+  c.fillStyle = pal.robe;
+  roundRect(c, x - 8, bodyY - 6, 16, 17, 4); c.fill();
+  c.fillStyle = pal.trim;
+  c.fillRect(x - 8, bodyY + 7, 16, 4);
+  c.fillStyle = pal.skin;
+  c.beginPath(); c.arc(x, bodyY - 12, 7.2, 0, 7); c.fill();
+  c.fillStyle = pal.hair;
+  c.beginPath(); c.arc(x, bodyY - 14, 7.4, Math.PI, 0); c.fill();
+  c.fillRect(x - 7.4, bodyY - 14, 14.8, 3);
+
+  c.fillStyle = '#2a2016';
+  if (e.dir === 'down') { c.fillRect(x - 3.4, bodyY - 12, 1.8, 2); c.fillRect(x + 1.6, bodyY - 12, 1.8, 2); }
+  else if (e.dir === 'left') { c.fillRect(x - 5.4, bodyY - 12, 1.8, 2); }
+  else if (e.dir === 'right') { c.fillRect(x + 3.6, bodyY - 12, 1.8, 2); }
+}
+
+function bubble(c, e) {
+  const y = e.y - 30 + Math.sin(time*3)*2;
+  c.fillStyle = quest.won ? '#8fd0ff' : '#f2b23c';
+  c.beginPath(); c.arc(e.x, y, 8.5, 0, 7); c.fill();
+  c.fillStyle = '#1b1b1b'; c.font = 'bold 12px "DejaVu Sans", system-ui, sans-serif';
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(quest.won ? '\u266a' : '!', e.x, y + 0.5);
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+}
+
+function render() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, VW, VH);
+  const sx0 = shake > 0 ? (Math.random() - 0.5)*shake : 0;
+  const sy0 = shake > 0 ? (Math.random() - 0.5)*shake : 0;
+  ctx.save();
+  ctx.translate(-Math.round(cam.x) + sx0, -Math.round(cam.y) + sy0);
+
+  const gx0 = Math.floor(cam.x/T), gy0 = Math.floor(cam.y/T);
+  const gx1 = Math.min(W - 1, gx0 + Math.ceil(VW/T)), gy1 = Math.min(H - 1, gy0 + Math.ceil(VH/T));
+
+  // terreno
+  for (let gy = gy0; gy <= gy1; gy++)
+    for (let gx = gx0; gx <= gx1; gx++)
+      drawGround(ctx, gx, gy, gx*T, gy*T);
+
+  // lanterne (sotto i personaggi)
+  for (let gy = gy0; gy <= gy1; gy++)
+    for (let gx = gx0; gx <= gx1; gx++)
+      if (grid[gy][gx] === 'l') drawLantern(ctx, lanterns.find(l => Math.abs(l.x - (gx*T + 16)) < 1) || { seed: 0.5 }, gx*T, gy*T);
+
+  // muri, alberi, porte
+  for (let gy = gy0; gy <= gy1; gy++) {
+    for (let gx = gx0; gx <= gx1; gx++) {
+      const k = grid[gy][gx];
+      if (k === 'm') drawWall(ctx, gx*T, gy*T, gx, gy);
+      else if (k === '#') drawTree(ctx, gx*T, gy*T, gx, gy);
+      else if (k === 'D') drawDoor(ctx, gx*T, gy*T, doorOpen.has(gx + ',' + gy));
+    }
+  }
+
+  // oggetti a terra + particelle
+  for (const it of items) if (!it.taken) drawKey(ctx, it);
+  for (const p of particles) {
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.max * 1.6));
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+
+  // personaggi ordinati per profondità
+  const chars = [{ e: player, pal: { robe: '#3b6fd4', trim: '#2a4f9c', skin: '#f0c9a0', hair: '#5a3a24' }, me: true }]
+    .concat(npcs.map(n => ({ e: n, pal: { robe: n.robe, trim: n.trim, skin: n.skin, hair: n.hair } })));
+  chars.sort((a, b) => a.e.y - b.e.y);
+  for (const ch of chars) drawChar(ctx, ch.e, ch.pal, ch.me);
+  for (const n of npcs) {
+    const near = nearestNpc(58) === n;
+    if (near && !dialog && !quest.won) bubble(ctx, n);
+  }
+
+  ctx.restore();
+
+  drawHud();
+  if (dialog) drawDialog();
+  if (quest.won) drawWin();
+}
+
+function drawHud() {
+  ctx.font = '600 15px "DejaVu Sans", system-ui, sans-serif';
+  const txt = 'Obiettivo: ' + objective();
+  const w = ctx.measureText(txt).width + 34;
+  ctx.fillStyle = 'rgba(14,18,22,.78)';
+  roundRect(ctx, 16, 14, w, 36, 10); ctx.fill();
+  ctx.fillStyle = '#f2b23c';
+  ctx.beginPath(); ctx.arc(33, 32, 5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#f0ece4'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, 46, 33);
+
+  // titolo del gioco
+  ctx.font = '600 13px "DejaVu Sans", system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(240,236,228,.55)';
+  ctx.fillText('La Radura delle Lanterne', VW/2, 33);
+  ctx.textAlign = 'left';
+
+  // inventario
+  const iw = 178;
+  ctx.fillStyle = 'rgba(14,18,22,.78)';
+  roundRect(ctx, VW - iw - 16, 14, iw, 36, 10); ctx.fill();
+  ctx.font = '600 13px "DejaVu Sans Mono", ui-monospace, monospace';
+  ctx.fillStyle = quest.key ? '#f2b23c' : '#5d666f';
+  ctx.beginPath(); ctx.arc(VW - iw, 32, 4.5, 0, 7); ctx.fill();
+  ctx.fillStyle = quest.key ? '#f0ece4' : '#5d666f';
+  ctx.fillText('Chiave d\u2019Ambra', VW - iw + 12, 33);
+  ctx.textBaseline = 'alphabetic';
+}
+
+function drawDialog() {
+  const h = 116, y = VH - h - 24, x = 24, w = VW - 48;
+  ctx.fillStyle = 'rgba(12,16,20,.92)';
+  roundRect(ctx, x, y, w, h, 14); ctx.fill();
+  ctx.strokeStyle = 'rgba(242,178,60,.45)'; ctx.lineWidth = 1.5;
+  roundRect(ctx, x + 0.5, y + 0.5, w - 1, h - 1, 14); ctx.stroke();
+
+  if (dialog.speaker) {
+    ctx.font = '700 14px "DejaVu Sans", system-ui, sans-serif';
+    ctx.fillStyle = '#f2b23c';
+    ctx.fillText(dialog.speaker, x + 22, y + 30);
+  }
+  const line = dialog.lines[dialog.i].slice(0, Math.floor(dialog.typed));
+  ctx.font = '400 19px "DejaVu Sans", system-ui, sans-serif';
+  ctx.fillStyle = '#efe9df';
+  // a capo semplice
+  const maxW = w - 48; let row = '', yy = y + (dialog.speaker ? 60 : 46);
+  for (const word of line.split(' ')) {
+    if (ctx.measureText(row + word + ' ').width > maxW) { ctx.fillText(row, x + 24, yy); row = word + ' '; yy += 26; }
+    else row += word + ' ';
+  }
+  ctx.fillText(row, x + 24, yy);
+
+  if (dialog.typed >= dialog.lines[dialog.i].length)
+    ctx.fillText('\u25b6', x + w - 34, y + h - 18);
+}
+
+function drawWin() {
+  ctx.fillStyle = 'rgba(8,11,14,.72)';
+  ctx.fillRect(0, 0, VW, VH);
+  const cy = VH/2;
+  ctx.textAlign = 'center';
+  ctx.font = '700 42px "DejaVu Sans", system-ui, sans-serif';
+  ctx.fillStyle = '#f2b23c';
+  ctx.fillText('La Radura \u00e8 salva', VW/2, cy - 26);
+  ctx.font = '400 19px "DejaVu Sans", system-ui, sans-serif';
+  ctx.fillStyle = '#efe9df';
+  ctx.fillText('Hai riportato la Chiave d\u2019Ambra nella torre: le lanterne tornano ad ardere.', VW/2, cy + 14);
+  ctx.fillStyle = '#9aa3ac';
+  ctx.fillText('premi R per ricominciare', VW/2, cy + 52);
+  ctx.textAlign = 'left';
+}
+
+/* -------------------------------- input ---------------------------- */
+addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  keys.add(k);
+  if (k === 'e' || k === ' ') { if (!e.repeat) interact(); e.preventDefault(); }
+  if (k === 'm' && !e.repeat) { muted = !muted; tone(320, 0.06, 'sine', 0.03); }
+  if (k === 'r' && !e.repeat) resetGame();
+  if (actx && actx.state === 'suspended') actx.resume();
+});
+addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+addEventListener('blur', () => keys.clear());
+cv.addEventListener('pointerdown', () => { interact(); if (actx && actx.state === 'suspended') actx.resume(); });
+
+function resetGame() {
+  quest.told = quest.key = quest.hint = quest.opened = quest.won = false;
+  doorOpen.clear();
+  for (const it of items) it.taken = false;
+  for (const p of particles.slice()) particles.splice(particles.indexOf(p), 1);
+  const spawn = { x: 0, y: 0 };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++)
+    if (RAW[y] && RAW[y][x] === 'P') { spawn.x = x*T + T/2; spawn.y = y*T + T/2; }
+  player.x = spawn.x; player.y = spawn.y; player.dir = 'down';
+  cam.x = clamp(player.x - VW/2, 0, W*T - VW);
+  cam.y = clamp(player.y - VH/2, 0, H*T - VH);
+  dialog = null;
+}
+
+/* -------------------------- ciclo principale ----------------------- */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last)/1000);
+  last = now;
+  update(dt);
+  render();
+  requestAnimationFrame(frame);
+}
+resetGame();
+render();
+requestAnimationFrame(frame);
+
+/* ------------------------ gancio per il collaudo ------------------- *
+ *  Permette il playtest automatico da fuori (browser headless):
+ *  leggere lo stato, teletrasportare, simulare tasti, avanzare il tempo.
+ * ------------------------------------------------------------------ */
+window.__game = {
+  state() {
+    return {
+      x: Math.round(player.x), y: Math.round(player.y), dir: player.dir,
+      quest: Object.assign({}, quest),
+      inventory: items.map(i => ({ id: i.id, taken: i.taken })),
+      dialogOpen: !!dialog,
+      dialogLine: dialog ? dialog.lines[dialog.i] : null,
+      objective: objective(),
+      particles: particles.length,
+      errors: window.__errors.slice()
+    };
+  },
+  teleport(tx, ty) { player.x = tx*T + T/2; player.y = ty*T + T/2;
+    cam.x = clamp(player.x - VW/2, 0, W*T - VW); cam.y = clamp(player.y - VH/2, 0, H*T - VH); },
+  press(k) { keys.add(String(k).toLowerCase()); },
+  release(k) { keys.delete(String(k).toLowerCase()); },
+  interact() { interact(); },
+  advance() { advanceDialog(); },
+  tick(seconds) { const step = 1/60; for (let t = 0; t < (seconds || 1/60); t += step) update(step); },
+  tile(what) {
+    if (what === 'door') return doorBlocks.map(d => ({ x: d.x, y: d.y, open: doorOpen.has(d.x + ',' + d.y) }));
+    if (what === 'spawn') for (let y = 0; y < H; y++) for (let x = 0; x < W; x++)
+      if (RAW[y] && RAW[y][x] === 'P') return { x, y };
+    if (what === 'key') return items.map(i => ({ x: Math.floor(i.x/T), y: Math.floor(i.y/T) }));
+    if (what === 'npc') return npcs.map(n => ({ id: n.id, x: Math.floor(n.x/T), y: Math.floor(n.y/T) }));
+    return null;
+  },
+  map() { return { w: W, h: H, tiles: T, grid: grid.map(r => r.join('')) }; }
+};
+})();
+</script>
+</body>
+</html>
