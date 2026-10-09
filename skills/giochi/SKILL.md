@@ -38,6 +38,34 @@ Godot 4 è la fase 2 (motore completo, editor per l'utente sul proprio PC): si a
 5. **Nessun asset di terzi non tracciato**: la grafica procedurale evita del tutto il problema delle
    licenze (le linee guida RPG Maker vietano l'addestramento su asset e core script ufficiali).
 
+
+## Grafica: la fabbrica di asset (Blender headless)
+
+La grafica "elementare" non è un limite del motore: è un limite della **pipeline di asset**. Su
+questa macchina (6 core, **nessuna GPU**) Blender renderizza su CPU: misurato qui **~6 s per un
+frame 512px** e **8 rotazioni a 256px in 9 s**. Vedi `media/giochi/asset/README.md`.
+
+```bash
+blender --background --factory-startup --python asset/script/cristallo.py -- \
+  --outdir asset/renders/ --sequenza 8 --passo 45 --lato 256 --campioni 48
+montage asset/renders/cristallo-0[0-7].png -tile 4x2 -geometry +4+4 -background none asset/sprite.png
+```
+
+- **La tecnica che alza la qualità è il 2.5D**: modello 3D → render **ortografico** da angoli fissi →
+  sprite 2D per il motore. Materiali, ombre e illuminazione veri, impacchettati come immagini.
+- **Base di partenza**: asset CC0 già pronti (Kenney, Poly Haven, ambientCG, Quaternius; LPC per il
+  2D RPG) — non si disegna nulla a mano, si compone.
+- **Trappole verificate**: il Blender di Ubuntu è compilato *senza OpenImageDenoise* (accendere il
+  denoise fa fallire il render: si compensa con più campioni) e il view transform filmico schiarisce
+  e desatura (per sprite usare `Standard`).
+- **Altri strumenti guidabili da CLI**: `montage`/`convert` (ImageMagick), `inkscape --export-type=png`
+  (vettoriale), `gimp -i -b` (raster batch, texture, normal map), `tiled --export-map` (mappe),
+  `fluidsynth`/`sclang`/`csound` (audio), `ffmpeg` (conversioni e montaggi).
+- **WebGL funziona nel browser headless** (ANGLE/SwiftShader, verificato): si può renderizzare 3D
+  vero (three.js, Babylon) e catturarne i frame con `screenshot`.
+- Le scene **si scrivono in Python**, non nel file `.blend` (binario): lo script è la verità del
+  progetto, parametrizzato e diffabile.
+
 ## Verifica visiva nel browser (HTML)
 
 ```bash
