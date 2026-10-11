@@ -23,6 +23,10 @@ try {
 const liveMod = readFileSync("/root/pi-harness/media/browser-live.mjs", "utf8");
 const askTool = readFileSync("/root/pi-harness/media/ask-tool.mjs", "utf8");
 const askBroker = readFileSync("/root/pi-harness/media/ask-broker.mjs", "utf8");
+// skill delle immagini (dove è documentato il blocco ```video) e regole di esclusione dal
+// repository: le skill di terzi (HyperFrames) vivono in skills/ ma non si pubblicano.
+const immaginiSkill = readFileSync("/root/pi-harness/skills/immagini/SKILL.md", "utf8");
+const gitignore = readFileSync("/root/pi-harness/.gitignore", "utf8");
 const unzipMod = readFileSync("/root/pi-harness/media/unzip.mjs", "utf8");
 let pass = 0, fail = 0;
 const ok = (m) => { console.log("  ✔ " + m); pass++; };
@@ -546,6 +550,86 @@ check(
   "il manuale documenta l'interruttore e il comando /ask",
   // il manuale scrive la tabella con le pipe protette (`/ask <on\|off\|status>`): si normalizza
   /DASH_ASK=off/.test(readme) && /\/ask (?:<)?on\|off(?:\|status)?/.test(readme.replace(/\\\|/g, "|")),
+);
+
+// --- 30. lettura ad alta voce: agganci e vincoli -----------------------------
+// Il motore sta sul server (media/tts.mjs) e il browser non sintetizza nulla: la verifica statica
+// qui serve a impedire che una delle due metà venga tolta per sbaglio (una metà sola non legge).
+const ttsMod = readFileSync("/root/pi-harness/media/tts.mjs", "utf8");
+check("dashboard.mjs importa il motore TTS", /from "\.\/media\/tts\.mjs"/.test(mjs));
+check("il motore è piper nel venv dedicato", /\/opt\/piper\/venv\/bin\/piper/.test(ttsMod));
+check("il catalogo dichiara più di una voce italiana", (ttsMod.match(/motore: "piper"/g) || []).length >= 3);
+check("le voci non installate sono dichiarate come tali", /disponibile:/.test(ttsMod) && /non installata/.test(html));
+check("il testo parlato toglie i blocchi di codice", /blocco di codice/.test(ttsMod) && /testoParlato/.test(ttsMod));
+check("i segmenti corti si uniscono (niente tracce da mezzo secondo)", /MIN_SEG_CHARS/.test(ttsMod));
+check(
+  "la sintesi gira in parallelo, non in serie",
+  /inParallelo\(/.test(ttsMod) && /PARALLEL/.test(ttsMod),
+);
+check("la traccia è una sola, in MP3, con le durate dei paragrafi", /libmp3lame/.test(ttsMod) && /segmentiManifest/.test(ttsMod));
+check("senza ffmpeg si ripiega sul WAV (concatWav)", /function concatWav/.test(ttsMod));
+check("la cache si pota da sola oltre il tetto", /CACHE_MAX_BYTES/.test(ttsMod) && /podaCache/.test(ttsMod));
+check(
+  "gli endpoint del TTS esistono nel server",
+  /url\.pathname === "\/api\/tts"/.test(mjs) &&
+    /url\.pathname === "\/api\/tts\/job"/.test(mjs) &&
+    /url\.pathname === "\/api\/tts\/audio"/.test(mjs) &&
+    /url\.pathname === "\/api\/tts\/export"/.test(mjs) &&
+    /url\.pathname === "\/api\/tts\/prefs"/.test(mjs),
+);
+check("la traccia risponde al Range (seek su un capitolo lungo)", /Content-Range/.test(mjs) && /Accept-Ranges/.test(mjs));
+check(
+  "la sintesi è un LAVORO con avanzamento, non una richiesta appesa",
+  /ttsJobs/.test(mjs) && /avviaTtsJob/.test(mjs) && /json\(res, 202/.test(mjs),
+);
+check("le preferenze voce/velocità sono su disco", /TTS_PREFS_FILE/.test(mjs));
+check("il player in chat esiste ed è agganciato ai messaggi", /function ttsPlayerInline/.test(html) && /🔊 ascolta/.test(html));
+check("il lettore a schermo intero esiste", /id="ttsViewer"/.test(html) && /function ttsApriLettore/.test(html));
+check("il paragrafo in ascolto si evidenzia e si può cliccare", /\.ttspar\.on/.test(html) && /ttsEvidenzia/.test(html));
+check("i file .md hanno il pulsantino di lettura nel file manager", /function ttsPulsantino/.test(html) && /isTestoLeggibile/.test(html));
+check("la barra del lettore ha i comandi indispensabili", /id="tPlay"/.test(html) && /id="tPrev"/.test(html) && /id="tNext"/.test(html) && /id="tExport"/.test(html) && /id="tVoce"/.test(html));
+check(
+  "la velocità si applica con playbackRate (non rigenerando l'audio)",
+  /playbackRate = ttsPrefs\.velocita/.test(html),
+);
+check(
+  "il primo play lo fa una persona: nessun avvio automatico dopo la generazione",
+  /il primo ▶ lo preme SEMPRE una persona/.test(html) && !/\.play\(\)[\s\S]{0,80}ttsMontalo/.test(html),
+);
+check("le scorciatoie del lettore esistono (spazio, frecce, +/−)", /ttsViewer"\)\.hidden\) return;/.test(html) && /ttsSalta\(-1\)/.test(html));
+check("la voce preferita si sceglie dal menu delle funzioni", /id="ttsVoceSel"/.test(html) && /ttsPopolaMenuFeatures/.test(html));
+check(
+  "il manuale documenta la lettura ad alta voce e i suoi endpoint",
+  /\/api\/tts/.test(readme) && /lettura ad alta voce/i.test(readme),
+);
+
+// --- video: blocco ```video + rotta /api/video (HyperFrames) -----------------
+// Il blocco esiste per intero (linguaggi, tipo, card) e la rotta risponde alle richieste
+// PARZIALI: senza `Content-Range` la barra del tempo non funziona, ed è la ragione per cui il
+// video non passa da /api/image.
+check("il blocco ```video è cablato (linguaggi, tipo, card)", /VIDEO_FENCE_LANGS/.test(html) && /\"video\", \"mp4\", \"filmato\"/.test(html) && /function makeVideoCard/.test(html));
+check(
+  "il tipo del blocco si decide in un punto solo (niente ternari sparsi)",
+  /function tipoBlocco/.test(html) && /tipo: tipoBlocco\(open\.lang\)/.test(html),
+);
+check("la card video riusa l'estetica di quella immagine e ha il player", /vidfig/.test(html) && /classList\.add\("err"\)/.test(html) && /video\.controls = true/.test(html));
+check("nessun avvio automatico del video", !/video\.autoplay = true/.test(html) && /preload = "metadata"/.test(html));
+check(
+  "la rotta video serve le richieste parziali (206) e rifiuta fuori dalla fine (416)",
+  /url\.pathname === \"\/api\/video\"/.test(mjs) && /206,/.test(mjs) && /416,/.test(mjs) && /Content-Range/.test(mjs),
+);
+check("il formato del video si verifica dai magic number (ftyp / EBML)", /function sniffVideoMime/.test(mjs) && /ftyp/.test(mjs) && /0x1a/.test(mjs) && /0xdf/.test(mjs));
+check("il tetto del video è configurabile e separato da quello delle immagini", /DASH_VIDEO_MAX_BYTES/.test(mjs) && /VIDEO_MAX_BYTES/.test(mjs));
+check("il blocco video è documentato nella skill delle immagini", /media\/presentazione\.mp4/.test(immaginiSkill) && /blocco `video`/.test(immaginiSkill));
+check(
+  "il manuale documenta il video, la sua rotta e il costo del render",
+  /\/api\/video/.test(readme) && /blocco `video`/.test(readme) && /3,5 secondi di CPU/.test(readme),
+);
+// Le skill di HyperFrames sono di TERZI (Apache 2.0): stanno in skills/ perché l'harness le
+// legge da lì, ma non devono finire nel repository pubblico.
+check(
+  "le skill di terzi (HyperFrames) sono escluse dal versionamento",
+  /skills\/hyperframes/.test(gitignore) && /skills\/media-use\//.test(gitignore),
 );
 
 console.log(`\nrisultato: ${pass} ok, ${fail} falliti`);

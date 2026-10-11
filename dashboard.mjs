@@ -46,6 +46,16 @@ import { leggiWiki as memoriaWiki, linkRotti as memoriaLinkRotti } from "./media
 import { ricostruisci as memoriaRicostruisci, aggiornaDopoSessione as memoriaArchiviaSessione } from "./media/memoria/memoria-build.mjs";
 import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato, indiceDaAggiornare as memoriaIndiceDaAggiornare } from "./media/memoria/memoria-index.mjs";
 import { createDecisionMService } from "./media/decision-m-service.mjs";
+import {
+  VOCI as TTS_VOCI,
+  elencoCache as ttsElencoCache,
+  esporta as ttsEsporta,
+  leggiMeta as ttsLeggiMeta,
+  percorsoAudio as ttsPercorsoAudio,
+  podaCache as ttsPodaCache,
+  sintetizza as ttsSintetizza,
+  statoMotore as ttsStatoMotore,
+} from "./media/tts.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -1096,6 +1106,76 @@ function askToolEnabled() {
 // Dopo un riavvio le domande rimaste senza esito (la promessa del tool è morta col processo)
 // vengono marcate come scadute nel log: nessuna card resta "in attesa" per sempre.
 askBroker.markOrphansExpired();
+
+// ---- lettura ad alta voce: preferenze e lavori ---------------------------
+// La voce e la velocità scelte restano su disco (sopravvivono al riavvio); i lavori in corso
+// vivono in memoria, perché un lavoro è un processo di sintesi, non uno stato da conservare.
+const TTS_PREFS_FILE = process.env.DASH_TTS_PREFS_FILE || join(MEDIA_DIR, "tts-prefs.json");
+let ttsVoce = "serena";
+let ttsVelocita = 1;
+let ttsUltimoFile = "";
+try {
+  const pref = JSON.parse(readFileSync(TTS_PREFS_FILE, "utf8"));
+  if (TTS_VOCI.some((v) => v.id === pref?.voce)) ttsVoce = pref.voce;
+  if (Number.isFinite(pref?.velocita) && pref.velocita >= 0.5 && pref.velocita <= 3) ttsVelocita = pref.velocita;
+  if (typeof pref?.ultimoFile === "string") ttsUltimoFile = pref.ultimoFile;
+} catch {
+  /* nessuna preferenza salvata: si usano i default */
+}
+function saveTtsPrefs() {
+  try {
+    writeFileSync(TTS_PREFS_FILE, JSON.stringify({ voce: ttsVoce, velocita: ttsVelocita, ultimoFile: ttsUltimoFile }, null, 2));
+  } catch (err) {
+    console.error("[tts] preferenze non salvate:", err?.message ?? err);
+  }
+}
+if (!existsSync(TTS_PREFS_FILE)) saveTtsPrefs();
+
+/**
+ * Lavori di sintesi in corso o conclusi: `chiave` → stato.
+ * Il POST risponde SUBITO e la generazione prosegue in background: un capitolo impiega minuti e
+ * una richiesta HTTP che resta appesa per minuti viene tagliata da proxy e telefono (lezione già
+ * imparata con le sessioni lunghe). Il frontend chiede l'avanzamento con GET /api/tts/job.
+ * La chiave è voce+testo: due richieste identiche non fanno due volte lo stesso lavoro.
+ */
+const ttsJobs = new Map();
+/**
+ * Avvia (o riaggancia) un lavoro. `onProgress` aggiorna il conteggio dei segmenti, che è
+ * l'unica cosa che rende sopportabile l'attesa su un capitolo lungo.
+ */
+function avviaTtsJob({ testo, voce }) {
+  const chiave = createHash("sha1").update(`${voce}|${testo}`).digest("hex").slice(0, 16);
+  const esistente = ttsJobs.get(chiave);
+  if (esistente && esistente.stato === "in-corso") return esistente;
+  const job = { chiave, stato: "in-corso", voce, fatti: 0, totali: 0, iniziato: Date.now(), errore: null, manifest: null };
+  ttsJobs.set(chiave, job);
+  // la mappa non cresce senza fine: si tengono i 30 lavori più recenti
+  if (ttsJobs.size > 30) {
+    const vecchi = [...ttsJobs.values()].sort((a, b) => a.iniziato - b.iniziato).slice(0, ttsJobs.size - 30);
+    for (const v of vecchi) ttsJobs.delete(v.chiave);
+  }
+  ttsSintetizza({
+    testo,
+    voceId: voce,
+    onProgress: (fatti, totali) => {
+      job.fatti = fatti;
+      job.totali = totali;
+    },
+  })
+    .then((manifest) => {
+      job.stato = "pronto";
+      job.manifest = manifest;
+      job.fatti = job.totali || manifest.segmenti.length;
+      job.fine = Date.now();
+    })
+    .catch((err) => {
+      job.stato = "errore";
+      job.errore = (err?.message || String(err)) + (err?.stderr ? ` — ${err.stderr}` : "");
+      job.fine = Date.now();
+      console.error("[tts] sintesi non riuscita:", job.errore);
+    });
+  return job;
+}
 
 const BROWSER_EXT = createBrowserExtension({
   mediaDir: MEDIA_DIR,
@@ -3458,6 +3538,30 @@ function looksLikeSvg(buf) {
   return testa.includes("<svg") || (testa.includes("<?xml") && testa.includes("svg"));
 }
 
+// ---- video ---------------------------------------------------------------
+/**
+ * Formato di un video dai magic number, non dall'estensione: un `.mp4` che è in realtà una
+ * pagina HTML non entra nella rotta video (e il browser non lo riproduce come filmato).
+ *
+ * Riconosciuti: MP4/M4V e MOV (contenitore ISO-BMFF, scatola `ftyp` al byte 4) e
+ * WebM/Matroska (firma EBML). AVIF/HEIC usano lo stesso `ftyp` ma sono immagini: si escludono,
+ * perché le prende `sniffImageMime` e servirle come video darebbe un player nero.
+ */
+function sniffVideoMime(buf) {
+  if (buf.length >= 12 && buf.subarray(4, 8).toString("latin1") === "ftyp") {
+    const brand = buf.subarray(8, 12).toString("latin1").trim();
+    if (/^(avif|avis|heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(brand)) return null;
+    // `qt` è QuickTime (.mov): è un video, anche se non sempre riproducibile in Chrome
+    if (brand === "qt") return "video/quicktime";
+    return "video/mp4";
+  }
+  if (buf.length >= 4 && buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3) {
+    const testa = buf.toString("latin1");
+    return testa.includes("webm") ? "video/webm" : "video/x-matroska";
+  }
+  return null;
+}
+
 // ---- documenti PDF -------------------------------------------------------
 /**
  * Formato PDF dai magic number: `%PDF-` nei primi byte del file.
@@ -3615,6 +3719,14 @@ function parsePdfRange(valore, pagineTotali) {
 /** Tetto per l'anteprima di un'immagine in chat: oltre, si mostra il percorso come testo. */
 const IMAGE_MAX_BYTES =
   Number(process.env.DASH_IMAGE_MAX_BYTES) > 0 ? Number(process.env.DASH_IMAGE_MAX_BYTES) : 40 * 1024 * 1024;
+
+/**
+ * Tetto per il video servito alla card della chat. È largo di proposito: a differenza di
+ * un'immagine (che il browser decodifica tutta in memoria) un video si guarda a pezzi via
+ * Range, quindi 200 MB si vedono benissimo. Il limite serve solo a non servire file assurdi.
+ */
+const VIDEO_MAX_BYTES =
+  Number(process.env.DASH_VIDEO_MAX_BYTES) > 0 ? Number(process.env.DASH_VIDEO_MAX_BYTES) : 2 * 1024 * 1024 * 1024;
 
 import { statSync as require_statSync } from "node:fs";
 
@@ -5311,6 +5423,131 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && url.pathname === "/api/video") {
+      // Un video prodotto in casa (un render di HyperFrames, un montaggio): la card della chat lo
+      // riproduce dentro la pagina. Perché non è un caso di /api/image:
+      //   1) Range. Un <video> chiede il file a pezzi (prima i byte 0-, poi il salto al minuto 3):
+      //      senza `Accept-Ranges` e senza 206 il player riscarica tutto dall'inizio e lo
+      //      scorrimento sulla barra del tempo non funziona. Qui la richiesta parziale si serve
+      //      davvero, che è l'unico modo di guardare un file grande senza aspettarlo tutto.
+      //   2) Tetto largo. Un video da 200 MB si guarda benissimo a pezzi; IMAGE_MAX_BYTES lo
+      //      rifiuterebbe.
+      const richiesto = url.searchParams.get("path") || "";
+      const soloMeta = url.searchParams.get("meta") === "1";
+      // `resolveCitedPath` e non `safeResolve`: il percorso arriva da un blocco scritto
+      // dall'agente, che cita lo stesso file in tre modi (assoluto, relativo alla cartella di
+      // lavoro `media/x.mp4`, relativo ai file generati `x.mp4`). Con la sola root `/root`, un
+      // «media/x.mp4» scritto nel blocco non esisterebbe: è lo stesso motivo per cui quella
+      // funzione esiste per le citazioni nel testo.
+      const info = await resolveCitedPath(richiesto);
+      if (!info) return json(res, 404, { error: `file non trovato: «${richiesto}»` });
+      if (info.type === "dir") return json(res, 400, { error: "è una cartella, non un file" });
+      const abs = resolve(ROOT, info.path);
+      let st;
+      try {
+        st = await fs.stat(abs);
+      } catch {
+        return json(res, 404, { error: `file non trovato: «${richiesto}»` });
+      }
+      if (!st.isFile()) return json(res, 400, { error: "non è un file" });
+      let testa = Buffer.alloc(0);
+      try {
+        const fh = await fs.open(abs, "r");
+        try {
+          const buf = Buffer.alloc(512);
+          const { bytesRead } = await fh.read(buf, 0, 512, 0);
+          testa = buf.subarray(0, bytesRead);
+        } finally {
+          await fh.close();
+        }
+      } catch (e) {
+        return json(res, 500, { error: `lettura non riuscita: ${e?.message || e}` });
+      }
+      const mime = sniffVideoMime(testa);
+      const rel = relative(ROOT, abs);
+      if (!mime) {
+        return json(res, 415, {
+          ok: false,
+          error:
+            "il file non è un video (mp4, m4v, mov, webm): per un disegno usa il blocco ```svg, per un'immagine ```img",
+          path: rel,
+          size: st.size,
+        });
+      }
+      const troppoGrande = st.size > VIDEO_MAX_BYTES;
+      if (soloMeta) {
+        return json(res, 200, {
+          ok: true,
+          mime,
+          path: rel,
+          name: basename(abs),
+          size: st.size,
+          mtime: st.mtimeMs,
+          tooBig: troppoGrande,
+          maxBytes: VIDEO_MAX_BYTES,
+          // Chrome non sa riprodurre il Matroska (.mkv): la card lo dichiara invece di restare
+          // nera per sempre. Il .mov invece si tenta: se è H.264 va, se è ProRes fallisce e
+          // allora la card mostra il download.
+          playable: mime !== "video/x-matroska",
+          nota: mime === "video/quicktime" ? "QuickTime: se non parte qui, scaricalo" : "",
+        });
+      }
+      if (troppoGrande) {
+        return json(res, 413, {
+          ok: false,
+          error: `video troppo grande per l'anteprima (${Math.round(st.size / 1024 / 1024)} MB, limite ${
+            Math.round(VIDEO_MAX_BYTES / 1024 / 1024)
+          } MB): scaricalo`,
+          path: rel,
+          size: st.size,
+        });
+      }
+      const comuni = {
+        "Content-Type": mime,
+        // inline: è un'anteprima, non un download (il nome del file resta nel titolo della card)
+        "Content-Disposition": "inline",
+        "Accept-Ranges": "bytes",
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "private, max-age=60",
+      };
+      const richiestaRange = String(req.headers.range || "").trim();
+      const m = /^bytes=(\d*)-(\d*)$/.exec(richiestaRange);
+      if (m && (m[1] || m[2])) {
+        let inizio;
+        let fine;
+        if (!m[1]) {
+          // `bytes=-N`: gli ULTIMI N byte. Alcuni player aprono così l'indice del MP4.
+          const coda = Number(m[2]);
+          if (!Number.isFinite(coda) || coda <= 0) {
+            res.writeHead(416, { "Content-Range": `bytes */${st.size}` });
+            return res.end();
+          }
+          inizio = Math.max(0, st.size - coda);
+          fine = st.size - 1;
+        } else {
+          inizio = Number(m[1]);
+          fine = m[2] ? Math.min(Number(m[2]), st.size - 1) : st.size - 1;
+        }
+        if (!Number.isFinite(inizio) || inizio >= st.size || inizio > fine) {
+          res.writeHead(416, { "Content-Range": `bytes */${st.size}` });
+          return res.end();
+        }
+        res.writeHead(206, {
+          ...comuni,
+          "Content-Range": `bytes ${inizio}-${fine}/${st.size}`,
+          "Content-Length": fine - inizio + 1,
+        });
+        const stream = createReadStream(abs, { start: inizio, end: fine });
+        // chi legge chiude a metà (ha cambiato posizione): la lettura va chiusa con lui
+        stream.on("error", () => res.destroy());
+        return stream.pipe(res);
+      }
+      res.writeHead(200, { ...comuni, "Content-Length": st.size });
+      const stream = createReadStream(abs);
+      stream.on("error", () => res.destroy());
+      return stream.pipe(res);
+    }
+
     if (req.method === "GET" && url.pathname === "/api/pdf") {
       // Documenti PDF: metadati, UNA pagina resa in PNG, il testo di una pagina o di una fascia,
       // e la ricerca dentro il documento.
@@ -5480,6 +5717,127 @@ const server = http.createServer(async (req, res) => {
         troncato,
         avvertenza: PDF_UNTRUSTED_NOTE,
       });
+    }
+
+    // ---- lettura ad alta voce (TTS locale) -------------------------------
+    // Quattro rotte, come per i PDF: stato+voci, avvio di un lavoro, avanzamento, traccia audio.
+    // La sintesi è LENTA di proposito (piper su CPU, offline): un capitolo di mezz'ora d'ascolto
+    // si genera in qualche minuto, quindi il lavoro si avvia e si segue, non si aspetta.
+    if (req.method === "GET" && url.pathname === "/api/tts") {
+      const motore = ttsStatoMotore();
+      return json(res, 200, {
+        ok: true,
+        motore,
+        voci: motore.voci,
+        prefs: { voce: ttsVoce, velocita: ttsVelocita, ultimoFile: ttsUltimoFile },
+        jobs: [...ttsJobs.values()].map((j) => ({ chiave: j.chiave, stato: j.stato, voce: j.voce, fatti: j.fatti, totali: j.totali })),
+        recenti: await ttsElencoCache(),
+      });
+    }
+    if (req.method === "GET" && url.pathname === "/api/tts/job") {
+      const chiave = url.searchParams.get("chiave") || "";
+      const job = ttsJobs.get(chiave);
+      if (!job) return json(res, 404, { error: "lavoro non trovato (il server è stato riavviato?)" });
+      return json(res, 200, {
+        ok: true,
+        chiave: job.chiave,
+        stato: job.stato,
+        voce: job.voce,
+        fatti: job.fatti,
+        totali: job.totali,
+        errore: job.errore,
+        manifest: job.manifest
+          ? { ...job.manifest, testo: undefined, url: `/api/tts/audio?id=${job.manifest.id}` }
+          : null,
+      });
+    }
+    if (req.method === "POST" && url.pathname === "/api/tts") {
+      const body = await readBody(req, 4 * 1024 * 1024);
+      const voceId = TTS_VOCI.some((v) => v.id === body.voce) ? body.voce : ttsVoce;
+      let testo = typeof body.testo === "string" ? body.testo : "";
+      let origine = "incollato";
+      if (!testo && body.path) {
+        let abs;
+        try {
+          abs = await safeResolve(String(body.path));
+        } catch (e) {
+          return json(res, e?.code === 403 ? 403 : 404, { error: `percorso non leggibile: «${body.path}»` });
+        }
+        try {
+          testo = await fs.readFile(abs, "utf8");
+        } catch (e) {
+          return json(res, 500, { error: `lettura non riuscita: ${e?.message || e}` });
+        }
+        origine = String(body.path);
+        ttsUltimoFile = origine;
+        saveTtsPrefs();
+      }
+      if (!testo.trim()) return json(res, 400, { error: "serve un testo o il percorso di un file da leggere" });
+      if (testo.length > 400000) return json(res, 413, { error: `testo troppo lungo (${testo.length} caratteri): leggilo a capitoli` });
+      // Nota: `voce` qui NON cambia la preferenza salvata (lo fa POST /api/tts/prefs): una richiesta
+      // una tantum con un'altra voce non deve riscrivere la scelta dell'utente per il futuro.
+      const job = avviaTtsJob({ testo, voce: voceId });
+      return json(res, 202, { ok: true, chiave: job.chiave, stato: job.stato, voce: job.voce, origine, caratteri: testo.length });
+    }
+    if (req.method === "POST" && url.pathname === "/api/tts/prefs") {
+      const body = await readBody(req, 8 * 1024);
+      if (TTS_VOCI.some((v) => v.id === body.voce)) ttsVoce = body.voce;
+      if (Number.isFinite(body.velocita) && body.velocita >= 0.5 && body.velocita <= 3) ttsVelocita = body.velocita;
+      saveTtsPrefs();
+      return json(res, 200, { ok: true, prefs: { voce: ttsVoce, velocita: ttsVelocita, ultimoFile: ttsUltimoFile } });
+    }
+    if (req.method === "POST" && url.pathname === "/api/tts/export") {
+      const body = await readBody(req, 8 * 1024);
+      try {
+        const dest = await ttsEsporta(String(body.id || ""), body.nome ? String(body.nome) : "");
+        const rel = relative(ROOT, dest);
+        return json(res, 200, { ok: true, path: rel, name: basename(dest), size: statSync(dest).size, url: `/api/download?path=${encodeURIComponent(rel)}` });
+      } catch (e) {
+        return json(res, 404, { error: e?.message || String(e) });
+      }
+    }
+    if (req.method === "POST" && url.pathname === "/api/tts/poda") {
+      return json(res, 200, { ok: true, ...(await ttsPodaCache()) });
+    }
+    if (req.method === "GET" && url.pathname === "/api/tts/audio") {
+      // La traccia di un capitolo può durare mezz'ora: senza Range il browser non può spostarsi
+      // avanti e indietro nella lettura (e su iPhone riparte da capo a ogni tocco della barra).
+      const id = url.searchParams.get("id") || "";
+      const meta = ttsLeggiMeta(id);
+      const binario = ttsPercorsoAudio(id, meta?.audio);
+      if (!binario) return json(res, 404, { error: "traccia non trovata in cache" });
+      const mime = binario.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
+      const st = statSync(binario);
+      const range = req.headers.range;
+      if (range) {
+        const m = /^bytes=(\d*)-(\d*)$/.exec(String(range).trim());
+        if (m) {
+          let da = m[1] ? Number(m[1]) : 0;
+          let a = m[2] ? Number(m[2]) : st.size - 1;
+          if (Number.isNaN(da) || Number.isNaN(a) || da > a || a >= st.size) {
+            res.writeHead(416, { "Content-Range": `bytes */${st.size}` });
+            return res.end();
+          }
+          a = Math.min(a, st.size - 1);
+          res.writeHead(206, {
+            "Content-Type": mime,
+            "Content-Length": a - da + 1,
+            "Content-Range": `bytes ${da}-${a}/${st.size}`,
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "public, max-age=86400",
+          });
+          createReadStream(binario, { start: da, end: a }).pipe(res);
+          return;
+        }
+      }
+      res.writeHead(200, {
+        "Content-Type": mime,
+        "Content-Length": st.size,
+        "Accept-Ranges": "bytes",
+        "Cache-Control": "public, max-age=86400",
+      });
+      createReadStream(binario).pipe(res);
+      return;
     }
 
     if (req.method === "POST" && url.pathname === "/api/upload") {

@@ -32,6 +32,16 @@ media/goals.json
 media/progetto.json
 media/.ask-*
 
+# ---- lettura ad alta voce: tracce audio e preferenze ----
+# La cache delle tracce è audio rigenerabile (decine di MB per capitolo) e le tracce esportate in
+# media/audio/ sono il contenuto di un libro: né l'una né le altre hanno qualcosa a che fare col
+# codice del progetto. Le preferenze (voce, velocità, ultimo file letto) sono stato dell'istanza.
+media/tts/
+media/audio/
+media/tts-prefs.json
+# I campioni di voce servono a scegliere la voce: sono audio, non codice
+media/tts-campioni/
+
 # ---- memoria a lungo termine: i DATI non si pubblicano ----
 # Il codice della memoria (media/memoria/*.mjs) è versionato come tutto il resto: è prodotto.
 # I dati NO, e non per prudenza generica: l'indice contiene estratti di ogni documento e di
@@ -52,6 +62,13 @@ media/grafo-*.png
 # Screenshot delle istanze tester (contengono i dati della memoria di ALTRI utenti: mai pubblicarli)
 media/memoria-tester*.png
 
+# ---- video: artefatti binari, si rigenerano ----
+# Un MP4 non è codice: sono centinaia di KB che si rifanno con `npx hyperframes render`.
+# Questi restano sul server (la chat li mostra da media/, non serve versionarli).
+media/video-presentazione-harness.mp4
+media/hyperframes-prova.mp4
+media/hyperframes-prova.webm
+
 # ---- temporanei ----
 *.tmp
 .tail-fix.tmp
@@ -63,6 +80,21 @@ piccolo.bin
 media/CU2026_*_estratto.txt
 # esiti di errore delle API di generazione immagini (spazzatura di test)
 media/out_gemini-*.json
+
+# ---- skill di terzi (HyperFrames, HeyGen) ----
+# Sono 13 skill Apache 2.0 che insegnano all'agente a scrivere composizioni HTML e a
+# renderizzarle in MP4 col CLI `hyperframes`. Stanno in skills/ perché l'harness le legge da
+# lì, ma NON si pubblicano: sono ~8 MB di codice di terzi, e Apache 2.0 vuole licenza e
+# attribuzione (LICENSE + NOTICE nel repo) che qui non ha senso mantenere aggiornate.
+# Si reinstallano con: npx hyperframes skills update
+#                       (le workflow di creazione one-shot, es. pr-to-video, stanno a parte)
+skills/hyperframes/
+skills/hyperframes-*/
+skills/media-use/
+skills/general-video/
+skills/motion-graphics/
+skills/faceless-explainer/
+skills/product-launch-video/
 
 # ---- immagini scaricate dal web ----
 # Restano locali (nella cartella dei file generati): servono a mostrarle in chat, non sono codice

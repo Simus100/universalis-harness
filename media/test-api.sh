@@ -179,6 +179,45 @@ tests() {
   check "export di una sessione inesistente → 404" 404 "$(code -u pi:testpass "$B/api/sessions/export?id=non-esiste")"
   check "ricerca file fuori root → 403" 403 "$(code -u pi:testpass "$B/api/search/files?q=root&path=../..")"
 
+  echo "== 7. lettura ad alta voce (TTS locale) =="
+  check "GET /api/tts senza credenziali → 401" 401 "$(code $B/api/tts)"
+  check "GET /api/tts" 200 "$(code -u pi:testpass $B/api/tts)"
+  local tv; tv=$(curl -s -u pi:testpass $B/api/tts)
+  check "il motore dichiara piper e le voci" "ok" "$(echo "$tv" | python3 -c "import json,sys;d=json.load(sys.stdin);print('ok' if d['motore']['piper'] and len(d['voci'])>=3 else 'no')" 2>/dev/null || echo err)"
+  check "POST /api/tts senza testo → 400" 400 "$(code -u pi:testpass -X POST -H 'Content-Type: application/json' -d '{}' $B/api/tts)"
+  check "POST /api/tts con file inesistente → 404" 404 "$(code -u pi:testpass -X POST -H 'Content-Type: application/json' -d '{"path":"non-esiste.md"}' $B/api/tts)"
+  # La generazione è un LAVORO: si avvia, si segue, e la traccia si scarica a pezzi (Range).
+  # Voce «riccardo» (x_low) di proposito: il test deve durare pochi secondi anche su una CPU carica.
+  local jobkey manifest id audio st
+  jobkey=$(curl -s -u pi:testpass -X POST -H 'Content-Type: application/json' \
+    -d '{"testo":"Prova della lettura ad alta voce. Seconda frase, per fare due segmenti.","voce":"riccardo"}' \
+    $B/api/tts | python3 -c "import json,sys;print(json.load(sys.stdin).get('chiave',''))" 2>/dev/null)
+  [ -n "$jobkey" ] && ok "lavoro avviato: $jobkey" || ko "lavoro non avviato"
+  manifest=""
+  for i in $(seq 1 40); do
+    manifest=$(curl -s -u pi:testpass "$B/api/tts/job?chiave=$jobkey")
+    st=$(echo "$manifest" | python3 -c "import json,sys;print(json.load(sys.stdin).get('stato',''))" 2>/dev/null)
+    [ "$st" = "pronto" ] && break
+    [ "$st" = "errore" ] && break
+    sleep 1
+  done
+  check "il lavoro arriva a «pronto»" pronto "$st"
+  id=$(echo "$manifest" | python3 -c "import json,sys;print((json.load(sys.stdin).get('manifest') or {}).get('id',''))" 2>/dev/null)
+  [ -n "$id" ] && ok "traccia generata (id ${id:0:8})" || ko "nessun id nel manifest"
+  check "segmenti con i tempi dei paragrafi" ok "$(echo "$manifest" | python3 -c "import json,sys;m=json.load(sys.stdin)['manifest'];print('ok' if m['segmenti'] and m['segmenti'][0]['fine']>0 else 'no')" 2>/dev/null || echo err)"
+  check "la traccia si scarica" 200 "$(code -u pi:testpass "$B/api/tts/audio?id=$id")"
+  check "la traccia risponde al Range (206)" 206 "$(code -u pi:testpass -H 'Range: bytes=0-1023' "$B/api/tts/audio?id=$id")"
+  check "Range fuori misura → 416" 416 "$(code -u pi:testpass -H 'Range: bytes=99999999-' "$B/api/tts/audio?id=$id")"
+  check "id inesistente → 404" 404 "$(code -u pi:testpass "$B/api/tts/audio?id=aaaaaaaaaaaaaaaaaaaaaaaa")"
+  check "export in media/audio" 200 "$(code -u pi:testpass -X POST -H 'Content-Type: application/json' -d "{\"id\":\"$id\",\"nome\":\"prova-api\"}" $B/api/tts/export)"
+  check "preferenze voce/velocità" 200 "$(code -u pi:testpass -X POST -H 'Content-Type: application/json' -d '{"voce":"paola","velocita":1.25}' $B/api/tts/prefs)"
+  # la cache non si rigenera: stesso testo, stessa voce → «riusata»
+  jobkey=$(curl -s -u pi:testpass -X POST -H 'Content-Type: application/json' \
+    -d '{"testo":"Prova della lettura ad alta voce. Seconda frase, per fare due segmenti.","voce":"riccardo"}' \
+    $B/api/tts | python3 -c "import json,sys;print(json.load(sys.stdin).get('chiave',''))" 2>/dev/null)
+  sleep 2
+  check "la seconda richiesta riusa la cache" riusata "$(curl -s -u pi:testpass "$B/api/tts/job?chiave=$jobkey" | python3 -c "import json,sys;d=json.load(sys.stdin);print((d.get('manifest') or {}).get('cache',''))" 2>/dev/null)"
+
   echo
   echo "risultato: $PASS ok, $FAIL falliti"
   [ "$FAIL" = "0" ]

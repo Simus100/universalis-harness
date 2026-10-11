@@ -135,7 +135,46 @@ avviene attorno all'angolo in alto a sinistra (`transform-origin: 0 0`) e per 90
 una **compensazione** nel translate, altrimenti l'immagine finisce fuori dallo stage. Su telefono la
 barra scorre in orizzontale con bersagli ≥44px; i comandi restano sopra l'overlay.
 
-**Costo e sicurezza.** Nessuna miniatura generata sul server (non ci sono ImageMagick né ffmpeg su
-questa macchina): si serve l'originale. Il prezzo è che una foto da 8 MB si scarica tutta per essere
-guardata in chat: per questo l'anteprima ha un tetto di 40 MB e mostra il percorso utile
-(«aprila dai file») invece di scaricare. Il formato è sempre verificato dal server sui magic number.
+**Costo e sicurezza.** Nessuna miniatura generata sul server: si serve l'originale. Il prezzo è che
+una foto da 8 MB si scarica tutta per essere guardata in chat: per questo l'anteprima ha un tetto di
+40 MB e mostra il percorso utile («aprila dai file») invece di scaricare. Il formato è sempre
+verificato dal server sui magic number. (`ffmpeg` è comparso su questa macchina il 2026-10-11, ma
+**solo** per la lettura ad alta voce: le immagini continuano a essere servite così come sono.)
+
+## 9. Lettura ad alta voce: barra in chat e lettore a schermo intero
+
+Due forme, **un solo motore** (piper sul server: vedi `docs/MANUALE.md`), e la stessa traccia MP3
+con i tempi dei paragrafi. Il testo mostrato dal lettore è **quello che si sente**: i paragrafi
+arrivano già ripuliti dal markdown (asterischi, tabelle e blocchi di codice non si leggono), così
+non c'è differenza fra ciò che si vede e ciò che si ascolta.
+
+**Barra in chat** (`.ttsbar`, sotto il messaggio): ▶/⏸, posizione, `tempo / durata`, voce,
+velocità, e una riga di stato che **dice cosa sta succedendo** («⏳ sintetizzo: 12/48 paragrafi…»,
+«riccardo (maschile, leggera) · 6:12 — premi ▶», «traccia salvata in …»). Un'attesa muta, su un
+lavoro di minuti, sembra un guasto: la riga di stato è parte del progetto, non un dettaglio.
+
+**Lettore dei capitoli** (`#ttsViewer`, stesso scheletro di `.vlightbox`): barra in alto (✕, nome,
+contatore, ⏮ ▶ ⏭, −/velocità/＋, voce, ⬇ mp3, ⛶), stage con il testo, riga di servizio in basso.
+Il paragrafo in ascolto prende `.ttspar.on` (fondo d'accento al 10% più bordo sinistro acceso): la
+separazione sta nel **bordo**, non nel riempimento, perché su fondo nero due grigi vicini non si
+distinguono (stessa regola della sezione 1). Il paragrafo è cliccabile e ha l'ora d'inizio
+(`6 · 1:03`) in micro-testo, che è anche il modo per saltare a un punto senza cercarlo a orecchio.
+
+Tre decisioni da non disfare:
+
+1. **il primo ▶ lo preme una persona.** La generazione finisce da sola, ma la lettura non parte da
+   sola: su iOS un `play()` che nasce da un timer viene rifiutato dal browser (`NotAllowedError`) e
+   una lettura che non parte sembra rotta;
+2. **la velocità è `playbackRate`, non una rigenerazione**: 0,75× e 2× usano la stessa traccia in
+   cache, e cambiare velocità è istantaneo;
+3. **l'evidenziazione segue senza strappare**: si scorre al paragrafo nuovo solo se è uscito dalla
+   vista — chi sta rileggendo un passaggio sopra non se lo vede scappare sotto (stesso patto
+   dell'autoscroll della chat, e per lo stesso motivo).
+
+Un solo `<audio>` per tutta la dashboard (`#ttsAudio`): due letture insieme non si capiscono, e su
+iOS un elemento nuovo per ogni clic perde l'autorizzazione al play. Aprire un lettore ferma il
+precedente, il lavoro di sintesi invece prosegue (finirà in cache: la prossima volta è istantaneo).
+
+Su telefono la barra del lettore scorre in orizzontale con bersagli ≥44px; i paragrafi restano a
+tutta larghezza con testo a `--fs-md` e interlinea 1,7, perché la lettura a schermo qui dura minuti
+e non deve affaticare.

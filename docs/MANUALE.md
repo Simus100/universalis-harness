@@ -481,6 +481,115 @@ pagina inesistente, non-PDF, percorso fuori dalla root, scansione, degradazione 
 disattivata) e `node media/test-pdf-ui.mjs` (32 verifiche nel browser vero: card in chat, lettore a
 pagine, zoom, tastiera, apertura dal file manager, non-regressione su `img` e `svg`).
 
+### Video (blocco `video`)
+
+Un video prodotto in casa si mostra in chat come un'immagine o un PDF: un blocco con linguaggio
+`video` (anche `mp4` o `filmato`), **una riga di percorso** e la didascalia nelle righe successive.
+
+````
+```video
+media/presentazione.mp4
+La presentazione, 12 secondi
+```
+````
+
+La card mostra un **player con la barra del tempo**, il nome del file e i metadati veri letti dal
+file decodificato (durata, pixel, formato, peso), più tre azioni: *schermo pieno* (apre il video in
+una scheda), *scarica*, *copia percorso*. **Il video non parte da solo**: si avvia a mano, perché una
+chat che si mette a suonare da sola è un difetto.
+
+**Perché una rotta sua** (`GET /api/video`), e non `/api/image`: un `<video>` chiede il file **a
+pezzi** (prima i byte `0-`, poi il salto al minuto 3). La rotta risponde alle richieste parziali con
+`206 Partial Content` e `Content-Range`, e dichiara `Accept-Ranges: bytes` — senza questo la barra
+del tempo non funziona e il player riscarica tutto dall'inizio. Quindi un video di centinaia di MB
+si guarda bene: il tetto per l'anteprima è **2 GB** (`DASH_VIDEO_MAX_BYTES`), non i 40 MB delle
+immagini, perché il file non viene mai tenuto tutto in memoria.
+
+**Il formato si verifica dai magic number** (`ftyp` per MP4/M4V/MOV, firma EBML per WebM/Matroska),
+non dall'estensione: un HTML rinominato `.mp4` viene rifiutato con **415** e un motivo, e un'**AVIF**
+— che usa lo stesso contenitore `ftyp` dei video — non passa per video (lo prende `/api/image`).
+Altri casi: percorso inesistente o fuori dalla root **404**, cartella **400**, oltre il tetto **413**
+con l'indicazione di scaricarlo.
+
+**Formati riproducibili.** MP4/M4V/WebM sì. Un **.mov** si tenta (se è H.264 va, se è ProRes no) e
+in quel caso la card lo dichiara. Un **.mkv** il browser non lo riproduce: il `meta` risponde
+`playable: false` e la card mostra il download con il motivo, **invece di lasciare un riquadro nero**
+che sembra un guasto.
+
+**Produrre un video: HyperFrames.** L'harness ha installato [HyperFrames](https://github.com/heygen-com/hyperframes)
+(Apache 2.0): si scrive una composizione in HTML e la si renderizza in MP4 con Chrome headless e
+FFmpeg. Il CLI è `npx hyperframes` (`init`, `lint`, `check`, `snapshot`, `render`, `doctor`) e le sue
+skill stanno in `skills/` (installate da fuori: `npx hyperframes skills update`, e **non versionate**
+nel repository — sono di terzi, vedi `.gitignore`).
+
+```bash
+npx hyperframes init mio-video --non-interactive
+cd mio-video && npx hyperframes lint && npx hyperframes render --quality draft
+```
+
+Due cose che valgono più di ogni istruzione:
+
+- **Il render costa tempo di macchina e va annunciato.** Misurato qui (6 core, senza GPU): **10
+  secondi di video a 1080p in 33,5 secondi**, cioè circa **3,5 secondi di CPU per ogni secondo di
+  video**. Un video di 30 secondi sono ~2 minuti. Non è un'operazione da fare in silenzio mentre
+  l'utente aspetta una risposta: si dice quanto ci vuole *prima* di lanciarla.
+- **Il primo comando scarica Chrome Headless Shell** (113 MB in `~/.cache/hyperframes`) e ha bisogno
+  di `unzip`: `npx hyperframes doctor` dice se manca qualcosa. La **telemetria del CLI è spenta**
+  (`npx hyperframes telemetry disable`): questo harness non manda fuori niente.
+
+Test: `node media/test-video.mjs` (33 verifiche sul server: magic number e trappole, richieste
+parziali `206`/`416`, byte identici all'originale, meta, percorsi, tetto) e
+`node media/test-video-ui.mjs` (33 verifiche nel browser vero: la card e i suoi metadati, il seek che
+si applica, il **frame decodificato** su canvas — la prova che i byte sono arrivati —, gli alias, i
+fallimenti con motivo, la non-regressione su `img`/`svg`/`js`, schermo piccolo).
+
+### Lettura ad alta voce (TTS locale)
+
+Il server **parla**: le risposte della chat e i capitoli `.md` si possono ascoltare, e la voce non
+esce dalla macchina (nessun servizio cloud, nessuna chiave, nessun costo a consumo).
+
+- **In chat**: sotto ogni risposta dell'assistente c'è **🔊 ascolta**. Si apre una barra con ▶/⏸,
+  posizione, tempo, **voce** e **velocità**; il contesto della risposta resta sotto gli occhi.
+- **Un capitolo**: nel file manager ogni file `.md`/`.markdown`/`.txt` ha il pulsantino **🎧**
+  (e la card del file in chat ha **🎧 leggi**). Si apre il **lettore a schermo intero**: il testo
+  (quello che si sente, già ripulito da asterischi, tabelle e blocchi di codice) paragrafo per
+  paragrafo, con il paragrafo in ascolto evidenziato. Un clic su un paragrafo salta lì.
+- **Esportare**: **⬇ mp3** salva la traccia in `media/audio/<nome>.mp3` — è il file da portare sul
+  telefono. Le tracce restano in cache: riascoltare non rigenera nulla.
+- **Scorciatoie** nel lettore: `spazio` play/pausa, `←`/`→` paragrafo precedente/successivo,
+  `+`/`−` velocità (0,75×–2×), `Esc` chiude.
+
+**Come è fatto, e perché così.** La sintesi avviene sul server con **piper** (voci neurali ONNX su
+CPU) e la lettura di un capitolo è un **lavoro**: un testo di mezz'ora d'ascolto impiega minuti, e
+il browser riceve un'unica traccia MP3 con i tempi di ogni paragrafo (è da lì che viene
+l'evidenziazione). Le richieste HTTP che restano appese per minuti vengono tagliate dai proxy e dai
+telefoni: quindi il lavoro si **avvia** (`POST /api/tts` risponde `202` subito) e si **segue**
+(`GET /api/tts/job`), mostrando l'avanzamento («⏳ sintetizzo: 12/48 paragrafi»).
+
+Il primo ▶ lo preme sempre una persona: su iOS un `play()` che arriva da un timer non parte, e una
+lettura che non parte sembra rotta.
+
+**Voci** (si scelgono dal menu **features → lettura**, e valgono per tutti i lettori):
+
+| voce | tipo | velocità di generazione | note |
+|------|------|--------------------------|------|
+| `serena` | femminile, modello *high* (114 MB) | ≈1× realtime | la più curata |
+| `paola` | femminile, *medium* (63 MB) | ≈3× realtime | buon compromesso |
+| `riccardo` | **maschile**, *x_low* (28 MB) | ≈11× realtime | unica voce maschile libera: timbro più povero |
+| `diego` | maschile, neurale Azure (`edge-tts`) | ≈5× realtime | la più naturale, ma richiede la rete **e da questo IP Azure risponde 403**: opzione di riserva |
+
+**Installazione (una volta sola, sul server)**: binario piper in `/opt/piper/` con l'ambiente
+Python dedicato `/opt/piper/venv` (`pip install piper-tts edge-tts`), i modelli in
+`/opt/piper/voices/`, più **`ffmpeg`** per concatenare e comprimere le tracce in MP3. Senza ffmpeg il
+motore ripiega su un WAV unico (funziona, pesa ~20 volte tanto). Percorsi e limiti sono
+riconfigurabili: `DASH_TTS_PIPER`, `DASH_TTS_VOICES`, `DASH_TTS_CACHE`, `DASH_TTS_CACHE_MAX`,
+`DASH_TTS_PARALLEL`.
+Per **disinstallare**: `rm -rf /opt/piper` (torna il messaggio «motore di lettura non disponibile»)
+— il resto della dashboard non dipende da nulla di tutto questo.
+
+Verifiche: `bash media/test-api.sh` (15 controlli: avvio del lavoro, stato, traccia, Range, cache
+riusata, export, preferenze) e i controlli statici in `node media/test-static.mjs`.
+
 ### Ricerca
 - **nelle chat**: campo di ricerca nel drawer (☰). Scansiona i JSONL in `sessions/` e mostra
   per ogni chat i riscontri con lo **snippet evidenziato**; da lì si apre la chat o si scarica
@@ -625,6 +734,14 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
 | POST | `/api/browser/control` | `{ mode: "agent"\|"human" }` lock anti-conflitto (in modalità human il frame rate sale a 10/s) |
 | POST | `/api/browser/reload` | ricarica la pagina attiva: i frame arrivano solo ai cambi, così una pagina ferma non sembra bloccata |
 | GET | `/api/image?path=` | anteprima di un'immagine: `Content-Type` ricavato dai magic number, `inline`, `nosniff`; `?meta=1` restituisce solo formato, peso e `tooBig` (rifiuta ciò che non è un'immagine: 415) |
+| GET | `/api/video?path=` | anteprima di un video: serve anche le **richieste parziali** (`Range` → `206` con `Content-Range`, `416` fuori dalla fine), `inline`, `nosniff`; `?meta=1` dice formato, peso, `tooBig`, `playable` e una `nota` per i formati che il browser non riproduce |
+| GET | `/api/tts` | lettura ad alta voce: stato del motore, voci disponibili, preferenze, lavori in corso e tracce in cache |
+| POST | `/api/tts` | `{ testo }` oppure `{ path, voce? }` avvia la sintesi → `202 { chiave }` (il lavoro prosegue in background) |
+| GET | `/api/tts/job?chiave=` | avanzamento del lavoro (`in-corso` con `fatti/totali`, `pronto` col manifest, `errore`) |
+| GET | `/api/tts/audio?id=` | la traccia del capitolo (MP3, o WAV se manca ffmpeg) con **Range** per il seek |
+| POST | `/api/tts/prefs` | `{ voce, velocita }` preferenze persistite (0,5–3×) |
+| POST | `/api/tts/export` | `{ id, nome? }` copia la traccia in `media/audio/` e torna percorso e link di scarico |
+| POST | `/api/tts/poda` | pota la cache delle tracce oltre il tetto (`DASH_TTS_CACHE_MAX`) |
 | GET | `/api/progetto` | le cartelle del progetto con la loro scheda (file, dimensione, elenco) e quale è attiva |
 | POST | `/api/progetto` | `{ azione: aggiungi\|rimuovi\|attiva\|svuota, path }` — percorsi relativi alla root, senza `..`; aggiorna anche il contesto dell'agente |
 | POST | `/api/browser/open` | `{ url }` naviga a un URL (barra indirizzi della live view); accetta solo http/https |
@@ -720,6 +837,8 @@ node media/test-image-api.mjs    # immagini: il formato è verificato dai magic 
 node media/test-image-ui.mjs     # immagini in chat e lettore a schermo intero nel browser vero: anteprima, errori, miniatura, galleria, zoom, rotazione (istanze di prova su :8482/:8483)
 node media/test-pdf.mjs          # documenti PDF: metadati, testo per pagina e per fascia, ricerca, pagina in PNG, limiti, percorso fuori root, scansione, degradazione (istanze di prova su :8431/:8432)
 node media/test-pdf-ui.mjs       # documenti PDF nel browser vero: card con la prima pagina, lettore a pagine (avanti/indietro, zoom, tastiera), apertura dal file manager, non-regressione (istanze su :8484/:8485)
+node media/test-video.mjs        # video: magic number (HTML e AVIF camuffati da mp4 rifiutati), richieste parziali 206/416, byte identici all'originale, meta, percorsi, tetto (istanza di prova su :8498)
+node media/test-video-ui.mjs     # video in chat nel browser vero: player con metadati reali, seek che si applica, frame DECODIFICATO su canvas, fallimenti con motivo, non-regressione (istanze su :8486/:8487)
 node media/test-static.mjs       # coerenza HTML/server (id, endpoint, cablaggio) — nessuna rete
 node media/test-ui.mjs           # logica frontend in node:vm (storico, notifiche, form cron, …)
 node media/test-palette.mjs      # comandi slash: filtro, completamento, esecuzione (istanza su :8499)

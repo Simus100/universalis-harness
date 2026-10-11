@@ -46,6 +46,8 @@ doppio tocco, due dita), rotazione, schermo intero e scorciatoie da tastiera.
 disegno vero nel punto esatto del messaggio — con vista ingrandita, copia e download — dopo il
 passaggio in un sanitizzatore che rifiuta script, risorse esterne e riferimenti di rete.
 
+**Ascoltare invece di leggere.** Le risposte lunghe e i capitoli si possono **ascoltare**: sotto ogni risposta c'è 🔊 ascolta, e nel file manager ogni `.md` ha il pulsante 🎧 che apre un lettore a schermo intero con il paragrafo in ascolto evidenziato, salto a un punto cliccandolo e velocità da 0,75× a 2×. La voce è **sul server** — piper, voci neurali italiane, offline, nessun servizio cloud né costo a consumo — e la traccia già generata resta in cache: riascoltare è istantaneo. Un capitolo diventa un **`.mp3`** scaricabile con un clic.
+
 **Un decisore locale, acceso a richiesta.** Dove serve un giudizio ripetibile con una probabilità —
 instradare una richiesta, dire se un input è ostile, scegliere fra azioni, dare una priorità —
 l'harness può accendere dal menu *features* un decisore tipizzato locale — **Decision_M** (4B su CPU):
@@ -154,6 +156,9 @@ ruoli e permessi. Nella modalità ospitata non c'è fatturazione automatica: è 
 - `poppler-utils` *(opzionale)* per leggere i documenti PDF (`pdfinfo`, `pdftotext`, `pdftocairo`):
   senza, i PDF restano scaricabili e visibili come file, ma non se ne legge il testo. Si disattiva
   con `DASH_PDF_DISABLED=1`
+- **piper** + `ffmpeg` *(opzionali)* per la lettura ad alta voce: il binario in `/opt/piper/` con il
+  suo ambiente Python e le voci in `/opt/piper/voices/`. Senza, tutto il resto funziona e la
+  dashboard dice «motore di lettura non disponibile»
 
 ## Documentazione
 

@@ -1239,6 +1239,49 @@ footer {
   .vbar .ghost { min-height: 44px; flex: 0 0 auto; }
   #vName { max-width: 34vw; }
 }
+/* ---------- lettura ad alta voce (TTS) ----------------------------------
+ * Due forme, un motore solo: la BARRA compatta sotto un messaggio (riascoltare una risposta
+ * lunga, soprattutto da telefono) e il LETTORE a schermo intero per i capitoli .md, dove il
+ * paragrafo che si sta ascoltando si accende e gli altri restano leggibili.
+ * Il tempo di generazione si mostra sempre: un capitolo non è istantaneo e un'attesa muta
+ * sembra un guasto. La velocità non si cuoce nell'audio (playbackRate): la stessa traccia
+ * già generata serve 0,75× come 2×, senza rigenerare nulla. */
+.ttsbar {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%;
+  margin-top: 6px; padding: 6px 8px; border: 1px solid var(--border-soft); border-radius: var(--radius);
+  background: var(--panel-2);
+}
+.ttsbar .ttsplay {
+  border: 1px solid var(--border); background: var(--panel-3); color: var(--text);
+  min-width: 40px; min-height: 32px; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--fs-md);
+}
+.ttsbar .ttsplay:hover { border-color: var(--accent); color: var(--accent); }
+.ttsbar .ttsplay:disabled { opacity: .5; cursor: default; }
+.ttsseek { flex: 1 1 160px; min-width: 120px; accent-color: var(--accent); height: 20px; }
+.ttsbar .ttstime { font-size: var(--fs-sm); color: var(--dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ttsbar select {
+  background: var(--panel-3); color: var(--text); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 3px 4px; font-size: var(--fs-sm); max-width: 46vw;
+}
+.ttsbar .ttsstato { font-size: var(--fs-sm); color: var(--dim); flex-basis: 100%; }
+.ttsbar[data-stato="errore"] .ttsstato { color: var(--red); }
+.ttsbar[data-stato="pronto"] .ttsstato { color: var(--green); }
+/* la barra di lettura sta a capo, sotto la riga dei comandi del messaggio */
+.msgacts-tts { flex-basis: 100%; width: 100%; }
+
+/* lettore capitoli: stesso scheletro del lettore immagini (barra sopra, stage in mezzo, info sotto) */
+.ttsstage { flex: 1; min-height: 0; overflow: auto; padding: 14px 16px 40px; background: #05060a; -webkit-overflow-scrolling: touch; }
+.ttstext { max-width: 74ch; margin: 0 auto; font-size: var(--fs-lg); line-height: 1.75; color: var(--text-soft); }
+.ttspar { margin: 0 0 14px; padding: 6px 10px; border-left: 3px solid transparent; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; cursor: pointer; }
+.ttspar:hover { background: rgba(255,255,255,.03); }
+.ttspar.on { background: rgba(91,157,255,.10); border-left-color: var(--accent); color: var(--text); }
+.ttspar .ttsn { display: block; font-size: var(--fs-xs); color: var(--faint); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 760px) {
+  .ttstext { font-size: var(--fs-md); line-height: 1.7; }
+  .ttsbar select { max-width: 40vw; }
+}
+
 /* ---------- menu "features" ---------- */
 .feat { position: relative; flex: 0 0 auto; }
 .feat-panel {
@@ -1433,6 +1476,20 @@ footer {
   .imgfig .imgnome { max-width: 30%; }
   .imgfig .imgacts button { min-height: 40px; }
 }
+
+/* ---------- card video (blocchi Markdown ```video) ---------- */
+/* Riusa la struttura della card immagine (.imgfig): cambia il riquadro del player, che sta in
+   colonna sotto il testo di attesa e su fondo scuro (le bande nere di un video si vedono). */
+.imgfig.vidfig .imgbox { flex-direction: column; gap: 6px; background: #05070b; }
+.imgfig.vidfig .imgbox video {
+  max-width: 100%; max-height: min(62vh, 560px); display: block;
+  background: #000; border-radius: var(--radius-sm);
+}
+.imgfig.vidfig .vidnota {
+  display: none; padding: 7px 10px; font-size: var(--fs-sm); color: var(--yellow);
+  background: rgba(251,191,36,.07); border-top: 1px solid rgba(251,191,36,.22);
+}
+.imgfig.vidfig .vidnota.on { display: block; }
 
 /* ---------- progetto: stella nel file manager ed elenco file ---------- */
 /* La stella sta nella riga della cartella: il click marca/smarca SENZA aprire la cartella
@@ -1698,6 +1755,11 @@ footer {
         <div class="feat-sep"></div>
         <div class="feat-h">servizi locali — si accendono a richiesta</div>
         <div class="feat-row">
+          <span class="feat-lbl" title="Lettura ad alta voce: il motore (piper) gira sul server, offline">lettura</span>
+          <select id="ttsVoceSel" class="select" title="Voce per la lettura ad alta voce (piper sul server; le tracce sono in cache, quindi cambiare voce rigenera)"></select>
+          <button id="ttsUltimoBtn" class="pill" type="button" title="Rileggi l'ultimo file letto ad alta voce"><span class="led"></span>▶ ultimo</button>
+        </div>
+        <div class="feat-row">
           <button id="decisionMToggle" class="pill" type="button" title="Decision_M (decisore tipizzato locale): domande sì/no, scelta, punteggio → probabilità, senza generare testo). Acceso occupa ~5,7 GB di RAM e la CPU; spento libera tutto."><span class="led"></span>Decision_M</button>
           <span class="feat-lbl" id="decisionMInfo">—</span>
         </div>
@@ -1937,6 +1999,31 @@ footer {
   <div class="pstage" id="pStage"><img id="pImg" alt="pagina del documento" draggable="false" /></div>
   <div class="vinfo" id="pInfo"></div>
 </div>
+
+<div class="vlightbox" id="ttsViewer" hidden>
+  <!-- Lettore capitoli: la barra sta SOPRA lo stage e resta raggiungibile anche a schermo intero
+       (su telefono non c'è Esc: è l'errore già commesso una volta nella live view). -->
+  <div class="vbar">
+    <button class="ghost" id="tBack" type="button" title="Chiudi (Esc)">✕</button>
+    <span class="vtitle"><span id="tName">lettura</span><span class="vcount" id="tCount"></span></span>
+    <span style="flex:1"></span>
+    <button class="ghost" id="tPrev" type="button" title="Paragrafo precedente (←)" aria-label="Paragrafo precedente">◀◀</button>
+    <button class="ghost" id="tPlay" type="button" title="Ascolta / pausa (spazio)">▶</button>
+    <button class="ghost" id="tNext" type="button" title="Paragrafo successivo (→)" aria-label="Paragrafo successivo">▶▶</button>
+    <button class="ghost" id="tSlow" type="button" title="Più lento">−</button>
+    <span class="vcount" id="tRate">1×</span>
+    <button class="ghost" id="tFast" type="button" title="Più veloce">＋</button>
+    <select id="tVoce" class="select" title="Voce" aria-label="Voce"></select>
+    <button class="ghost" id="tExport" type="button" title="Salva la traccia in media/audio">⬇ mp3</button>
+    <button class="ghost" id="tFull" type="button" title="Schermo intero">⛶</button>
+  </div>
+  <div class="ttsstage" id="tStage"><div class="ttstext" id="tText"></div></div>
+  <div class="vinfo" id="tInfo">Scegli un file .md e premi «🎧 leggi»: il testo verrà letto ad alta voce, paragrafo per paragrafo.</div>
+</div>
+
+<!-- Un solo elemento audio per tutta la dashboard: due letture insieme non si capiscono, e su
+     iOS un `<audio>` nuovo per ogni click perde l'autorizzazione al play. -->
+<audio id="ttsAudio" preload="metadata"></audio>
 
 <footer id="chatFooter">
   <div class="hintbar" id="editBar" hidden>
@@ -2369,14 +2456,28 @@ const SVG_FENCE_LANG = "svg";
  *  chi legge, niente immagini che spariscono o cambiano sotto), e il formato viene verificato dai
  *  magic number prima di servire i byte. */
 const IMG_FENCE_LANGS = new Set(["img", "image", "foto"]);
+/** Linguaggi del blocco che contiene il PERCORSO di un video da mostrare in chat.
+ *  Solo file locali, come immagini e PDF: i byte arrivano da /api/video, che serve anche le
+ *  richieste parziali (Range) — senza quelle la barra del tempo non funziona. */
+const VIDEO_FENCE_LANGS = new Set(["video", "mp4", "filmato"]);
 /** Linguaggi del blocco che contiene il PERCORSO di un documento PDF da mostrare in chat.
  *  Come per le immagini: solo file locali, formato verificato dai magic number dal server, e
  *  le pagine arrivano da /api/pdf (mai un visualizzatore di terze parti). */
 const PDF_FENCE_LANGS = new Set(["pdf", "documento"]);
 
-/** Card del blocco: un solo punto decide chi disegna cosa (il tipo lo assegna la scansione). */
+/** Tipo del blocco dal linguaggio della fence: un solo posto decide chi disegna cosa. */
+function tipoBlocco(lang) {
+  if (lang === SVG_FENCE_LANG) return "svg";
+  if (VIDEO_FENCE_LANGS.has(lang)) return "video";
+  if (PDF_FENCE_LANGS.has(lang)) return "pdf";
+  if (IMG_FENCE_LANGS.has(lang)) return "img";
+  return null;
+}
+
+/** Card del blocco (il tipo lo assegna la scansione). */
 function makeBlockCard(tipo, code, err) {
   if (tipo === "svg") return makeSvgCard(code, err);
+  if (tipo === "video") return makeVideoCard(code, err);
   if (tipo === "pdf") return makePdfCard(code, err);
   return makeImgCard(code, err);
 }
@@ -2476,9 +2577,11 @@ function flushSvgBlocks(bubble, tail, final = false) {
         const corpo = tail.text.slice(tail.pending.bodyStart);
         const perche = tail.pending.tipo === "img"
           ? "blocco immagine non chiuso (manca la fence ``` di chiusura)"
-          : tail.pending.tipo === "pdf"
-            ? "blocco documento non chiuso (manca la fence ``` di chiusura)"
-            : "blocco SVG non chiuso (manca la fence ``` di chiusura)";
+          : tail.pending.tipo === "video"
+            ? "blocco video non chiuso (manca la fence ``` di chiusura)"
+            : tail.pending.tipo === "pdf"
+              ? "blocco documento non chiuso (manca la fence ``` di chiusura)"
+              : "blocco SVG non chiuso (manca la fence ``` di chiusura)";
         bubble.appendChild(makeBlockCard(tail.pending.tipo, corpo, perche));
         tail.el.textContent = tail.text.slice(0, tail.pending.fenceStart);
         tail.text = "";
@@ -2506,7 +2609,7 @@ function flushSvgBlocks(bubble, tail, final = false) {
       tail.el.textContent = tail.text;
       return;
     }
-    if (open.lang !== SVG_FENCE_LANG && !IMG_FENCE_LANGS.has(open.lang) && !PDF_FENCE_LANGS.has(open.lang)) {
+    if (!tipoBlocco(open.lang)) {
       // blocco di codice di altro linguaggio: si salta l'intero blocco, così un ```svg
       // citato dentro un blocco js non viene scambiato per un disegno
       const close = findCloseFence(tail.text, open.bodyStart);
@@ -2517,7 +2620,7 @@ function flushSvgBlocks(bubble, tail, final = false) {
     tail.pending = {
       fenceStart: open.start,
       bodyStart: open.bodyStart,
-      tipo: open.lang === SVG_FENCE_LANG ? "svg" : PDF_FENCE_LANGS.has(open.lang) ? "pdf" : "img",
+      tipo: tipoBlocco(open.lang),
     };
     tail.el.textContent = tail.text; // in attesa: il blocco resta visibile come testo
   }
@@ -2760,6 +2863,161 @@ function makeImgCard(code, forcedError) {
           btnDl.disabled = false;
           img.onclick = null;
         }
+      } catch (e2) {
+        if (fig.isConnected) fallisci(`errore di rete: ${e2?.message || e2}`);
+      }
+    })();
+
+  return fig;
+}
+
+/**
+ * Card di un video: il blocco ```video contiene un PERCORSO e, dalle righe successive, una
+ * didascalia.
+ *
+ *     ```video
+ *     media/render.mp4
+ *     Il video di presentazione, 12 secondi
+ *     ```
+ *
+ * I byte arrivano da /api/video, che serve anche le richieste parziali: la barra del tempo
+ * funziona quindi anche su un file grande, senza scaricarlo tutto.
+ *
+ * Il video NON parte da solo: una chat che si mette a suonare da sola è un difetto, non una
+ * funzione. Se il formato non è riproducibile nel browser (mkv, o un .mov ProRes) la card lo
+ * dice e lascia il download, invece di lasciare un riquadro nero che sembra un guasto.
+ */
+function makeVideoCard(code, forcedError) {
+  const righe = String(code || "")
+    .split("\n")
+    .map((r) => r.trim())
+    .filter(Boolean);
+  let percorso = (righe.shift() || "").replace(/^[`'"](.*)[`'"]$/s, "$1").trim();
+  const didascalia = righe.join(" ").trim();
+
+  const fig = document.createElement("figure");
+  fig.className = "imgfig vidfig";
+
+  const head = document.createElement("div");
+  head.className = "imghead";
+  const lbl = document.createElement("span");
+  lbl.className = "imglbl";
+  lbl.textContent = "video";
+  const nome = document.createElement("span");
+  nome.className = "imgnome";
+  nome.textContent = percorso.split("/").pop() || "(percorso mancante)";
+  nome.title = percorso;
+  const meta = document.createElement("span");
+  meta.className = "imgmeta";
+  const acts = document.createElement("div");
+  acts.className = "imgacts";
+  head.append(lbl, nome, meta, acts);
+
+  const box = document.createElement("div");
+  box.className = "imgbox";
+  const wait = document.createElement("span");
+  wait.className = "imgwait";
+  wait.textContent = "carico il video…";
+  box.appendChild(wait);
+  // Il video resta nel flusso (niente `hidden`): con un elemento invisibile il caricamento
+  // dei metadati non parte in modo affidabile, ed è lo stesso vicolo cieco che ha reso
+  // necessario il commento su `img` più sopra. Il testo di attesa sta sopra, in colonna,
+  // e sparisce quando arrivano i metadati.
+  const video = document.createElement("video");
+  video.controls = true;
+  video.preload = "metadata"; // i metadati sì, i byte no: non si scarica un filmato per sbaglio
+  video.playsInline = true;
+  box.appendChild(video);
+
+  const nota = document.createElement("div");
+  nota.className = "vidnota";
+
+  const cap = document.createElement("div");
+  cap.className = "imgcap";
+  cap.textContent = didascalia;
+  cap.hidden = !didascalia;
+  const err = document.createElement("div");
+  err.className = "imgerr";
+  if (didascalia) box.setAttribute("aria-label", didascalia);
+
+  fig.append(head, box, cap, nota, err);
+
+  const mkBtn = (testo, titolo, fn, disabled) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = testo;
+    b.title = titolo;
+    b.disabled = !!disabled;
+    b.onclick = fn;
+    acts.appendChild(b);
+    return b;
+  };
+  // ingrandire un video in chat non ha senso: lo si apre in una scheda, dove sta tutto
+  const btnApri = mkBtn("⤢ schermo pieno", "Apri il video in una scheda", () => {
+    if (percorso) window.open(`/api/video?path=${encodeURIComponent(percorso)}`, "_blank", "noopener");
+  }, true);
+  const btnDl = mkBtn("⬇ scarica", "Scarica il file originale", () => {
+    if (percorso) window.location = downloadUrl(percorso);
+  }, true);
+  const btnCopia = mkBtn("⧉ copia percorso", "Copia il percorso negli appunti", async () => {
+    const okk = await copyText(percorso);
+    btnCopia.textContent = okk ? "✓ percorso copiato" : "✗ non copiato";
+    setTimeout(() => (btnCopia.textContent = "⧉ copia percorso"), 1500);
+  });
+
+  const fmtDurata = (s) => {
+    if (!Number.isFinite(s) || s <= 0) return "";
+    const tot = Math.round(s);
+    return `${Math.floor(tot / 60)}:${String(tot % 60).padStart(2, "0")}`;
+  };
+
+  const fallisci = (messaggio) => {
+    fig.classList.add("err");
+    err.textContent = messaggio;
+    wait.remove();
+    video.remove();
+    btnApri.disabled = true;
+    btnDl.disabled = true;
+  };
+
+  if (forcedError) fallisci(forcedError);
+  else if (!percorso) fallisci("il blocco ```video non contiene un percorso di file");
+  else
+    (async () => {
+      try {
+        const r = await fetch(`/api/video?meta=1&path=${encodeURIComponent(percorso)}`);
+        const j = await r.json().catch(() => ({}));
+        if (!fig.isConnected) return;
+        if (!r.ok || !j.ok) {
+          fallisci(j.error || `non riesco a mostrare «${percorso}»`);
+          return;
+        }
+        percorso = j.path || percorso;
+        nome.textContent = j.name || nome.textContent;
+        nome.title = percorso;
+        meta.textContent = `${j.mime.replace("video/", "")} · ${fmtSize(j.size)}`;
+        btnApri.disabled = false;
+        btnDl.disabled = false;
+        if (!j.playable) {
+          // formato che Chrome non riproduce: dichiararlo è meglio che mostrare un riquadro nero
+          fallisci(`${j.nota || "questo formato non si riproduce nel browser"}: scaricalo per vederlo`);
+          btnDl.disabled = false;
+          return;
+        }
+        video.onloadedmetadata = () => {
+          if (!fig.isConnected) return;
+          wait.remove();
+          const durata = fmtDurata(video.duration);
+          const dim = video.videoWidth ? `${video.videoWidth}×${video.videoHeight} px · ` : "";
+          meta.textContent = `${durata ? `${durata} · ` : ""}${dim}${j.mime.replace("video/", "")} · ${fmtSize(j.size)}`;
+          if (j.nota) {
+            nota.textContent = j.nota;
+            nota.classList.add("on");
+          }
+        };
+        video.onerror = () =>
+          fallisci(`il browser non riproduce «${percorso}» (${j.mime}): scaricalo per vederlo`);
+        video.src = `/api/video?path=${encodeURIComponent(percorso)}`;
       } catch (e2) {
         if (fig.isConnected) fallisci(`errore di rete: ${e2?.message || e2}`);
       }
@@ -3312,6 +3570,18 @@ function msgActions(m, { copy, edit, regen } = {}) {
       }
     }, "Copia il testo del messaggio");
   }
+  // Lettura ad alta voce: solo per le risposte dell'assistente (è quello che si riascolta) e solo
+  // se c'è testo. Il player si apre QUI, sotto il messaggio: il contesto resta sotto gli occhi.
+  if (m.role === "assistant" && (m.text || "").trim()) {
+    const ttsBox = document.createElement("div");
+    ttsBox.className = "msgacts-tts";
+    ttsBox.hidden = true;
+    mk("🔊 ascolta", "", () => {
+      ttsBox.hidden = false;
+      ttsPlayerInline(ttsBox, { testo: m.text, titolo: "risposta" });
+    }, "Leggi ad alta voce questa risposta (voce del server, offline)");
+    bar.appendChild(ttsBox);
+  }
   if (edit) mk("✎ modifica", "", () => startEditMessage(m.text), "Modifica questo messaggio e riparti da qui");
   if (regen) mk("↻ rigenera", "danger", regenerateLast, "Genera di nuovo l'ultima risposta");
   return bar;
@@ -3490,7 +3760,19 @@ function fileCard(info) {
   // dai browser che lo considerano una navigazione
   dl.href = downloadUrl(path);
   dl.title = (isDir ? `Scarica la cartella come ${dlName}` : `Scarica ${name}`) + ` (${path})`;
-  card.appendChild(primo); card.appendChild(meta); card.appendChild(openBtn); card.appendChild(dl);
+  card.appendChild(primo); card.appendChild(meta); card.appendChild(openBtn);
+  // File leggibile (capitolo .md, appunti .txt): accanto ad «apri» c'è «🎧 leggi», perché
+  // ascoltare un capitolo è un uso diverso dall'aprirlo per correggerlo.
+  if (!isDir && isTestoLeggibile(path)) {
+    const leggi = document.createElement("button");
+    leggi.type = "button";
+    leggi.className = "fbtn";
+    leggi.textContent = "🎧 leggi";
+    leggi.title = `Leggi «${name}» ad alta voce (voce neurale sul server)`;
+    leggi.onclick = () => ttsApriLettore({ path, titolo: name });
+    card.appendChild(leggi);
+  }
+  card.appendChild(dl);
   return card;
 }
 
@@ -5608,8 +5890,10 @@ async function loadDir(rel) {
       const full = jr(currentDir, e.name);
       const icon = isDir ? "📁" : e.type === "link" ? "🔗" : isImage(e.name) ? "🖼" : isPdf(e.name) ? "🧾" : "📄";
       const meta = isDir ? "" : fmtSize(e.size);
-      // le cartelle portano la stella del progetto (vedi stellaProgetto)
-      el.appendChild(frow(icon, e.name, e.type, () => (isDir ? loadDir(full) : openFile(full)), meta, isDir ? stellaProgetto(full) : null));
+      // le cartelle portano la stella del progetto (vedi stellaProgetto); i file di testo il
+      // pulsantino 🎧, che legge ad alta voce SENZA aprire l'editor
+      const extra = isDir ? stellaProgetto(full) : isTestoLeggibile(e.name) ? ttsPulsantino(full, e.name) : null;
+      el.appendChild(frow(icon, e.name, e.type, () => (isDir ? loadDir(full) : openFile(full)), meta, extra));
     }
   } catch { alert("errore di connessione"); }
 }
@@ -5707,6 +5991,8 @@ const imgMime = (p) => IMG_MIME[String(p).split(".").pop().toLowerCase()] || "";
 const isImage = (p) => !!imgMime(p);
 /** Vero se il nome è un PDF: la verifica vera (magic number) la fa il server. */
 const isPdf = (p) => /\.pdf$/i.test(String(p || ""));
+/** Testo che ha senso ascoltare: capitoli Markdown e appunti in chiaro. */
+const isTestoLeggibile = (p) => /\.(md|markdown|txt)$/i.test(String(p || ""));
 
 /* ===================== LETTORE PDF (a pagine) =====================
  * Apre un PDF a tutto schermo: UNA pagina alla volta, resa dal server in PNG (/api/pdf),
@@ -6172,6 +6458,538 @@ addEventListener("keydown", (e) => {
   else if (e.key === "-" || e.key === "_") $("vZoomOut").click();
   else if (e.key === "0" || e.key === "f" || e.key === "F") { if (e.key === "0") vAdatta(); else setVFull(!vFull); }
   else if (e.key === "r" || e.key === "R") vRuota();
+});
+
+/* ===================== LETTURA AD ALTA VOCE (TTS) =====================
+ * Il motore è sul SERVER (piper, offline, voci neurali italiane): il browser riceve UNA traccia
+ * mp3 e i tempi di ogni paragrafo. Da lì vengono le due forme:
+ *  - la BARRA sotto un messaggio, per riascoltare una risposta lunga (soprattutto da telefono);
+ *  - il LETTORE a schermo intero per un capitolo .md, dove il paragrafo in ascolto si accende e
+ *    si può saltare a un punto cliccandolo.
+ *
+ * Tre scelte che spiegano il codice sotto:
+ *  1. la generazione è LUNGA (un capitolo: minuti) → il lavoro parte e si segue, non si aspetta;
+ *  2. il primo ▶ lo preme SEMPRE una persona: su iOS un play() che arriva da un timer non parte,
+ *     e una lettura che non parte sembra rotta;
+ *  3. la velocità si applica con playbackRate, non rigenerando l'audio: la stessa traccia serve
+ *     0,75× come 2×, e la cache resta valida.
+ */
+let ttsVociCache = null;
+let ttsPrefs = { voce: "serena", velocita: 1 };
+let ttsUltimoFile = "";
+let ttsAttivo = null; // il player in uso: { tipo, manifest, indice, paragrafi, ... }
+const VELOCITA = [0.75, 1, 1.25, 1.5, 1.75, 2];
+
+const ttsAudio = () => $("ttsAudio");
+
+function ttsTempo(s) {
+  if (!Number.isFinite(s) || s < 0) s = 0;
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, "0")}`;
+}
+
+/** Voci e preferenze dal server: una lettura sola, poi restano in memoria. */
+async function ttsCarica(force) {
+  if (ttsVociCache && !force) return { voci: ttsVociCache, prefs: ttsPrefs };
+  const r = await fetch("/api/tts");
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || "motore di lettura non disponibile");
+  ttsVociCache = j.voci || [];
+  ttsPrefs = j.prefs || ttsPrefs;
+  ttsUltimoFile = j.prefs?.ultimoFile || "";
+  return { voci: ttsVociCache, prefs: ttsPrefs, motore: j.motore };
+}
+
+/**
+ * Pulsantino 🎧 della riga di file manager: legge il file ad alta voce senza aprirlo.
+ * `stopPropagation` perché la riga intera apre l'editor: leggere non è modificare.
+ */
+function ttsPulsantino(rel, nome) {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "projstar";
+  b.textContent = "🎧";
+  b.title = `Leggi «${rel}» ad alta voce`;
+  b.setAttribute("aria-label", b.title);
+  b.onclick = (e) => {
+    e.stopPropagation();
+    ttsApriLettore({ path: rel, titolo: nome || rel.split("/").pop() });
+  };
+  return b;
+}
+
+/** Menu «lettura» del pannello features: la voce preferita vale per tutti i lettori. */
+async function ttsPopolaMenuFeatures() {
+  const sel = $("ttsVoceSel");
+  const ultimo = $("ttsUltimoBtn");
+  if (!sel) return;
+  try {
+    await ttsCarica(true);
+  } catch {
+    sel.innerHTML = '<option value="">motore non disponibile</option>';
+    return;
+  }
+  sel.innerHTML = ttsOpzioniVoci(ttsPrefs.voce);
+  sel.onchange = () => {
+    ttsPrefs.voce = sel.value;
+    ttsSalvaPrefs();
+    const v = (ttsVociCache || []).find((x) => x.id === sel.value);
+    toast(`voce: ${v?.nome || sel.value}`, "ok");
+  };
+  if (ultimo) {
+    ultimo.disabled = !ttsUltimoFile;
+    ultimo.onclick = () => {
+      setFeatPanel(false);
+      if (!ttsUltimoFile) return toast("nessun file ancora letto", "err");
+      ttsApriLettore({ path: ttsUltimoFile, titolo: ttsUltimoFile.split("/").pop() });
+    };
+  }
+}
+
+/** Menu delle voci: quelle non disponibili (modello mancante) restano visibili ma disattivate. */
+function ttsOpzioniVoci(selezionata) {
+  const voci = ttsVociCache || [];
+  return voci
+    .map((v) => `<option value="${escAttr(v.id)}"${v.id === selezionata ? " selected" : ""}${v.disponibile ? "" : " disabled"}>${escHtml(v.nome)}${v.disponibile ? "" : " — non installata"}</option>`)
+    .join("");
+}
+
+function ttsMenuVelocita(selezionata) {
+  return VELOCITA.map((v) => `<option value="${v}"${Math.abs(v - selezionata) < 0.01 ? " selected" : ""}>${v}×</option>`).join("");
+}
+
+/**
+ * Genera la lettura di un testo (o di un file) e racconta l'avanzamento.
+ * Ritorna il manifest, oppure null se qualcosa è andato storto (l'errore lo mostra `onStato`).
+ */
+async function ttsGenera({ testo, path, voce, onStato }) {
+  let r;
+  try {
+    r = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ testo, path, voce }),
+    });
+  } catch (err) {
+    onStato({ stato: "errore", testo: "il server non risponde: " + (err?.message || err) });
+    return null;
+  }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    onStato({ stato: "errore", testo: j.error || `errore ${r.status}` });
+    return null;
+  }
+  onStato({ stato: "in-corso", fatti: 0, totali: 0 });
+  for (let giro = 0; giro < 1200; giro++) {
+    await new Promise((res) => setTimeout(res, 1500));
+    const rr = await fetch(`/api/tts/job?chiave=${encodeURIComponent(j.chiave)}`);
+    const jj = await rr.json().catch(() => ({}));
+    if (!rr.ok) {
+      onStato({ stato: "errore", testo: jj.error || "lavoro non più disponibile (server riavviato?)" });
+      return null;
+    }
+    if (jj.stato === "pronto") {
+      onStato({ stato: "pronto", manifest: jj.manifest });
+      return jj.manifest;
+    }
+    if (jj.stato === "errore") {
+      onStato({ stato: "errore", testo: jj.errore || "sintesi non riuscita" });
+      return null;
+    }
+    onStato({ stato: "in-corso", fatti: jj.fatti, totali: jj.totali });
+  }
+  onStato({ stato: "errore", testo: "attesa troppo lunga: riprova con una voce più veloce (paola, riccardo)" });
+  return null;
+}
+
+/** Ferma la lettura in corso e libera il player precedente (uno alla volta: due voci insieme no). */
+function ttsFerma() {
+  const a = ttsAudio();
+  try {
+    a.pause();
+    a.removeAttribute("src");
+    a.load();
+  } catch {}
+  if (ttsAttivo?.tipo === "inline") ttsAttivo.contenitore.hidden = true;
+  if (ttsAttivo) ttsAttivo.fermo = true;
+  ttsAttivo = null;
+}
+
+/**
+ * Barra di lettura compatta, da mettere sotto un messaggio.
+ * Il testo da leggere arriva dal messaggio stesso: nessun file da scegliere.
+ */
+function ttsPlayerInline(contenitore, { testo, titolo = "risposta" }) {
+  ttsFerma();
+  contenitore.innerHTML = "";
+  const bar = document.createElement("div");
+  bar.className = "ttsbar";
+  bar.dataset.stato = "attesa";
+  bar.innerHTML =
+    '<button class="ttsplay" type="button" title="Ascolta / pausa" aria-label="Ascolta">▶</button>' +
+    '<input class="ttsseek" type="range" min="0" max="1000" value="0" aria-label="Posizione nella lettura" />' +
+    '<span class="ttstime">0:00 / 0:00</span>' +
+    `<select class="ttsvoce" title="Voce" aria-label="Voce">${ttsOpzioniVoci(ttsPrefs.voce)}</select>` +
+    `<select class="ttsvel" title="Velocità di lettura" aria-label="Velocità">${ttsMenuVelocita(ttsPrefs.velocita)}</select>` +
+    '<span class="ttsstato">preparo la voce…</span>';
+  contenitore.appendChild(bar);
+
+  const ui = {
+    tipo: "inline",
+    contenitore,
+    bar,
+    play: bar.querySelector(".ttsplay"),
+    seek: bar.querySelector(".ttsseek"),
+    tempo: bar.querySelector(".ttstime"),
+    stato: bar.querySelector(".ttsstato"),
+    voce: bar.querySelector(".ttsvoce"),
+    vel: bar.querySelector(".ttsvel"),
+    manifest: null,
+    sorgente: { testo, titolo },
+    fermo: false,
+  };
+  ui.play.disabled = true;
+  ui.play.onclick = () => ttsAlterna(ui);
+  ui.seek.oninput = () => {
+    const a = ttsAudio();
+    if (ui.manifest && Number.isFinite(a.duration)) a.currentTime = (Number(ui.seek.value) / 1000) * a.duration;
+  };
+  ui.voce.onchange = () => {
+    ttsPrefs.voce = ui.voce.value;
+    ttsSalvaPrefs();
+    ttsRicarica(ui);
+  };
+  ui.vel.onchange = () => {
+    ttsPrefs.velocita = Number(ui.vel.value);
+    ttsAudio().playbackRate = ttsPrefs.velocita;
+    ttsSalvaPrefs();
+  };
+  ttsAttivo = ui;
+  ttsRicarica(ui);
+  return ui;
+}
+
+/** (Ri)genera la lettura per un player: usata all'apertura e quando si cambia voce. */
+async function ttsRicarica(ui) {
+  ui.fermo = false;
+  ui.play.disabled = true;
+  ui.manifest = null;
+  ui.bar.dataset.stato = "attesa";
+  const manifest = await ttsGenera({
+    ...ui.sorgente,
+    voce: ttsPrefs.voce,
+    onStato: (s) => {
+      if (ui.fermo || ui !== ttsAttivo) return;
+      if (s.stato === "in-corso") {
+        ui.stato.textContent = s.totali
+          ? `⏳ sintetizzo: ${s.fatti}/${s.totali} paragrafi…`
+          : "⏳ preparo la voce…";
+      } else if (s.stato === "errore") {
+        ui.bar.dataset.stato = "errore";
+        ui.stato.textContent = "✗ " + s.testo;
+      }
+    },
+  });
+  if (!manifest || ui.fermo || ui !== ttsAttivo) return;
+  ttsMontalo(ui, manifest, { paragrafi: false });
+}
+
+/** Collega un manifest a un player: traccia pronta, comandi attivi. */
+function ttsMontalo(ui, manifest, { paragrafi = false } = {}) {
+  ui.manifest = manifest;
+  const a = ttsAudio();
+  a.src = manifest.url;
+  a.playbackRate = ttsPrefs.velocita;
+  ui.bar.dataset.stato = "pronto";
+  ui.play.disabled = false;
+  ui.stato.textContent = `${manifest.voceNome} · ${ttsTempo(manifest.durata)}${manifest.cache === "riusata" ? " · già pronta" : ""} — premi ▶`;
+  // il lettore a schermo intero non ha barra di avanzamento né contatore (li mostra la sua barra
+  // in alto): solo il player compatto in chat li ha, quindi si aggiornano se ci sono
+  if (ui.tempo) ui.tempo.textContent = `0:00 / ${ttsTempo(manifest.durata)}`;
+  if (paragrafi) ttsDisegnaParagrafi(ui);
+}
+
+/** Testo del capitolo a schermo, un paragrafo per riga, cliccabile per saltare lì. */
+function ttsDisegnaParagrafi(ui) {
+  const box = $("tText");
+  box.innerHTML = "";
+  ui.paragrafi = [];
+  for (const s of ui.manifest.segmenti) {
+    const p = document.createElement("p");
+    p.className = "ttspar";
+    const n = document.createElement("span");
+    n.className = "ttsn";
+    n.textContent = `${s.i + 1} · ${ttsTempo(s.inizio)}`;
+    const t = document.createElement("span");
+    t.textContent = s.testo;
+    p.appendChild(n);
+    p.appendChild(t);
+    p.onclick = () => {
+      // niente `ui.indice = s.i` a mano: l'indice lo ricalcola `ttsEvidenzia` dalla posizione,
+      // altrimenti il confronto «indice invariato» salta l'aggiornamento della classe e resta
+      // acceso il paragrafo precedente (difetto visto in prova)
+      ttsAudio().currentTime = s.inizio + 0.01;
+      ttsEvidenzia(ui);
+      if (ttsAudio().paused) ttsAlterna(ui);
+    };
+    box.appendChild(p);
+    ui.paragrafi.push(p);
+  }
+  $("tCount").textContent = `${ui.manifest.segmenti.length} paragrafi · ${ttsTempo(ui.manifest.durata)}`;
+}
+
+function ttsAlterna(ui) {
+  const a = ttsAudio();
+  if (!ui.manifest) return;
+  if (a.paused) {
+    // la traccia caricata è quella del player attivo? se no, si ricarica prima di suonare
+    if (!String(a.src || "").includes(ui.manifest.id)) a.src = ui.manifest.url;
+    a.playbackRate = ttsPrefs.velocita;
+    a.play().then(() => {
+      ui.play.textContent = "❚❚";
+    }).catch((err) => {
+      ui.bar.dataset.stato = "errore";
+      ui.stato.textContent = "✗ non riesco a riprodurre: " + (err?.message || err);
+    });
+  } else {
+    a.pause();
+    ui.play.textContent = "▶";
+  }
+}
+
+/** Individua il paragrafo in ascolto e, se serve, lo porta in vista. */
+function ttsEvidenzia(ui) {
+  if (!ui?.paragrafi?.length) return;
+  const t = ttsAudio().currentTime;
+  let idx = ui.indice ?? 0;
+  const segs = ui.manifest.segmenti;
+  // ricerca binaria: un capitolo ha centinaia di segmenti, e timeupdate scatta ~4 volte al secondo
+  let lo = 0;
+  let hi = segs.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (t < segs[mid].inizio) hi = mid - 1;
+    else if (t >= segs[mid].fine) lo = mid + 1;
+    else {
+      idx = mid;
+      break;
+    }
+  }
+  if (idx === ui.indice) {
+    // il paragrafo non è cambiato, ma il tempo sì: l'informazione di servizio si aggiorna lo stesso
+    const info = $("tInfo");
+    if (info && !/^(✗|traccia salvata|lettura finita)/.test(info.textContent || "")) {
+      info.textContent = `paragrafo ${idx + 1} di ${segs.length} · ${ttsTempo(t)} / ${ttsTempo(ui.manifest.durata)}`;
+    }
+    return;
+  }
+  ui.paragrafi[ui.indice]?.classList.remove("on");
+  ui.indice = idx;
+  const el = ui.paragrafi[idx];
+  if (el) {
+    el.classList.add("on");
+    // si segue la lettura solo se il paragrafo è uscito dalla vista: chi sta rileggendo un punto
+    // sopra non viene strappato via a ogni paragrafo (stesso patto dell'autoscroll in chat)
+    const stage = $("tStage");
+    const r = el.getBoundingClientRect();
+    const v = stage.getBoundingClientRect();
+    if (r.top < v.top + 40 || r.bottom > v.bottom - 40) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }
+  $("tInfo").textContent = `paragrafo ${idx + 1} di ${segs.length} · ${ttsTempo(ttsAudio().currentTime)} / ${ttsTempo(ui.manifest.durata)}`;
+}
+
+/** Preferenze (voce e velocità) sul server: sopravvivono al riavvio e valgono per tutti i lettori. */
+function ttsSalvaPrefs() {
+  fetch("/api/tts/prefs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ voce: ttsPrefs.voce, velocita: ttsPrefs.velocita }),
+  }).catch(() => {});
+}
+
+/**
+ * Lettore a schermo intero per un capitolo: `path` (file sul server) oppure `testo`.
+ * Il testo mostrato è QUELLO CHE SI SENTE (paragrafi già ripuliti dal markdown dal server):
+ * quello che leggi è quello che ascolti, senza asterischi né backtick da indovinare.
+ */
+async function ttsApriLettore({ path, testo, titolo } = {}) {
+  ttsFerma();
+  try {
+    await ttsCarica();
+  } catch (err) {
+    toast(err?.message || "motore di lettura non disponibile", "err");
+    return;
+  }
+  const v = $("ttsViewer");
+  v.hidden = false;
+  $("tName").textContent = titolo || (path ? path.split("/").pop() : "lettura");
+  $("tCount").textContent = "";
+  $("tText").innerHTML = "";
+  $("tInfo").textContent = "preparo la voce…";
+  $("tVoce").innerHTML = ttsOpzioniVoci(ttsPrefs.voce);
+  $("tRate").textContent = ttsPrefs.velocita + "×";
+  $("tPlay").textContent = "▶";
+
+  const ui = {
+    tipo: "lettore",
+    bar: $("ttsViewer").querySelector(".vbar"),
+    play: $("tPlay"),
+    stato: $("tInfo"),
+    manifest: null,
+    indice: -1,
+    paragrafi: [],
+    sorgente: { path, testo, titolo },
+    fermo: false,
+  };
+  ttsAttivo = ui;
+  const manifest = await ttsGenera({
+    path,
+    testo,
+    voce: ttsPrefs.voce,
+    onStato: (s) => {
+      if (ui.fermo || ui !== ttsAttivo) return;
+      if (s.stato === "in-corso") {
+        $("tInfo").textContent = s.totali
+          ? `⏳ sintetizzo: ${s.fatti}/${s.totali} paragrafi… (più la voce è curata, più ci vuole)`
+          : "⏳ preparo la voce…";
+      } else if (s.stato === "errore") {
+        $("tInfo").textContent = "✗ " + s.testo;
+      }
+    },
+  });
+  if (!manifest || ui.fermo || ui !== ttsAttivo) return;
+  ttsMontalo(ui, manifest, { paragrafi: true });
+  $("tInfo").textContent = `${manifest.voceNome} · ${manifest.segmenti.length} paragrafi · ${ttsTempo(manifest.durata)} · ${manifest.cache === "riusata" ? "già pronta" : "generata ora"} — premi ▶`;
+}
+
+function ttsChiudiLettore() {
+  const v = $("ttsViewer");
+  v.hidden = true;
+  if (ttsAttivo?.tipo === "lettore") ttsFerma();
+}
+
+// ---- eventi dell'elemento audio: uno solo per tutta la dashboard ----
+(() => {
+  const a = ttsAudio();
+  a.addEventListener("timeupdate", () => {
+    const ui = ttsAttivo;
+    if (!ui?.manifest) return;
+    const durata = Number.isFinite(a.duration) && a.duration > 0 ? a.duration : ui.manifest.durata;
+    if (ui.seek && ui.tempo) {
+      ui.seek.value = String(Math.round((a.currentTime / durata) * 1000));
+      ui.tempo.textContent = `${ttsTempo(a.currentTime)} / ${ttsTempo(durata)}`;
+    }
+    if (ui.tipo === "lettore") ttsEvidenzia(ui);
+  });
+  a.addEventListener("ended", () => {
+    const ui = ttsAttivo;
+    if (!ui) return;
+    ui.play.textContent = "▶";
+    if (ui.seek) ui.seek.value = "1000";
+    if (ui.tipo === "lettore") $("tInfo").textContent = "lettura finita";
+    else ui.stato.textContent = "lettura finita";
+  });
+  a.addEventListener("error", () => {
+    const ui = ttsAttivo;
+    if (!ui) return;
+    const msg = "✗ traccia non riproducibile";
+    if (ui.tipo === "lettore") $("tInfo").textContent = msg;
+    else ui.stato.textContent = msg;
+  });
+})();
+
+/** Salta di `delta` paragrafi (◀◀ / ▶▶ nel lettore). */
+function ttsSalta(delta) {
+  const ui = ttsAttivo;
+  if (ui?.tipo !== "lettore" || !ui.manifest) return;
+  const i = Math.max(0, Math.min(ui.manifest.segmenti.length - 1, (ui.indice ?? 0) + delta));
+  ttsAudio().currentTime = ui.manifest.segmenti[i].inizio + 0.01;
+  ttsEvidenzia(ui);
+}
+
+// ---- comandi del lettore ----
+$("tBack").onclick = () => ttsChiudiLettore();
+$("tPlay").onclick = () => ttsAlterna(ttsAttivo);
+$("tPrev").onclick = () => ttsSalta(-1);
+$("tNext").onclick = () => ttsSalta(1);
+$("tSlow").onclick = () => ttsCambiaVelocita(-0.25);
+$("tFast").onclick = () => ttsCambiaVelocita(0.25);
+$("tVoce").onchange = () => {
+  ttsPrefs.voce = $("tVoce").value;
+  ttsSalvaPrefs();
+  const ui = ttsAttivo;
+  if (ui?.tipo === "lettore") {
+    ttsFerma0(ui);
+    ttsRicarica(ui);
+  }
+};
+$("tFull").onclick = () => {
+  const el = $("ttsViewer");
+  if (!document.fullscreenElement) el.requestFullscreen?.().catch(() => {});
+  else document.exitFullscreen?.().catch(() => {});
+};
+$("tExport").onclick = async () => {
+  const ui = ttsAttivo;
+  if (ui?.manifest?.id) {
+    try {
+      const r = await fetch("/api/tts/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: ui.manifest.id, nome: (ui.sorgente?.titolo || "lettura").replace(/\.[a-z]+$/i, "") }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "esportazione non riuscita");
+      toast(`traccia salvata in ${j.path}`, "ok");
+      $("tInfo").innerHTML = `traccia salvata: <b>${escHtml(j.path)}</b> — <a href="${escAttr(j.url)}">scarica</a>`;
+    } catch (err) {
+      toast(err?.message || "esportazione non riuscita", "err");
+    }
+  }
+};
+
+/** Ferma l'audio SENZA smontare il player: serve prima di rigenerarlo con un'altra voce. */
+function ttsFerma0(ui) {
+  const a = ttsAudio();
+  try {
+    a.pause();
+    a.removeAttribute("src");
+    a.load();
+  } catch {}
+  ui.play.textContent = "▶";
+  ui.fermo = false;
+  ui.paragrafi = [];
+  ui.indice = -1;
+  $("tText").innerHTML = "";
+}
+
+function ttsCambiaVelocita(step) {
+  const ui = ttsAttivo;
+  const idx = VELOCITA.findIndex((v) => Math.abs(v - ttsPrefs.velocita) < 0.01);
+  const base = idx < 0 ? 1 : idx;
+  const passo = Math.round(step / 0.25); // +1 o −1: un gradino della scala VELOCITA
+  const nuovo = VELOCITA[Math.max(0, Math.min(VELOCITA.length - 1, base + passo))];
+  ttsPrefs.velocita = nuovo;
+  ttsAudio().playbackRate = nuovo;
+  $("tRate").textContent = nuovo + "×";
+  if (ui?.vel) ui.vel.value = String(nuovo);
+  ttsSalvaPrefs();
+}
+
+// ---- scorciatoie da tastiera del lettore ----
+document.addEventListener("keydown", (e) => {
+  if ($("ttsViewer").hidden) return;
+  const dentro = e.target && /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
+  if (e.key === "Escape") return ttsChiudiLettore();
+  if (dentro) return;
+  if (e.key === " ") {
+    e.preventDefault();
+    return ttsAlterna(ttsAttivo);
+  }
+  if (e.key === "ArrowLeft") return ttsSalta(-1);
+  if (e.key === "ArrowRight") return ttsSalta(1);
+  if (e.key === "+" || e.key === "=") return ttsCambiaVelocita(0.25);
+  if (e.key === "-" || e.key === "_") return ttsCambiaVelocita(-0.25);
 });
 
 /* ====================== COMPATTAZIONE DEL CONTESTO ====================== */
@@ -6724,6 +7542,7 @@ function setFeatPanel(open) {
     resetFeatPanelStyle(panel);
   }
   panel.hidden = !open;
+  if (open) ttsPopolaMenuFeatures();
   if (btn) {
     btn.setAttribute("aria-expanded", open ? "true" : "false");
     btn.classList.toggle("on", open);

@@ -1,0 +1,985 @@
+Sign in
+
+Gemini
+
+About Gemini Get Gemini App Subscriptions For Business Sign in
+
+# Lettore Text-to-Speech per File Markdown
+
+https://share.gemini.google/8OlPHS1B3ZyV
+
+Created with Pro October 9, 2026 at 08:51 PM Published October 11, 2026 at 02:49 AM
+
+##### You said ho bisogno di un text to speech, ho scritto un libro e vorrei creareu napp per semplice per leggelr …
+
+ho bisogno di un text to speech, ho scritto un libro e vorrei creareu napp per semplice per leggelr oin locale, deve accettare file md. possibile ?
+
+Assolutamente sì. Ascoltare ad alta voce i capitoli del proprio libro è un metodo eccellente per fare editing e perfezionare il ritmo della narrazione, specialmente quando si costruiscono mondi complessi o ambientazioni di fantascienza e cyberpunk.
+
+Per creare un'applicazione leggera, completamente offline e capace di digerire i file Markdown (.md), hai due strade principali molto rapide da implementare.
+
+### Opzione 1: App Web Locale (HTML / JavaScript)
+
+Questa è la soluzione con l'interfaccia più comoda per la lettura. Sfrutta la Web Speech API integrata in tutti i browser moderni (Chrome, Edge, Firefox). Ti basta creare un file index.html sul tuo computer e aprirlo con un doppio clic.
+
+Usa la libreria marked.js per convertire il Markdown in testo leggibile.
+
+HTML
+
+```
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Lettore Libro MD</title>
+    <!-- Richiede connessione solo per caricare questa libreria, o puoi scaricarla in locale -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 1rem; line-height: 1.6; }
+        .controls { position: sticky; top: 0; background: white; padding: 10px 0; border-bottom: 1px solid #ccc; }
+        button { padding: 10px 20px; cursor: pointer; font-size: 16px; margin-right: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <input type="file" id="fileInput" accept=".md">
+        <button onclick="play()">Riproduci</button>
+        <button onclick="pause()">Pausa</button>
+        <button onclick="resume()">Riprendi</button>
+        <button onclick="stop()">Ferma</button>
+    </div>
+
+    <div id="content" style="margin-top: 20px;"></div>
+
+    <script>
+        let testoPuro = "";
+        const synth = window.speechSynthesis;
+
+        // Gestione caricamento file
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const markdownText = e.target.result;
+                // Mostra a schermo formattato
+                document.getElementById('content').innerHTML = marked.parse(markdownText);
+                // Crea una versione pulita senza tag HTML per il sintetizzatore
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = marked.parse(markdownText);
+                testoPuro = tempDiv.textContent || tempDiv.innerText || "";
+            };
+            reader.readAsText(file, 'utf-8');
+        });
+
+        function play() {
+            if (synth.speaking) synth.cancel();
+            if (!testoPuro) { alert("Carica prima un file .md!"); return; }
+
+            const utterance = new SpeechSynthesisUtterance(testoPuro);
+            utterance.lang = 'it-IT';
+            utterance.rate = 1.0; // Velocità (0.1 a 10)
+            synth.speak(utterance);
+        }
+
+        function pause() { synth.pause(); }
+        function resume() { synth.resume(); }
+        function stop() { synth.cancel(); }
+    </script>
+</body>
+</html>
+
+```
+
+### Opzione 2: Script Python (Automazione e Backend)
+
+Se preferisci gestire il tutto tramite Python per integrarlo magari con altri tuoi flussi di lavoro, puoi usare la libreria pyttsx3, che si appoggia alle voci native di Windows/Linux ed è al 100% offline.
+
+Ti serviranno alcune librerie per gestire la formattazione e la codifica (per evitare i classici errori di decodifica come UnicodeDecodeError).
+
+Bash
+
+```
+pip install pyttsx3 markdown beautifulsoup4
+
+```
+
+Ecco lo script pronto all'uso:
+
+Python
+
+```
+import pyttsx3
+import markdown
+from bs4 import BeautifulSoup
+import tkinter as tk
+from tkinter import filedialog
+
+def pulisci_markdown(md_string):
+    """Converte il Markdown in HTML e poi estrae solo il testo puro."""
+    html = markdown.markdown(md_string)
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.get_text()
+
+def main():
+    # Inizializza il motore TTS
+    engine = pyttsx3.init()
+    engine.setProperty('rate', 160) # Regola la velocità
+
+    # Seleziona la voce italiana se disponibile
+    voices = engine.getProperty('voices')
+    for voice in voices:
+        if 'IT' in voice.id.upper() or 'ITALIAN' in voice.name.upper():
+            engine.setProperty('voice', voice.id)
+            break
+
+    # Apre una finestra nativa per selezionare il file
+    root = tk.Tk()
+    root.withdraw() # Nasconde la finestra principale
+    percorso_file = filedialog.askopenfilename(
+        title="Seleziona il capitolo del libro",
+        filetypes=[("Markdown Files", "*.md")]
+    )
+
+    if percorso_file:
+        print(f"Leggendo: {percorso_file}")
+        # Forza l'UTF-8 per gestire correttamente accenti e apostrofi
+        with open(percorso_file, 'r', encoding='utf-8') as f:
+            testo_md = f.read()
+
+        testo_pulito = pulisci_markdown(testo_md)
+
+        print("Inizio riproduzione audio...")
+        engine.say(testo_pulito)
+        engine.runAndWait()
+        print("Lettura completata.")
+
+if __name__ == "__main__":
+    main()
+
+```
+
+L'approccio HTML/JS è il più comodo se vuoi fermare e riprendere la lettura mentre rileggi il testo a schermo. L'approccio Python è invece eccellente se in futuro vorrai aggiungere una funzione per esportare direttamente i file in .mp3 (tramite engine.save_to_file()) per ascoltarli sul telefono.
+
+Aggiungiamo un'interfaccia grafica a Python?
+
+Yes
+
+##### You said sei in grado d icostruirmi tutta l'app funzionante?
+
+sei in grado d icostruirmi tutta l'app funzionante?
+
+Certamente. Per avere un'applicazione robusta, con un'interfaccia grafica completa (pulsanti, barra della velocità, area di lettura) e che non si blocchi durante la riproduzione, la soluzione migliore è costruire una Web App locale in un file unico.
+
+Creare un'interfaccia grafica in Python con tkinter per leggere testi lunghi è problematico: la libreria pyttsx3 blocca il thread principale ("gela" l'applicazione) finché non finisce di leggere la frase, rendendo difficilissimo implementare un tasto "Pausa" funzionante senza usare complessi sistemi di multi-threading.
+
+Il browser, invece, gestisce la Web Speech API nativamente in background.
+
+Ecco il codice completo per la tua app. Ho impostato un'interfaccia in modalità scura (ottima per l'affaticamento visivo durante la scrittura o l'editing) con un pannello di controllo fisso in alto.
+
+### L'App Completa: Lettore Markdown TTS
+
+-
+
+Crea un nuovo file di testo sul tuo computer.
+
+-
+
+Incolla tutto il codice qui sotto.
+
+-
+
+Salva il file chiamandolo lettore_md.html.
+
+-
+
+Fai doppio clic sul file per aprirlo nel tuo browser (Chrome, Edge o Firefox). Funziona completamente offline (a parte il primo caricamento della libreria per il Markdown).
+
+HTML
+
+```
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lettore Markdown - Universalis</title>
+    <!-- Libreria per convertire MD in HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* Tema Scuro Moderno */
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e24;
+            --text-main: #e0e0e0;
+            --accent: #00adb5;
+            --accent-hover: #007a80;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+        }
+
+        /* Barra degli strumenti fissa in alto */
+        .toolbar {
+            background-color: var(--panel-bg);
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            border-bottom: 1px solid #333;
+        }
+
+        input[type="file"] {
+            color: var(--text-main);
+            font-size: 14px;
+        }
+
+        button {
+            background-color: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+            background: #2a2a35;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        /* Area di lettura */
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+            font-size: 1.15rem;
+        }
+
+        /* Formattazione elementi Markdown */
+        #reader-content h1, h2, h3 { color: var(--accent); }
+        #reader-content blockquote { border-left: 4px solid var(--accent); margin-left: 0; padding-left: 15px; font-style: italic; color: #aaa; }
+
+        .status {
+            position: fixed;
+            bottom: 10px;
+            right: 20px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <input type="file" id="md-file" accept=".md">
+        <button id="btn-play">▶️ Leggi</button>
+        <button id="btn-pause">⏸ Pausa</button>
+        <button id="btn-resume">⏯ Riprendi</button>
+        <button id="btn-stop">⏹ Ferma</button>
+
+        <div class="slider-container">
+            <label for="speed">Velocità:</label>
+            <input type="range" id="speed" min="0.5" max="2" step="0.1" value="1">
+            <span id="speed-val">1.0x</span>
+        </div>
+    </div>
+
+    <div class="container" id="reader-content">
+        <h2>Benvenuto nel tuo Lettore.</h2>
+        <p>Usa il pulsante in alto per caricare un file <code>.md</code>. Il testo apparirà qui formattato e potrai ascoltarlo ad alta voce.</p>
+    </div>
+
+    <div class="status" id="status-text">Stato: In attesa</div>
+
+    <script>
+        const synth = window.speechSynthesis;
+        let blocksToRead = [];
+        let currentBlockIndex = 0;
+
+        // Aggiorna indicatore velocità
+        document.getElementById('speed').addEventListener('input', (e) => {
+            document.getElementById('speed-val').innerText = e.target.value + "x";
+        });
+
+        // Gestione caricamento file
+        document.getElementById('md-file').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const mdText = event.target.result;
+
+                // Renderizza il Markdown a schermo
+                document.getElementById('reader-content').innerHTML = marked.parse(mdText);
+
+                // Crea una versione testuale pulita rimuovendo l'HTML
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = marked.parse(mdText);
+
+                // Dividiamo il testo in paragrafi. Questo previene un bug noto di Chrome
+                // in cui la sintesi vocale si interrompe da sola su testi troppo lunghi (> 15 secondi).
+                const rawText = tempDiv.textContent || tempDiv.innerText || "";
+                blocksToRead = rawText.split('\n').filter(block => block.trim().length > 0);
+                currentBlockIndex = 0;
+
+                document.getElementById('status-text').innerText = "Stato: File caricato con successo";
+            };
+            reader.readAsText(file, 'utf-8');
+        });
+
+        function readNextBlock() {
+            if (currentBlockIndex >= blocksToRead.length) {
+                document.getElementById('status-text').innerText = "Stato: Lettura completata";
+                return; // Finito
+            }
+
+            const utterance = new SpeechSynthesisUtterance(blocksToRead[currentBlockIndex]);
+            utterance.lang = 'it-IT';
+            utterance.rate = parseFloat(document.getElementById('speed').value);
+
+            utterance.onend = () => {
+                currentBlockIndex++;
+                readNextBlock(); // Passa al paragrafo successivo
+            };
+
+            utterance.onerror = (e) => {
+                console.log("Errore riproduzione:", e);
+            };
+
+            synth.speak(utterance);
+        }
+
+        // Controlli
+        document.getElementById('btn-play').addEventListener('click', () => {
+            if (blocksToRead.length === 0) {
+                alert("Carica prima un file .md");
+                return;
+            }
+            synth.cancel(); // Ferma qualsiasi cosa stia dicendo
+            currentBlockIndex = 0; // Ricomincia dall'inizio
+            document.getElementById('status-text').innerText = "Stato: In riproduzione...";
+            readNextBlock();
+        });
+
+        document.getElementById('btn-pause').addEventListener('click', () => {
+            synth.pause();
+            document.getElementById('status-text').innerText = "Stato: In pausa";
+        });
+
+        document.getElementById('btn-resume').addEventListener('click', () => {
+            synth.resume();
+            document.getElementById('status-text').innerText = "Stato: In riproduzione...";
+        });
+
+        document.getElementById('btn-stop').addEventListener('click', () => {
+            synth.cancel();
+            document.getElementById('status-text').innerText = "Stato: Fermato";
+        });
+    </script>
+</body>
+</html>
+
+```
+
+### Funzionalità integrate nel codice:
+
+-
+
+Anti-Crash Text Chunking: I browser hanno un bug storico per cui smettono di leggere se un blocco di testo dura più di 15 secondi. Il codice che ho scritto divide automaticamente il tuo file in paragrafi e li passa al sintetizzatore uno per volta in modo invisibile, così può leggere interi capitoli senza mai interrompersi.
+
+-
+
+Barra di scorrimento: L'intestazione in alto è bloccata. Puoi scorrere il testo del capitolo per seguire la lettura con gli occhi e avrai sempre i comandi Play/Pausa a portata di mouse.
+
+-
+
+Selettore Velocità: Puoi regolare il ritmo da 0.5x a 2.0x.
+
+Vuoi espandere l'app con l'evidenziazione del testo?
+
+Yes
+
+##### You said ma non è possibile avere una letttura più naturale? con voce maschile ?
+
+ma non è possibile avere una letttura più naturale? con voce maschile ?
+
+Il limite dell'App Web è che dipende dalle voci installate nel tuo sistema operativo (Windows, macOS o Linux). Queste voci standard spesso risultano un po' metalliche, ma puoi selezionare una voce maschile (come "Cosimo" su Mac o "Diego" su Windows) aggiungendo un selettore all'interfaccia.
+
+Se cerchi una naturalezza di livello autoriale — fondamentale per valutare il ritmo di un libro — la soluzione definitiva è abbandonare le voci di sistema e usare le reti neurali.
+
+Ecco entrambe le soluzioni.
+
+### Opzione 1: Aggiungere il selettore voci all'App Web
+
+Sostituisci il codice lettore_md.html precedente con questa versione aggiornata. Include un menu a tendina che carica tutte le voci italiane disponibili sul tuo computer, permettendoti di scegliere quella maschile.
+
+HTML
+
+```
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Lettore Markdown - Voci</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root { --bg-color: #121212; --panel-bg: #1e1e24; --text-main: #e0e0e0; --accent: #00adb5; }
+        body { font-family: system-ui, sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0; line-height: 1.7; }
+        .toolbar { background: var(--panel-bg); padding: 15px; position: sticky; top: 0; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #333; }
+        button { background: var(--accent); color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        select, input[type="file"] { background: #333; color: white; padding: 5px; border: 1px solid #555; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; font-size: 1.15rem; }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <input type="file" id="md-file" accept=".md">
+        <select id="voice-select"><option>Caricamento voci...</option></select>
+        <button id="btn-play">▶️ Leggi</button>
+        <button id="btn-pause">⏸ Pausa</button>
+        <button id="btn-resume">⏯ Riprendi</button>
+        <button id="btn-stop">⏹ Ferma</button>
+    </div>
+
+    <div class="container" id="reader-content">Carica un file .md per iniziare.</div>
+
+    <script>
+        const synth = window.speechSynthesis;
+        let blocksToRead = [];
+        let currentBlockIndex = 0;
+        let voices = [];
+
+        // Carica e filtra le voci in italiano
+        function populateVoices() {
+            voices = synth.getVoices().filter(v => v.lang.startsWith('it'));
+            const select = document.getElementById('voice-select');
+            select.innerHTML = '';
+            voices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.value = index;
+                select.appendChild(option);
+            });
+        }
+
+        populateVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoices;
+        }
+
+        document.getElementById('md-file').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                document.getElementById('reader-content').innerHTML = marked.parse(text);
+                const tempDiv = document.createElement("div");
+                tempDiv.innerHTML = marked.parse(text);
+                blocksToRead = (tempDiv.textContent || "").split('\n').filter(b => b.trim().length > 0);
+            };
+            reader.readAsText(file, 'utf-8');
+        });
+
+        function readNextBlock() {
+            if (currentBlockIndex >= blocksToRead.length) return;
+
+            const utterance = new SpeechSynthesisUtterance(blocksToRead[currentBlockIndex]);
+            const selectedVoiceIndex = document.getElementById('voice-select').value;
+            utterance.voice = voices[selectedVoiceIndex];
+
+            utterance.onend = () => { currentBlockIndex++; readNextBlock(); };
+            synth.speak(utterance);
+        }
+
+        document.getElementById('btn-play').addEventListener('click', () => {
+            synth.cancel(); currentBlockIndex = 0; readNextBlock();
+        });
+        document.getElementById('btn-pause').addEventListener('click', () => synth.pause());
+        document.getElementById('btn-resume').addEventListener('click', () => synth.resume());
+        document.getElementById('btn-stop').addEventListener('click', () => synth.cancel());
+    </script>
+</body>
+</html>
+
+```
+
+### Opzione 2: Voce Neurale Maschile (Qualità da Audiolibro)
+
+Se le voci di sistema non ti soddisfano, il salto di qualità richiede un'architettura TTS moderna. Puoi sfruttare edge-tts, una libreria Python che si interfaccia gratuitamente con le voci neurali di Microsoft Azure (le stesse usate dai lettori di alto livello), generando un file .mp3 iper-realistico.
+
+La voce maschile predefinita in italiano è Diego (it-IT-DiegoNeural), che ha un'intonazione eccezionale per la narrativa.
+
+Installa le dipendenze nel tuo ambiente:
+
+Bash
+
+```
+pip install edge-tts markdown beautifulsoup4
+
+```
+
+Esegui questo script. Convertirà il tuo file .md direttamente in un file audio pronto da ascoltare:
+
+Python
+
+```
+import asyncio
+import edge_tts
+import markdown
+from bs4 import BeautifulSoup
+import os
+import tkinter as tk
+from tkinter import filedialog
+
+def pulisci_markdown(md_string):
+    html = markdown.markdown(md_string)
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.get_text()
+
+async def genera_audiolibro():
+    # Seleziona il file Markdown
+    root = tk.Tk()
+    root.withdraw()
+    percorso_file = filedialog.askopenfilename(filetypes=[("Markdown Files", "*.md")])
+
+    if not percorso_file:
+        return
+
+    with open(percorso_file, 'r', encoding='utf-8') as f:
+        testo_pulito = pulisci_markdown(f.read())
+
+    output_file = "capitolo_audio.mp3"
+
+    # Usa la voce neurale maschile di Microsoft Azure
+    voce_maschile = "it-IT-DiegoNeural"
+
+    print("Generazione audio neurale in corso... (potrebbe richiedere qualche secondo)")
+    communicate = edge_tts.Communicate(testo_pulito, voce_maschile)
+    await communicate.save(output_file)
+
+    print(f"Completato! File salvato come {output_file}")
+
+    # Avvia automaticamente il file audio (Windows)
+    os.startfile(output_file)
+
+if __name__ == "__main__":
+    asyncio.run(genera_audiolibro())
+
+```
+
+Vuoi implementare un'architettura LLM per la lettura?
+
+Yes
+
+##### You said quale ambiente. voglio tutto all incluisive. guidami passo passo codice + installazione , tutto
+
+quale ambiente. voglio tutto all incluisive. guidami passo passo codice + installazione , tutto
+
+Costruiamo un'applicazione desktop completa, moderna e con interfaccia grafica scura.
+
+Per farlo, utilizzeremo CustomTkinter (per un'interfaccia elegante), Edge-TTS (per scaricare la voce neurale maschile "Diego" ad altissima fedeltà da Microsoft Azure) e Pygame (per gestire i controlli audio di Play, Pausa e Stop nativamente dentro l'app, senza bloccare la finestra).
+
+Ecco la guida passo passo per configurare l'ambiente di sviluppo e avviare il software.
+
+### 1. Creazione dell'Ambiente Virtuale (Virtual Environment)
+
+L'approccio più pulito è isolare l'app in un ambiente virtuale per evitare conflitti con altri pacchetti sul tuo sistema.
+
+Apri il terminale (o il prompt dei comandi) nella cartella in cui vuoi salvare il progetto e digita:
+
+Bash
+
+```
+python -m venv lettore_tts_env
+
+```
+
+Attiva l'ambiente virtuale:
+
+-
+
+Su Windows: lettore_tts_env\Scripts\activate
+
+-
+
+Su Linux/macOS: source lettore_tts_env/bin/activate
+
+### 2. Installazione delle Librerie
+
+Con l'ambiente attivo (dovresti vedere (lettore_tts_env) all'inizio della riga di comando), installa i pacchetti necessari in un colpo solo:
+
+Bash
+
+```
+pip install edge-tts markdown beautifulsoup4 pygame customtkinter
+
+```
+
+### 3. Il Codice dell'Applicazione
+
+Crea un file chiamato app.py nella tua cartella di progetto e incolla questo codice. È stato strutturato utilizzando il multi-threading per evitare che l'interfaccia si blocchi ("congeli") mentre l'audio viene generato in background.
+
+Python
+
+```
+import os
+import asyncio
+import threading
+import customtkinter as ctk
+from tkinter import filedialog
+import markdown
+from bs4 import BeautifulSoup
+import edge_tts
+import pygame
+
+# Inizializza il motore audio per i controlli Play/Pausa
+pygame.mixer.init()
+
+# Imposta il tema dell'interfaccia grafica
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
+
+class LettoreApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
+        self.title("Universalis - Lettore Markdown")
+        self.geometry("500x380")
+        self.resizable(False, False)
+
+        self.percorso_file = None
+        self.file_audio = "capitolo_corrente.mp3"
+
+        # --- Interfaccia Utente ---
+        self.lbl_titolo = ctk.CTkLabel(self, text="Lettore Neurale", font=("Segoe UI", 24, "bold"))
+        self.lbl_titolo.pack(pady=20)
+
+        self.btn_seleziona = ctk.CTkButton(self, text="1. Seleziona File .md", command=self.seleziona_file)
+        self.btn_seleziona.pack(pady=10)
+
+        self.lbl_stato = ctk.CTkLabel(self, text="Nessun file selezionato", text_color="gray", wraplength=400)
+        self.lbl_stato.pack(pady=5)
+
+        self.btn_genera = ctk.CTkButton(self, text="2. Genera Audio", command=self.avvia_generazione, state="disabled", fg_color="#28a745", hover_color="#218838")
+        self.btn_genera.pack(pady=10)
+
+        # Area Controlli Audio
+        self.frame_controlli = ctk.CTkFrame(self, fg_color="transparent")
+        self.frame_controlli.pack(pady=20)
+
+        self.btn_play = ctk.CTkButton(self.frame_controlli, text="▶ Play", width=80, command=self.play_audio, state="disabled")
+        self.btn_play.grid(row=0, column=0, padx=5)
+
+        self.btn_pausa = ctk.CTkButton(self.frame_controlli, text="⏸ Pausa", width=80, command=self.pausa_audio, state="disabled")
+        self.btn_pausa.grid(row=0, column=1, padx=5)
+
+        self.btn_stop = ctk.CTkButton(self.frame_controlli, text="⏹ Stop", width=80, command=self.stop_audio, state="disabled")
+        self.btn_stop.grid(row=0, column=2, padx=5)
+
+    def seleziona_file(self):
+        file_path = filedialog.askopenfilename(title="Scegli il capitolo", filetypes=[("Markdown Files", "*.md")])
+        if file_path:
+            self.percorso_file = file_path
+            nome_file = os.path.basename(file_path)
+            self.lbl_stato.configure(text=f"Pronto: {nome_file}", text_color="white")
+            self.btn_genera.configure(state="normal")
+
+            # Disabilita il play se si carica un nuovo file
+            self.btn_play.configure(state="disabled")
+            self.btn_pausa.configure(state="disabled")
+            self.btn_stop.configure(state="disabled")
+
+    def pulisci_markdown(self, testo_md):
+        # Converte Markdown in HTML e lo spoglia dei tag
+        html = markdown.markdown(testo_md)
+        soup = BeautifulSoup(html, "html.parser")
+        return soup.get_text()
+
+    def avvia_generazione(self):
+        self.lbl_stato.configure(text="Connessione e generazione in corso...\nPotrebbe richiedere alcuni secondi.", text_color="#ffc107")
+        self.btn_genera.configure(state="disabled")
+        self.btn_seleziona.configure(state="disabled")
+
+        # Sblocca eventuali file audio aperti prima di sovrascriverli
+        try:
+            pygame.mixer.music.stop()
+            pygame.mixer.music.unload()
+        except AttributeError:
+            pass
+
+        # Lancia la conversione su un thread parallelo
+        threading.Thread(target=self.genera_audio_thread, daemon=True).start()
+
+    def genera_audio_thread(self):
+        try:
+            with open(self.percorso_file, 'r', encoding='utf-8') as f:
+                testo_md = f.read()
+
+            testo_pulito = self.pulisci_markdown(testo_md)
+            # Rimuove simboli residui che la voce potrebbe leggere letteralmente ("asterisco", ecc.)
+            testo_pulito = testo_pulito.replace('*', '').replace('#', '')
+
+            # Esegue il comando asincrono della rete neurale
+            asyncio.run(self.crea_file_tts(testo_pulito))
+
+            self.after(0, self.generazione_completata)
+        except Exception as e:
+            self.after(0, lambda: self.errore_generazione(str(e)))
+
+    async def crea_file_tts(self, testo):
+        # Voce neurale maschile di Azure
+        voce = "it-IT-DiegoNeural"
+        communicate = edge_tts.Communicate(testo, voce, rate="+0%")
+        await communicate.save(self.file_audio)
+
+    def generazione_completata(self):
+        self.lbl_stato.configure(text="Audio pronto! File salvato localmente.", text_color="#28a745")
+        self.btn_genera.configure(state="normal")
+        self.btn_seleziona.configure(state="normal")
+        self.btn_play.configure(state="normal")
+        self.btn_stop.configure(state="normal")
+
+        # Carica il file MP3 nel motore audio
+        pygame.mixer.music.load(self.file_audio)
+
+    def errore_generazione(self, errore):
+        self.lbl_stato.configure(text=f"Errore: {errore}", text_color="red")
+        self.btn_genera.configure(state="normal")
+        self.btn_seleziona.configure(state="normal")
+
+    def play_audio(self):
+        if not pygame.mixer.music.get_busy():
+            pygame.mixer.music.play()
+        else:
+            pygame.mixer.music.unpause()
+        self.btn_pausa.configure(state="normal")
+
+    def pausa_audio(self):
+        pygame.mixer.music.pause()
+
+    def stop_audio(self):
+        pygame.mixer.music.stop()
+        # Riavvolge il nastro
+        pygame.mixer.music.load(self.file_audio)
+
+if __name__ == "__main__":
+    app = LettoreApp()
+    app.mainloop()
+
+```
+
+### 4. Avvio ed Esecuzione
+
+Torna nel terminale e lancia l'applicativo:
+
+Bash
+
+```
+python app.py
+
+```
+
+Nota bene: L'interfaccia e la riproduzione del file audio sono interamente locali, ma durante la fase 2 ("Genera Audio"), lo script richiederà momentaneamente l'accesso a internet per scaricare la voce neurale di Azure e compilare il file .mp3 sul tuo disco. Una volta comparso "Audio pronto!", puoi ascoltarlo, metterlo in pausa e riprenderlo completamente offline tutte le volte che vuoi.
+
+##### You said note: This error originates from a subprocess, and is likely not a problem with pip.
+
+(lettore_tts_e…
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
+
+(lettore_tts_env) C:\Users\mace\Desktop\lettore_ai>python app.py
+
+Traceback (most recent call last):
+
+File "C:\Users\mace\Desktop\lettore_ai\app.py", line 4, in <module>
+
+import customtkinter as ctk
+
+ModuleNotFoundError: No module named 'customtkinter'
+
+(lettore_tts_env) C:\Users\mace\Desktop\lettore_ai>python app.py
+
+Traceback (most recent call last):
+
+File "C:\Users\mace\Desktop\lettore_ai\app.py", line 4, in <module>
+
+import customtkinter as ctk
+
+ModuleNotFoundError: No module named 'customtkinter'
+
+(lettore_tts_env) C:\Users\mace\Desktop\lettore_ai>
+
+L'errore ModuleNotFoundError e la nota This error originates from a subprocess indicano che il comando di installazione precedente si è interrotto prima di finire. Uno dei pacchetti (spesso pygame a causa della mancanza di alcuni file di compilazione su Windows) ha bloccato l'intera operazione, quindi customtkinter non è mai stato effettivamente installato.
+
+Risolviamolo in modo pulito. Assicurati che il tuo ambiente virtuale sia attivo (devi vedere (lettore_tts_env) nel prompt) e lancia questi comandi uno alla volta. In questo modo, se c'è un colpevole, lo isoliamo.
+
+1. Aggiorna lo strumento di installazione (risolve molti errori di build):
+
+Bash
+
+```
+python -m pip install --upgrade pip setuptools wheel
+
+```
+
+2. Installa l'interfaccia grafica:
+
+Bash
+
+```
+pip install customtkinter
+
+```
+
+3. Installa il motore di testo e markdown:
+
+Bash
+
+```
+pip install edge-tts markdown beautifulsoup4
+
+```
+
+4. Installa il motore audio (Pygame):
+Nota: se questo comando ti dà lo stesso errore rosso di prima, usa la versione Community Edition (pygame-ce) che è molto più stabile e compatibile.
+
+Bash
+
+```
+pip install pygame
+
+```
+
+(Se il comando sopra fallisce, lancia questo: pip install pygame-ce e il codice funzionerà allo stesso identico modo).
+
+Una volta che tutti i comandi sono andati a buon fine senza scritte rosse, lancia di nuovo la tua app:
+
+Bash
+
+```
+python app.py
+
+```
+
+Dimmi se uno di questi passaggi si blocca e ti restituisce l'errore del subprocess, così lo sistemiamo subito!
+
+##### You said ModuleNotFoundError: No module named 'setuptools._distutils.msvccompiler'
+[end of output]
+
+n…
+
+ModuleNotFoundError: No module named 'setuptools._distutils.msvccompiler'
+
+[end of output]
+
+note: This error originates from a subprocess, and is likely not a problem with pip.
+
+ERROR: Failed to build 'pygame' when getting requirements to build wheel
+
+(lettore_tts_env) C:\Users\mace\Desktop\lettore_ai>
+
+Esattamente come sospettavamo: l'errore è causato da pygame. Sta cercando di "compilare" il pacchetto da zero (perché non trova una versione precompilata per la tua versione esatta di Python), ma si blocca perché su Windows mancano i compilatori C++ (MSVC) e c'è un'incompatibilità con le versioni più recenti di setuptools.
+
+La soluzione più pulita e immediata è usare Pygame Community Edition (pygame-ce). È un fork ufficiale molto più aggiornato e stabile, che fornisce file già precompilati (le cosiddette wheels) per evitare del tutto questo problema di compilazione.
+
+La cosa ottima è che il codice dell'app non richiede alcuna modifica: pygame-ce si usa sempre scrivendo import pygame.
+
+Nel terminale, con il tuo ambiente (lettore_tts_env) ancora attivo, digita:
+
+Bash
+
+```
+pip install pygame-ce
+
+```
+
+Dato che hai già installato customtkinter ed edge-tts nei passaggi precedenti, non appena finisce l'installazione di pygame-ce (che dovrebbe essere immediata e senza errori rossi), puoi avviare l'app:
+
+Bash
+
+```
+python app.py
+
+```
+
+Sign in
+
+Gemini may display inaccurate info, including about people, so double-check its responses.
+
+Google Privacy Policy Opens in a new window Google Terms of Service Opens in a new window Your privacy & Gemini Apps Opens in a new window
+
+Google apps
+
+Copy public link
+
+Report
+
+Copy prompt
+
+Expand text
+
+Download code
+
+Copy code
+
+en-US Sign in
+
+Before you continue to Google
+
+We use cookies and data, including IP addresses, to
+
+- Deliver and maintain Google services
+
+- Track outages and protect against spam, fraud, and abuse
+
+- Measure audience engagement and site statistics to understand how our services are used and enhance the quality of those services
+
+If you choose to “Accept all,” we will also use cookies and data, including IP addresses, to
+
+- Develop and improve new services
+
+- Deliver and measure the effectiveness of ads
+
+- Show personalized content, depending on your settings
+
+- Show personalized ads, depending on your settings
+
+If you choose to “Reject all,” we will not use cookies or IP addresses for these additional purposes.
+
+Non-personalized content is influenced by things like the content you’re currently viewing, activity in your active Search session, and your location. Non-personalized ads are influenced by the content you’re currently viewing and your general location. Personalized content and ads can also include more relevant results, recommendations, and tailored ads based on past activity from this browser, like previous Google searches. We also use cookies and data to tailor the experience to be age-appropriate, if relevant.
+
+Select “More options” to see additional information, including details about managing your privacy settings. You can also visit g.co/privacytools at any time.
+
+Accept all Reject all
+
+More options
+
+Privacy•Terms
+
+Read more
