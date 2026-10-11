@@ -563,9 +563,15 @@ cd mio-video && npx hyperframes lint && npx hyperframes render --quality draft
 Due cose che valgono più di ogni istruzione:
 
 - **Il render costa tempo di macchina e va annunciato.** Misurato qui (6 core, senza GPU): **10
-  secondi di video a 1080p in 33,5 secondi**, cioè circa **3,5 secondi di CPU per ogni secondo di
-  video**. Un video di 30 secondi sono ~2 minuti. Non è un'operazione da fare in silenzio mentre
-  l'utente aspetta una risposta: si dice quanto ci vuole *prima* di lanciarla.
+  secondi di video a 1080p in 33,5 secondi**, e **21,2 secondi in 131** per un montaggio con griglia
+  animata, grana e audio. La regola è **~3,5 secondi di CPU per ogni secondo di video** su contenuto
+  semplice e **fino a ~6** con grana, particelle o texture animate (sono i pixel che cambiano a ogni
+  fotogramma: è lì che il capture paga). Un video di 30 secondi sono ~2 minuti. Non è un'operazione
+  da fare in silenzio mentre l'utente aspetta una risposta: si dice quanto ci vuole *prima* di
+  lanciarla, e per provare si usa `--quality draft` o `--fps 15`.
+- **Il file può essere pesante**: 21 s con grana sono ~46 MB a qualità `looks`, ~15 MB ricompressi a
+  CRF 23 con `-movflags +faststart` (l'indice in testa: con `/api/video` il player parte subito). I
+  video in `media/` restano fuori dal versionamento (`media/*.mp4`): sono binari che si rigenerano.
 - **Il primo comando scarica Chrome Headless Shell** (113 MB in `~/.cache/hyperframes`) e ha bisogno
   di `unzip`: `npx hyperframes doctor` dice se manca qualcosa. La **telemetria del CLI è spenta**
   (`npx hyperframes telemetry disable`): questo harness non manda fuori niente.

@@ -63,11 +63,16 @@ media/grafo-*.png
 media/memoria-tester*.png
 
 # ---- video: artefatti binari, si rigenerano ----
-# Un MP4 non è codice: sono centinaia di KB che si rifanno con `npx hyperframes render`.
-# Questi restano sul server (la chat li mostra da media/, non serve versionarli).
-media/video-presentazione-harness.mp4
-media/hyperframes-prova.mp4
-media/hyperframes-prova.webm
+# Un MP4 non è codice: da centinaia di KB a decine di MB, e si rifà con `npx hyperframes render`
+# (la composizione, quella sì, è codice e va versionata dove serve). La chat li mostra da media/
+# servendoli a pezzi (/api/video con Range), quindi restano sul server: NON si pubblicano.
+media/*.mp4
+media/*.webm
+media/*.mov
+# Progetto della composizione d'esempio (index.html + audio): sono decine di MB di WAV e un
+# progetto di prova, non il codice del prodotto. Resta sul server, ri-renderizzabile con
+# `npx hyperframes render` da questa cartella.
+media/nimbo-intro/
 
 # ---- temporanei ----
 *.tmp
