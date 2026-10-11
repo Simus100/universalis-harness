@@ -3243,6 +3243,24 @@ function dirStats(dir, { maxFiles = 5000 } = {}) {
 }
 
 /** Elenco skill (dalla cache del resource loader) + diagnostica + dir. */
+
+/**
+ * Frasi che dicono «quando usarla» in una descrizione. Il controllo è euristico, quindi guarda le
+ * lingue in cui le skill arrivano davvero: l'italiano (`usa quando`, `quando`) e l'inglese
+ * (`use when`, `use for`, `when`). Con il solo `use when` le descrizioni di pacchetti di terzi
+ * (HyperFrames) risultavano tutte avvisate pur essendo criteri d'uso chiarissimi — e un avviso che
+ * grida al lupo su otto skill insegna a ignorare gli avvisi.
+ */
+const FRASI_QUANDO =
+  /(usa quando|usala quando|usa per|serve a|attiva quando|ogni volta che|\bquando\b|use when|use for|use it when|use this when|\bwhen\b)/i;
+
+/**
+ * Markup ATTIVO in una descrizione: è l'unica cosa che va davvero evitata (la descrizione entra
+ * nel system prompt e nelle schede, e un host può renderizzarla). Un nome di elemento citato nel
+ * testo — `<hf-audio-group>` — non è markup attivo: è un avviso, non un errore.
+ */
+const DESCRIZIONE_MARKUP_ATTIVO = /<\s*(script|iframe|object|embed|link|style|img|svg|a)\b|\son[a-z]+\s*=/i;
+
 /**
  * Consigli sulle regole delle Agent Skills (https://agentskills.io/specification e le guide di
  * Claude Code / Codex): `name` e `description` sono ciò che il modello vede SEMPRE, il corpo
@@ -3258,14 +3276,45 @@ function consigliSkill(raw) {
   const corpo = m ? raw.slice(m[0].length) : raw;
   const dm = fm.match(/^description:\s*([\s\S]*?)(?=\n[a-zA-Z-]+:|\s*$)/m);
   const desc = dm ? dm[1].trim() : "";
-  if (desc && !/(usa quando|usala quando|usa per|serve a|use when|attiva quando|ogni volta che|quando\b)/i.test(desc))
+  if (desc && !FRASI_QUANDO.test(desc))
     avvisi.push("descrizione senza «quando usarla»: il modello potrebbe non attivarla mai");
-  if (/<[^>]+>/.test(desc)) avvisi.push("la descrizione non deve contenere tag < >");
+  if (DESCRIZIONE_MARKUP_ATTIVO.test(desc))
+    avvisi.push("la descrizione contiene markup attivo (script/iframe/on…=): qui ci va solo testo");
+  else if (/<[^>]+>/.test(desc))
+    avvisi.push("la descrizione cita un tag < >: alcuni host lo mostrano o lo tolgono — se non è essenziale, scrivilo senza parentesi angolari");
   const righe = corpo.split("\n").filter((r) => r.trim()).length;
   if (righe > 400) avvisi.push(`corpo lungo (${righe} righe): valuta di spostare i dettagli in references/`);
   if (!/^\s*#\s+\S/m.test(corpo)) avvisi.push("manca un titolo (# …) all'inizio del corpo");
   // i riferimenti a file inesistenti li controlla il test, che conosce la cartella della skill
   return { avvisi, righe, descrizioneCaratteri: desc.length };
+}
+
+/**
+ * Gruppi della scheda Skill. Le skill di uno stesso pacchetto si leggono meglio raccolte sotto una
+ * voce sola: con 22 skill in elenco, le 13 di HyperFrames (che sono di terzi e arrivano tutte
+ * insieme) occupavano l'intera schermata e nascondevano quelle dell'harness.
+ *
+ * Il raggruppamento è SOLO di visualizzazione: caricamento, system prompt e `/skill:nome` restano
+ * esattamente quelli di prima, un nome per skill. Il gruppo si riconosce dal prefisso (così una
+ * skill aggiunta dopo con `npx hyperframes skills update` cade nel gruppo da sé) e da un elenco di
+ * nomi per i workflow che non hanno il prefisso.
+ */
+const SKILL_GRUPPI = [
+  {
+    id: "hyperframes",
+    titolo: "HyperFrames (HeyGen)",
+    nota: "pacchetto di terzi (Apache 2.0): composizioni HTML rese in video. Installate da fuori e non versionate — si aggiornano con `npx hyperframes skills update`.",
+    prefissi: ["hyperframes"],
+    nomi: ["media-use", "faceless-explainer", "general-video", "motion-graphics", "product-launch-video"],
+  },
+];
+
+/** Id del gruppo di una skill, o null se sta in elenco da sola. */
+function gruppoDiSkill(nome) {
+  for (const g of SKILL_GRUPPI) {
+    if (g.prefissi.some((p) => nome.startsWith(p)) || g.nomi.includes(nome)) return g.id;
+  }
+  return null;
 }
 
 function skillsPayload() {
@@ -3301,8 +3350,12 @@ function skillsPayload() {
         righeCorpo: info.righe,
         descrizioneCaratteri: info.descrizioneCaratteri,
         avvisi: info.avvisi,
+        // gruppo di visualizzazione (es. le skill di HyperFrames): null = elenco normale
+        gruppo: gruppoDiSkill(s.name),
       };
     }),
+    // i gruppi con titolo e nota, così la scheda non deve sapere come sono fatti
+    gruppi: SKILL_GRUPPI.map((g) => ({ id: g.id, titolo: g.titolo, nota: g.nota })),
     diagnostics: loaded.diagnostics || [],
   };
 }

@@ -1376,6 +1376,23 @@ footer {
 }
 .goal-badge.done { color: #06281c; background: var(--green); border-color: transparent; }
 .goal-badge.archived { color: var(--text-soft); background: var(--panel-3); }
+
+/* ---- gruppi di skill nella scheda Skill (es. il pacchetto HyperFrames) ---- */
+.skillgroup { padding: 0; overflow: hidden; }
+.skillgroup-head {
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  background: none; border: 0; color: var(--text); font: inherit; cursor: pointer;
+  padding: 12px 14px; min-height: 44px;
+}
+.skillgroup-head:hover { background: var(--panel-3); }
+.skillgroup-freccia { color: var(--accent-3); line-height: 1; font-size: var(--fs-lg); }
+.skillgroup-titolo { font-weight: 600; }
+.skillgroup-nota { padding: 0 14px 12px; color: var(--dim); font-size: var(--fs-sm); }
+.skillgroup-dentro {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 12px 12px; border-top: 1px solid var(--border-soft);
+}
+.skillgroup-dentro .goal-card { margin: 0; }
 .goal-desc { color: var(--dim); font-size: var(--fs-md); margin: 7px 0 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .goal-progress { margin: 4px 0 2px; }
 .goal-progress-h { display: flex; justify-content: space-between; font-size: var(--fs-sm); color: var(--faint); margin-bottom: 5px; }
@@ -8283,14 +8300,28 @@ let skills = [];
 let skillsLoaded = false;
 let skillEditing = null;
 let skillDiagnostics = [];
+let skillGroupsInfo = [];   // gruppi di visualizzazione (es. le skill di HyperFrames)
+// I gruppi si mostrano CHIUSI: "accorpate in una cartella" vuol dire che non occupano la
+// schermata; chi cerca una skill di quel pacchetto la apre. Lo stato vive in memoria: al reload
+// si riparte chiusi, che è la vista utile.
+const skillGruppiAperti = new Set();
+
+/**
+ * Aggiorna l'elenco delle skill dal payload del server. Erano cinque punti con le stesse due
+ * righe copiate: aggiungere un campo nuovo (i gruppi) significava ricordarsene in tutti e cinque.
+ */
+function setSkillsDaPayload(j) {
+  skills = Array.isArray(j.skills) ? j.skills : [];
+  skillGroupsInfo = Array.isArray(j.gruppi) ? j.gruppi : [];
+  skillDiagnostics = Array.isArray(j.diagnostics) ? j.diagnostics : [];
+}
 
 async function loadSkills() {
   try {
     const r = await fetch("/api/skills");
     const j = await r.json();
-    skills = Array.isArray(j.skills) ? j.skills : [];
-    skillDiagnostics = Array.isArray(j.diagnostics) ? j.diagnostics : [];
-  } catch { skills = []; skillDiagnostics = []; }
+    setSkillsDaPayload(j);
+  } catch { skills = []; skillGroupsInfo = []; skillDiagnostics = []; }
   renderSkills();
 }
 
@@ -8309,7 +8340,26 @@ function renderSkills() {
     el.appendChild(d);
     return;
   }
-  for (const s of skills) el.appendChild(skillCard(s));
+  // Le skill di uno stesso pacchetto si mostrano accorpate: elenco singolo per le skill
+  // dell'harness, una «cartella» richiudibile per ogni gruppo (oggi le 13 di HyperFrames, che
+  // altrimenti occupavano da sole tutte le schermate e nascondevano le altre).
+  const perGruppo = new Map();
+  const singole = [];
+  for (const s of skills) {
+    if (!s.gruppo) { singole.push(s); continue; }
+    if (!perGruppo.has(s.gruppo)) perGruppo.set(s.gruppo, []);
+    perGruppo.get(s.gruppo).push(s);
+  }
+  for (const s of singole) el.appendChild(skillCard(s));
+  for (const g of skillGroupsInfo) {
+    const dentro = perGruppo.get(g.id);
+    if (dentro && dentro.length) el.appendChild(skillGroup(g, dentro));
+  }
+  // un gruppo dichiarato ma non più noto (config cambiata): le sue skill restano visibili,
+  // perché una skill non deve mai sparire dalla scheda per un raggruppamento
+  for (const [id, dentro] of perGruppo) {
+    if (!skillGroupsInfo.some((g) => g.id === id)) for (const s of dentro) el.appendChild(skillCard(s));
+  }
   if (skillDiagnostics.length) {
     const box = document.createElement("div");
     box.className = "goal-card";
@@ -8373,9 +8423,52 @@ async function saveSkillFromForm() {
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { alert(j.error || "errore nel salvataggio"); return; }
   skillEditing = null;
-  skills = Array.isArray(j.skills) ? j.skills : [];
-  skillDiagnostics = Array.isArray(j.diagnostics) ? j.diagnostics : [];
+  setSkillsDaPayload(j);
   renderSkills();
+}
+
+/**
+ * Un gruppo di skill come «cartella»: intestazione con titolo, conteggio e nota, e sotto le sue
+ * skill — solo se aperta. Il raggruppamento è SOLO di visualizzazione: il modello continua a
+ * vedere ogni skill col suo nome e la sua descrizione, e `/skill:nome` funziona come prima.
+ */
+function skillGroup(g, lista) {
+  const card = document.createElement("div");
+  card.className = "goal-card skillgroup";
+  const aperto = skillGruppiAperti.has(g.id);
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "skillgroup-head";
+  head.setAttribute("aria-expanded", aperto ? "true" : "false");
+  const freccia = document.createElement("span");
+  freccia.className = "skillgroup-freccia";
+  freccia.textContent = aperto ? "▾" : "▸";
+  const titolo = document.createElement("span");
+  titolo.className = "skillgroup-titolo";
+  titolo.textContent = g.titolo;
+  const conta = document.createElement("span");
+  conta.className = "goal-badge";
+  conta.textContent = `${lista.length} skill`;
+  head.append(freccia, titolo, conta);
+  head.onclick = () => {
+    if (aperto) skillGruppiAperti.delete(g.id);
+    else skillGruppiAperti.add(g.id);
+    renderSkills();
+  };
+  card.appendChild(head);
+  if (g.nota) {
+    const nota = document.createElement("div");
+    nota.className = "skillgroup-nota";
+    nota.textContent = g.nota;
+    card.appendChild(nota);
+  }
+  if (aperto) {
+    const dentro = document.createElement("div");
+    dentro.className = "skillgroup-dentro";
+    for (const s of lista) dentro.appendChild(skillCard(s));
+    card.appendChild(dentro);
+  }
+  return card;
 }
 
 function skillCard(s) {
@@ -8388,7 +8481,11 @@ function skillCard(s) {
   title.textContent = "/" + s.name;
   const badge = document.createElement("span");
   badge.className = "goal-badge";
-  badge.textContent = s.writable ? "dashboard" : "esterna";
+  // «dashboard» vuol dire «scrivibile dalla dashboard», non «fatta qui»: per una skill di un
+  // pacchetto di terzi (HyperFrames) quel badge è falso — si aggiorna da fuori e da sola — e
+  // faceva credere che fosse nostra.
+  badge.textContent = s.gruppo ? "pacchetto" : s.writable ? "dashboard" : "esterna";
+  if (s.gruppo) badge.title = "skill di un pacchetto di terzi: si aggiorna con lo strumento del pacchetto, non da qui";
   head.appendChild(title);
   head.appendChild(badge);
   card.appendChild(head);
@@ -8463,8 +8560,7 @@ async function deleteSkill(name) {
   const r = await fetch("/api/skills/delete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name }) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { alert(j.error || "errore"); return; }
-  skills = Array.isArray(j.skills) ? j.skills : [];
-  skillDiagnostics = Array.isArray(j.diagnostics) ? j.diagnostics : [];
+  setSkillsDaPayload(j);
   renderSkills();
 }
 
@@ -8493,8 +8589,7 @@ $("skillUploadInput").onchange = async (e) => {
   const r = await fetch(url, { method: "POST", body: f });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) { alert(j.error || "upload fallito"); return; }
-  skills = Array.isArray(j.skills) ? j.skills : [];
-  skillDiagnostics = Array.isArray(j.diagnostics) ? j.diagnostics : [];
+  setSkillsDaPayload(j);
   renderSkills();
 };
 

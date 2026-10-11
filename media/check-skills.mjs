@@ -18,6 +18,17 @@ const YAML = piRequire("yaml");
 
 const DIR = process.env.DASH_SKILLS_DIR || "/root/pi-harness/skills";
 const NAME_RE = /^[a-z0-9-]{1,64}$/;
+/**
+ * Frasi che dicono «quando usarla». L'euristica guarda le due lingue in cui le descrizioni
+ * arrivano: l'italiano (`usa quando`, `quando`) e l'inglese (`use when`, `use for`, `when`).
+ * Con il solo `use when` le 13 skill di HyperFrames — descrizioni scritte benissimo, ma in
+ * inglese — risultavano tutte «senza quando», e otto avvisi falsi insegnano a ignorare gli avvisi.
+ * Le stesse regole stanno in `dashboard.mjs` (funzione `consigliSkill`): vanno tenute allineate.
+ */
+const FRASI_QUANDO =
+  /(usa quando|usala quando|usa per|serve a|attiva quando|ogni volta che|\bquando\b|use when|use for|use it when|use this when|\bwhen\b)/i;
+/** Markup ATTIVO (errore). Un nome di elemento citato nel testo non lo è: vedi sotto. */
+const DESCRIZIONE_MARKUP_ATTIVO = /<\s*(script|iframe|object|embed|link|style|img|svg|a)\b|\son[a-z]+\s*=/i;
 
 let pass = 0;
 let fail = 0;
@@ -81,8 +92,15 @@ for (const { p, expectedName } of files) {
    * Alcune sono OBBLIGHI (errore): tag < > nella descrizione, name non valido.
    * Altre sono CONSIGLI (avviso, non fanno fallire la suite): la descrizione è l'unica cosa
    * che il modello vede per decidere se caricare la skill, e il corpo pesa a ogni uso. */
-  if (desc && /<[^>]+>/.test(desc)) ko(`${rel}: la descrizione non può contenere tag < >`);
-  if (desc && !/(usa quando|usala quando|usa per|serve a|use when|attiva quando|ogni volta che|quando\b)/i.test(desc)) {
+  if (desc && DESCRIZIONE_MARKUP_ATTIVO.test(desc))
+    ko(`${rel}: la descrizione contiene markup attivo (script/iframe/on…=): qui ci va solo testo`);
+  else if (desc && /<[^>]+>/.test(desc)) {
+    // non è markup eseguibile: è un tag CITATO nel testo (es. `<hf-audio-group>`). Avviso, non
+    // errore: alcuni host mostrano la descrizione come markdown e potrebbero toglierlo.
+    console.log(`  ⚠ ${rel}: la descrizione cita un tag < > — alcuni host lo mostrano o lo tolgono`);
+    avvisi++;
+  }
+  if (desc && !FRASI_QUANDO.test(desc)) {
     console.log(`  ⚠ ${rel}: la descrizione non dice «quando usarla» — è l'unico aggancio per l'attivazione`);
     avvisi++;
   }

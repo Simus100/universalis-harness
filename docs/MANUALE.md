@@ -313,6 +313,32 @@ nella suite riporta anche gli avvisi (informativi, non fanno fallire il test); g
 specifica — YAML valido, `name` valido e uguale alla cartella, `description` presente e ≤ 1024 —
 restano errori.
 
+Due precisazioni che sono costate due correzioni, e che valgono per chi tocca quella regola:
+
+- **il «quando usarla» si riconosce in italiano e in inglese** (`usa quando`/`quando` e
+  `use when`/`use for`/`when`). Con il solo `use when` le 13 skill di HyperFrames — descrizioni
+  scritte benissimo ("Use when the user wants to market…"), ma in inglese — risultavano tutte
+  «senza quando», con **otto avvisi falsi**; e una scheda che grida al lupo insegna a non leggere
+  più gli avvisi;
+- **markup ATTIVO è un errore, un tag citato nel testo è un avviso.** `<script>`, `<iframe>`, `on…=`
+  in una descrizione non ci vanno (finisce nel system prompt e nelle schede): errore. Un nome di
+  elemento citato — `<hf-audio-group>` — non è markup eseguibile: avviso, perché alcuni host
+  mostrano la descrizione come markdown e potrebbero toglierlo.
+
+Le due copie della regola (`consigliSkill` in `dashboard.mjs` e `media/check-skills.mjs`) **devono
+restare allineate**: un controllo che esiste solo in una delle due è peggio di nessun controllo, e
+`media/test-static.mjs` lo verifica.
+
+**Gruppi: le skill di un pacchetto si accorpano.** Le skill di uno stesso pacchetto di terzi si
+mostrano raccolte sotto una **cartella richiudibile** (oggi **HyperFrames (HeyGen)**, 13 skill):
+intestazione con titolo, conteggio e nota, e sotto le schede — solo se aperta. È un raggruppamento
+**di sola visualizzazione**: caricamento, system prompt e `/skill:nome` restano un nome per skill, e
+se il gruppo non è più dichiarato le sue skill **non spariscono** (tornano in elenco). Il gruppo si
+riconosce dal **prefisso** del nome (`hyperframes…`, così una skill aggiunta dopo con
+`npx hyperframes skills update` ci cade da sé) e da un elenco di nomi per i workflow senza prefisso
+(`media-use`, `general-video`, `motion-graphics`, `faceless-explainer`, `product-launch-video`). I
+gruppi si dichiarano in `SKILL_GRUPPI` (`dashboard.mjs`).
+
 ### Rappresentazioni visive (SVG scritto come testo)
 
 Il modello scrive i disegni **come testo** (non serve alcun servizio di generazione immagini):
@@ -521,6 +547,13 @@ che sembra un guasto.
 FFmpeg. Il CLI è `npx hyperframes` (`init`, `lint`, `check`, `snapshot`, `render`, `doctor`) e le sue
 skill stanno in `skills/` (installate da fuori: `npx hyperframes skills update`, e **non versionate**
 nel repository — sono di terzi, vedi `.gitignore`).
+
+**La skill che decide la strada è nostra: `video`** (`skills/video/SKILL.md`, versionata). HyperFrames
+sa *come* fare un video, non *se* serve: la skill `video` dice quando un video va renderizzato, quando
+basta un'animazione scritta nel file (una pagina o una dashboard **viva** non è un MP4 — renderizzare
+lì è tempo buttato) e quando serve invece uno `screenshot` del tool `browser`. Dice anche quanto
+costa il render e dove mettere il risultato. È la skill da leggere quando la richiesta è «fammi un
+video», «animiamo la dashboard», «una presentazione».
 
 ```bash
 npx hyperframes init mio-video --non-interactive
@@ -839,6 +872,8 @@ node media/test-pdf.mjs          # documenti PDF: metadati, testo per pagina e p
 node media/test-pdf-ui.mjs       # documenti PDF nel browser vero: card con la prima pagina, lettore a pagine (avanti/indietro, zoom, tastiera), apertura dal file manager, non-regressione (istanze su :8484/:8485)
 node media/test-video.mjs        # video: magic number (HTML e AVIF camuffati da mp4 rifiutati), richieste parziali 206/416, byte identici all'originale, meta, percorsi, tetto (istanza di prova su :8498)
 node media/test-video-ui.mjs     # video in chat nel browser vero: player con metadati reali, seek che si applica, frame DECODIFICATO su canvas, fallimenti con motivo, non-regressione (istanze su :8486/:8487)
+node media/check-skills.mjs     # regole delle Agent Skills su tutte le skill: YAML, name, descrizione col «quando usarla», markup attivo, corpo, file citati
+node media/test-skill-groups-ui.mjs # gruppi nella vista skill (browser vero): cartella chiusa all'apertura, apre con tutte le sue skill, le nostre restano in elenco, nessuna sparisce (istanze su :8488/:8489)
 node media/test-static.mjs       # coerenza HTML/server (id, endpoint, cablaggio) — nessuna rete
 node media/test-ui.mjs           # logica frontend in node:vm (storico, notifiche, form cron, …)
 node media/test-palette.mjs      # comandi slash: filtro, completamento, esecuzione (istanza su :8499)

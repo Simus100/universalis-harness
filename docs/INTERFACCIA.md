@@ -178,3 +178,23 @@ precedente, il lavoro di sintesi invece prosegue (finirà in cache: la prossima 
 Su telefono la barra del lettore scorre in orizzontale con bersagli ≥44px; i paragrafi restano a
 tutta larghezza con testo a `--fs-md` e interlinea 1,7, perché la lettura a schermo qui dura minuti
 e non deve affaticare.
+
+## 10. Gruppi di skill nella vista 🧩
+
+Le skill di uno stesso **pacchetto di terzi** (oggi HyperFrames, 13 voci) si mostrano accorpate in
+una «cartella» richiudibile: senza, occupavano da sole tutte le schermate dell'elenco e nascondevano
+le skill dell'harness — che sono quelle che si guardano più spesso.
+
+| scelta | perché |
+|---|---|
+| **chiusa all'apertura** | «accorpate» vuol dire che non devono occupare spazio: chi cerca una skill di quel pacchetto la apre, gli altri vedono il resto |
+| intestazione `▸ titolo · N skill` + nota | il conteggio evita di aprire per curiosità; la nota dice **di chi è** il pacchetto e come si aggiorna |
+| badge **pacchetto** invece di *dashboard* | `dashboard` significa «scrivibile da qui», non «fatta qui»: su una skill di terzi che si riscrive da fuori quel badge diceva il falso |
+| schede dentro a piena scheda, con `gap` 10px | indentazione e bordo superiore bastano a dire «siamo dentro»: niente scatole di scatole |
+| bersaglio ≥44px sulla riga della cartella | è un comando come gli altri, e su telefono si tocca con il dito |
+| stato in memoria (si riparte chiusi) | è una vista di consultazione rapida: ricordare un'apertura vecchia riporterebbe 13 schede in mezzo ai piedi |
+
+Il raggruppamento è **di sola visualizzazione**: il caricamento delle skill, il system prompt e
+`/skill:nome` restano un nome per skill. Se un gruppo non è più dichiarato, le sue skill **non
+spariscono**: tornano in elenco semplice (una skill che scompare per una scelta di layout è un
+guasto, non una preferenza).

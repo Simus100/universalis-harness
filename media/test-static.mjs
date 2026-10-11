@@ -27,6 +27,10 @@ const askBroker = readFileSync("/root/pi-harness/media/ask-broker.mjs", "utf8");
 // repository: le skill di terzi (HyperFrames) vivono in skills/ ma non si pubblicano.
 const immaginiSkill = readFileSync("/root/pi-harness/skills/immagini/SKILL.md", "utf8");
 const gitignore = readFileSync("/root/pi-harness/.gitignore", "utf8");
+// le regole delle Agent Skills stanno in DUE posti (dashboard + CLI di controllo): qui si verifica
+// che non divergano, perché un avviso che esiste solo in uno dei due è peggio di nessun avviso.
+const checkSkills = readFileSync("/root/pi-harness/media/check-skills.mjs", "utf8");
+const videoSkill = readFileSync("/root/pi-harness/skills/video/SKILL.md", "utf8");
 const unzipMod = readFileSync("/root/pi-harness/media/unzip.mjs", "utf8");
 let pass = 0, fail = 0;
 const ok = (m) => { console.log("  ✔ " + m); pass++; };
@@ -630,6 +634,52 @@ check(
 check(
   "le skill di terzi (HyperFrames) sono escluse dal versionamento",
   /skills\/hyperframes/.test(gitignore) && /skills\/media-use\//.test(gitignore),
+);
+
+// --- gruppi di skill nella scheda Skill + skill `video` ---------------------
+check(
+  "il server dichiara i gruppi e li manda nel payload",
+  /const SKILL_GRUPPI/.test(mjs) && /function gruppoDiSkill/.test(mjs) && /gruppo: gruppoDiSkill\(s\.name\)/.test(mjs) && /gruppi: SKILL_GRUPPI\.map/.test(mjs),
+);
+check(
+  "le skill di HyperFrames finiscono nel gruppo (prefisso + workflow senza prefisso)",
+  /prefissi: \["hyperframes"\]/.test(mjs) && /"media-use", "faceless-explainer", "general-video", "motion-graphics", "product-launch-video"/.test(mjs),
+);
+check(
+  "la scheda Skill accorpa il gruppo in una cartella richiudibile",
+  /function skillGroup/.test(html) && /skillgroup-head/.test(html) && /skillGruppiAperti/.test(html) && /aria-expanded/.test(html),
+);
+check(
+  "nessuna skill sparisce se il gruppo non è più dichiarato",
+  /un gruppo dichiarato ma non più noto/.test(html) && /!skillGroupsInfo\.some\(\(g\) => g\.id === id\)/.test(html),
+);
+check(
+  "aggiornare l'elenco delle skill ha un punto solo (setSkillsDaPayload)",
+  (html.match(/Array\.isArray\(j\.skills\)/g) || []).length === 1 && /function setSkillsDaPayload/.test(html),
+);
+check(
+  "le regole delle Agent Skills non divergono fra dashboard e CLI",
+  /const FRASI_QUANDO/.test(mjs) && /const FRASI_QUANDO/.test(checkSkills) && /const DESCRIZIONE_MARKUP_ATTIVO/.test(mjs) && /const DESCRIZIONE_MARKUP_ATTIVO/.test(checkSkills),
+);
+check(
+  "«quando usarla» è riconosciuto anche in inglese (falsi positivi sulle skill di terzi)",
+  /use for/.test(mjs) && /use for/.test(checkSkills) && /\\bwhen\\b/.test(mjs) && /\\bwhen\\b/.test(checkSkills),
+);
+check(
+  "markup attivo = errore, tag citato nel testo = avviso",
+  /DESCRIZIONE_MARKUP_ATTIVO\.test\(desc\)\)/.test(checkSkills) && /else if \(desc && \/<\[\^>\]\+>\/\.test\(desc\)\)/.test(checkSkills),
+);
+check(
+  "la skill `video` è nostra, dice quando usarla e instrada su HyperFrames",
+  /^name: video$/m.test(videoSkill) && /Usala quando/i.test(videoSkill) && /hyperframes/.test(videoSkill) && /3,5 secondi di macchina/.test(videoSkill),
+);
+check(
+  "la skill `video` distingue il video dal file animato (e manda allo screenshot del browser)",
+  /dashboard viva/.test(videoSkill) && /nessun render/.test(videoSkill) && /screenshot/.test(videoSkill),
+);
+check(
+  "il manuale documenta i gruppi della scheda Skill",
+  /HyperFrames \(HeyGen\)/.test(readme) && /accorp/i.test(readme),
 );
 
 console.log(`\nrisultato: ${pass} ok, ${fail} falliti`);
