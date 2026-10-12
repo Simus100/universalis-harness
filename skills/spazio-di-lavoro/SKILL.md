@@ -61,3 +61,12 @@ Non aggirare il limite spostando il lavoro nella cartella tecnica o in `/var/tmp
 proponi di procedere a parti (un blocco per volta, consegnando e liberando), di ridurre la qualità
 o la durata del lavoro, oppure di consegnare il risultato all'utente e rimuovere i file
 intermedi.
+
+## I modelli condivisi stanno in /opt (non scaricarli nella home)
+
+Voce (Kokoro), trascrizione (Whisper) e Chrome sono già installati e condivisi in
+`/opt/hyperframes-models` e `/opt/hyperframes-chrome`, collegati da symlink nelle cache degli
+utenti. Sono usabili subito: **non scaricare modelli nella tua cartella** (~300-500 MB l'uno:
+porterebbero lo spazio libero sotto la soglia dei 1024 MB e i video smetterebbero di renderizzare).
+Se serve un modello diverso (per esempio un Whisper più preciso), chiedilo all'istanza admin, che
+lo installa in `/opt` per tutti. Dettagli in `media/hyperframes-opzionali.md`.
