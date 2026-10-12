@@ -36,6 +36,63 @@ EOF
 
 ---
 
+## 1bis. Componenti esterni installati sulla macchina (fuori dal repository)
+
+**Regola.** Nel repository entrano solo testi, script e file piccoli (oggi: ~13 MB in totale, il
+file più grande è una PNG da 1,2 MB). Binari, motori, browser e modelli **non si versionano**: si
+scaricano sulla macchina che installa. Questo documento dice cosa serve, da dove arriva e come si
+verifica. Chi ricostruisce da zero deve eseguire questa sezione **dopo** i prerequisiti e **prima**
+di avviare le istanze.
+
+**Perché in `/opt` e non nelle home.** `/root` è `drwx------` (le istanze dei tester non lo leggono) e
+le home dei tester sono filesystem piccoli (2 GB) con una soglia: sotto 1 GB libero HyperFrames non
+renderizza. Tutto ciò che è condiviso e pesante sta quindi in `/opt`, leggibile da tutti
+(`chmod -R a+rX`), con **symlink per utente** dove la CLI si aspetta di trovarlo.
+
+| Componente | Perché serve | Dove va | Link / comando | Verifica |
+|---|---|---|---|---|
+| Node.js ≥ 22 | dashboard, CLI HyperFrames, REA | `$PATH` (via linuxbrew) | vedi prerequisiti | `node --version` |
+| FFmpeg + FFprobe | render video (HyperFrames) | `/usr/bin` | `apt-get install -y ffmpeg` | `ffmpeg -version` |
+| patchelf | corregge l'RPATH di `whisper-cli` (senza, la trascrizione funziona solo per root) | `/usr/bin` | `apt-get install -y patchelf` | `patchelf --version` |
+| OpenJDK 21 (headless) | requisito di Ghidra | `/usr/lib/jvm/java-21-openjdk-amd64` | `apt-get install -y openjdk-21-jdk-headless` | `java -version` |
+| **Ghidra 12.1.x** | pseudocodice/assembly/xrefs dei binari (motore di REA) | `/opt/rea-tools/ghidra_12.1.4_PUBLIC` | zip da <https://github.com/NationalSecurityAgency/ghidra/releases> (`ghidra_12.1.4_PUBLIC_*.zip`, ~570 MB) | `rea doctor --json` → 8 check Ghidra `ok` |
+| **REA** (`rea-agents` 6.4.0) | CLI di reverse engineering | `/usr/bin/rea` (npm globale) | `npm install -g rea-agents` — <https://github.com/morluto/rea> | `rea --version` |
+| pwntools 4.15.0 + pyelftools 0.33 + unicorn 2.1.2 | layout ELF (`inspect-binary-layout`) | venv `/opt/rea-tools/venv` | `python3 -m venv /opt/rea-tools/venv && /opt/rea-tools/venv/bin/pip install pwntools==4.15.0 pyelftools==0.33 unicorn==2.1.2` | `rea inspect-binary-layout <elf> --json` |
+| WABT 1.0.42 | strumenti WASM (`wasm2wat`, `wasm-objdump`) | `/opt/rea-tools/wabt/bin` | <https://github.com/WebAssembly/wabt/releases> (`wabt-1.0.42-linux-x64.tar.gz`) | `wasm2wat --version` |
+| wrapper **`/usr/local/bin/rea`** | esporta i percorsi di engine e toolchain a ogni invocazione | `/usr/local/bin` | script in [`media/tool-rea.md`](../media/tool-rea.md) | `rea doctor --json` |
+| **HyperFrames CLI** 0.8.150 | composizione e render dei video | `/usr/bin/hyperframes` (npm globale) | `npm install -g hyperframes` | `hyperframes --version` |
+| Chrome Headless Shell | render dei video | `/opt/hyperframes-chrome` + symlink `~/.cache/hyperframes/chrome` | `npx hyperframes browser ensure` (oppure copia dalla cache di un'istanza) | `hyperframes doctor --json` → `Chrome: ok` |
+| **Kokoro TTS** (`kokoro-onnx` + `soundfile`) | voce fuori campo on-device | venv `/opt/hyperframes-models/kokoro-venv` | `python3 -m venv` + `pip install kokoro-onnx soundfile` | `hyperframes doctor` → `TTS (Kokoro): ok` |
+| Modello Kokoro + voci (336 MB) | sintesi vocale | `/opt/hyperframes-models/tts/{models,voices}` + symlink `~/.cache/hyperframes/tts` | `kokoro-v1.0.onnx` e `voices-v1.0.bin` da <https://github.com/thewh1teagle/kokoro-onnx/releases> (`model-files-v1.0`) | `hyperframes tts "prova" -v if_sara --lang it -o /tmp/p.wav` |
+| **Whisper** (runtime + modello) | trascrizione con timestamp parola per parola | `/opt/hyperframes-models/whisper` + symlink `~/.cache/hyperframes/whisper` | primo uso: `hyperframes transcribe <audio> --model small` (compila whisper.cpp da <https://github.com/ggml-org/whisper.cpp>, scarica `ggml-small.bin` 488 MB da <https://huggingface.co/ggerganov/whisper.cpp>); poi `patchelf --set-rpath /opt/hyperframes-models/whisper/whisper.cpp/build/bin` su `whisper-cli` e `lib*` | `hyperframes doctor` → `whisper-cpp: ok` |
+| wrapper **`/usr/local/bin/hyperframes`** | dice alla CLI quale Python usare per Kokoro | `/usr/local/bin` | `export HYPERFRAMES_PYTHON=/opt/hyperframes-models/kokoro-venv/bin/python` | `hyperframes tts …` funziona da utente non-root |
+| Skill di terzi (HyperFrames, HeyGen, media-use) | guidano composizione e media | `skills/` di ogni istanza | `npx hyperframes skills update`, poi `bash scripts/skills-sync-istanze.sh --applica` | `node media/test-skill-collisioni.mjs` |
+| Skill ufficiale di REA | metodo investigativo + riferimenti | `~/.agents/skills/reverse-engineer-anything` | copia da `/usr/lib/node_modules/rea-agents/skills/` (oppure `rea setup`) | `rea doctor --json` → `skill: aligned` |
+
+**Non installate, per scelta:** Docker (serve solo a `render --docker`) e la musica locale
+MusicGen (~3 GB di PyTorch, generazione lenta su CPU senza GPU: la musica si prende dal provider
+hosted). Dettagli e prove in [`media/hyperframes-opzionali.md`](../media/hyperframes-opzionali.md).
+
+### Istruzioni per un'AI che installa da questo repository
+
+1. **Leggi prima** `docs/RICOSTRUZIONE.md` (questo file), `media/tool-rea.md`,
+   `media/hyperframes-opzionali.md`, `media/skill-istanze.md`, `media/skill-collisioni.md`.
+2. **Non aggiungere al repository** binari, modelli, video o archivi: scarica tutto **sulla
+   macchina** (in `/opt` se è condiviso fra istanze) e aggiorna solo i testi di questi documenti.
+3. Esegui i prerequisiti di sistema (sezione 1), poi la tabella qui sopra nell'ordine dato:
+   `ffmpeg` e `patchelf` → JDK → Ghidra → REA → venv pwntools → WABT → i due wrapper →
+   HyperFrames CLI → Chrome → Kokoro (venv, modelli) → Whisper (primo uso, poi `patchelf`).
+4. Dopo ogni componente esegui la sua **verifica**: non procedere se un `doctor` segnala un
+   problema (i messaggi sono in italiano solo se lo sono qui: la CLI parla inglese).
+5. **Permessi**: `chmod -R a+rX` su ciò che sta in `/opt`; i symlink nelle home vanno creati con
+   `ln -sfn` e resi dell'utente giusto con `chown -h`.
+6. **Ripeti la verifica finale**: `rea doctor --json`, `hyperframes doctor --json`,
+   `node media/test-skill-collisioni.mjs` per ogni istanza, `bash scripts/spazio-tester.sh`.
+7. Le istanze dei tester vedono i componenti condivisi in `/opt` e scrivono **solo** nella loro home:
+   non installare nulla nelle loro cartelle (riempirebbero lo spazio e bloccherebbero i render).
+
+---
+
 ## 2. Istanza principale (`/root/pi-harness`, porta 8420)
 
 ```bash
@@ -148,7 +205,7 @@ adduser --disabled-password --gecos "pi harness istanza limitata (clone isolato)
 usermod -s /bin/bash tester07
 ```
 
-### 4.2 Disco dedicato (tetto fisico ~360 MB)
+### 4.2 Disco dedicato (tetto fisico, oggi 2 GB)
 
 ```bash
 mkdir -p /var/lib/tester07
@@ -181,7 +238,7 @@ pacchetto in sola lettura.
 mkdir -p /var/lib/tester07/agent
 chown -R tester07:tester07 /var/lib/tester07/agent
 # copia qui la config di pi (auth.json con la chiave del provider, settings.json) e installa
-# le estensioni usate: la cartella cresce fino a ~92 MB, per questo sta fuori dal disco da 360 MB.
+# le estensioni usate: la cartella cresce fino a ~92 MB, per questo sta fuori dal disco limitato.
 ```
 
 ### 4.5 `.env` dell'utente limitato
@@ -198,7 +255,7 @@ DASH_BACKUP_DIR=/home/tester07/backups
 DASH_TZ=Europe/Rome
 
 # limiti dell'istanza
-DASH_QUOTA_MB=300
+DASH_QUOTA_MB=1700
 PI_CODING_AGENT_DIR=/var/lib/tester07/agent
 DASH_SUBAGENT_EXT=/var/lib/tester07/agent/npm/node_modules/pi-subagents/index.ts
 
@@ -271,9 +328,9 @@ API la stessa). Vale come modello per `tester_09`, …: cambiare `08` → `09` e
 adduser --disabled-password --gecos "pi harness istanza limitata (clone isolato)" tester08
 usermod -s /bin/bash tester08
 
-# 2. disco dedicato (~360 MB) + quota soft 300 MB nel .env
+# 2. disco dedicato (oggi 2 GB; per la creazione minima iniziale erano 360 MB) + quota soft nel .env
 mkdir -p /var/lib/tester08
-truncate -s 360M /var/lib/tester08/disk.img
+truncate -s 2G /var/lib/tester08/disk.img
 mkfs.ext4 -q -F -L tester08 /var/lib/tester08/disk.img
 echo '/var/lib/tester08/disk.img /home/tester08 ext4 loop,nofail,defaults 0 2' >> /etc/fstab
 mkdir -p /home/tester08 && mount /home/tester08 && chown tester08:tester08 /home/tester08
@@ -293,7 +350,7 @@ chown -R tester08:tester08 /home/tester08
 
 # 4. config agente isolata: auth.json è la CHIAVE API (la stessa della 07)
 mkdir -p /var/lib/tester08/agent && rsync -a /var/lib/tester07/agent/ /var/lib/tester08/agent/
-chown -R tester08:tester08 /var/lib/tester08/agent        # ~92 MB, sta FUORI dal disco da 360 MB
+chown -R tester08:tester08 /var/lib/tester08/agent        # ~92 MB, sta FUORI dal disco limitato
 
 # 5. .env (percorsi 08, credenziali proprie) — vedi §4.5, più PI_CODING_AGENT_DIR=/var/lib/tester08/agent
 #    e DASH_SUBAGENT_EXT=/var/lib/tester08/agent/npm/node_modules/pi-subagents/index.ts
@@ -407,6 +464,12 @@ archivio, riavviare l'unit. Il codice si ripristina dal repository git, non dagl
 
 ## 9. Punti di attenzione
 
+- **File grandi mai nel repository.** Binari, modelli, video e browser si scaricano sulla macchina
+  (vedi sezione 1bis); nel repo restano solo testi e script. Regola già attiva in `.gitignore`
+  (`node_modules/`, `media/*.mp4`, skill di terzi).
+- **Componenti condivisi in `/opt`**: Ghidra e toolchain REA, Chrome Headless Shell, modelli Kokoro
+  e Whisper. Le home dei tester hanno 2 GB e una soglia di render: sotto 1 GB libero i video non
+  partono (`bash scripts/spazio-tester.sh` lo segnala).
 - **Segreti fuori dal repository**: `.env` (password), `.session-secret`, `/root/.pi/agent/auth.json`,
   `/var/lib/tester07/agent/auth.json`. Mai committarli: sono in `.gitignore`, il pacchetto di
   export li tiene in `CONFIG-RISERVATA/` con permessi `600`.

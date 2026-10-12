@@ -18,9 +18,15 @@ istanza per istanza (vedi *Revisione del codice* in fondo).
 | servizio | `pi-dashboard.service` | `pi-tester01.service` | `pi-tester07.service` |
 | host pubblico | `harness.universalisproduzioni.it` | `tester01.89-117-59-173.sslip.io` | `tester07.89-117-59-173.sslip.io`, `htester.universalisproduzioni.it` |
 | `DASH_ROOT` (file manager) | `/root` | `/root/tester_01` | `/home/tester07` |
+
+> **Nota (2026-10-12).** I valori delle istanze limitate sono cambiati rispetto alle verifiche
+datate in questo documento: il disco dedicato è passato da **360 MB a 2 GB** (necessario perché
+HyperFrames rifiuta di renderizzare sotto 1 GB libero) e la quota soft da **300 MB a 1700 MB**.
+Le cifre di 300/360 MB che compaiono più sotto sono la fotografia di quelle verifiche, non lo
+stato attuale. Riferimenti aggiornati: `docs/RICOSTRUZIONE.md` §1bis e §4, `media/skill-istanze.md`.
 | modello | scelto dall'utente | scelto dall'utente | **fisso** `deepseek-flash` (`DASH_LOCK_MODEL=1`) |
 | thinking | libero | libero | `low`/`high`; `max` mostrato ma non selezionabile |
-| quota disco | nessuna | nessuna | **300 MB** soft su disco loop da 360 MB |
+| quota disco | nessuna | nessuna | **1700 MB** soft su disco loop da 2 GB (dall'11-12/10/2026; prima 300 MB su 360 MB) |
 | tool browser | attivo | attivo | presente ma **non attivo** (niente sudo, vedi sotto) |
 | sandbox | nessuna | nessuna | `ProtectSystem=strict`, `NoNewPrivileges=true` |
 | config agente pi | `/root/.pi/agent` (condivisa) | `/root/.pi/agent` (condivisa) | `/var/lib/tester07/agent` (isolata) |
