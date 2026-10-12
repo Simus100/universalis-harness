@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="it">
+  <head><meta charset="UTF-8" /><title>v05 — La storia smontata</title></head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #v05-root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif; }
+        #v05-occhiello { position: absolute; left: 60px; top: 118px; font-size: 17px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #78d8ee; }
+        #v05-doc { position: absolute; left: 0; top: 162px; width: 1080px; height: 470px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); background: #0a0f16; }
+        #v05-page { position: absolute; left: -292px; top: 0; width: 1665px; }
+        #v05-page img { display: block; width: 1665px; height: auto; }
+        #v05-col { position: absolute; left: 60px; right: 60px; top: 690px; display: flex; flex-direction: column; gap: 28px; }
+        .v05-card { border: 1px solid rgba(174,199,228,0.24); background: rgba(255,255,255,0.03); padding: 20px 22px 24px; opacity: 0.22; }
+        .v05-card .k { font-size: 15px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #aeb8c5; }
+        .v05-card p { font-family: "P052", serif; font-size: 30px; line-height: 1.3; margin: 10px 0 0; }
+        .v05-card.acceso { border-color: rgba(120,216,238,0.55); opacity: 1; }
+        .v05-card.acceso .k { color: #78d8ee; }
+        #v05-fonte { position: absolute; left: 60px; top: 1440px; display: flex; align-items: center; gap: 16px; opacity: 0.22; }
+        #v05-fonte .pill { border: 1px solid rgba(174,199,228,0.45); border-radius: 999px; padding: 9px 20px; font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase; }
+        #v05-fonte .cat { font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase; color: #aeb8c5; }
+        #v05-fonte.acceso .pill { border-color: #78d8ee; color: #78d8ee; }
+      </style>
+      <div id="v05-root" data-composition-id="v05-storia" data-width="1080" data-height="1920" data-duration="6.9" data-fps="30">
+        <div id="v05-occhiello">Dentro la storia</div>
+        <div id="v05-doc" data-layout-allow-overflow>
+          <div id="v05-page" data-layout-allow-overflow><img src="assets/story-1920.png" alt="Pagina della storia sul sito" /></div>
+        </div>
+        <div id="v05-col">
+          <div class="v05-card" id="v05-c2"><div class="k">Perché conta</div><p>Il valore sanitario dipende dalla validazione del modello e dalle garanzie sull'uso delle informazioni, non dalla sola scala annunciata.</p></div>
+          <div class="v05-card" id="v05-c1"><div class="k">L'opinione di Aion</div><p>Sul fronte startup il punto non è ripetere la cronaca, ma capire se conta la capacità di finanziare crescita, distribuzione e resistenza nel tempo.</p></div>
+        </div>
+        <div id="v05-fonte"><span class="pill">Fonte: TechCrunch</span><span class="cat">Categoria · Startup</span></div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#v05-doc", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 0.05);
+          tl.fromTo("#v05-page", { y: 0 }, { y: -180, duration: 5.5, ease: "power1.out" }, 0.05);
+          tl.to("#v05-page", { y: -260, duration: 2.05, ease: "power1.out" }, 5.55);
+          tl.to("#v05-c2", { opacity: 1, duration: 0.5, ease: "power2.out" }, 2.9);
+          tl.fromTo("#v05-c2", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.6 }, 2.9);
+          tl.to("#v05-c1", { opacity: 1, duration: 0.5, ease: "power2.out" }, 4.15);
+          tl.fromTo("#v05-c1", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.6 }, 4.15);
+          tl.to("#v05-fonte", { opacity: 1, duration: 0.5, ease: "power2.out" }, 5.7);
+          window.__timelines["v05-storia"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

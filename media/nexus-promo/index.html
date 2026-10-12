@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=1920, height=1080" />
+    <meta name="viewport" content="width=1080, height=1920" />
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
     <style>
       * {
@@ -12,15 +12,15 @@
       }
       html,
       body {
-        width: 1920px;
-        height: 1080px;
+        width: 1080px;
+        height: 1920px;
         overflow: hidden;
         background: #000;
       }
       #root {
         position: relative;
-        width: 1920px;
-        height: 1080px;
+        width: 1080px;
+        height: 1920px;
         overflow: hidden;
         background: #0C1119;
       }
@@ -38,113 +38,131 @@
       data-composition-id="main"
       data-start="0"
       data-duration="40"
-      data-width="1920"
-      data-height="1080"
+      data-width="1080"
+      data-height="1920"
     >
       <div
-        id="el-01-rumore"
+        id="el-v01-rumore"
         class="scene"
-        data-composition-id="01-rumore"
-        data-composition-src="compositions/frames/01-rumore.html"
+        data-composition-id="v01-rumore"
+        data-composition-src="compositions/vertical/v01-rumore.html"
         data-start="0"
-        data-duration="7.5"
+        data-duration="5.9"
         data-track-index="0"
       ></div>
       <audio
-        id="el-01-rumore-voice"
-        src="assets/voce/f1.wav"
+        id="el-v01-rumore-voice"
+        src="assets/voce2/f1.wav"
         data-start="0"
-        data-duration="7.5"
+        data-duration="5.9"
         data-track-index="10"
         data-volume="1"
       ></audio>
 
       <div
-        id="el-02-filtro"
+        id="el-v02-filtro"
         class="scene"
-        data-composition-id="02-filtro"
-        data-composition-src="compositions/frames/02-filtro.html"
-        data-start="7.5"
-        data-duration="7"
+        data-composition-id="v02-filtro"
+        data-composition-src="compositions/vertical/v02-filtro.html"
+        data-start="5.9"
+        data-duration="5.5"
         data-track-index="1"
       ></div>
       <audio
-        id="el-02-filtro-voice"
-        src="assets/voce/f2.wav"
-        data-start="7.5"
-        data-duration="6.5"
+        id="el-v02-filtro-voice"
+        src="assets/voce2/f2.wav"
+        data-start="5.9"
+        data-duration="5"
         data-track-index="10"
         data-volume="1"
       ></audio>
 
       <div
-        id="el-03-sintesi"
+        id="el-v03-sintesi"
         class="scene"
-        data-composition-id="03-sintesi"
-        data-composition-src="compositions/frames/03-sintesi.html"
-        data-start="14"
-        data-duration="6.7"
+        data-composition-id="v03-sintesi"
+        data-composition-src="compositions/vertical/v03-sintesi.html"
+        data-start="10.9"
+        data-duration="5"
         data-track-index="0"
       ></div>
       <audio
-        id="el-03-sintesi-voice"
-        src="assets/voce/f3.wav"
-        data-start="14"
-        data-duration="6.7"
+        id="el-v03-sintesi-voice"
+        src="assets/voce2/f3.wav"
+        data-start="10.9"
+        data-duration="5"
         data-track-index="10"
         data-volume="1"
       ></audio>
 
       <div
-        id="el-04-storia"
+        id="el-v04-dossier"
         class="scene"
-        data-composition-id="04-storia"
-        data-composition-src="compositions/frames/04-storia.html"
-        data-start="20.7"
-        data-duration="7.6"
+        data-composition-id="v04-dossier"
+        data-composition-src="compositions/vertical/v04-dossier.html"
+        data-start="15.9"
+        data-duration="7.5"
         data-track-index="1"
       ></div>
       <audio
-        id="el-04-storia-voice"
-        src="assets/voce/f4.wav"
-        data-start="20.7"
-        data-duration="7.6"
+        id="el-v04-dossier-voice"
+        src="assets/voce2/f4.wav"
+        data-start="15.9"
+        data-duration="7.5"
         data-track-index="10"
         data-volume="1"
       ></audio>
 
       <div
-        id="el-05-metriche"
+        id="el-v05-storia"
         class="scene"
-        data-composition-id="05-metriche"
-        data-composition-src="compositions/frames/05-metriche.html"
-        data-start="28.299999999999997"
-        data-duration="6.5"
+        data-composition-id="v05-storia"
+        data-composition-src="compositions/vertical/v05-storia.html"
+        data-start="23.4"
+        data-duration="6.9"
         data-track-index="0"
       ></div>
       <audio
-        id="el-05-metriche-voice"
-        src="assets/voce/f5.wav"
-        data-start="28.299999999999997"
-        data-duration="6.5"
+        id="el-v05-storia-voice"
+        src="assets/voce2/f5.wav"
+        data-start="23.4"
+        data-duration="6.9"
         data-track-index="10"
         data-volume="1"
       ></audio>
 
       <div
-        id="el-06-chiusura"
+        id="el-v06-metriche"
         class="scene"
-        data-composition-id="06-chiusura"
-        data-composition-src="compositions/frames/06-chiusura.html"
-        data-start="34.8"
+        data-composition-id="v06-metriche"
+        data-composition-src="compositions/vertical/v06-metriche.html"
+        data-start="30.299999999999997"
         data-duration="5.2"
         data-track-index="1"
       ></div>
       <audio
-        id="el-06-chiusura-voice"
-        src="assets/voce/f6.wav"
-        data-start="34.8"
+        id="el-v06-metriche-voice"
+        src="assets/voce2/f6.wav"
+        data-start="30.299999999999997"
         data-duration="5.2"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-v07-chiusura"
+        class="scene"
+        data-composition-id="v07-chiusura"
+        data-composition-src="compositions/vertical/v07-chiusura.html"
+        data-start="35.5"
+        data-duration="4.5"
+        data-track-index="0"
+      ></div>
+      <audio
+        id="el-v07-chiusura-voice"
+        src="assets/voce2/f7.wav"
+        data-start="35.5"
+        data-duration="4.5"
         data-track-index="10"
         data-volume="1"
       ></audio>
@@ -152,11 +170,11 @@
       <!-- BGM -->
       <audio
         id="el-bgm"
-        src="assets/musica.wav"
+        src="assets/musica2.wav"
         data-start="0"
         data-duration="40"
         data-track-index="11"
-        data-volume="0.32"
+        data-volume="0.3"
       ></audio>
 
       <!-- captions -->
@@ -171,6 +189,103 @@
         data-track-kind="captions"
       ></div>
 
+      <!-- SFX -->
+      <audio
+        id="el-sfx-0"
+        src="assets/sfx/impact.wav"
+        data-start="5.9"
+        data-duration="0.9"
+        data-track-index="20"
+        data-volume="1.2"
+      ></audio>
+      <audio
+        id="el-sfx-1"
+        src="assets/sfx/tick.wav"
+        data-start="8"
+        data-duration="0.07"
+        data-track-index="21"
+        data-volume="2.2"
+      ></audio>
+      <audio
+        id="el-sfx-2"
+        src="assets/sfx/whoosh.wav"
+        data-start="10.9"
+        data-duration="0.85"
+        data-track-index="22"
+        data-volume="1.6"
+      ></audio>
+      <audio
+        id="el-sfx-3"
+        src="assets/sfx/impact.wav"
+        data-start="16.02"
+        data-duration="0.9"
+        data-track-index="23"
+        data-volume="1.35"
+      ></audio>
+      <audio
+        id="el-sfx-4"
+        src="assets/sfx/whoosh.wav"
+        data-start="17.95"
+        data-duration="0.85"
+        data-track-index="24"
+        data-volume="1.3"
+      ></audio>
+      <audio
+        id="el-sfx-5"
+        src="assets/sfx/whoosh.wav"
+        data-start="23.4"
+        data-duration="0.85"
+        data-track-index="25"
+        data-volume="1.6"
+      ></audio>
+      <audio
+        id="el-sfx-6"
+        src="assets/sfx/tick.wav"
+        data-start="30.85"
+        data-duration="0.07"
+        data-track-index="26"
+        data-volume="2.2"
+      ></audio>
+      <audio
+        id="el-sfx-7"
+        src="assets/sfx/tick.wav"
+        data-start="31.45"
+        data-duration="0.07"
+        data-track-index="27"
+        data-volume="2.2"
+      ></audio>
+      <audio
+        id="el-sfx-8"
+        src="assets/sfx/tick.wav"
+        data-start="33.25"
+        data-duration="0.07"
+        data-track-index="28"
+        data-volume="2.2"
+      ></audio>
+      <audio
+        id="el-sfx-9"
+        src="assets/sfx/tick.wav"
+        data-start="33.9"
+        data-duration="0.07"
+        data-track-index="29"
+        data-volume="2.2"
+      ></audio>
+      <audio
+        id="el-sfx-10"
+        src="assets/sfx/riser.wav"
+        data-start="33.5"
+        data-duration="2"
+        data-track-index="30"
+        data-volume="1.4"
+      ></audio>
+      <audio
+        id="el-sfx-11"
+        src="assets/sfx/impact.wav"
+        data-start="35.55"
+        data-duration="0.9"
+        data-track-index="31"
+        data-volume="1.3"
+      ></audio>
     </div>
 
     <script>
@@ -178,8 +293,8 @@
       window.__timelines["main"] = gsap.timeline({ paused: true });
       // ── frame transitions (injected by transitions.mjs) ──
       (function () { var tl = window.__timelines["main"];
-        tl.to("#el-02-filtro", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 14);
-        tl.fromTo("#el-03-sintesi", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 14);
+        tl.to("#el-v02-filtro", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 10.9);
+        tl.fromTo("#el-v03-sintesi", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 10.9);
         tl.to({}, { duration: 40 }, 0); // full-span anchor — main.duration() == composition total (Studio master duration)
       })();
     </script>

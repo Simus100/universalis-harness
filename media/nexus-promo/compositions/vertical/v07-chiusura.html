@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="it">
+  <head><meta charset="UTF-8" /><title>v07 — Le notizie che contano</title></head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #v07-root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif; }
+        #v07-shot { position: absolute; left: 60px; top: 300px; width: 960px; }
+        #v07-shot img { display: block; width: 960px; height: auto; }
+        #v07-mask { position: absolute; left: 60px; top: 300px; width: 960px; height: 526px; background: linear-gradient(180deg, rgba(12,17,25,0) 58%, rgba(12,17,25,0.96) 100%); }
+        #v07-cta { position: absolute; left: 60px; right: 60px; top: 940px; }
+        #v07-nome { font-family: "P052", serif; font-weight: 700; font-size: 78px; line-height: 1.04; }
+        #v07-regola { width: 100%; height: 1px; background: rgba(174,199,228,0.45); margin: 26px 0 30px; transform-origin: 0% 50%; }
+        #v07-url { font-size: 46px; font-weight: 700; color: #78d8ee; }
+        #v07-firma { margin-top: 46px; display: flex; align-items: center; gap: 20px; }
+        #v07-firma img { width: 200px; height: auto; opacity: 0.85; }
+        #v07-ruolo { font-size: 15px; letter-spacing: 0.2em; text-transform: uppercase; color: #aeb8c5; }
+      </style>
+      <div id="v07-root" data-composition-id="v07-chiusura" data-width="1080" data-height="1920" data-duration="4.5" data-fps="30">
+        <div id="v07-shot"><img src="assets/hero-plate.png" alt="Testata di Altair Nexus" /></div>
+        <div id="v07-mask"></div>
+        <div id="v07-cta">
+          <div id="v07-nome">Altair Nexus</div>
+          <div id="v07-regola"></div>
+          <div id="v07-url">nexus.universalis.it</div>
+          <div id="v07-firma"><img src="assets/universalis.png" alt="Universalis Produzioni" /><div id="v07-ruolo">Automation Intelligence</div></div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#v07-shot", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.95, ease: "power2.out" }, 0.05);
+          tl.fromTo("#v07-mask", { opacity: 0 }, { opacity: 1, duration: 0.95, ease: "power1.out" }, 0.05);
+          tl.fromTo("#v07-nome", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 2.05);
+          tl.fromTo("#v07-regola", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, 2.25);
+          tl.fromTo("#v07-url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 2.85);
+          tl.fromTo("#v07-firma", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 3.35);
+          window.__timelines["v07-chiusura"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,570 @@
+{
+ "bgm": {
+  "path": "assets/musica2.wav",
+  "volume": 0.3,
+  "source": "host",
+  "duration_s": 40.15
+ },
+ "sfx": [
+  {
+   "frame": 2,
+   "file": "assets/sfx/impact.wav",
+   "offset_s": 0.0,
+   "duration_s": 0.9,
+   "volume": 1.2,
+   "source": "host"
+  },
+  {
+   "frame": 2,
+   "file": "assets/sfx/tick.wav",
+   "offset_s": 2.1,
+   "duration_s": 0.07,
+   "volume": 2.2,
+   "source": "host"
+  },
+  {
+   "frame": 3,
+   "file": "assets/sfx/whoosh.wav",
+   "offset_s": 0.0,
+   "duration_s": 0.85,
+   "volume": 1.6,
+   "source": "host"
+  },
+  {
+   "frame": 4,
+   "file": "assets/sfx/impact.wav",
+   "offset_s": 0.12,
+   "duration_s": 0.9,
+   "volume": 1.35,
+   "source": "host"
+  },
+  {
+   "frame": 4,
+   "file": "assets/sfx/whoosh.wav",
+   "offset_s": 2.05,
+   "duration_s": 0.85,
+   "volume": 1.3,
+   "source": "host"
+  },
+  {
+   "frame": 5,
+   "file": "assets/sfx/whoosh.wav",
+   "offset_s": 0.0,
+   "duration_s": 0.85,
+   "volume": 1.6,
+   "source": "host"
+  },
+  {
+   "frame": 6,
+   "file": "assets/sfx/tick.wav",
+   "offset_s": 0.55,
+   "duration_s": 0.07,
+   "volume": 2.2,
+   "source": "host"
+  },
+  {
+   "frame": 6,
+   "file": "assets/sfx/tick.wav",
+   "offset_s": 1.15,
+   "duration_s": 0.07,
+   "volume": 2.2,
+   "source": "host"
+  },
+  {
+   "frame": 6,
+   "file": "assets/sfx/tick.wav",
+   "offset_s": 2.95,
+   "duration_s": 0.07,
+   "volume": 2.2,
+   "source": "host"
+  },
+  {
+   "frame": 6,
+   "file": "assets/sfx/tick.wav",
+   "offset_s": 3.6,
+   "duration_s": 0.07,
+   "volume": 2.2,
+   "source": "host"
+  },
+  {
+   "frame": 6,
+   "file": "assets/sfx/riser.wav",
+   "offset_s": 3.2,
+   "duration_s": 2.0,
+   "volume": 1.4,
+   "source": "host"
+  },
+  {
+   "frame": 7,
+   "file": "assets/sfx/impact.wav",
+   "offset_s": 0.05,
+   "duration_s": 0.9,
+   "volume": 1.3,
+   "source": "host"
+  }
+ ],
+ "voices": [
+  {
+   "frame": 1,
+   "path": "assets/voce2/f1.wav",
+   "words": [
+    {
+     "text": "Geopolitica.",
+     "start": 0.3,
+     "end": 0.878
+    },
+    {
+     "text": "Startup.",
+     "start": 1.138,
+     "end": 1.506
+    },
+    {
+     "text": "Mercati.",
+     "start": 1.766,
+     "end": 2.134
+    },
+    {
+     "text": "Scienza.",
+     "start": 2.394,
+     "end": 2.762
+    },
+    {
+     "text": "Ogni",
+     "start": 3.3,
+     "end": 3.512
+    },
+    {
+     "text": "giorno,",
+     "start": 3.532,
+     "end": 3.85
+    },
+    {
+     "text": "oltre",
+     "start": 4.01,
+     "end": 4.275
+    },
+    {
+     "text": "centocinquanta",
+     "start": 4.295,
+     "end": 5.036
+    },
+    {
+     "text": "fonti.",
+     "start": 5.056,
+     "end": 5.321
+    }
+   ]
+  },
+  {
+   "frame": 2,
+   "path": "assets/voce2/f2.wav",
+   "words": [
+    {
+     "text": "Il",
+     "start": 0.3,
+     "end": 0.399
+    },
+    {
+     "text": "rumore",
+     "start": 0.419,
+     "end": 0.715
+    },
+    {
+     "text": "non",
+     "start": 0.735,
+     "end": 0.883
+    },
+    {
+     "text": "è",
+     "start": 0.903,
+     "end": 1.001
+    },
+    {
+     "text": "informazione.",
+     "start": 1.021,
+     "end": 1.613
+    },
+    {
+     "text": "Altair",
+     "start": 2.2,
+     "end": 2.536
+    },
+    {
+     "text": "Nexus",
+     "start": 2.556,
+     "end": 2.837
+    },
+    {
+     "text": "ne",
+     "start": 2.857,
+     "end": 2.969
+    },
+    {
+     "text": "tiene",
+     "start": 2.989,
+     "end": 3.269
+    },
+    {
+     "text": "nove.",
+     "start": 3.289,
+     "end": 3.513
+    }
+   ]
+  },
+  {
+   "frame": 3,
+   "path": "assets/voce2/f3.wav",
+   "words": [
+    {
+     "text": "Una",
+     "start": 0.35,
+     "end": 0.513
+    },
+    {
+     "text": "sintesi:",
+     "start": 0.533,
+     "end": 0.914
+    },
+    {
+     "text": "il",
+     "start": 1.174,
+     "end": 1.283
+    },
+    {
+     "text": "segnale",
+     "start": 1.303,
+     "end": 1.683
+    },
+    {
+     "text": "dominante,",
+     "start": 1.703,
+     "end": 2.193
+    },
+    {
+     "text": "il",
+     "start": 2.7,
+     "end": 2.8
+    },
+    {
+     "text": "tema",
+     "start": 2.82,
+     "end": 3.02
+    },
+    {
+     "text": "del",
+     "start": 3.04,
+     "end": 3.189
+    },
+    {
+     "text": "giorno,",
+     "start": 3.209,
+     "end": 3.509
+    },
+    {
+     "text": "cosa",
+     "start": 3.669,
+     "end": 3.869
+    },
+    {
+     "text": "osservare.",
+     "start": 3.889,
+     "end": 4.338
+    }
+   ]
+  },
+  {
+   "frame": 4,
+   "path": "assets/voce2/f4.wav",
+   "words": [
+    {
+     "text": "Quando",
+     "start": 0.35,
+     "end": 0.637
+    },
+    {
+     "text": "una",
+     "start": 0.657,
+     "end": 0.8
+    },
+    {
+     "text": "storia",
+     "start": 0.82,
+     "end": 1.107
+    },
+    {
+     "text": "merita",
+     "start": 1.127,
+     "end": 1.414
+    },
+    {
+     "text": "di",
+     "start": 1.434,
+     "end": 1.53
+    },
+    {
+     "text": "più,",
+     "start": 1.55,
+     "end": 1.693
+    },
+    {
+     "text": "diventa",
+     "start": 2.2,
+     "end": 2.601
+    },
+    {
+     "text": "un",
+     "start": 2.621,
+     "end": 2.735
+    },
+    {
+     "text": "dossier:",
+     "start": 2.755,
+     "end": 3.155
+    },
+    {
+     "text": "sei",
+     "start": 3.415,
+     "end": 3.587
+    },
+    {
+     "text": "assi",
+     "start": 3.607,
+     "end": 3.836
+    },
+    {
+     "text": "di",
+     "start": 3.856,
+     "end": 3.97
+    },
+    {
+     "text": "rischio,",
+     "start": 3.99,
+     "end": 4.391
+    },
+    {
+     "text": "tre",
+     "start": 4.9,
+     "end": 5.056
+    },
+    {
+     "text": "scenari,",
+     "start": 5.076,
+     "end": 5.44
+    },
+    {
+     "text": "e",
+     "start": 5.6,
+     "end": 5.704
+    },
+    {
+     "text": "i",
+     "start": 5.724,
+     "end": 5.828
+    },
+    {
+     "text": "limiti",
+     "start": 5.848,
+     "end": 6.16
+    },
+    {
+     "text": "dichiarati.",
+     "start": 6.18,
+     "end": 6.701
+    }
+   ]
+  },
+  {
+   "frame": 5,
+   "path": "assets/voce2/f5.wav",
+   "words": [
+    {
+     "text": "Per",
+     "start": 0.35,
+     "end": 0.545
+    },
+    {
+     "text": "ogni",
+     "start": 0.565,
+     "end": 0.825
+    },
+    {
+     "text": "storia:",
+     "start": 0.845,
+     "end": 1.236
+    },
+    {
+     "text": "cosa",
+     "start": 1.496,
+     "end": 1.756
+    },
+    {
+     "text": "è",
+     "start": 1.776,
+     "end": 1.906
+    },
+    {
+     "text": "successo,",
+     "start": 1.926,
+     "end": 2.446
+    },
+    {
+     "text": "perché",
+     "start": 2.606,
+     "end": 2.997
+    },
+    {
+     "text": "conta,",
+     "start": 3.017,
+     "end": 3.342
+    },
+    {
+     "text": "e",
+     "start": 3.9,
+     "end": 3.995
+    },
+    {
+     "text": "la",
+     "start": 4.015,
+     "end": 4.109
+    },
+    {
+     "text": "lettura",
+     "start": 4.129,
+     "end": 4.46
+    },
+    {
+     "text": "di",
+     "start": 4.48,
+     "end": 4.574
+    },
+    {
+     "text": "Aion.",
+     "start": 4.594,
+     "end": 4.784
+    },
+    {
+     "text": "Con",
+     "start": 5.45,
+     "end": 5.568
+    },
+    {
+     "text": "la",
+     "start": 5.588,
+     "end": 5.667
+    },
+    {
+     "text": "fonte",
+     "start": 5.687,
+     "end": 5.884
+    },
+    {
+     "text": "dichiarata.",
+     "start": 5.904,
+     "end": 6.299
+    }
+   ]
+  },
+  {
+   "frame": 6,
+   "path": "assets/voce2/f6.wav",
+   "words": [
+    {
+     "text": "Nove",
+     "start": 0.35,
+     "end": 0.542
+    },
+    {
+     "text": "storie.",
+     "start": 0.562,
+     "end": 0.85
+    },
+    {
+     "text": "La",
+     "start": 1.65,
+     "end": 1.755
+    },
+    {
+     "text": "categoria",
+     "start": 1.775,
+     "end": 2.25
+    },
+    {
+     "text": "più",
+     "start": 2.27,
+     "end": 2.428
+    },
+    {
+     "text": "calda,",
+     "start": 2.448,
+     "end": 2.712
+    },
+    {
+     "text": "l'intensità",
+     "start": 2.872,
+     "end": 3.399
+    },
+    {
+     "text": "della",
+     "start": 3.419,
+     "end": 3.682
+    },
+    {
+     "text": "giornata.",
+     "start": 3.702,
+     "end": 4.124
+    }
+   ]
+  },
+  {
+   "frame": 7,
+   "path": "assets/voce2/f7.wav",
+   "words": [
+    {
+     "text": "Le",
+     "start": 0.3,
+     "end": 0.384
+    },
+    {
+     "text": "notizie",
+     "start": 0.404,
+     "end": 0.699
+    },
+    {
+     "text": "che",
+     "start": 0.719,
+     "end": 0.845
+    },
+    {
+     "text": "contano.",
+     "start": 0.865,
+     "end": 1.16
+    },
+    {
+     "text": "Nexus",
+     "start": 1.9,
+     "end": 2.155
+    },
+    {
+     "text": "punto",
+     "start": 2.175,
+     "end": 2.431
+    },
+    {
+     "text": "universalis",
+     "start": 2.451,
+     "end": 3.013
+    },
+    {
+     "text": "punto",
+     "start": 3.033,
+     "end": 3.288
+    },
+    {
+     "text": "it.",
+     "start": 3.308,
+     "end": 3.41
+    }
+   ]
+  }
+ ]
+}

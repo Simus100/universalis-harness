@@ -42,7 +42,7 @@
         }
         .f03-lab.acceso .k { color: #78d8ee; }
       </style>
-      <div data-hf-id="hf-6o1b" id="f03-root" data-composition-id="03-sintesi" data-width="1920" data-height="1080" data-duration="6.7" data-fps="30">
+      <div data-hf-id="hf-6o1b" id="f03-root" data-composition-id="03-sintesi" data-width="1920" data-height="1080" data-duration="5.0" data-fps="30">
         <div data-hf-id="hf-rp4j" id="f03-fondo"></div>
         <div data-hf-id="hf-4nb0" id="f03-occhiello">Aion Brief · la sintesi del giorno</div>
         <div data-hf-id="hf-k07p" id="f03-view" data-layout-allow-overflow="">
@@ -80,7 +80,7 @@
 
           // 3,9 / 4,7 / 5,4  le tre etichette si accendono quando la voce le nomina.
           ["#f03-lab1", "#f03-lab2", "#f03-lab3"].forEach(function (sel, i) {
-            const t = 3.9 + i * 0.82;
+            const t = 1.65 + i * 1.15;
             tl.fromTo(sel, { opacity: 0.12, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, t);
             tl.fromTo(sel + " .k", { color: "#aeb8c5" }, { color: "#78d8ee", duration: 0.4, ease: "power1.out" }, t + 0.1);
           });

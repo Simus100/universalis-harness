@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="it">
+  <head><meta charset="UTF-8" /><title>04 — Il dossier</title></head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #f04-root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif; }
+        #f04-fondo { position: absolute; inset: 0; background: #0c1119; }
+        #f04-occhiello { position: absolute; left: 90px; top: 44px; font-size: 18px; font-weight: 700; letter-spacing: 0.26em; text-transform: uppercase; color: #78d8ee; }
+        #f04-hero { position: absolute; left: 90px; top: 92px; width: 1740px; height: 816px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); transform-origin: 0% 0%; }
+        #f04-hero img { display: block; width: 1920px; height: 900px; }
+        #f04-map { position: absolute; left: 90px; top: 92px; width: 1740px; height: 940px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); opacity: 0; }
+        #f04-map img { display: block; width: 1813px; height: 978px; }
+        #f04-scen { position: absolute; left: 90px; bottom: 96px; width: 1740px; height: 400px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); opacity: 0; }
+        #f04-scen img { display: block; width: 1920px; height: 440px; }
+        #f04-dato {
+          position: absolute; right: 90px; top: 300px; text-align: right; font-family: "P052", serif; font-weight: 700;
+          font-size: 96px; line-height: 1; color: #78d8ee; opacity: 0;
+        }
+        #f04-dato span { display: block; font-family: "Nimbus Sans", sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.2em; text-transform: uppercase; color: #aeb8c5; margin-top: 10px; }
+        #f04-velo { position: absolute; inset: 0; background: #0c1119; opacity: 0; }
+      </style>
+      <div id="f04-root" data-composition-id="04-dossier" data-width="1920" data-height="1080" data-duration="7.5" data-fps="30">
+        <div id="f04-fondo"></div>
+        <div id="f04-occhiello">Report AI · dossier a sei assi</div>
+        <div id="f04-hero" data-layout-allow-overflow><img src="assets/report-hero.png" alt="Testata del report Caso Iran 2026" /></div>
+        <div id="f04-dato">6 assi<span>di rischio</span></div>
+        <div id="f04-map" data-layout-allow-overflow><img src="assets/report-map.png" alt="Mappa 3D del rischio" /></div>
+        <div id="f04-scen" data-layout-allow-overflow><img src="assets/report-scenari.png" alt="Tre traiettorie plausibili" /></div>
+        <div id="f04-velo"></div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+
+          // 0,0–2,0  la testata del report entra spingendo dentro (la voce: "quando una storia merita di più")
+          tl.fromTo("#f04-hero", { scale: 1.06, opacity: 0 }, { scale: 1.0, opacity: 1, duration: 1.1, ease: "power2.out" }, 0.05);
+          tl.fromTo("#f04-dato", { opacity: 0, x: 26 }, { opacity: 1, x: 0, duration: 0.6, ease: "power2.out" }, 1.35);
+          // si ritira e lascia il campo alla mappa: il quadro cambia, la pagina è la stessa
+          tl.to("#f04-hero", { scale: 0.42, x: -30, y: -26, opacity: 0.35, duration: 1.0, ease: "power3.inOut" }, 2.05);
+          tl.to("#f04-dato", { opacity: 0, x: 26, duration: 0.4, ease: "power2.in" }, 2.05);
+
+          // 2,1–4,8  la mappa 3D entra in campo e la camera le spinge dentro ("diventa un dossier: sei assi")
+          tl.fromTo("#f04-map", { opacity: 0, scale: 1.18 }, { opacity: 1, scale: 1.0, duration: 1.0, ease: "power2.out" }, 2.15);
+          tl.fromTo("#f04-map img", { y: 0, x: 0 }, { y: -44, x: -30, duration: 5.2, ease: "none" }, 2.15);
+          tl.to("#f04-hero", { opacity: 0.15, duration: 0.6, ease: "power1.out", overwrite: "auto" }, 3.1);
+
+          // 4,8–7,5  le tre traiettorie salgono e si posano ("tre scenari, e i limiti dichiarati")
+          tl.to("#f04-map", { opacity: 0.22, duration: 0.6, ease: "power2.in" }, 4.85);
+          tl.fromTo("#f04-scen", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 4.9);
+
+          // tenuta: il quadro composito resta leggibile e fermo
+          tl.fromTo("#f04-velo", { opacity: 0 }, { opacity: 0.12, duration: 0.8, ease: "power1.in" }, 6.6);
+
+          window.__timelines["04-dossier"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

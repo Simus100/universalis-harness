@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8">
+    <title>06 — Le notizie che contano</title>
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #f07-root {
+          position: relative; width: 100%; height: 100%; overflow: hidden;
+          background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif;
+        }
+        #f07-fondo { position: absolute; inset: 0; background: #0c1119; }
+        #f07-shot { position: absolute; left: 60px; top: 130px; width: 1080px; }
+        #f07-shot img { display: block; width: 1080px; height: auto; }
+        #f07-mask {
+          position: absolute; left: 60px; top: 130px; width: 1080px; height: 592px;
+          background: linear-gradient(90deg, rgba(12,17,25,0) 55%, rgba(12,17,25,0.96) 100%);
+        }
+        #f07-cta { position: absolute; left: 1150px; right: 90px; top: 300px; }
+        #f07-nome { font-family: "P052", serif; font-weight: 700; font-size: 76px; line-height: 1.04; }
+        #f07-regola { width: 100%; height: 1px; background: rgba(174,199,228,0.45); margin: 26px 0 30px; transform-origin: 0% 50%; }
+        #f07-url { font-size: 46px; font-weight: 700; letter-spacing: 0.02em; color: #78d8ee; }
+        #f07-firma { margin-top: 46px; display: flex; align-items: center; gap: 22px; }
+        #f07-firma img { width: 220px; height: auto; opacity: 0.85; }
+        #f07-ruolo { font-size: 16px; letter-spacing: 0.2em; text-transform: uppercase; color: #aeb8c5; }
+      </style>
+      <div data-hf-id="hf-27sg" id="f07-root" data-composition-id="07-chiusura" data-width="1920" data-height="1080" data-duration="4.5" data-fps="30">
+        <div data-hf-id="hf-voeq" id="f07-fondo"></div>
+        <div data-hf-id="hf-9amw" id="f07-shot"><img data-hf-id="hf-94dz" src="assets/hero-plate.png" alt="Testata di Altair Nexus"></div>
+        <div data-hf-id="hf-yloo" id="f07-mask"></div>
+        <div data-hf-id="hf-uyu6" id="f07-cta">
+          <div data-hf-id="hf-nl09" id="f07-nome">Altair Nexus</div>
+          <div data-hf-id="hf-24v4" id="f07-regola"></div>
+          <div data-hf-id="hf-w8x0" id="f07-url">nexus.universalis.it</div>
+          <div data-hf-id="hf-p5y5" id="f07-firma">
+            <img data-hf-id="hf-l3m4" src="assets/universalis.png" alt="Universalis Produzioni">
+            <div data-hf-id="hf-91fp" id="f07-ruolo">Automation Intelligence</div>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+
+          // 0,05–1,7  la testata reale entra con un solo gesto, mentre la voce dice la promessa.
+          tl.fromTo("#f07-shot", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.95, ease: "power2.out" }, 0.05);
+          tl.fromTo("#f07-mask", { opacity: 0 }, { opacity: 1, duration: 0.95, ease: "power1.out" }, 0.05);
+
+          // 2,05–3,6  nome, indirizzo e firma: una rivelazione per frase, poi più nulla.
+          tl.fromTo("#f07-nome", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 2.05);
+          tl.fromTo("#f07-regola", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, 2.25);
+          tl.fromTo("#f07-url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 2.85);
+          tl.fromTo("#f07-firma", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 3.35);
+
+          window.__timelines["07-chiusura"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

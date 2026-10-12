@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8">
+    <title>05 — Lo stato dell'edizione</title>
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #f06-root {
+          position: relative; width: 100%; height: 100%; overflow: hidden;
+          background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif;
+        }
+        #f06-fondo { position: absolute; inset: 0; background: #0c1119; }
+        #f06-occhiello {
+          position: absolute; left: 90px; top: 92px; font-size: 18px; font-weight: 700;
+          letter-spacing: 0.26em; text-transform: uppercase; color: #78d8ee;
+        }
+        #f06-titolo {
+          position: absolute; left: 90px; top: 124px; font-family: "P052", serif; font-weight: 700;
+          font-size: 74px; letter-spacing: -0.01em;
+        }
+        #f06-riga { position: absolute; left: 90px; right: 90px; top: 246px; height: 1px; background: rgba(174,199,228,0.24); }
+        #f06-griglia {
+          position: absolute; left: 90px; right: 90px; top: 288px;
+          display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 224px);
+          gap: 26px;
+        }
+        .f06-card {
+          border: 1px solid rgba(174,199,228,0.24); background: rgba(255,255,255,0.03);
+          padding: 22px 26px; position: relative;
+        }
+        .f06-card .top { position: absolute; left: 0; top: -1px; height: 1px; width: 100%; background: #78d8ee; transform-origin: 0% 50%; }
+        .f06-card .k { font-size: 15px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #aeb8c5; }
+        .f06-card .v { font-family: "P052", serif; font-weight: 700; font-size: 62px; line-height: 1.02; margin-top: 12px; }
+        .f06-card.small .v { font-size: 40px; }
+        .f06-card .s { font-size: 17px; color: #aeb8c5; margin-top: 10px; }
+      </style>
+      <div data-hf-id="hf-19ud" id="f06-root" data-composition-id="06-metriche" data-width="1920" data-height="1080" data-duration="5.2" data-fps="30">
+        <div data-hf-id="hf-hjud" id="f06-fondo"></div>
+        <div data-hf-id="hf-le04" id="f06-occhiello">Metriche</div>
+        <div data-hf-id="hf-3xsc" id="f06-titolo">Stato dell'edizione</div>
+        <div data-hf-id="hf-vrwa" id="f06-riga"></div>
+        <div data-hf-id="hf-lv4g" id="f06-griglia">
+          <div data-hf-id="hf-riyo" class="f06-card" id="f06-c1"><div data-hf-id="hf-sijt" class="top"></div><div data-hf-id="hf-m8ui" class="k">News in edizione</div><div data-hf-id="hf-g0il" class="v">9</div><div data-hf-id="hf-8uo9" class="s">Storie presenti nella selezione corrente.</div></div>
+          <div data-hf-id="hf-06uj" class="f06-card" id="f06-c2"><div data-hf-id="hf-8kpp" class="top"></div><div data-hf-id="hf-yb74" class="k">Fonti analizzate</div><div data-hf-id="hf-8j8z" class="v">151</div><div data-hf-id="hf-pjad" class="s">Base iniziale del monitoraggio.</div></div>
+          <div data-hf-id="hf-09nj" class="f06-card small" id="f06-c3"><div data-hf-id="hf-9rms" class="top"></div><div data-hf-id="hf-ucbk" class="k">Ultimo aggiornamento</div><div data-hf-id="hf-seki" class="v">12 ott, 17:04</div><div data-hf-id="hf-hbm2" class="s">Refresh più recente rilevato.</div></div>
+          <div data-hf-id="hf-6fdc" class="f06-card small" id="f06-c4"><div data-hf-id="hf-9dbr" class="top"></div><div data-hf-id="hf-hsuz" class="k">Categoria più calda</div><div data-hf-id="hf-ovp6" class="v">Geopolitica</div><div data-hf-id="hf-hjub" class="s">Sezione con il lead medio più forte.</div></div>
+          <div data-hf-id="hf-7715" class="f06-card small" id="f06-c5"><div data-hf-id="hf-ak8u" class="top"></div><div data-hf-id="hf-rrjk" class="k">Intensità della giornata</div><div data-hf-id="hf-xss4" class="v">Alta</div><div data-hf-id="hf-39f3" class="s">Stima della pressione editoriale.</div></div>
+          <div data-hf-id="hf-b556" class="f06-card small" id="f06-c6"><div data-hf-id="hf-a5xt" class="top"></div><div data-hf-id="hf-zdip" class="k">Copertura categorie</div><div data-hf-id="hf-mv5k" class="v">3/8</div><div data-hf-id="hf-s8tl" class="s">Categorie attive oggi.</div></div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+
+          tl.fromTo("#f06-titolo", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, 0.05);
+          tl.fromTo("#f06-occhiello", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 0.05);
+          tl.fromTo("#f06-riga", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.out", transformOrigin: "0% 50%" }, 0.35);
+
+          // La cascata segue la voce: prima i due numeri che nomina, poi categoria e intensità,
+          // e solo nella seconda metà le due metriche che la voce non legge (aggiornamento, copertura).
+          const entrate = [
+            ["#f06-c1", 0.55],
+            ["#f06-c2", 1.15],
+            ["#f06-c4", 3.05],
+            ["#f06-c5", 3.70],
+            ["#f06-c6", 4.45],
+            ["#f06-c3", 5.05],
+          ];
+          entrate.forEach(function (par) {
+            const sel = par[0];
+            const t = par[1];
+            tl.fromTo(sel, { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, t);
+            tl.fromTo(sel + " .top", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, t + 0.05);
+          });
+
+          window.__timelines["06-metriche"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

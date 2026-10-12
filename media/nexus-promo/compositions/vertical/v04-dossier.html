@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="it">
+  <head><meta charset="UTF-8" /><title>v04 — Il dossier</title></head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #v04-root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif; }
+        #v04-occhiello { position: absolute; left: 60px; top: 150px; font-size: 17px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #78d8ee; }
+        #v04-hero { position: absolute; left: 0; top: 200px; width: 1080px; height: 670px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); transform-origin: 0% 0%; }
+        #v04-hero img { display: block; width: 1080px; height: auto; }
+        #v04-map { position: absolute; left: 60px; top: 260px; width: 960px; height: 990px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); opacity: 0; }
+        #v04-map img { display: block; width: 960px; height: auto; }
+        #v04-scen { position: absolute; left: 0; top: 1300px; width: 1080px; height: 200px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); opacity: 0; }
+        #v04-scen img { display: block; width: 1080px; height: auto; }
+        #v04-velo { position: absolute; inset: 0; background: #0c1119; opacity: 0; }
+      </style>
+      <div id="v04-root" data-composition-id="v04-dossier" data-width="1080" data-height="1920" data-duration="7.5" data-fps="30">
+        <div id="v04-occhiello">Report AI · dossier a sei assi</div>
+        <div id="v04-hero" data-layout-allow-overflow><img src="assets/report-titolo.png" alt="Titolo del report Caso Iran 2026" /></div>
+        <div id="v04-map" data-layout-allow-overflow><img src="assets/report-mappa-zoom.png" alt="Mappa 3D del rischio" /></div>
+        <div id="v04-scen" data-layout-allow-overflow><img src="assets/report-scen-zoom.png" alt="Tre traiettorie plausibili" /></div>
+        <div id="v04-velo"></div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+          // il titolo del dossier entra spingendo dentro, poi si ritira e lascia il campo alla mappa
+          tl.fromTo("#v04-hero", { scale: 1.05, opacity: 0 }, { scale: 1.0, opacity: 1, duration: 1.05, ease: "power2.out" }, 0.05);
+          tl.to("#v04-hero", { scale: 0.55, y: -110, opacity: 0.22, duration: 0.95, ease: "power3.inOut" }, 2.05);
+          // la mappa 3D: entra e la camera le va dentro, con un pan lento sul campo di nodi
+          tl.fromTo("#v04-map", { opacity: 0, scale: 1.14 }, { opacity: 1, scale: 1.0, duration: 1.0, ease: "power2.out" }, 2.15);
+          tl.fromTo("#v04-map img", { y: 0, x: 0 }, { y: -70, x: -22, duration: 5.2, ease: "none" }, 2.15);
+          tl.to("#v04-hero", { opacity: 0.08, duration: 0.6, ease: "power1.out", overwrite: "auto" }, 3.1);
+          // le tre traiettorie salgono sul bordo basso: de-escalation, attrito, nuova escalation
+          tl.to("#v04-map", { opacity: 0.25, duration: 0.6, ease: "power2.in" }, 4.85);
+          tl.fromTo("#v04-scen", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 4.9);
+          tl.fromTo("#v04-velo", { opacity: 0 }, { opacity: 0.12, duration: 0.8, ease: "power1.in" }, 6.6);
+          window.__timelines["v04-dossier"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

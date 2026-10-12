@@ -6,813 +6,855 @@
     {
       "id": "caption-group-0",
       "frame": 1,
-      "start": 0.4,
-      "end": 1.146,
+      "start": 0.3,
+      "end": 0.998,
       "text": "Geopolitica.",
       "words": [
         {
           "id": "caption-word-0-0",
           "text": "Geopolitica.",
-          "start": 0.4,
-          "end": 1.026
+          "start": 0.3,
+          "end": 0.878
         }
       ]
     },
     {
       "id": "caption-group-1",
       "frame": 1,
-      "start": 1.286,
-      "end": 1.805,
+      "start": 1.138,
+      "end": 1.626,
       "text": "Startup.",
       "words": [
         {
           "id": "caption-word-1-0",
           "text": "Startup.",
-          "start": 1.286,
-          "end": 1.685
+          "start": 1.138,
+          "end": 1.506
         }
       ]
     },
     {
       "id": "caption-group-2",
       "frame": 1,
-      "start": 1.945,
-      "end": 2.463,
+      "start": 1.766,
+      "end": 2.254,
       "text": "Mercati.",
       "words": [
         {
           "id": "caption-word-2-0",
           "text": "Mercati.",
-          "start": 1.945,
-          "end": 2.343
+          "start": 1.766,
+          "end": 2.134
         }
       ]
     },
     {
       "id": "caption-group-3",
       "frame": 1,
-      "start": 2.603,
-      "end": 3.122,
+      "start": 2.394,
+      "end": 2.882,
       "text": "Scienza.",
       "words": [
         {
           "id": "caption-word-3-0",
           "text": "Scienza.",
-          "start": 2.603,
-          "end": 3.002
+          "start": 2.394,
+          "end": 2.762
         }
       ]
     },
     {
       "id": "caption-group-4",
       "frame": 1,
-      "start": 3.8,
-      "end": 4.471,
+      "start": 3.3,
+      "end": 3.97,
       "text": "Ogni giorno,",
       "words": [
         {
           "id": "caption-word-4-0",
           "text": "Ogni",
-          "start": 3.8,
-          "end": 4.012
+          "start": 3.3,
+          "end": 3.512
         },
         {
           "id": "caption-word-4-1",
           "text": "giorno,",
-          "start": 4.032,
-          "end": 4.351
+          "start": 3.532,
+          "end": 3.85
         }
       ]
     },
     {
       "id": "caption-group-5",
       "frame": 1,
-      "start": 4.511,
-      "end": 5.971,
-      "text": "centocinquantuno fonti che ti",
+      "start": 4.01,
+      "end": 5.441,
+      "text": "oltre centocinquanta fonti.",
       "words": [
         {
           "id": "caption-word-5-0",
-          "text": "centocinquantuno",
-          "start": 4.511,
-          "end": 5.36
+          "text": "oltre",
+          "start": 4.01,
+          "end": 4.275
         },
         {
           "id": "caption-word-5-1",
-          "text": "fonti",
-          "start": 5.38,
-          "end": 5.645
+          "text": "centocinquanta",
+          "start": 4.295,
+          "end": 5.036
         },
         {
           "id": "caption-word-5-2",
-          "text": "che",
-          "start": 5.665,
-          "end": 5.824
-        },
-        {
-          "id": "caption-word-5-3",
-          "text": "ti",
-          "start": 5.844,
-          "end": 5.951
+          "text": "fonti.",
+          "start": 5.056,
+          "end": 5.321
         }
       ]
     },
     {
       "id": "caption-group-6",
-      "frame": 1,
-      "start": 5.971,
-      "end": 6.8,
-      "text": "urlano addosso.",
+      "frame": 2,
+      "start": 6.2,
+      "end": 6.635,
+      "text": "Il rumore",
       "words": [
         {
           "id": "caption-word-6-0",
-          "text": "urlano",
-          "start": 5.971,
-          "end": 6.289
+          "text": "Il",
+          "start": 6.2,
+          "end": 6.299
         },
         {
           "id": "caption-word-6-1",
-          "text": "addosso.",
-          "start": 6.309,
-          "end": 6.68
+          "text": "rumore",
+          "start": 6.319,
+          "end": 6.615
         }
       ]
     },
     {
       "id": "caption-group-7",
       "frame": 2,
-      "start": 7.8,
-      "end": 8.205,
-      "text": "Il rumore",
+      "start": 6.635,
+      "end": 7.633,
+      "text": "non è informazione.",
       "words": [
         {
           "id": "caption-word-7-0",
-          "text": "Il",
-          "start": 7.8,
-          "end": 7.891
+          "text": "non",
+          "start": 6.635,
+          "end": 6.783
         },
         {
           "id": "caption-word-7-1",
-          "text": "rumore",
-          "start": 7.911,
-          "end": 8.185
+          "text": "è",
+          "start": 6.803,
+          "end": 6.901
+        },
+        {
+          "id": "caption-word-7-2",
+          "text": "informazione.",
+          "start": 6.921,
+          "end": 7.513
         }
       ]
     },
     {
       "id": "caption-group-8",
       "frame": 2,
-      "start": 8.205,
-      "end": 9.14,
-      "text": "non è informazione.",
+      "start": 8.1,
+      "end": 8.757,
+      "text": "Altair Nexus",
       "words": [
         {
           "id": "caption-word-8-0",
-          "text": "non",
-          "start": 8.205,
-          "end": 8.342
+          "text": "Altair",
+          "start": 8.1,
+          "end": 8.436
         },
         {
           "id": "caption-word-8-1",
-          "text": "è",
-          "start": 8.362,
-          "end": 8.453
-        },
-        {
-          "id": "caption-word-8-2",
-          "text": "informazione.",
-          "start": 8.473,
-          "end": 9.02
+          "text": "Nexus",
+          "start": 8.456,
+          "end": 8.737
         }
       ]
     },
     {
       "id": "caption-group-9",
       "frame": 2,
-      "start": 9.8,
-      "end": 10.823,
-      "text": "Altair Nexus legge",
+      "start": 8.757,
+      "end": 9.533,
+      "text": "ne tiene nove.",
       "words": [
         {
           "id": "caption-word-9-0",
-          "text": "Altair",
-          "start": 9.8,
-          "end": 10.161
+          "text": "ne",
+          "start": 8.757,
+          "end": 8.869
         },
         {
           "id": "caption-word-9-1",
-          "text": "Nexus",
-          "start": 10.181,
-          "end": 10.482
+          "text": "tiene",
+          "start": 8.889,
+          "end": 9.169
         },
         {
           "id": "caption-word-9-2",
-          "text": "legge",
-          "start": 10.502,
-          "end": 10.803
+          "text": "nove.",
+          "start": 9.189,
+          "end": 9.413
         }
       ]
     },
     {
       "id": "caption-group-10",
-      "frame": 2,
-      "start": 10.823,
-      "end": 12.227,
-      "text": "centocinquantuno fonti,",
+      "frame": 3,
+      "start": 11.25,
+      "end": 11.934,
+      "text": "Una sintesi:",
       "words": [
         {
           "id": "caption-word-10-0",
-          "text": "centocinquantuno",
-          "start": 10.823,
-          "end": 11.786
+          "text": "Una",
+          "start": 11.25,
+          "end": 11.413
         },
         {
           "id": "caption-word-10-1",
-          "text": "fonti,",
-          "start": 11.806,
-          "end": 12.107
+          "text": "sintesi:",
+          "start": 11.433,
+          "end": 11.814
         }
       ]
     },
     {
       "id": "caption-group-11",
-      "frame": 2,
-      "start": 12.267,
-      "end": 12.548,
-      "text": "e ne",
+      "frame": 3,
+      "start": 12.074,
+      "end": 13.213,
+      "text": "il segnale dominante,",
       "words": [
         {
           "id": "caption-word-11-0",
-          "text": "e",
-          "start": 12.267,
-          "end": 12.388
+          "text": "il",
+          "start": 12.074,
+          "end": 12.183
         },
         {
           "id": "caption-word-11-1",
-          "text": "ne",
-          "start": 12.408,
-          "end": 12.528
+          "text": "segnale",
+          "start": 12.203,
+          "end": 12.583
+        },
+        {
+          "id": "caption-word-11-2",
+          "text": "dominante,",
+          "start": 12.603,
+          "end": 13.093
         }
       ]
     },
     {
       "id": "caption-group-12",
-      "frame": 2,
-      "start": 12.548,
-      "end": 13.23,
-      "text": "tiene nove.",
+      "frame": 3,
+      "start": 13.6,
+      "end": 13.94,
+      "text": "il tema",
       "words": [
         {
           "id": "caption-word-12-0",
-          "text": "tiene",
-          "start": 12.548,
-          "end": 12.849
+          "text": "il",
+          "start": 13.6,
+          "end": 13.7
         },
         {
           "id": "caption-word-12-1",
-          "text": "nove.",
-          "start": 12.869,
-          "end": 13.11
+          "text": "tema",
+          "start": 13.72,
+          "end": 13.92
         }
       ]
     },
     {
       "id": "caption-group-13",
       "frame": 3,
-      "start": 14.3,
-      "end": 15.102,
-      "text": "Ogni mattina,",
+      "start": 13.94,
+      "end": 14.529,
+      "text": "del giorno,",
       "words": [
         {
           "id": "caption-word-13-0",
-          "text": "Ogni",
-          "start": 14.3,
-          "end": 14.541
+          "text": "del",
+          "start": 13.94,
+          "end": 14.089
         },
         {
           "id": "caption-word-13-1",
-          "text": "mattina,",
-          "start": 14.561,
-          "end": 14.982
+          "text": "giorno,",
+          "start": 14.109,
+          "end": 14.409
         }
       ]
     },
     {
       "id": "caption-group-14",
       "frame": 3,
-      "start": 15.142,
-      "end": 15.884,
-      "text": "una sintesi.",
+      "start": 14.569,
+      "end": 15.358,
+      "text": "cosa osservare.",
       "words": [
         {
           "id": "caption-word-14-0",
-          "text": "una",
-          "start": 15.142,
-          "end": 15.323
+          "text": "cosa",
+          "start": 14.569,
+          "end": 14.769
         },
         {
           "id": "caption-word-14-1",
-          "text": "sintesi.",
-          "start": 15.343,
-          "end": 15.764
+          "text": "osservare.",
+          "start": 14.789,
+          "end": 15.238
         }
       ]
     },
     {
       "id": "caption-group-15",
-      "frame": 3,
-      "start": 16.5,
-      "end": 17.758,
-      "text": "Il segnale dominante,",
+      "frame": 4,
+      "start": 16.25,
+      "end": 16.72,
+      "text": "Quando una",
       "words": [
         {
           "id": "caption-word-15-0",
-          "text": "Il",
-          "start": 16.5,
-          "end": 16.622
+          "text": "Quando",
+          "start": 16.25,
+          "end": 16.537
         },
         {
           "id": "caption-word-15-1",
-          "text": "segnale",
-          "start": 16.642,
-          "end": 17.069
-        },
-        {
-          "id": "caption-word-15-2",
-          "text": "dominante,",
-          "start": 17.089,
-          "end": 17.638
+          "text": "una",
+          "start": 16.557,
+          "end": 16.7
         }
       ]
     },
     {
       "id": "caption-group-16",
-      "frame": 3,
-      "start": 17.798,
-      "end": 18.203,
-      "text": "il tema",
+      "frame": 4,
+      "start": 16.72,
+      "end": 17.334,
+      "text": "storia merita",
       "words": [
         {
           "id": "caption-word-16-0",
-          "text": "il",
-          "start": 17.798,
-          "end": 17.92
+          "text": "storia",
+          "start": 16.72,
+          "end": 17.007
         },
         {
           "id": "caption-word-16-1",
-          "text": "tema",
-          "start": 17.94,
-          "end": 18.183
+          "text": "merita",
+          "start": 17.027,
+          "end": 17.314
         }
       ]
     },
     {
       "id": "caption-group-17",
-      "frame": 3,
-      "start": 18.203,
-      "end": 18.892,
-      "text": "del giorno,",
+      "frame": 4,
+      "start": 17.334,
+      "end": 17.713,
+      "text": "di più,",
       "words": [
         {
           "id": "caption-word-17-0",
-          "text": "del",
-          "start": 18.203,
-          "end": 18.386
+          "text": "di",
+          "start": 17.334,
+          "end": 17.43
         },
         {
           "id": "caption-word-17-1",
-          "text": "giorno,",
-          "start": 18.406,
-          "end": 18.772
+          "text": "più,",
+          "start": 17.45,
+          "end": 17.593
         }
       ]
     },
     {
       "id": "caption-group-18",
-      "frame": 3,
-      "start": 19.35,
-      "end": 20.156,
-      "text": "e cosa osservare.",
+      "frame": 4,
+      "start": 18.1,
+      "end": 19.175,
+      "text": "diventa un dossier:",
       "words": [
         {
           "id": "caption-word-18-0",
-          "text": "e",
-          "start": 19.35,
-          "end": 19.436
+          "text": "diventa",
+          "start": 18.1,
+          "end": 18.501
         },
         {
           "id": "caption-word-18-1",
-          "text": "cosa",
-          "start": 19.456,
-          "end": 19.628
+          "text": "un",
+          "start": 18.521,
+          "end": 18.635
         },
         {
           "id": "caption-word-18-2",
-          "text": "osservare.",
-          "start": 19.648,
-          "end": 20.036
+          "text": "dossier:",
+          "start": 18.655,
+          "end": 19.055
         }
       ]
     },
     {
       "id": "caption-group-19",
       "frame": 4,
-      "start": 21,
-      "end": 21.973,
-      "text": "Per ogni storia:",
+      "start": 19.315,
+      "end": 19.756,
+      "text": "sei assi",
       "words": [
         {
           "id": "caption-word-19-0",
-          "text": "Per",
-          "start": 21,
-          "end": 21.188
+          "text": "sei",
+          "start": 19.315,
+          "end": 19.487
         },
         {
           "id": "caption-word-19-1",
-          "text": "ogni",
-          "start": 21.208,
-          "end": 21.458
-        },
-        {
-          "id": "caption-word-19-2",
-          "text": "storia:",
-          "start": 21.478,
-          "end": 21.853
+          "text": "assi",
+          "start": 19.507,
+          "end": 19.736
         }
       ]
     },
     {
       "id": "caption-group-20",
       "frame": 4,
-      "start": 22.113,
-      "end": 23.148,
-      "text": "cosa è successo,",
+      "start": 19.756,
+      "end": 20.411,
+      "text": "di rischio,",
       "words": [
         {
           "id": "caption-word-20-0",
-          "text": "cosa",
-          "start": 22.113,
-          "end": 22.363
+          "text": "di",
+          "start": 19.756,
+          "end": 19.87
         },
         {
           "id": "caption-word-20-1",
-          "text": "è",
-          "start": 22.383,
-          "end": 22.508
-        },
-        {
-          "id": "caption-word-20-2",
-          "text": "successo,",
-          "start": 22.528,
-          "end": 23.028
+          "text": "rischio,",
+          "start": 19.89,
+          "end": 20.291
         }
       ]
     },
     {
       "id": "caption-group-21",
       "frame": 4,
-      "start": 23.65,
-      "end": 24.428,
-      "text": "perché conta,",
+      "start": 20.8,
+      "end": 21.46,
+      "text": "tre scenari,",
       "words": [
         {
           "id": "caption-word-21-0",
-          "text": "perché",
-          "start": 23.65,
-          "end": 23.998
+          "text": "tre",
+          "start": 20.8,
+          "end": 20.956
         },
         {
           "id": "caption-word-21-1",
-          "text": "conta,",
-          "start": 24.018,
-          "end": 24.308
+          "text": "scenari,",
+          "start": 20.976,
+          "end": 21.34
         }
       ]
     },
     {
       "id": "caption-group-22",
       "frame": 4,
-      "start": 24.9,
-      "end": 25.113,
-      "text": "e la",
+      "start": 21.5,
+      "end": 21.748,
+      "text": "e i",
       "words": [
         {
           "id": "caption-word-22-0",
           "text": "e",
-          "start": 24.9,
-          "end": 24.986
+          "start": 21.5,
+          "end": 21.604
         },
         {
           "id": "caption-word-22-1",
-          "text": "la",
-          "start": 25.006,
-          "end": 25.093
+          "text": "i",
+          "start": 21.624,
+          "end": 21.728
         }
       ]
     },
     {
       "id": "caption-group-23",
       "frame": 4,
-      "start": 25.113,
-      "end": 25.834,
-      "text": "lettura di Aion.",
+      "start": 21.748,
+      "end": 22.721,
+      "text": "limiti dichiarati.",
       "words": [
         {
           "id": "caption-word-23-0",
-          "text": "lettura",
-          "start": 25.113,
-          "end": 25.415
+          "text": "limiti",
+          "start": 21.748,
+          "end": 22.06
         },
         {
           "id": "caption-word-23-1",
-          "text": "di",
-          "start": 25.435,
-          "end": 25.521
-        },
-        {
-          "id": "caption-word-23-2",
-          "text": "Aion.",
-          "start": 25.541,
-          "end": 25.714
+          "text": "dichiarati.",
+          "start": 22.08,
+          "end": 22.601
         }
       ]
     },
     {
       "id": "caption-group-24",
-      "frame": 4,
-      "start": 26.45,
-      "end": 26.727,
-      "text": "Con la",
+      "frame": 5,
+      "start": 23.75,
+      "end": 24.756,
+      "text": "Per ogni storia:",
       "words": [
         {
           "id": "caption-word-24-0",
-          "text": "Con",
-          "start": 26.45,
-          "end": 26.592
+          "text": "Per",
+          "start": 23.75,
+          "end": 23.945
         },
         {
           "id": "caption-word-24-1",
-          "text": "la",
-          "start": 26.612,
-          "end": 26.707
+          "text": "ogni",
+          "start": 23.965,
+          "end": 24.225
+        },
+        {
+          "id": "caption-word-24-2",
+          "text": "storia:",
+          "start": 24.245,
+          "end": 24.636
         }
       ]
     },
     {
       "id": "caption-group-25",
-      "frame": 4,
-      "start": 26.727,
-      "end": 27.084,
-      "text": "fonte,",
+      "frame": 5,
+      "start": 24.896,
+      "end": 25.966,
+      "text": "cosa è successo,",
       "words": [
         {
           "id": "caption-word-25-0",
-          "text": "fonte,",
-          "start": 26.727,
-          "end": 26.964
+          "text": "cosa",
+          "start": 24.896,
+          "end": 25.156
+        },
+        {
+          "id": "caption-word-25-1",
+          "text": "è",
+          "start": 25.176,
+          "end": 25.306
+        },
+        {
+          "id": "caption-word-25-2",
+          "text": "successo,",
+          "start": 25.326,
+          "end": 25.846
         }
       ]
     },
     {
       "id": "caption-group-26",
-      "frame": 4,
-      "start": 27.124,
-      "end": 28.022,
-      "text": "sempre dichiarata.",
+      "frame": 5,
+      "start": 26.006,
+      "end": 26.862,
+      "text": "perché conta,",
       "words": [
         {
           "id": "caption-word-26-0",
-          "text": "sempre",
-          "start": 27.124,
-          "end": 27.408
+          "text": "perché",
+          "start": 26.006,
+          "end": 26.397
         },
         {
           "id": "caption-word-26-1",
-          "text": "dichiarata.",
-          "start": 27.428,
-          "end": 27.902
+          "text": "conta,",
+          "start": 26.417,
+          "end": 26.742
         }
       ]
     },
     {
       "id": "caption-group-27",
       "frame": 5,
-      "start": 28.6,
-      "end": 29.367,
-      "text": "Nove storie,",
+      "start": 27.3,
+      "end": 27.529,
+      "text": "e la",
       "words": [
         {
           "id": "caption-word-27-0",
-          "text": "Nove",
-          "start": 28.6,
-          "end": 28.851
+          "text": "e",
+          "start": 27.3,
+          "end": 27.395
         },
         {
           "id": "caption-word-27-1",
-          "text": "storie,",
-          "start": 28.871,
-          "end": 29.247
+          "text": "la",
+          "start": 27.415,
+          "end": 27.509
         }
       ]
     },
     {
       "id": "caption-group-28",
       "frame": 5,
-      "start": 29.407,
-      "end": 30.865,
-      "text": "centocinquantuno fonti,",
+      "start": 27.529,
+      "end": 28.304,
+      "text": "lettura di Aion.",
       "words": [
         {
           "id": "caption-word-28-0",
-          "text": "centocinquantuno",
-          "start": 29.407,
-          "end": 30.411
+          "text": "lettura",
+          "start": 27.529,
+          "end": 27.86
         },
         {
           "id": "caption-word-28-1",
-          "text": "fonti,",
-          "start": 30.431,
-          "end": 30.745
+          "text": "di",
+          "start": 27.88,
+          "end": 27.974
+        },
+        {
+          "id": "caption-word-28-2",
+          "text": "Aion.",
+          "start": 27.994,
+          "end": 28.184
         }
       ]
     },
     {
       "id": "caption-group-29",
       "frame": 5,
-      "start": 31.4,
-      "end": 32.059,
-      "text": "la categoria",
+      "start": 28.85,
+      "end": 29.087,
+      "text": "Con la",
       "words": [
         {
           "id": "caption-word-29-0",
-          "text": "la",
-          "start": 31.4,
-          "end": 31.513
+          "text": "Con",
+          "start": 28.85,
+          "end": 28.968
         },
         {
           "id": "caption-word-29-1",
-          "text": "categoria",
-          "start": 31.533,
-          "end": 32.039
+          "text": "la",
+          "start": 28.988,
+          "end": 29.067
         }
       ]
     },
     {
       "id": "caption-group-30",
       "frame": 5,
-      "start": 32.059,
-      "end": 32.65,
-      "text": "più calda,",
+      "start": 29.087,
+      "end": 29.819,
+      "text": "fonte dichiarata.",
       "words": [
         {
           "id": "caption-word-30-0",
-          "text": "più",
-          "start": 32.059,
-          "end": 32.228
+          "text": "fonte",
+          "start": 29.087,
+          "end": 29.284
         },
         {
           "id": "caption-word-30-1",
-          "text": "calda,",
-          "start": 32.248,
-          "end": 32.53
+          "text": "dichiarata.",
+          "start": 29.304,
+          "end": 29.699
         }
       ]
     },
     {
       "id": "caption-group-31",
-      "frame": 5,
-      "start": 32.69,
-      "end": 34.145,
-      "text": "l'intensità della giornata.",
+      "frame": 6,
+      "start": 30.65,
+      "end": 31.27,
+      "text": "Nove storie.",
       "words": [
         {
           "id": "caption-word-31-0",
-          "text": "l'intensità",
-          "start": 32.69,
-          "end": 33.253
+          "text": "Nove",
+          "start": 30.65,
+          "end": 30.842
         },
         {
           "id": "caption-word-31-1",
-          "text": "della",
-          "start": 33.273,
-          "end": 33.555
-        },
-        {
-          "id": "caption-word-31-2",
-          "text": "giornata.",
-          "start": 33.575,
-          "end": 34.025
+          "text": "storie.",
+          "start": 30.862,
+          "end": 31.15
         }
       ]
     },
     {
       "id": "caption-group-32",
       "frame": 6,
-      "start": 35.1,
-      "end": 35.596,
-      "text": "Le notizie",
+      "start": 31.95,
+      "end": 32.57,
+      "text": "La categoria",
       "words": [
         {
           "id": "caption-word-32-0",
-          "text": "Le",
-          "start": 35.1,
-          "end": 35.201
+          "text": "La",
+          "start": 31.95,
+          "end": 32.055
         },
         {
           "id": "caption-word-32-1",
-          "text": "notizie",
-          "start": 35.221,
-          "end": 35.576
+          "text": "categoria",
+          "start": 32.075,
+          "end": 32.55
         }
       ]
     },
     {
       "id": "caption-group-33",
       "frame": 6,
-      "start": 35.596,
-      "end": 36.243,
-      "text": "che contano.",
+      "start": 32.57,
+      "end": 33.132,
+      "text": "più calda,",
       "words": [
         {
           "id": "caption-word-33-0",
-          "text": "che",
-          "start": 35.596,
-          "end": 35.748
+          "text": "più",
+          "start": 32.57,
+          "end": 32.728
         },
         {
           "id": "caption-word-33-1",
-          "text": "contano.",
-          "start": 35.768,
-          "end": 36.123
+          "text": "calda,",
+          "start": 32.748,
+          "end": 33.012
         }
       ]
     },
     {
       "id": "caption-group-34",
       "frame": 6,
-      "start": 36.9,
-      "end": 37.702,
-      "text": "Altair Nexus.",
+      "start": 33.172,
+      "end": 34.544,
+      "text": "l'intensità della giornata.",
       "words": [
         {
           "id": "caption-word-34-0",
-          "text": "Altair",
-          "start": 36.9,
-          "end": 37.261
+          "text": "l'intensità",
+          "start": 33.172,
+          "end": 33.699
         },
         {
           "id": "caption-word-34-1",
-          "text": "Nexus.",
-          "start": 37.281,
-          "end": 37.582
+          "text": "della",
+          "start": 33.719,
+          "end": 33.982
+        },
+        {
+          "id": "caption-word-34-2",
+          "text": "giornata.",
+          "start": 34.002,
+          "end": 34.424
         }
       ]
     },
     {
       "id": "caption-group-35",
-      "frame": 6,
-      "start": 37.842,
-      "end": 39.165,
-      "text": "Nexus punto universalis",
+      "frame": 7,
+      "start": 35.8,
+      "end": 36.219,
+      "text": "Le notizie",
       "words": [
         {
           "id": "caption-word-35-0",
-          "text": "Nexus",
-          "start": 37.842,
-          "end": 38.143
+          "text": "Le",
+          "start": 35.8,
+          "end": 35.884
         },
         {
           "id": "caption-word-35-1",
-          "text": "punto",
-          "start": 38.163,
-          "end": 38.463
-        },
-        {
-          "id": "caption-word-35-2",
-          "text": "universalis",
-          "start": 38.483,
-          "end": 39.145
+          "text": "notizie",
+          "start": 35.904,
+          "end": 36.199
         }
       ]
     },
     {
       "id": "caption-group-36",
-      "frame": 6,
-      "start": 39.165,
-      "end": 39.726,
-      "text": "punto it.",
+      "frame": 7,
+      "start": 36.219,
+      "end": 36.78,
+      "text": "che contano.",
       "words": [
         {
           "id": "caption-word-36-0",
-          "text": "punto",
-          "start": 39.165,
-          "end": 39.466
+          "text": "che",
+          "start": 36.219,
+          "end": 36.345
         },
         {
           "id": "caption-word-36-1",
+          "text": "contano.",
+          "start": 36.365,
+          "end": 36.66
+        }
+      ]
+    },
+    {
+      "id": "caption-group-37",
+      "frame": 7,
+      "start": 37.4,
+      "end": 38.533,
+      "text": "Nexus punto universalis",
+      "words": [
+        {
+          "id": "caption-word-37-0",
+          "text": "Nexus",
+          "start": 37.4,
+          "end": 37.655
+        },
+        {
+          "id": "caption-word-37-1",
+          "text": "punto",
+          "start": 37.675,
+          "end": 37.931
+        },
+        {
+          "id": "caption-word-37-2",
+          "text": "universalis",
+          "start": 37.951,
+          "end": 38.513
+        }
+      ]
+    },
+    {
+      "id": "caption-group-38",
+      "frame": 7,
+      "start": 38.533,
+      "end": 39.03,
+      "text": "punto it.",
+      "words": [
+        {
+          "id": "caption-word-38-0",
+          "text": "punto",
+          "start": 38.533,
+          "end": 38.788
+        },
+        {
+          "id": "caption-word-38-1",
           "text": "it.",
-          "start": 39.486,
-          "end": 39.606
+          "start": 38.808,
+          "end": 38.91
         }
       ]
     }

@@ -2,7 +2,7 @@
 format: 1920x1080
 duration: 40s
 message: "Il rumore non è informazione: Altair Nexus riduce 151 fonti a 9 storie che contano."
-arc: Hook (rumore) → Promise (il filtro) → Proof ×3 (sintesi, storia, numeri) → CTA
+arc: Hook (rumore) → Promise (il filtro) → Proof ×4 (sintesi, dossier, storia, numeri) → CTA
 audience: "professionisti informati italiani (25-55) che seguono AI, tecnologia, geopolitica, finanza"
 mode: collaborative
 music: none
@@ -21,11 +21,18 @@ music: none
   **Modello di rivelazione guidato dalla voce**: a t=0 entra solo ciò che la voce sta dicendo; ogni
   elemento successivo appare quando la voce lo nomina, e le rivelazioni si distribuiscono anche nella
   seconda metà del frame. Ogni frame chiude su **lettura tenuta**: fermo, al massimo un jitter sub-pixel.
-- **Ritmo / frame tenuti** — frame 02 e frame 06 sono i respiri: nel 02 il numero si posa e resta;
-  nel 06 non si muove nulla di proposito. I frame 01, 04 e 05 sono i più densi di movimento.
+- **Ritmo / frame tenuti** — frame 02 e frame 07 sono i respiri: nel 02 il numero si posa e resta;
+  nel 07 non si muove nulla di proposito. I frame 01, 03, 04 e 06 sono i più densi di movimento.
+  Cambio di quadro ogni 2–3 s: il primo taglio arriva a 5,9 s, non a 7,5 come nella v1.
 - **Voce e musica** — narrazione piper `it_IT-serena-high` (una traccia voce per frame, montata su
-  track 10); bed musicale costruito in ffmpeg: rumore filtrato per i primi 7,4 s, colpo secco sul
-  taglio, poi pad pulito — il suono fa lo stesso percorso dell'immagine. Bed a `data-volume 0.32`.
+  track 10); bed musicale costruito in ffmpeg: rumore filtrato per i primi 5,8 s, colpo secco sul
+  taglio, poi pad con battito ogni 2 s e crescendo negli ultimi 4 s — il suono fa lo stesso percorso
+  dell'immagine. Bed a `data-volume 0.30`.
+- **Disegno sonoro (v2)** — dodici effetti sintetizzati in ffmpeg e montati sulle giunzioni:
+  `impact` sul taglio del rumore e sull'ingresso della chiusura, `whoosh` sulle entrate in campo
+  (sintesi, dossier, storia), `tick` sul count-up del 9 e su ogni card della cascata metrica,
+  `riser` di 2 s che sale nell'ultimo frame di prova e scarica nell'impatto finale. Volume per
+  effetto in `audio_meta2.json`: nessun effetto sopra la voce.
 - **Lista negativa** — mai: glow, ombre colorate, bordi spessi, gradienti viola/blu alla "AI",
   immagini stock, facce generate, dati inventati, cursori o chrome di browser. Mai i due modi di
   fallire il montaggio: **presentazione a schede** (tutto dentro al primo 25% e poi congelato) e
@@ -34,6 +41,10 @@ music: none
 - **Materiali reali** — catture del sito: `assets/hero-plate.png`, `assets/brief-plate.png`,
   `assets/story-1920.png`, `assets/metrics-plate.png` (non usata: le card sono ricostruite in HTML
   perché la cascata le anima una per una), più la firma `assets/universalis.png`.
+  **Novità v2**: l'area Report entra nel video con tre ritagli reali — `assets/report-hero.png`
+  (testata del dossier *Caso Iran 2026*), `assets/report-map.png` (mappa 3D del rischio e lettura
+  Altair), `assets/report-scenari.png` (le tre traiettorie plausibili). Era il materiale più forte
+  del sito e nella prima versione non c'era.
 
 ---
 
@@ -43,11 +54,11 @@ music: none
 - blueprint: kinetic-type-beats (Adapt)
 - src: compositions/frames/01-rumore.html
 - status: animated
-- duration: 7.5s
+- duration: 5.9s
 - poster: 4s
 - transition_in: cut
 - scene: Titoli reali del sito che scorrono velocissimi in tre colonne; stop secco sul nero.
-- voiceover: "Geopolitica. Startup. Mercati. Scienza. Ogni giorno, centocinquantuno fonti che ti urlano addosso."
+- voiceover: "Geopolitica. Startup. Mercati. Scienza. Ogni giorno, oltre centocinquanta fonti."
 - focal: i titoli reali dell'edizione (testo, non immagine)
 - roles: i titoli delle storie = cutout (il vero soggetto) · fondo = background (nero pieno)
 - asset_candidates: capture/screenshots/full-page.png, capture/screenshots/scroll-008.png
@@ -72,11 +83,11 @@ quadro resta vuoto — è la giunzione, non una dissolvenza.
 - blueprint: dataviz-countup (Adapt)
 - src: compositions/frames/02-filtro.html
 - status: animated
-- duration: 6.5s
+- duration: 5.0s
 - poster: 4s
 - transition_in: cut
 - scene: 151 fonti ridotte a 9 storie: il numero trema come rumore, poi si compone e il 9 conta su.
-- voiceover: "Il rumore non è informazione. Altair Nexus legge centocinquantuno fonti, e ne tiene nove."
+- voiceover: "Il rumore non è informazione. Altair Nexus ne tiene nove."
 - focal: il numero (nessun asset: il dato è il soggetto)
 - roles: hairline = struttura · numero = cutout (il soggetto)
 - asset_candidates: capture/assets/visual-editoriale-generato-dalla-sintesi.jpg
@@ -100,11 +111,11 @@ Scene 4 (5.55–6.5s): alla parola "nove" il 9 conta su da 0 e si accende in acc
 - blueprint: zoom-out-workspace-reveal (Adapt)
 - src: compositions/frames/03-sintesi.html
 - status: animated
-- duration: 6.7s
+- duration: 5.0s
 - poster: 5s
 - transition_in: crossfade
 - scene: Zoom-out da una riga del brief alla sezione Aion Brief intera, con il visual editoriale.
-- voiceover: "Ogni mattina, una sintesi. Il segnale dominante, il tema del giorno, e cosa osservare."
+- voiceover: "Una sintesi: il segnale dominante, il tema del giorno, cosa osservare."
 - focal: assets/brief-plate.png
 - roles: brief-plate = cutout (la prova) · fondo = background
 - asset_candidates: capture/screenshots/scroll-016.png, capture/assets/visual-editoriale-generato-dalla-sintesi.jpg
@@ -123,17 +134,45 @@ grigio ad accento.
 Scene 4 (5.5–6.7s): alla voce "e cosa osservare" si accende la terza etichetta, quella che era il punto
 di partenza: la camera è già ferma, nessun drift residuo.
 
-## Frame 4 — La storia smontata
+## Frame 4 — Il dossier
+
+- type: feature_showcase
+- blueprint: camera-journey (Adapt)
+- src: compositions/frames/04-dossier.html
+- status: animated
+- duration: 7.5s
+- poster: 5s
+- transition_in: cut
+- scene: Dalla testata del report alla mappa 3D alle tre traiettorie: un unico campo, la camera viaggia.
+- voiceover: "Quando una storia merita di più, diventa un dossier: sei assi di rischio, tre scenari, e i limiti dichiarati."
+- focal: assets/report-map.png
+- roles: report-hero = cutout nella prima scena · report-map = cutout (il soggetto che resta) · report-scenari = supporting in chiusura
+- asset_candidates: capture/assets/visual-editoriale-generato-dalla-sintesi.jpg
+
+Adapt: la firma del blueprint è la camera che viaggia dentro lo stesso mondo invece di cambiare quadro;
+qui il "mondo" è il dossier e le sue tre superfici (testata, mappa, traiettorie) sono la stessa pagina.
+
+Scene 1 (0.05–2.1s): la testata del report entra spingendo dentro (scala 1,06 → 1,0) mentre la voce dice
+"quando una storia merita di più"; l'occhiello "Report AI · dossier a sei assi" è già in alto, e il dato
+"6 assi di rischio" entra da destra con il suo hairline.
+Scene 2 (2.1–4.8s): la testata si ritira (scala 0,42, opacità 0,35) e **lascia il campo alla mappa 3D**,
+che entra spingendo (1,18 → 1,0) con un pan lentissimo sul campo di nodi: un unico movimento continuo,
+non un taglio. La voce nomina i sei assi mentre la mappa è in campo.
+Scene 3 (4.8–7.5s): la mappa si abbassa di opacità e **le tre traiettorie salgono dal basso** e si posano
+sul bordo inferiore: de-escalation, attrito negoziale, nuova escalation — con i limiti dichiarati che la
+voce nomina per ultimi. Un velo leggerissimo chiude il quadro, che resta leggibile e fermo.
+
+## Frame 5 — La storia smontata
 
 - type: feature_showcase
 - blueprint: transcript-scroll-artifact-reveal (Adapt)
-- src: compositions/frames/04-storia.html
+- src: compositions/frames/05-storia.html
 - status: animated
-- duration: 7.6s
+- duration: 6.9s
 - poster: 6s
 - transition_in: cut
 - scene: La pagina della storia scorre a sinistra mentre a destra si accendono opinione, perché conta e fonte.
-- voiceover: "Per ogni storia: cosa è successo, perché conta, e la lettura di Aion. Con la fonte, sempre dichiarata."
+- voiceover: "Per ogni storia: cosa è successo, perché conta, e la lettura di Aion. Con la fonte dichiarata."
 - focal: assets/story-1920.png
 - roles: story-1920 = cutout (la pagina reale che scorre) · le due card di lettura = supporting evidenziate
 - asset_candidates: capture/screenshots/scroll-024.png, capture/screenshots/scroll-032.png
@@ -153,17 +192,17 @@ Scene 4 (5.7–7.6s): alla voce "con la fonte, sempre dichiarata" si accende il 
 ultimo elemento del frame — è il punto che distingue il prodotto. La traversata si esaurisce e il quadro
 resta leggibile e fermo.
 
-## Frame 5 — Lo stato dell'edizione
+## Frame 6 — Lo stato dell'edizione
 
 - type: benefit_highlight
 - blueprint: grid-card-assemble (Adapt)
-- src: compositions/frames/05-metriche.html
+- src: compositions/frames/06-metriche.html
 - status: animated
-- duration: 6.5s
+- duration: 5.2s
 - poster: 4s
 - transition_in: cut
 - scene: Le sei card delle metriche reali si assemblano in griglia sotto la voce.
-- voiceover: "Nove storie, centocinquantuno fonti, la categoria più calda, l'intensità della giornata."
+- voiceover: "Nove storie. La categoria più calda, l'intensità della giornata."
 - focal: le card metriche (dati reali del sito, ricostruite in HTML)
 - roles: le card = cutout · hairline = struttura · fondo = background
 - asset_candidates: capture/screenshots/scroll-065.png
@@ -180,17 +219,17 @@ legge — **3/8** e **12 ott, 17:04** — così la griglia si completa senza che
 blocco all'inizio.
 Scene 3 (6.0–6.5s): tenuta: la griglia completa è ferma e leggibile.
 
-## Frame 6 — Le notizie che contano
+## Frame 7 — Le notizie che contano
 
 - type: cta
 - blueprint: titlecard-reveal (Reproduce)
-- src: compositions/frames/06-chiusura.html
+- src: compositions/frames/07-chiusura.html
 - status: animated
-- duration: 5.2s
+- duration: 4.5s
 - poster: 3s
 - transition_in: cut
 - scene: La testata reale a sinistra, a destra nome, indirizzo e firma; il quadro si ferma e tiene.
-- voiceover: "Le notizie che contano. Altair Nexus: nexus punto universalis punto it."
+- voiceover: "Le notizie che contano. Nexus punto universalis punto it."
 - focal: assets/hero-plate.png
 - roles: hero-plate = cutout (la testata reale) · universalis.png = supporting (la firma) · fondo = background
 - asset_candidates: capture/screenshots/scroll-000.png, capture/assets/universalis-produzioni.png
