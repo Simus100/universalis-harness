@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Universalis Harness — marchio</title>
+  <desc>Grafo di nodi collegati: il nodo centrale (l'agente) e sei nodi periferici (file, memoria, browser, obiettivi, skill, pianificazioni).</desc>
+  <rect width="1024" height="1024" fill="#07080b"/>
+  <rect x="16" y="16" width="992" height="992" rx="224" fill="none" stroke="#1c222b" stroke-width="6"/>
+  <g stroke="#2b3240" stroke-width="14" stroke-linecap="round">
+    <line x1="512" y1="512" x2="512" y2="236"/>
+    <line x1="512" y1="512" x2="751" y2="374"/>
+    <line x1="512" y1="512" x2="751" y2="650"/>
+    <line x1="512" y1="512" x2="512" y2="788"/>
+    <line x1="512" y1="512" x2="273" y2="650"/>
+    <line x1="512" y1="512" x2="273" y2="374"/>
+  </g>
+  <g stroke="#384152" stroke-width="8" stroke-linecap="round">
+    <line x1="512" y1="236" x2="751" y2="374"/>
+    <line x1="751" y1="374" x2="751" y2="650"/>
+    <line x1="751" y1="650" x2="512" y2="788"/>
+    <line x1="512" y1="788" x2="273" y2="650"/>
+    <line x1="273" y1="650" x2="273" y2="374"/>
+    <line x1="273" y1="374" x2="512" y2="236"/>
+  </g>
+  <circle cx="512" cy="512" r="126" fill="#5b9dff"/>
+  <circle cx="512" cy="512" r="62" fill="#07080b"/>
+  <g fill="#8b5cff">
+    <circle cx="512" cy="236" r="52"/>
+    <circle cx="751" cy="374" r="52"/>
+    <circle cx="751" cy="650" r="52"/>
+  </g>
+  <g fill="#34d399">
+    <circle cx="512" cy="788" r="52"/>
+    <circle cx="273" cy="650" r="52"/>
+  </g>
+  <g fill="#fbbf24">
+    <circle cx="273" cy="374" r="52"/>
+  </g>
+</svg>
