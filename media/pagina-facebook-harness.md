@@ -63,7 +63,7 @@ Agente AI self-hosted: lavora sui tuoi file, con dashboard, memoria e browser pi
 
 **Descrizione / Informazioni** (limite 255 caratteri)
 ```
-Pagina ufficiale di Universalis Harness, agente AI self-hosted: legge e scrive i tuoi file, ricorda le decisioni, gestisce obiettivi e pianificazioni e pilota un browser. Contenuti pubblicati con l'assistenza dell'agente, dichiarati come tali.
+Pagina ufficiale di Universalis Harness, agente AI self-hosted: legge e scrive i tuoi file, ricorda le decisioni, gestisce obiettivi e pianificazioni e pilota un browser. I contenuti sono pubblicati con l'assistenza di Aion e dichiarati come tali.
 ```
 
 **Immagine del profilo** (1024×1024, PNG)
@@ -93,8 +93,8 @@ Nelle prossime settimane raccontiamo qui come è fatto dentro: la memoria a lung
 ricorda le decisioni, gli obiettivi con catena di passaggi, e il browser che l'agente pilota da
 solo — con la possibilità, per una persona, di riprendere il controllo quando serve.
 
-Nota di trasparenza: questa Pagina è gestita dal titolare del progetto con l'assistenza
-dell'agente. I contenuti pubblicati dall'agente sono dichiarati come tali.
+Nota di trasparenza: questa Pagina è gestita dal titolare del progetto con l'assistenza di Aion,
+l'agente AI di Universalis Harness. Quando un contenuto lo scrive lui, è dichiarato come tale.
 ```
 
 **Post 2 — cosa sa fare** (dopo qualche ora)
@@ -117,11 +117,11 @@ Self-hosted, sui tuoi file, con la spesa sotto gli occhi.
 ```
 Come funziona questa Pagina, detto una volta e chiaro per sempre.
 
-Il titolare del progetto è una persona. La Pagina è sua. L'agente AI scrive bozze, prepara
-materiale e propone pubblicazioni; nulla esce senza che una persona lo approvi.
+Il titolare del progetto è una persona. La Pagina è sua. L'agente AI — si chiama Aion — prepara bozze,
+prepara materiale e propone pubblicazioni; nulla esce senza che una persona lo approvi.
 
-Quando un contenuto è prodotto dall'agente, lo dichiariamo nel post. Se un giorno vedrai qui
-risposte ai commenti scritte dall'agente, saranno firmate come tali: non ci presentiamo come
+Quando un contenuto è prodotto da Aion, lo dichiariamo nel post. Se un giorno vedrai qui
+risposte ai commenti scritte da lui, saranno firmate come tali: non ci presentiamo come
 una persona che non esiste.
 
 Un profilo personale finto dietro una Pagina è la scorciatoia che brucia tutto: noi non la
@@ -136,9 +136,12 @@ positivo #34d399, attenzione #fbbf24).
 
 ## Regole di gestione (concordate)
 
-- **Chi risponde ai commenti**: l'agente prepara la risposta, la persona la pubblica. Se in futuro
-  risponde l'agente, ogni risposta è dichiarata: nessun commento firmato come se fosse di una
-  persona umana.
+- **Chi risponde ai commenti**: Aion prepara la risposta, la persona la pubblica. Se in futuro
+  risponde direttamente l'agente, ogni risposta è firmata «Aion» e dichiarata come scritta
+  dall'AI: nessun commento firmato come se fosse di una persona umana.
+- **Aion non è un profilo personale.** È il nome dell'agente e la firma dei suoi contenuti. Non
+  esiste, e non deve nascere, un account Facebook «Aion» che si presenta come persona: è la
+  scorciatoia che Meta vieta e che fa disabilitare Pagina e profili insieme.
 - **Nessun messaggio privato a profili reali** per conto della Pagina.
 - **Etichetta AI**: i contenuti generati o modificati con AI vanno dichiarati al momento della
   pubblicazione (Meta applica anche etichette automatiche quando rileva segnali AI).
@@ -149,6 +152,10 @@ positivo #34d399, attenzione #fbbf24).
 
 ## Cosa resta da decidere
 
-- Conferma del nome: `Universalis Harness` oppure un altro.
-- Quale profilo personale fa da amministratore (deve essere quello vero).
+- Quale profilo personale fa da amministratore (deve essere quello vero, non l'account nuovo).
 - Se pubblicare anche su Instagram/Threads collegati alla stessa Pagina, più avanti.
+
+## Deciso
+
+- **L'agente si chiama Aion**: è la firma dei contenuti scritti dall'AI. Non è un profilo
+  personale e non diventa un account Facebook.
