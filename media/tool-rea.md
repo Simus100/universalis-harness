@@ -34,11 +34,15 @@ preferire CLI-as-skill»).
 |---|---|---|---|
 | REA CLI (`rea-agents`) | 6.4.0 | `/usr/bin/rea` (npm globale) | i 129 comandi |
 | wrapper `rea` | — | `/usr/local/bin/rea` | imposta le variabili d'ambiente degli engine |
-| Ghidra | 12.1.4 | `/root/rea-tools/ghidra_12.1.4_PUBLIC` | pseudocodice, assembly, xrefs, tipi (nativo) |
+| Ghidra | 12.1.4 | `/opt/rea-tools/ghidra_12.1.4_PUBLIC` | pseudocodice, assembly, xrefs, tipi (nativo) |
 | OpenJDK | 21.0.12.1 | `/usr/lib/jvm/java-21-openjdk-amd64` | requisito di Ghidra (min 21) |
-| pwntools + pyelftools + unicorn | 4.15.0 / 0.33 / 2.1.2 | venv `/root/rea-tools/venv` | `inspect-binary-layout` |
-| WABT | 1.0.42 | `/root/rea-tools/wabt/bin` | `inspect-wasm-artifact` |
-| skill REA | v37, 170 tool | `~/.agents/skills/reverse-engineer-anything` (+ `~/.claude/skills/`) | metodo e riferimenti |
+| pwntools + pyelftools + unicorn | 4.15.0 / 0.33 / 2.1.2 | venv `/opt/rea-tools/venv` | `inspect-binary-layout` |
+| WABT | 1.0.42 | `/opt/rea-tools/wabt/bin` | strumenti WASM |
+| skill REA | v37, 170 tool | `~/.agents/skills/reverse-engineer-anything` (+ copie per istanza) | metodo e riferimenti |
+
+Gli engine sono in `/opt` (e non sotto `/root`) perché **`/root` è `drwx------`**: lì dentro
+le altre istanze dell'harness e gli utenti non-root non possono leggerli. Verificato: da utente
+`tester08` la decompilazione Ghidra funziona.
 
 Il wrapper è la chiave del funzionamento stabile: `/usr/local/bin/rea` esporta
 `GHIDRA_INSTALL_DIR`, `JAVA_HOME`, `REA_PWNTOOLS_PYTHON`, `REA_WABT_BIN_DIRECTORY` e poi esegue
@@ -100,17 +104,32 @@ Tempi: l'import in Ghidra è `ephemeral-source-immutable`, quindi ogni comando r
 
 - **10 capability su 18 indisponibili**, quasi tutte per il mondo Apple (Hopper, Mach-O, plist,
   `assetutil`, Swift demangle, UI nativa macOS): su Linux non ci saranno mai.
-  REA qui copre **ELF/PE, JS/Electron, WASM, EVM, .NET managed, artifact/archivi, firmware (parziale — Binwalk/Unblob non installati)**.
+  REA qui copre **ELF/PE, JS/Electron, EVM, .NET managed, artifact/archivi, firmware (parziale — Binwalk/Unblob non installati)**.
+- **WASM: nessun comando CLI.** In 6.4.0 l'ispezione dei moduli WASM esiste solo come tool MCP
+  (`inspect_wasm_artifact`) e `inspect-artifact` rifiuta i `.wasm` (formato non supportato).
+  WABT è installato e usabile direttamente (`wasm2wat`, `wasm-objdump`).
 - **Android non configurato**: mancano `jadx`, `apktool`, `adb`.
 - **JEB, IDA, Hopper**: commerciali/piattaforma-specifici, assenti per definizione.
 - Non è stato toccato nulla del funzionamento interno dell'harness: nessuna modifica a
   `dashboard.mjs`, `harness.mjs` o `package.json`.
 
+**4. Utente non-root (dopo lo spostamento degli engine in `/opt`)** — la stessa decompilazione
+da `tester08`, che non può leggere `/root`:
+
+```bash
+sudo -u tester08 env -i HOME=/home/tester08 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/snap/bin \
+  /usr/local/bin/rea decompile /opt/rea-tools/targets/native/pwcheck validate_token --json
+```
+
+Esito: pseudocodice restituito (uscita 0), provider `ghidra 12.1.4`. Verificato anche
+`inspect-binary-layout` da utente: provider `pwntools-elf` con `pwntools@4.15.0;pyelftools@0.33`.
+
 ## Come si verifica (test di fumo)
 
 ```bash
 rea doctor --json | jq -r '.checks[] | select(.ok==false) | .name'   # attesi: hopper, ida-registration, registration:*
-rea decompile /root/rea-tools/targets/native/pwcheck validate_token --json   # deve mostrare s3cr3t-token-value
+rea decompile /opt/rea-tools/targets/native/pwcheck validate_token --json   # deve mostrare s3cr3t-token-value
 ```
 
-Target di prova (binari e app Electron) in `/root/rea-tools/targets/`: fuori dal repo, non pubblicati.
+Target di prova (binari e app Electron) in `/opt/rea-tools/targets/`: leggibili da tutti, non
+pubblicati nel repo.

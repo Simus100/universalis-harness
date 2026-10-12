@@ -70,9 +70,14 @@ quando cambia, quindi le nuove skill diventano attive senza riavvio (entro il co
 
 ```bash
 bash scripts/skills-sync-istanze.sh            # anteprima: mancanti e diverse per ogni istanza
-bash scripts/skills-sync-istanze.sh --applica  # backup, copia, chown, verifica per istanza
+bash scripts/skills-sync-istanze.sh --applica  # backup, copia, chown, relink, verifica
 bash scripts/skills-sync-istanze.sh --applica /home/tester07   # una sola istanza
 ```
+
+Oltre a copiare le skill mancanti e aggiornare quelle vecchie, `--applica` **riporta a symlink**
+le copie reali che stanno nelle cartelle globali dell'istanza (`~/.agents/skills`,
+`~/.claude/skills`): servono, perché `npx hyperframes init` e `skills update` le reinstallano lì e
+una copia reale con lo stesso nome di quella in `skills/` produce una collisione.
 
 **Prudenza incorporata:** lo script si astiene dalle istanze con `HOME=/root` (`pi-harness`,
 `tester_01`). Lì le stesse skill sono già raggiungibili via symlink da `/root/.agents/skills` e
@@ -82,14 +87,50 @@ una copia reale in `skills/` produrrebbe una **collisione di nome** (è il probl
 Va rilanciato dopo aver modificato o aggiunto una skill in `pi-harness`, perché le altre istanze
 non la vedono da sole.
 
-## Limite aperto: REA non è utilizzabile dagli utenti non-root
+## Risorse condivise: cosa serve perché HyperFrames e REA funzionino su tutte le istanze
 
-`rea-cli` è stata copiata anche a `tester07`/`tester08`, e il comando `rea` è eseguibile da tutti
-(`/usr/local/bin/rea`), ma **gli engine di analisi stanno sotto `/root`**
-(`/root/rea-tools/ghidra_12.1.4_PUBLIC`, il venv di pwntools, WABT) e `/root` non è leggibile dagli
-utenti: per loro `rea` funziona solo per le parti che non richiedono un engine (per esempio
-l'analisi statica JavaScript/Electron), mentre pseudocodice e layout binario falliscono col
-provider non disponibile. Per renderlo pienamente utilizzabile servirebbe spostare gli engine in
-una posizione leggibile (per esempio `/opt/rea-tools`) e aggiornare di conseguenza il wrapper
-`/usr/local/bin/rea` — decisione rimandata all'utente, perché espone Ghidra a tutti gli account
-della macchina.
+Le skill da sole non bastano: servono la CLI, gli engine e il browser. Stato attuale
+(verificato su `tester07` e `tester08` come utenti reali):
+
+| Risorsa | Dove | Perché è condivisa |
+|---|---|---|
+| CLI HyperFrames | `/usr/bin/hyperframes` (0.8.150, npm globale) | accessibile a tutti, nessun `npx` che riscarica |
+| FFmpeg / FFprobe | `/usr/bin/ffmpeg`, `/usr/bin/ffprobe` | pacchetti di sistema |
+| Chrome Headless Shell | `/opt/hyperframes-chrome` | 261 MB; ogni utente ha un **symlink** in `~/.cache/hyperframes/chrome` |
+| Engine di REA (Ghidra 12.1.4, pwntools, WABT) | `/opt/rea-tools` | leggibili da tutti; il wrapper `/usr/local/bin/rea` li imposta |
+| Skill | `skills/` di ogni istanza (+ symlink nelle sue globali) | una copia fisica per istanza |
+
+**Perché `/opt` e non `/root`.** `/root` è `drwx------`: gli utenti non-root non possono
+attraversarlo, quindi né Ghidra né il Chrome dell'istanza di root erano utilizzabili da loro.
+Spostare gli engine in `/opt` e il Chrome in `/opt/hyperframes-chrome` (con symlink per utente) è
+ciò che li rende disponibili a tutti.
+
+**Prove eseguite come utente reale** (`sudo -u tester08` / `tester07`, con `HOME` e `PATH` loro):
+
+- REA: `rea decompile /opt/rea-tools/targets/native/pwcheck validate_token --json` → pseudocodice
+  con `s3cr3t-token-value`; `inspect-binary-layout` → provider `pwntools-elf` attivo.
+- HyperFrames: `hyperframes init hf-test --non-interactive` + `hyperframes render --quality draft`
+  → MP4 di 10 s (300 frame) prodotto in ~29-31 s, con Chrome Headless Shell e FFmpeg di sistema.
+
+## Attenzione: le home degli utenti sono piccole (322 MB)
+
+`/home/tester07` e `/home/tester08` **non sono sulla partizione grande**: sono due filesystem loop
+da **322 MB**. La copia del Chrome (261 MB) li aveva portati al 100% di occupazione, bloccando il
+primo render tentato dentro la home (`Low disk space — 0.0 GB free`). Dopo lo spostamento in
+`/opt` + symlink: 264-299 MB liberi per utente.
+
+Conseguenze pratiche:
+
+- **i video si renderizzano fuori dalla home** (`/var/tmp/<progetto>`), perché i render producono
+  file temporanei grandi: la home non basta;
+- **cache e browser condivisi restano in `/opt`**, mai copiati nelle home;
+- quando si crea un progetto con `hyperframes init` conviene `HYPERFRAMES_SKIP_SKILLS=1` per non
+  reinstallare le skill in `~/.agents/skills` (altrimenti: `bash scripts/skills-sync-istanze.sh
+  --applica` rimette i symlink).
+
+## Nota di percorso
+
+Le istanze che girano con `HOME=/root` (`pi-harness`, `tester_01`) **condividono** le globali di
+root: per loro vale la soluzione a symlink descritta in `media/tool-skill-collisioni.md`. Le
+istanze con home propria (`tester07`, `tester08`) hanno invece una copia fisica ciascuna in
+`skills/` e i symlink solo nelle **loro** globali.

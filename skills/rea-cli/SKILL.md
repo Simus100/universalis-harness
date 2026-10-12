@@ -26,12 +26,15 @@ chiama il binario vero. L'ambiente viene impostato lì, **non** serve esportare 
 
 | Variabile | Valore | Sblocca |
 |---|---|---|
-| `GHIDRA_INSTALL_DIR` | `/root/rea-tools/ghidra_12.1.4_PUBLIC` | pseudocodice, assembly, xrefs, tipi (nativo) |
+| `GHIDRA_INSTALL_DIR` | `/opt/rea-tools/ghidra_12.1.4_PUBLIC` | pseudocodice, assembly, xrefs, tipi (nativo) |
 | `JAVA_HOME` | `/usr/lib/jvm/java-21-openjdk-amd64` | requisito di Ghidra |
-| `REA_PWNTOOLS_PYTHON` | `/root/rea-tools/venv/bin/python` | `inspect-binary-layout` (ELF) |
-| `REA_WABT_BIN_DIRECTORY` | `/root/rea-tools/wabt/bin` | `inspect-wasm-artifact` |
+| `REA_PWNTOOLS_PYTHON` | `/opt/rea-tools/venv/bin/python` | `inspect-binary-layout` (ELF) |
+| `REA_WABT_BIN_DIRECTORY` | `/opt/rea-tools/wabt/bin` | strumenti WABT (`wasm2wat`, `wasm-objdump`) |
 
-Se invochi `/usr/bin/rea` direttamente **Ghidra non viene trovato**: usa `rea`.
+Gli engine stanno in `/opt/rea-tools`, che è **leggibile da tutti**: REA funziona anche
+per le altre istanze dell'harness e per gli utenti non-root (verificato: decompilazione
+da utente `tester08`). Se invochi `/usr/bin/rea` direttamente **Ghidra non viene
+trovato**: usa `rea`.
 
 ## Comandi verificati su questa macchina
 
@@ -51,9 +54,15 @@ rea inspect-artifact ./target --json   # contenitore/binario: cosa è, cosa cont
 # altre superfici
 rea analyze-javascript-application <dir|asar> --json   # app JS/Electron
 rea inspect-binary-layout ./target --json              # sezioni, simboli, offset
-rea inspect-wasm-artifact ./module.wasm --json
 rea inspect-evm-interface ./bytecode.hex --json
+rea inspect-managed-artifact ./assembly.dll --json     # .NET / PE-CLI
 ```
+
+**WASM**: in 6.4.0 l'ispezione dei moduli WASM **non è esposta come comando CLI**
+(esiste solo come tool MCP `inspect_wasm_artifact`, e `inspect-artifact` rifiuta i
+`.wasm` come formato non supportato). Gli strumenti WABT ci sono comunque, in
+`/opt/rea-tools/wabt/bin` (`wasm2wat`, `wasm-objdump`, `wasm-validate`): per un
+modulo WASM si usa direttamente WABT.
 
 Catena tipica su un binario senza simboli (provata, ~65 s totali):
 `search` per la stringa → `xrefs` per l'indirizzo → `decompile` della funzione.
@@ -75,7 +84,7 @@ Catena tipica su un binario senza simboli (provata, ~65 s totali):
    conclusione: sono il motivo per cui REA dice «questo è dimostrato» invece di
    «sembra».
 5. **Test di fumo**, se sospetti un guasto:
-   `rea decompile /root/rea-tools/targets/native/pwcheck validate_token --json`
+   `rea decompile /opt/rea-tools/targets/native/pwcheck validate_token --json`
    deve restituire lo pseudocodice con la stringa `s3cr3t-token-value`.
 
 ## Limiti di questa macchina (dichiarali, non aggirarli)
@@ -86,6 +95,10 @@ Catena tipica su un binario senza simboli (provata, ~65 s totali):
   macOS). Su questo host REA copre il mondo **ELF/PE + JS/Electron + WASM + EVM +
   .NET managed**, non iOS/macOS.
 - **Android non è configurato**: servono `jadx`, `apktool` e `adb`, non installati.
+- **WASM senza comando CLI** (vedi sopra): si usa WABT direttamente.
+- I **target di prova** stanno in `/opt/rea-tools/targets/` (leggibili da tutti); i file
+grandi che produci vanno in `/var/tmp`, non nella home degli utenti (le loro home sono
+filesystem piccoli da 322 MB).
 - **Engine esterni assenti**: Binwalk/Unblob (firmware), JEB (Android commerciale),
   process capture/Frida su hardware reale.
 - Le skill di REA sono installate in `~/.agents/skills/reverse-engineer-anything`

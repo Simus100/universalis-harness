@@ -16,7 +16,10 @@
 #   2. copia le skill di pi-harness nella cartella dell'istanza
 #   3. assegna i file all'utente proprietario dell'istanza (la sua dashboard
 #      deve poterli modificare)
-#   4. verifica l'istanza col suo ambiente reale:
+#   4. riporta a symlink le copie reali nelle globali dell'istanza
+#      (~/.agents/skills, ~/.claude/skills): evita le collisioni di nome che
+#      `npx hyperframes init`/`skills update` ricreano in quelle cartelle
+#   5. verifica l'istanza col suo ambiente reale:
 #      node media/test-skill-collisioni.mjs con HOME/agentDir/DASH_SKILLS_DIR suoi
 #
 # PRUDENZA — perché le istanze si passano a mano. Copiare le skill in un'istanza
@@ -125,6 +128,25 @@ for istanza in "${istanze_ok[@]}"; do
   done
   chown -R "$utente:$gruppo" "$dest"
   echo "    proprietario: $utente:$gruppo"
+
+  # 4) nelle cartelle globali dell'istanza (~/.agents/skills, ~/.claude/skills) le copie
+  #    REALI delle skill che stanno anche in <istanza>/skills diventano symlink: pi carica
+  #    la prima copia con un certo nome e segnala l'altra come collisione. Serve perché
+  #    `npx hyperframes init`/`skills update` reinstallano le skill in quelle cartelle.
+  home_ist="$(env_di_istanza "$istanza" HOME || echo "/home/$(basename "$istanza")")"
+  for gdir in "$home_ist/.agents/skills" "$home_ist/.claude/skills"; do
+    [[ -d "$gdir" ]] || continue
+    for p in "$gdir"/*/; do
+      [[ -e "$p" ]] || continue
+      nome="$(basename "$p")"
+      [[ -L "$gdir/$nome" ]] && continue
+      [[ -d "$dest/$nome" ]] || continue
+      rm -rf "$gdir/$nome"
+      ln -sfn "$dest/$nome" "$gdir/$nome"
+      chown -h "$utente:$gruppo" "$gdir/$nome" 2>/dev/null || true
+      echo "    relink   $gdir/$nome → skills/$nome"
+    done
+  done
 done
 
 echo "backup: $BACKUP_ROOT"
