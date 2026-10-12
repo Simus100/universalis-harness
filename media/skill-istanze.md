@@ -112,21 +112,38 @@ ciò che li rende disponibili a tutti.
 - HyperFrames: `hyperframes init hf-test --non-interactive` + `hyperframes render --quality draft`
   → MP4 di 10 s (300 frame) prodotto in ~29-31 s, con Chrome Headless Shell e FFmpeg di sistema.
 
-## Attenzione: le home degli utenti sono piccole (322 MB)
+## Le home degli utenti: filesystem limitati, e come si ingrandiscono
 
-`/home/tester07` e `/home/tester08` **non sono sulla partizione grande**: sono due filesystem loop
-da **322 MB**. La copia del Chrome (261 MB) li aveva portati al 100% di occupazione, bloccando il
-primo render tentato dentro la home (`Low disk space — 0.0 GB free`). Dopo lo spostamento in
-`/opt` + symlink: 264-299 MB liberi per utente.
+`/home/tester07` e `/home/tester08` **non stanno sulla partizione grande**: sono due filesystem
+ext4 dentro file immagine (`/var/lib/tester07/disk.img`, `/var/lib/tester08/disk.img`), montati
+come `/dev/loop0` e `/dev/loop1`. Erano da **322 MB** — e la copia del Chrome (261 MB) li aveva
+portati al 100%, bloccando il primo render tentato dentro la home (`Low disk space — 0.0 GB free`).
 
-Conseguenze pratiche:
+**Stato attuale (2026-10-12): 948 MB per home**, 924 MB e 875 MB liberi. Ingrandimento eseguito con
+backup preventivo in `/root/home-backup-20261012-213220/`, senza riavviare le istanze:
 
-- **i video si renderizzano fuori dalla home** (`/var/tmp/<progetto>`), perché i render producono
-  file temporanei grandi: la home non basta;
-- **cache e browser condivisi restano in `/opt`**, mai copiati nelle home;
+```bash
+truncate -s 1G /var/lib/testerXX/disk.img   # cresce il file immagine
+losetup -c /dev/loopX                       # il loop device riconosce la nuova dimensione
+resize2fs /dev/loopX                        # ext4 cresce ONLINE, a filesystem montato
+```
+
+È un'operazione di **sola crescita**: non tocca i dati, non richiede unmount né riavvio, e lo spazio
+su disco lo occupano solo i blocchi effettivamente scritti (i file immagine sono sparsi). Lo spazio
+reale disponibile è quello di `/` (193 GB, 170 GB liberi). Per ingrandire ancora: ripetere gli
+stessi tre comandi con la nuova dimensione (nel file immagine e nel loop device).
+
+Restano valide le prassi che tengono fuori dalla home ciò che è grosso:
+
+- **i video si renderizzano fuori dalla home** (`/var/tmp/<progetto>`): i render producono file
+  temporanei grandi;
+- **cache e browser condivisi restano in `/opt`**, mai copiati nelle home (Chrome Headless Shell,
+  engine di REA);
 - quando si crea un progetto con `hyperframes init` conviene `HYPERFRAMES_SKIP_SKILLS=1` per non
   reinstallare le skill in `~/.agents/skills` (altrimenti: `bash scripts/skills-sync-istanze.sh
-  --applica` rimette i symlink).
+  --applica` rimette i symlink);
+- nella home restano comunque `media/` (file generati in chat), `sessions/` e `backups/`: ora
+  c'è spazio, ma un lavoro con molte immagini o video può ancora riempirla.
 
 ## Nota di percorso
 
