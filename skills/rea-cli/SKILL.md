@@ -98,11 +98,11 @@ Catena tipica su un binario senza simboli (provata, ~65 s totali):
 - **WASM senza comando CLI** (vedi sopra): si usa WABT direttamente.
 - I **target di prova** (binari di esempio, app Electron) stanno in `/opt/rea-tools/targets/`:
   leggibili da tutte le istanze.
-- **Dove mettere i file grandi** dipende da chi lavora: questa istanza (`pi-harness`) scrive i
-  file generati in `media/` e può usare `/var/tmp`; le istanze dei tester (`tester07`, `tester08`)
-  hanno a disposizione solo la loro home (948 MB) e la loro cartella grande
-  `/var/lib/testerXX/agent` — **mai `/var/tmp`**, che nel loro servizio è privata ed effimera
-  (`PrivateTmp=yes`). Vedi `media/skill-istanze.md`.
+- **Dove mettere i file grandi**: nello spazio di lavoro della tua istanza. Per le istanze dei
+tester è la loro cartella (`/home/testerXX`, ~950 MB) e **deve bastare**: non usare la cartella
+tecnica `/var/lib/testerXX/agent` (è del motore) né `/var/tmp` (con `PrivateTmp=yes` è privata ed
+effimera). Per `pi-harness` la cartella è `media/`. Se lo spazio finisce: avvisa l'utente e
+attendi — non cancellare nulla da solo. Dettagli nella skill `spazio-di-lavoro`.
 - **Engine esterni assenti**: Binwalk/Unblob (firmware), JEB (Android commerciale),
   process capture/Frida su hardware reale.
 - Le skill di REA sono installate in `~/.agents/skills/reverse-engineer-anything`
