@@ -8,7 +8,7 @@ description: Regola dello spazio di lavoro di questa istanza. Usala prima di pro
 ## Il tuo spazio di lavoro
 
 - **Istanze dei tester** (`tester07`, `tester08`): il tuo spazio è la **tua cartella**
-  (`/home/<utente>`, ~950 MB) — è il filesystem su cui gira anche la dashboard, e per te
+  (`/home/<utente>`, ~1,9 GB) — è il filesystem su cui gira anche la dashboard, e per te
   **deve bastare**. La cartella tecnica `/var/lib/<utente>/agent` è del motore (cache npm,
   credenziali, binari): **non è un'area di lavoro**, non metterci i risultati.
   **Non usare `/var/tmp` né `/tmp`**: il tuo servizio ha `PrivateTmp`, sono cartelle private ed
@@ -26,6 +26,21 @@ bash scripts/spazio-tester.sh            # se sei su pi-harness: stato dei teste
 - Sotto l'**85% di occupazione**: procedi.
 - Sopra l'**85%**: **fermati e avvisa l'utente in chat** con i numeri (usato/libero) e la lista
   dei candidati alla cancellazione con le loro dimensioni. **Attendi che decida lui.**
+
+## Attenzione ai video: soglia dei 1024 MB
+
+HyperFrames **rifiuta di renderizzare** se nella cartella del progetto ci sono **meno di 1024 MB
+liberi** (soglia fissa nel suo codice, nessuna opzione la abbassa: l'ho verificata). Prima di
+avviare un render:
+
+```bash
+df -m .        # guarda la colonna "available"
+```
+
+Se i MB liberi sono sotto 1024, il render fallisce subito con «Low disk space»: dillo all'utente
+**prima** di provarci, proponi di liberare spazio (o di renderizzare un video più corto), e non
+aggirare il limite spostando il lavoro altrove. Lo stesso controllo lo fa
+`bash scripts/spazio-tester.sh`.
 
 ## Cosa non si cancella mai da solo
 

@@ -38,6 +38,7 @@ for a in "$@"; do
 done
 
 soglia_avviso=85   # % di occupazione sopra cui si avvisa l'utente
+soglia_render_mb=1024  # HyperFrames rifiuta il render sotto 1 GB libero (soglia fissa nel suo codice)
 rigenerabili() {
   local home="$1"
   find "$home" -maxdepth 3 \( \
@@ -56,6 +57,7 @@ for home in "${ISTANZE[@]}"; do
   [ -d "$home" ] || { echo "— $home non esiste, salto"; continue; }
   utente="$(stat -c %U "$home")"
   read -r size usato libero perc < <(df -h "$home" | tail -1 | awk '{print $2, $3, $4, $5}')
+  libero_mb="$(df -m "$home" | tail -1 | awk '{print $4}')"
   echo "=== $home (utente $utente)"
   echo "    spazio: $size · usato $usato · libero $libero ($perc)"
 
@@ -77,6 +79,10 @@ for home in "${ISTANZE[@]}"; do
   if [ "$occ" -ge "$soglia_avviso" ]; then
     echo "    ⚠ ATTENZIONE: occupazione ${perc} ≥ soglia ${soglia_avviso}% — avvisa l'utente e chiedi cosa"
     echo "      cancellare: NON liberare nulla da soli."
+  fi
+  if [ "${libero_mb:-9999}" -lt "$soglia_render_mb" ]; then
+    echo "    ⚠ HyperFrames NON potrà renderizzare: servono ≥$((soglia_render_mb/1024)) GB liberi nella cartella"
+    echo "      del progetto, ce ne sono $((libero_mb/1024)) GB. Avvisa l'utente prima di avviare un video."
   fi
 
   if [ "$PULISCI" -eq 1 ] && [ -n "$cand" ]; then

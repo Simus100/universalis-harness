@@ -116,17 +116,26 @@ ciò che li rende disponibili a tutti.
 
 `/home/tester07` e `/home/tester08` **non stanno sulla partizione grande**: sono due filesystem
 ext4 dentro file immagine (`/var/lib/tester07/disk.img`, `/var/lib/tester08/disk.img`), montati
-come `/dev/loop0` e `/dev/loop1`. Erano da **322 MB** — e la copia del Chrome (261 MB) li aveva
-portati al 100%, bloccando il primo render tentato dentro la home (`Low disk space — 0.0 GB free`).
+come `/dev/loop0` e `/dev/loop1`. Sono nate da **322 MB** — e la copia del Chrome (261 MB) le aveva
+portate al 100%, bloccando il primo render tentato dentro la home (`Low disk space — 0.0 GB free`).
 
-**Stato attuale (2026-10-12): 948 MB per home**, 924 MB e 875 MB liberi. Ingrandimento eseguito con
-backup preventivo in `/root/home-backup-20261012-213220/`, senza riavviare le istanze:
+**Stato attuale (2026-10-12): 1,9 GB per home**, 1,8-1,9 GB liberi. Ingrandimento eseguito con
+backup preventivo (`/root/home-backup-20261012-213220` e `/root/home-backup-20261012-214835`),
+senza riavviare le istanze:
 
 ```bash
-truncate -s 1G /var/lib/testerXX/disk.img   # cresce il file immagine
+truncate -s 2G /var/lib/testerXX/disk.img   # cresce il file immagine
 losetup -c /dev/loopX                       # il loop device riconosce la nuova dimensione
 resize2fs /dev/loopX                        # ext4 cresce ONLINE, a filesystem montato
 ```
+
+**Perché 2 GB e non 1.** HyperFrames **rifiuta di renderizzare** se la cartella del progetto ha
+**meno di 1024 MB liberi** (soglia fissa nel suo codice, `checkDisk`: `if (freeMb < 1024)` → «Low
+disk space»; nessuna variabile la abbassa, verificato anche spostando la cache di estrazione).
+Con una home da 948 MB il render era **impossibile per costruzione**, anche a cartella vuota;
+con 1,9 GB liberi funziona: verificato con un render reale dentro la cartella di `tester07` e di
+`tester08` (MP4 di 10 s, ~30 s per render). Se lo spazio libero scende sotto 1 GB, i video
+tornano a fallire: `scripts/spazio-tester.sh` lo segnala.
 
 È un'operazione di **sola crescita**: non tocca i dati, non richiede unmount né riavvio, e lo spazio
 su disco lo occupano solo i blocchi effettivamente scritti (i file immagine sono sparsi). Lo spazio
@@ -135,10 +144,10 @@ stessi tre comandi con la nuova dimensione (nel file immagine e nel loop device)
 
 Restano valide le prassi che tengono fuori dalla home ciò che è grosso:
 
-- **Il GB della home è lo spazio di lavoro dei tester e deve bastare.** I risultati dei lavori
-  (video, export, dataset) si producono lì, non nella cartella tecnica `/var/lib/testerXX/agent`
-  (che è del motore: cache npm, credenziali, binari) e **non** in `/var/tmp`, che nel loro servizio
-  con `PrivateTmp=yes` è una cartella privata ed effimera.
+- **Il filesystem della home è lo spazio di lavoro dei tester e deve bastare** (oggi 1,9 GB).
+  I risultati dei lavori (video, export, dataset) si producono lì, non nella cartella tecnica
+  `/var/lib/testerXX/agent` (che è del motore: cache npm, credenziali, binari) e **non** in
+  `/var/tmp`, che nel loro servizio con `PrivateTmp=yes` è una cartella privata ed effimera.
 - **Quando lo spazio finisce non si cancella nulla da soli.** L'agente controlla lo spazio prima di
   un lavoro pesante; sopra l'85% di occupazione si ferma, avvisa l'utente con i numeri e la lista
   dei candidati (rigenerabili: `renders/`, `node_modules/`, `.cache/`, `*.log`, cartelle di prova) e
@@ -160,7 +169,7 @@ Le due istanze dei tester girano con un servizio systemd **confinato**: `User=te
 
 | | tester07 / tester08 |
 |---|---|
-| **Scrivono** | solo la loro home (948 MB, il loro spazio di lavoro) e `/var/lib/testerXX/agent` (area tecnica del motore, non per i risultati) |
+| **Scrivono** | solo la loro home (1,9 GB, il loro spazio di lavoro) e `/var/lib/testerXX/agent` (area tecnica del motore, non per i risultati) |
 | **Leggono** | la loro home, `/usr`, `/etc`, `/opt` (Chrome e Ghidra condivisi) |
 | **Non vedono** | `/root` (né il codice di pi-harness), la home dell'altro tester, `/usr/bin` e `/etc` in scrittura |
 | **File manager della dashboard** | confinato in `DASH_ROOT=/home/testerXX`: ogni percorso fuori risponde 403, anche attraverso un symlink |
