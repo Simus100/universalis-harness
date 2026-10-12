@@ -105,3 +105,14 @@ skills/product-launch-video/
 # Restano locali (nella cartella dei file generati): servono a mostrarle in chat, non sono codice
 # né parte del prodotto. Se una serve davvero nella documentazione, va copiata in docs/images/.
 media/web-*
+
+# ---- progetto video nexus-promo: artefatti rigenerabili, non codice ----
+# Le catture del sito, i render, i fotogrammi di controllo e gli asset immagine/audio si
+# rifanno con i comandi documentati in media/nexus-promo/README.md (cattura, voce piper,
+# musica ffmpeg, assemble, render). Tenerli versionati significherebbe 55+ MB di binari
+# nel repository pubblico che cambiano a ogni iterazione del video.
+media/nexus-promo/capture/
+media/nexus-promo/renders/
+media/nexus-promo/snapshots/
+media/nexus-promo/assets/
+media/nexus-promo/builds/

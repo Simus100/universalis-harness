@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="it">
+  <head><meta charset="UTF-8" /><title>v03 — La sintesi del giorno</title></head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #v03-root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif; }
+        #v03-occhiello { position: absolute; left: 60px; top: 120px; font-size: 17px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #78d8ee; }
+        #v03-view { position: absolute; left: 0; top: 166px; width: 1080px; height: 408px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); background: #0a0f16; }
+        #v03-shot { position: absolute; left: 0; top: 0; width: 1080px; transform-origin: 50% 44%; }
+        #v03-shot img { display: block; width: 1080px; height: auto; }
+        #v03-labels { position: absolute; left: 60px; right: 60px; top: 720px; display: flex; flex-direction: column; gap: 44px; }
+        .v03-lab { border-top: 1px solid rgba(174,199,228,0.24); padding-top: 14px; opacity: 0.14; }
+        .v03-lab .k { font-size: 16px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #aeb8c5; }
+        .v03-lab .v { font-family: "P052", serif; font-weight: 700; font-size: 42px; line-height: 1.14; margin-top: 8px; }
+      </style>
+      <div id="v03-root" data-composition-id="v03-sintesi" data-width="1080" data-height="1920" data-duration="6.7" data-fps="30">
+        <div id="v03-occhiello">Aion Brief · la sintesi del giorno</div>
+        <div id="v03-view" data-layout-allow-overflow>
+          <div id="v03-shot" data-layout-allow-overflow><img src="assets/brief-plate.png" alt="Sezione Aion Brief del sito" /></div>
+        </div>
+        <div id="v03-labels">
+          <div class="v03-lab" id="v03-lab1"><div class="k">Segnale dominante</div><div class="v">Startup</div></div>
+          <div class="v03-lab" id="v03-lab2"><div class="k">Tema principale</div><div class="v">Riposizionamento competitivo</div></div>
+          <div class="v03-lab" id="v03-lab3"><div class="k">Cosa osservare</div><div class="v">Capacità di trasformare annuncio in adozione reale</div></div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#v03-shot", { scale: 1.32, x: 0, y: 120 }, { scale: 1.0, x: 0, y: 0, duration: 2.45, ease: "power2.out" }, 0.05);
+          ["#v03-lab1", "#v03-lab2", "#v03-lab3"].forEach(function (sel, i) {
+            const t = 3.9 + i * 0.82;
+            tl.fromTo(sel, { opacity: 0.14, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, t);
+            tl.fromTo(sel + " .k", { color: "#aeb8c5" }, { color: "#78d8ee", duration: 0.4, ease: "power1.out" }, t + 0.1);
+          });
+          window.__timelines["v03-sintesi"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

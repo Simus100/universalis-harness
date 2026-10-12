@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8">
+    <title>03 — La sintesi del giorno</title>
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #f03-root {
+          position: relative; width: 100%; height: 100%; overflow: hidden;
+          background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif;
+        }
+        #f03-fondo { position: absolute; inset: 0; background: #0c1119; }
+        #f03-occhiello {
+          position: absolute; left: 340px; top: 34px; font-size: 18px; font-weight: 700;
+          letter-spacing: 0.26em; text-transform: uppercase; color: #78d8ee;
+        }
+        #f03-view {
+          position: absolute; left: 340px; top: 76px; width: 1240px; height: 452px;
+          overflow: hidden; border: 1px solid rgba(174,199,228,0.24); background: #0a0f16;
+        }
+        #f03-shot { position: absolute; left: 0; top: 0; width: 1240px; height: 990px; transform-origin: 50% 34%; }
+        #f03-shot img { display: block; width: 1240px; height: 990px; }
+        #f03-labels {
+          position: absolute; left: 340px; right: 580px; top: 566px;
+          display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px;
+        }
+        .f03-lab { border-top: 1px solid rgba(174,199,228,0.24); padding-top: 16px; }
+        .f03-lab .regola { position: absolute; height: 1px; background: #78d8ee; width: 0; }
+        .f03-lab .k {
+          font-size: 16px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+          color: #aeb8c5;
+        }
+        .f03-lab .v {
+          font-family: "P052", serif; font-weight: 700; font-size: 34px; line-height: 1.12; margin-top: 8px;
+          color: #edf1f5;
+        }
+        .f03-lab.acceso .k { color: #78d8ee; }
+      </style>
+      <div data-hf-id="hf-6o1b" id="f03-root" data-composition-id="03-sintesi" data-width="1920" data-height="1080" data-duration="6.7" data-fps="30">
+        <div data-hf-id="hf-rp4j" id="f03-fondo"></div>
+        <div data-hf-id="hf-4nb0" id="f03-occhiello">Aion Brief · la sintesi del giorno</div>
+        <div data-hf-id="hf-k07p" id="f03-view" data-layout-allow-overflow="">
+          <div data-hf-id="hf-ciki" id="f03-shot" data-layout-allow-overflow="">
+            <img data-hf-id="hf-rp6u" src="assets/brief-plate.png" alt="Sezione Aion Brief del sito">
+          </div>
+        </div>
+        <div data-hf-id="hf-33sy" id="f03-labels">
+          <div data-hf-id="hf-g9z1" class="f03-lab" id="f03-lab1">
+            <div data-hf-id="hf-0cot" class="k">Segnale dominante</div>
+            <div data-hf-id="hf-shij" class="v">Startup</div>
+          </div>
+          <div data-hf-id="hf-k832" class="f03-lab" id="f03-lab2">
+            <div data-hf-id="hf-3q07" class="k">Tema principale</div>
+            <div data-hf-id="hf-3vhf" class="v">Riposizionamento competitivo</div>
+          </div>
+          <div data-hf-id="hf-o673" class="f03-lab" id="f03-lab3">
+            <div data-hf-id="hf-id6h" class="k">Cosa osservare</div>
+            <div data-hf-id="hf-mzcs" class="v">Capacità di trasformare annuncio in adozione reale</div>
+          </div>
+        </div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+
+          // 0,0–2,4  si parte stretti sul riquadro "cosa osservare" e lo zoom-out parte da subito.
+          tl.fromTo(
+            "#f03-shot",
+            { scale: 1.9, x: 0, y: 128 },
+            { scale: 1.0, x: 0, y: 0, duration: 2.45, ease: "power2.out" },
+            0.05,
+          );
+
+          // 3,9 / 4,7 / 5,4  le tre etichette si accendono quando la voce le nomina.
+          ["#f03-lab1", "#f03-lab2", "#f03-lab3"].forEach(function (sel, i) {
+            const t = 3.9 + i * 0.82;
+            tl.fromTo(sel, { opacity: 0.12, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, t);
+            tl.fromTo(sel + " .k", { color: "#aeb8c5" }, { color: "#78d8ee", duration: 0.4, ease: "power1.out" }, t + 0.1);
+          });
+
+          window.__timelines["03-sintesi"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

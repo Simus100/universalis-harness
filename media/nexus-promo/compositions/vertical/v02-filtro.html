@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="it">
+  <head><meta charset="UTF-8" /><title>v02 — Il filtro</title></head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #v02-root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif; }
+        #v02-riga { position: absolute; left: 70px; right: 70px; top: 300px; text-align: center; font-family: "P052", serif; font-size: 52px; line-height: 1.2; opacity: 0; }
+        #v02-marca { position: absolute; left: 0; right: 0; top: 330px; text-align: center; opacity: 0; }
+        #v02-marca .nome { font-family: "P052", serif; font-weight: 700; font-size: 52px; }
+        #v02-regola { width: 340px; height: 1px; background: rgba(174,199,228,0.42); margin: 20px auto 0; transform-origin: 50% 50%; }
+        #v02-hair1 { position: absolute; left: 70px; right: 70px; top: 560px; height: 1px; background: rgba(174,199,228,0.24); }
+        #v02-hair2 { position: absolute; left: 70px; right: 70px; bottom: 340px; height: 1px; background: rgba(174,199,228,0.24); }
+        #v02-pila { position: absolute; left: 70px; right: 70px; top: 620px; bottom: 360px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
+        .v02-num { font-family: "P052", serif; font-weight: 700; font-size: 230px; line-height: 0.9; letter-spacing: -0.03em; }
+        #v02-c9 { color: #78d8ee; }
+        .v02-lab { font-size: 19px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #aeb8c5; opacity: 0; margin-top: 12px; }
+        #v02-freccia { position: relative; width: 2px; height: 120px; background: rgba(174,199,228,0.45); transform-origin: 50% 0%; }
+        #v02-freccia::after { content: ""; position: absolute; left: -11px; bottom: -2px; border-top: 22px solid rgba(174,199,228,0.45); border-left: 11px solid transparent; border-right: 11px solid transparent; }
+      </style>
+      <div id="v02-root" data-composition-id="v02-filtro" data-width="1080" data-height="1920" data-duration="7" data-fps="30">
+        <div id="v02-riga">Il rumore non è informazione.</div>
+        <div id="v02-marca"><div class="nome">Altair Nexus</div><div id="v02-regola"></div></div>
+        <div id="v02-hair1"></div>
+        <div id="v02-pila">
+          <div class="v02-num" id="v02-c151">151</div>
+          <div class="v02-lab" id="v02-l151">fonti analizzate</div>
+          <div id="v02-freccia"></div>
+          <div class="v02-num" id="v02-c9">9</div>
+          <div class="v02-lab" id="v02-l9">storie in edizione</div>
+        </div>
+        <div id="v02-hair2"></div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+          tl.fromTo("#v02-riga", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.25);
+          tl.fromTo("#v02-c151", { y: 0 }, { y: 3, duration: 0.14, repeat: 10, yoyo: true, ease: "none" }, 0.3);
+          tl.to("#v02-riga", { opacity: 0, y: -26, duration: 0.4, ease: "power2.in" }, 1.9);
+          tl.fromTo("#v02-c151", { y: 3 }, { y: 0, duration: 0.25, ease: "power2.out", immediateRender: false }, 2.1);
+          tl.fromTo("#v02-marca", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 2.3);
+          tl.fromTo("#v02-regola", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, 2.45);
+          tl.fromTo("#v02-freccia", { scaleY: 0 }, { scaleY: 1, duration: 0.7, ease: "power3.out" }, 2.7);
+          tl.fromTo("#v02-l151", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 3.1);
+          const nove = { v: 0 };
+          tl.fromTo(nove, { v: 0 }, {
+            v: 9, duration: 0.7, ease: "power2.out", snap: { v: 1 },
+            onUpdate: function () { document.getElementById("v02-c9").textContent = String(Math.round(nove.v)); },
+          }, 5.55);
+          tl.fromTo("#v02-c9", { scale: 1.06 }, { scale: 1, duration: 0.7, ease: "power3.out" }, 5.55);
+          tl.fromTo("#v02-l9", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 5.95);
+          window.__timelines["v02-filtro"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

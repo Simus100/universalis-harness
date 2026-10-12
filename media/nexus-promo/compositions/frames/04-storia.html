@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8">
+    <title>04 — La storia smontata</title>
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #f04-root {
+          position: relative; width: 100%; height: 100%; overflow: hidden;
+          background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif;
+        }
+        #f04-fondo { position: absolute; inset: 0; background: #0c1119; }
+        #f04-occhiello {
+          position: absolute; left: 90px; top: 40px; font-size: 18px; font-weight: 700;
+          letter-spacing: 0.26em; text-transform: uppercase; color: #78d8ee;
+        }
+        #f04-doc {
+          position: absolute; left: 90px; top: 90px; width: 940px; height: 800px;
+          overflow: hidden; border: 1px solid rgba(174,199,228,0.24); background: #0a0f16;
+        }
+        #f04-page { position: absolute; left: -390px; top: 0; width: 1920px; }
+        #f04-page img { display: block; width: 1920px; height: auto; }
+        #f04-col { position: absolute; left: 1090px; right: 90px; top: 130px; display: flex; flex-direction: column; gap: 34px; }
+        .f04-card {
+          border: 1px solid rgba(174,199,228,0.24); background: rgba(255,255,255,0.03);
+          padding: 26px 28px 30px; opacity: 0.22;
+        }
+        .f04-card .k {
+          font-size: 16px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #aeb8c5;
+        }
+        .f04-card p {
+          font-family: "P052", serif; font-weight: 400; font-size: 31px; line-height: 1.32;
+          margin: 14px 0 0; color: #edf1f5;
+        }
+        .f04-card.acceso { border-color: rgba(120,216,238,0.55); opacity: 1; }
+        .f04-card.acceso .k { color: #78d8ee; }
+        #f04-fonte {
+          position: absolute; left: 1090px; top: 800px; display: flex; align-items: center; gap: 18px;
+          opacity: 0.22;
+        }
+        #f04-fonte .pill {
+          border: 1px solid rgba(174,199,228,0.45); border-radius: 999px; padding: 10px 22px;
+          font-size: 19px; letter-spacing: 0.08em; text-transform: uppercase; color: #edf1f5;
+        }
+        #f04-fonte .cat { font-size: 19px; letter-spacing: 0.14em; text-transform: uppercase; color: #aeb8c5; }
+        #f04-fonte.acceso .pill { border-color: #78d8ee; color: #78d8ee; }
+      </style>
+      <div data-hf-id="hf-j2vu" id="f04-root" data-composition-id="04-storia" data-width="1920" data-height="1080" data-duration="7.6" data-fps="30">
+        <div data-hf-id="hf-kkrc" id="f04-fondo"></div>
+        <div data-hf-id="hf-yjtp" id="f04-occhiello">Dentro la storia</div>
+        <div data-hf-id="hf-vq0r" id="f04-doc" data-layout-allow-overflow="">
+          <div data-hf-id="hf-vzu6" id="f04-page" data-layout-allow-overflow="">
+            <img data-hf-id="hf-6fc0" src="assets/story-1920.png" alt="Pagina della storia sul sito">
+          </div>
+        </div>
+        <div data-hf-id="hf-yub0" id="f04-col">
+          <div data-hf-id="hf-3h1z" class="f04-card" id="f04-c2">
+            <div data-hf-id="hf-6lg3" class="k">Perché conta</div>
+            <p data-hf-id="hf-vife">Il valore sanitario dipende dalla validazione del modello e dalle garanzie sull'uso delle informazioni, non dalla sola scala annunciata.</p>
+          </div>
+          <div data-hf-id="hf-slkc" class="f04-card" id="f04-c1">
+            <div data-hf-id="hf-fscd" class="k">L'opinione di Aion</div>
+            <p data-hf-id="hf-9uuz">Sul fronte startup il punto non è ripetere la cronaca, ma capire se conta la capacità di finanziare crescita, distribuzione e resistenza nel tempo.</p>
+          </div>
+        </div>
+        <div data-hf-id="hf-8azu" id="f04-fonte">
+          <span data-hf-id="hf-r2jb" class="pill">Fonte: TechCrunch</span>
+          <span data-hf-id="hf-joe6" class="cat">Categoria · Startup</span>
+        </div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+
+          // 0,0–2,6  traversata della pagina reale: movimento costante, non pan decorativo.
+          tl.fromTo("#f04-doc", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 0.05);
+          tl.fromTo(
+            "#f04-page",
+            { y: 0 },
+            { y: -240, duration: 5.5, ease: "power1.out" },
+            0.05,
+          );
+          tl.to("#f04-page", { y: -330, duration: 2.05, ease: "power1.out" }, 5.55);
+
+          // 2,9  "perché conta" — la card si accende mentre lo scorrimento rallenta.
+          tl.fromTo("#f04-c2", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.6, ease: "power1.out" }, 2.9);
+          tl.to("#f04-c2", { opacity: 1, duration: 0.5, ease: "power2.out" }, 2.9);
+
+          // 4,15  "e la lettura di Aion".
+          tl.fromTo("#f04-c1", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.6, ease: "power1.out" }, 4.15);
+          tl.to("#f04-c1", { opacity: 1, duration: 0.5, ease: "power2.out" }, 4.15);
+
+          // 5,7  la fonte, ultimo elemento: è il punto che distingue il prodotto.
+          tl.to("#f04-fonte", { opacity: 1, duration: 0.5, ease: "power2.out" }, 5.7);
+
+          window.__timelines["04-storia"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8">
+    <title>02 — Il filtro</title>
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Roman.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "P052"; src: url("assets/fonts/P052-Bold.otf") format("opentype"); font-weight: 700; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype"); font-weight: 400; }
+        @font-face { font-family: "Nimbus Sans"; src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype"); font-weight: 700; }
+        #f02-root {
+          position: relative; width: 100%; height: 100%; overflow: hidden;
+          background: #0c1119; color: #edf1f5; font-family: "Nimbus Sans", sans-serif;
+        }
+        #f02-fondo { position: absolute; inset: 0; background: #0c1119; }
+        #f02-riga {
+          position: absolute; left: 0; right: 0; top: 232px; text-align: center;
+          font-family: "P052", serif; font-weight: 400; font-size: 62px; color: #edf1f5; opacity: 0;
+        }
+        #f02-marca {
+          position: absolute; left: 0; right: 0; top: 250px; text-align: center; opacity: 0;
+        }
+        #f02-marca .nome { font-family: "P052", serif; font-weight: 700; font-size: 46px; letter-spacing: 0.01em; }
+        #f02-marca .regola { width: 300px; height: 1px; background: rgba(174,199,228,0.42); margin: 18px auto 0; transform-origin: 50% 50%; }
+        #f02-centro {
+          position: absolute; left: 90px; right: 90px; top: 400px; height: 380px;
+          display: flex; align-items: center; justify-content: center; gap: 64px;
+        }
+        .f02-lato { display: flex; flex-direction: column; align-items: center; }
+        .f02-num { font-family: "P052", serif; font-weight: 700; font-size: 300px; line-height: 0.86; letter-spacing: -0.03em; }
+        #f02-c9 { color: #78d8ee; }
+        .f02-lab {
+          margin-top: 26px; font-size: 20px; font-weight: 700; letter-spacing: 0.22em;
+          text-transform: uppercase; color: #aeb8c5; opacity: 0;
+        }
+        #f02-freccia {
+          position: relative; width: 190px; height: 2px; background: rgba(174,199,228,0.45);
+          transform-origin: 0% 50%;
+        }
+        #f02-freccia::after {
+          content: ""; position: absolute; right: -2px; top: -9px;
+          border-left: 22px solid rgba(174,199,228,0.45);
+          border-top: 10px solid transparent; border-bottom: 10px solid transparent;
+        }
+        #f02-hair1 { position: absolute; left: 90px; right: 90px; top: 372px; height: 1px; background: rgba(174,199,228,0.24); }
+        #f02-hair2 { position: absolute; left: 90px; right: 90px; bottom: 214px; height: 1px; background: rgba(174,199,228,0.24); }
+      </style>
+      <div data-hf-id="hf-m1j0" id="f02-root" data-composition-id="02-filtro" data-width="1920" data-height="1080" data-duration="7" data-fps="30">
+        <div data-hf-id="hf-1hf2" id="f02-fondo"></div>
+        <div data-hf-id="hf-4s1u" id="f02-riga">Il rumore non è informazione.</div>
+        <div data-hf-id="hf-wzi4" id="f02-marca">
+          <div data-hf-id="hf-omo1" class="nome">Altair Nexus</div>
+          <div data-hf-id="hf-l0iv" class="regola" id="f02-regola"></div>
+        </div>
+        <div data-hf-id="hf-2301" id="f02-hair1"></div>
+        <div data-hf-id="hf-4iaf" id="f02-centro">
+          <div data-hf-id="hf-837b" class="f02-lato">
+            <div data-hf-id="hf-livz" class="f02-num" id="f02-c151">151</div>
+            <div data-hf-id="hf-48j1" class="f02-lab" id="f02-l151">fonti analizzate</div>
+          </div>
+          <div data-hf-id="hf-pdp5" id="f02-freccia"></div>
+          <div data-hf-id="hf-jj93" class="f02-lato">
+            <div data-hf-id="hf-oavz" class="f02-num" id="f02-c9">9</div>
+            <div data-hf-id="hf-jr1m" class="f02-lab" id="f02-l9">storie in edizione</div>
+          </div>
+        </div>
+        <div data-hf-id="hf-6142" id="f02-hair2"></div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+
+          // 0,25–1,9  la frase-tesi entra e resta mentre il 151 è ancora "rumore": trema.
+          tl.fromTo("#f02-riga", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 0.25);
+          tl.fromTo("#f02-c151", { y: 0 }, { y: 3, duration: 0.14, repeat: 10, yoyo: true, ease: "none" }, 0.3);
+
+          // 1,9–2,4  la frase esce, il numero si ferma e si allinea: entra il nome del prodotto.
+          tl.to("#f02-riga", { opacity: 0, y: -26, duration: 0.4, ease: "power2.in" }, 1.9);
+          tl.fromTo("#f02-c151", { y: 3 }, { y: 0, duration: 0.25, ease: "power2.out", immediateRender: false }, 2.1);
+          tl.fromTo("#f02-marca", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 2.3);
+          tl.fromTo("#f02-regola", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, 2.45);
+
+          // 2,6–3,4  la freccia si disegna e l'etichetta delle fonti appare.
+          tl.fromTo("#f02-freccia", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, 2.7);
+          tl.fromTo("#f02-l151", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 3.1);
+
+          // 5,6  la voce dice "ne tiene nove": il 9 conta su e si accende.
+          const nove = { v: 0 };
+          tl.fromTo(
+            nove,
+            { v: 0 },
+            {
+              v: 9,
+              duration: 0.7,
+              ease: "power2.out",
+              snap: { v: 1 },
+              onUpdate: function () {
+                document.getElementById("f02-c9").textContent = String(Math.round(nove.v));
+              },
+            },
+            5.55,
+          );
+          tl.fromTo("#f02-c9", { scale: 1.06 }, { scale: 1, duration: 0.7, ease: "power3.out" }, 5.55);
+          tl.fromTo("#f02-l9", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 5.95);
+
+          window.__timelines["02-filtro"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

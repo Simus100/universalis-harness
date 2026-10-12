@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8">
+    <title>01 — Il rumore</title>
+  </head>
+  <body>
+    <template>
+      <style>
+        @font-face {
+          font-family: "P052";
+          src: url("assets/fonts/P052-Roman.otf") format("opentype");
+          font-weight: 400;
+          font-style: normal;
+        }
+        @font-face {
+          font-family: "P052";
+          src: url("assets/fonts/P052-Bold.otf") format("opentype");
+          font-weight: 700;
+          font-style: normal;
+        }
+        @font-face {
+          font-family: "Nimbus Sans";
+          src: url("assets/fonts/NimbusSans-Regular.otf") format("opentype");
+          font-weight: 400;
+          font-style: normal;
+        }
+        @font-face {
+          font-family: "Nimbus Sans";
+          src: url("assets/fonts/NimbusSans-Bold.otf") format("opentype");
+          font-weight: 700;
+          font-style: normal;
+        }
+        #f01-root {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          background: #0c1119;
+          font-family: "Nimbus Sans", sans-serif;
+          color: #edf1f5;
+        }
+        #f01-fondo { position: absolute; inset: 0; background: #0c1119; }
+        #f01-wall {
+          position: absolute; inset: -200px 0 -200px 0;
+          display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px;
+          padding: 0 90px;
+        }
+        .f01-col { position: relative; overflow: hidden; height: 100%; }
+        .f01-track { position: absolute; left: 0; right: 0; top: 0; display: flex; flex-direction: column; gap: 40px; }
+        .f01-item { border-left: 2px solid rgba(174, 199, 228, 0.42); padding-left: 20px; }
+        .f01-cat {
+          font-size: 17px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase;
+          color: #78d8ee; margin-bottom: 8px;
+        }
+        .f01-item h3 {
+          margin: 0; font-family: "P052", serif; font-weight: 700; font-size: 39px; line-height: 1.12;
+          color: #edf1f5;
+        }
+        #f01-velo {
+          position: absolute; inset: 0;
+          background: linear-gradient(90deg, rgba(12,17,25,0.96) 0%, rgba(12,17,25,0.34) 42%, rgba(12,17,25,0.34) 58%, rgba(12,17,25,0.96) 100%);
+        }
+        #f01-buio { position: absolute; inset: 0; background: #0c1119; opacity: 0; }
+        #f01-hook {
+          position: absolute; left: 90px; bottom: 250px;
+          font-family: "P052", serif; font-weight: 700; font-size: 92px; line-height: 1.04;
+          letter-spacing: -0.01em; opacity: 0;
+        }
+        #f01-hook .parola { display: inline-block; }
+        #f01-hook .acc { color: #78d8ee; }
+      </style>
+      <div data-hf-id="hf-fhix" id="f01-root" data-composition-id="01-rumore" data-width="1920" data-height="1080" data-duration="7.5" data-fps="30">
+        <div data-hf-id="hf-5fv5" id="f01-fondo"></div>
+        <div data-hf-id="hf-7vg2" id="f01-wall" data-layout-allow-overflow="" data-layout-allow-occlusion="">
+          <div data-hf-id="hf-rhr2" class="f01-col">
+            <div data-hf-id="hf-kkef" class="f01-track" id="f01-c1">
+              <div data-hf-id="hf-p77z" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-yjlc" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-fesk" data-layout-allow-occlusion="">Attacchi Houthi, Riad promette una risposta «seria»</h3></div>
+              <div data-hf-id="hf-0u7j" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-r2uj" class="f01-cat" data-layout-allow-occlusion="">Mercati</div><h3 data-hf-id="hf-7nyk" data-layout-allow-occlusion="">San Francisco incentiva la conversione degli uffici in abitazioni</h3></div>
+              <div data-hf-id="hf-0fwi" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-uagx" class="f01-cat" data-layout-allow-occlusion="">Startup</div><h3 data-hf-id="hf-cih3" data-layout-allow-occlusion="">Apple punta su Huxe: assunzioni e licenza tecnologica</h3></div>
+              <div data-hf-id="hf-01lh" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-jdzc" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-ga4n" data-layout-allow-occlusion="">Abramovich, la BBC denuncia documenti falsificati</h3></div>
+              <div data-hf-id="hf-2tqo" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-z0yd" class="f01-cat" data-layout-allow-occlusion="">Startup</div><h3 data-hf-id="hf-ys8k" data-layout-allow-occlusion="">Ultrahuman e Abu Dhabi sviluppano un modello di età biologica</h3></div>
+              <div data-hf-id="hf-2ffn" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-i729" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-svm2" data-layout-allow-occlusion="">Diesel russo, crescono le critiche al piano di Trump</h3></div>
+            </div>
+          </div>
+          <div data-hf-id="hf-i1s2" class="f01-col">
+            <div data-hf-id="hf-9ows" class="f01-track" id="f01-c2">
+              <div data-hf-id="hf-214m" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-ilda" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-8on0" data-layout-allow-occlusion="">India, le opposizioni marciano verso la Corte suprema</h3></div>
+              <div data-hf-id="hf-1mtl" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-07vg" class="f01-cat" data-layout-allow-occlusion="">Startup</div><h3 data-hf-id="hf-exzg" data-layout-allow-occlusion="">Ultrahuman e Abu Dhabi sviluppano un modello di età biologica</h3></div>
+              <div data-hf-id="hf-y22c" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-heg7" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-nr2s" data-layout-allow-occlusion="">Yandex ferma un centro dati dopo un attacco ucraino</h3></div>
+              <div data-hf-id="hf-xnrb" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-hsr8" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-n0no" data-layout-allow-occlusion="">Tregua energetica annunciata da Trump: Zelensky apre</h3></div>
+              <div data-hf-id="hf-8qvh" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-lbez" class="f01-cat" data-layout-allow-occlusion="">Mercati</div><h3 data-hf-id="hf-43v5" data-layout-allow-occlusion="">San Francisco incentiva la conversione degli uffici</h3></div>
+              <div data-hf-id="hf-956i" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-ztkf" class="f01-cat" data-layout-allow-occlusion="">Startup</div><h3 data-hf-id="hf-av1j" data-layout-allow-occlusion="">Apple punta su Huxe: assunzioni e licenza tecnologica</h3></div>
+            </div>
+          </div>
+          <div data-hf-id="hf-ig33" class="f01-col">
+            <div data-hf-id="hf-agkl" class="f01-track" id="f01-c3">
+              <div data-hf-id="hf-9jhj" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-glu5" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-9xlz" data-layout-allow-occlusion="">Abramovich, la BBC denuncia documenti falsificati</h3></div>
+              <div data-hf-id="hf-9xsk" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-h056" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-fq32" data-layout-allow-occlusion="">Diesel russo, crescono le critiche al piano di Trump</h3></div>
+              <div data-hf-id="hf-ac3l" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-m64j" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-helo" data-layout-allow-occlusion="">Tregua energetica annunciata da Trump: Zelensky apre</h3></div>
+              <div data-hf-id="hf-aqem" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-mkfk" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-y7n8" data-layout-allow-occlusion="">India, le opposizioni marciano verso la Corte suprema</h3></div>
+              <div data-hf-id="hf-b4pn" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-e9pk" class="f01-cat" data-layout-allow-occlusion="">Geopolitica</div><h3 data-hf-id="hf-n8bw" data-layout-allow-occlusion="">Yandex ferma un centro dati dopo un attacco ucraino</h3></div>
+              <div data-hf-id="hf-bj0o" class="f01-item" data-layout-allow-occlusion=""><div data-hf-id="hf-10hi" class="f01-cat" data-layout-allow-occlusion="">Startup</div><h3 data-hf-id="hf-719d" data-layout-allow-occlusion="">Apple punta su Huxe: assunzioni e licenza</h3></div>
+            </div>
+          </div>
+        </div>
+        <div data-hf-id="hf-0uuj" id="f01-velo" data-layout-allow-occlusion=""></div>
+        <div data-hf-id="hf-ke3c" id="f01-hook">
+          <span data-hf-id="hf-q9m1" class="parola">151</span> <span data-hf-id="hf-2bye" class="parola">fonti.</span>
+          <span data-hf-id="hf-s5b0" class="parola acc">Ogni</span> <span data-hf-id="hf-r9g9" class="parola acc">giorno.</span>
+        </div>
+        <div data-hf-id="hf-7bqi" id="f01-buio"></div>
+      </div>
+      <script>
+        (function () {
+          "use strict";
+          const tl = gsap.timeline({ paused: true });
+
+          // Le tre colonne sono già in movimento a t=0 (primo movimento visibile entro 0,2 s).
+          // Velocità diverse, e un'accelerazione di scatto sulla prima alla parola "Geopolitica".
+          tl.fromTo("#f01-c1", { y: 0 }, { y: -130, duration: 0.45, ease: "power1.in" }, 0);
+          tl.fromTo("#f01-c1", { y: -130 }, { y: -640, duration: 3.0, ease: "sine.in", immediateRender: false }, 0.45);
+          tl.fromTo("#f01-c1", { y: -640 }, { y: -1500, duration: 3.45, ease: "power2.in", immediateRender: false }, 3.45);
+          tl.fromTo("#f01-c2", { y: 0 }, { y: -210, duration: 3.4, ease: "none" }, 0);
+          tl.fromTo("#f01-c2", { y: -210 }, { y: -1080, duration: 3.5, ease: "power1.in", immediateRender: false }, 3.4);
+          tl.fromTo("#f01-c3", { y: 0 }, { y: -420, duration: 6.9, ease: "none" }, 0);
+          tl.to("#f01-c3", { y: -1020, duration: 0.6, ease: "power2.in" }, 6.9);
+
+          // La riga entra quando la voce dice "151 fonti" e si compone parola per parola.
+          tl.fromTo("#f01-hook", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 3.5);
+          tl.fromTo(
+            "#f01-hook .parola",
+            { opacity: 0, y: 14 },
+            { opacity: 1, y: 0, duration: 0.34, stagger: 0.11, ease: "power2.out" },
+            3.6,
+          );
+
+          // Il taglio al nero: le colonne escono verso l'alto e il quadro resta vuoto.
+          tl.to("#f01-wall", { y: -420, duration: 0.6, ease: "power3.in" }, 6.9);
+          tl.to("#f01-hook", { opacity: 0, y: -40, duration: 0.35, ease: "power3.in" }, 6.95);
+          tl.to("#f01-buio", { opacity: 1, duration: 0.3, ease: "power2.in" }, 7.1);
+
+          window.__timelines["01-rumore"] = tl;
+          tl.seek(0);
+        })();
+      </script>
+    </template>
+  </body>
+</html>

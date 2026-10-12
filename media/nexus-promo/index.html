@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #0C1119;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="40"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div
+        id="el-01-rumore"
+        class="scene"
+        data-composition-id="01-rumore"
+        data-composition-src="compositions/frames/01-rumore.html"
+        data-start="0"
+        data-duration="7.5"
+        data-track-index="0"
+      ></div>
+      <audio
+        id="el-01-rumore-voice"
+        src="assets/voce/f1.wav"
+        data-start="0"
+        data-duration="7.5"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-02-filtro"
+        class="scene"
+        data-composition-id="02-filtro"
+        data-composition-src="compositions/frames/02-filtro.html"
+        data-start="7.5"
+        data-duration="7"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-02-filtro-voice"
+        src="assets/voce/f2.wav"
+        data-start="7.5"
+        data-duration="6.5"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-03-sintesi"
+        class="scene"
+        data-composition-id="03-sintesi"
+        data-composition-src="compositions/frames/03-sintesi.html"
+        data-start="14"
+        data-duration="6.7"
+        data-track-index="0"
+      ></div>
+      <audio
+        id="el-03-sintesi-voice"
+        src="assets/voce/f3.wav"
+        data-start="14"
+        data-duration="6.7"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-04-storia"
+        class="scene"
+        data-composition-id="04-storia"
+        data-composition-src="compositions/frames/04-storia.html"
+        data-start="20.7"
+        data-duration="7.6"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-04-storia-voice"
+        src="assets/voce/f4.wav"
+        data-start="20.7"
+        data-duration="7.6"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-05-metriche"
+        class="scene"
+        data-composition-id="05-metriche"
+        data-composition-src="compositions/frames/05-metriche.html"
+        data-start="28.299999999999997"
+        data-duration="6.5"
+        data-track-index="0"
+      ></div>
+      <audio
+        id="el-05-metriche-voice"
+        src="assets/voce/f5.wav"
+        data-start="28.299999999999997"
+        data-duration="6.5"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-06-chiusura"
+        class="scene"
+        data-composition-id="06-chiusura"
+        data-composition-src="compositions/frames/06-chiusura.html"
+        data-start="34.8"
+        data-duration="5.2"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-06-chiusura-voice"
+        src="assets/voce/f6.wav"
+        data-start="34.8"
+        data-duration="5.2"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <!-- BGM -->
+      <audio
+        id="el-bgm"
+        src="assets/musica.wav"
+        data-start="0"
+        data-duration="40"
+        data-track-index="11"
+        data-volume="0.32"
+      ></audio>
+
+      <!-- captions -->
+      <div
+        id="el-captions"
+        class="scene"
+        data-composition-id="captions"
+        data-composition-src="compositions/captions.html"
+        data-start="0"
+        data-duration="40"
+        data-track-index="2"
+        data-track-kind="captions"
+      ></div>
+
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+      // ── frame transitions (injected by transitions.mjs) ──
+      (function () { var tl = window.__timelines["main"];
+        tl.to("#el-02-filtro", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 14);
+        tl.fromTo("#el-03-sintesi", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 14);
+        tl.to({}, { duration: 40 }, 0); // full-span anchor — main.duration() == composition total (Studio master duration)
+      })();
+    </script>
+  </body>
+</html>

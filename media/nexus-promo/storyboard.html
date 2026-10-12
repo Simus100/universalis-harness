@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>nexus-promo — storyboard v1</title>
+    <style>
+      :root {
+        --bg: #070b10;
+        --panel: #0c1119;
+        --card: rgba(255, 255, 255, 0.03);
+        --line: rgba(174, 199, 228, 0.22);
+        --line-strong: rgba(174, 199, 228, 0.42);
+        --text: #edf1f5;
+        --muted: #aeb8c5;
+        --cyan: #78d8ee;
+        --violet: #9ea7ff;
+        --teal: #7cf0d5;
+        --amber: #d9b46f;
+        --serif: "P052", "URW Palladio L", "Palatino Linotype", Palatino, Georgia, serif;
+        --sans: "Nimbus Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: var(--bg); color: var(--text);
+        font-family: var(--sans); font-size: 15px; line-height: 1.55;
+      }
+      .wrap { max-width: 1360px; margin: 0 auto; padding: 56px 32px 96px; }
+      header.top { border-bottom: 1px solid var(--line); padding-bottom: 26px; margin-bottom: 40px; }
+      .kicker { font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--cyan); font-weight: 700; }
+      h1 { font-family: var(--serif); font-size: 46px; font-weight: 700; line-height: 1.06; margin: 14px 0 10px; letter-spacing: -0.01em; }
+      .dek { color: var(--muted); max-width: 68ch; font-size: 16px; }
+      .tags { margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap; }
+      .tag { border: 1px solid var(--line); border-radius: 999px; padding: 5px 14px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+      .actbar { display: flex; align-items: baseline; gap: 14px; margin: 44px 0 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+      .actbar b { font-family: var(--serif); font-size: 22px; font-weight: 700; }
+      .actbar span { color: var(--muted); font-size: 13px; }
+      .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px 26px; }
+      .cell { display: flex; flex-direction: column; }
+      .frame {
+        position: relative; aspect-ratio: 16 / 9; background: var(--panel);
+        border: 1px solid var(--line-strong); overflow: hidden;
+        container-type: inline-size;
+      }
+      .frame .inner { position: absolute; inset: 0; }
+      .labelrow { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; }
+      .labelrow .name { color: var(--text); font-weight: 700; }
+      .labelrow .id { color: var(--muted); }
+      .note { color: var(--muted); font-size: 13px; margin-top: 6px; }
+      .note b { color: var(--text); font-weight: 700; }
+      .chip { display: inline-block; margin-top: 10px; border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan); }
+      img { display: block; width: 100%; height: auto; }
+      .hair { height: 1px; background: var(--line); }
+
+      /* ---- frame 1: il rumore ---- */
+      .f1 .cols { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4cqw; padding: 3cqw; }
+      .f1 .col { display: flex; flex-direction: column; gap: 1.1cqw; opacity: 0.92; }
+      .f1 .t { border-left: 0.15cqw solid var(--line-strong); padding-left: 0.9cqw; }
+      .f1 .t .cat { font-size: 0.95cqw; letter-spacing: 0.2em; text-transform: uppercase; color: var(--cyan); }
+      .f1 .t h4 { font-family: var(--serif); font-size: 2.05cqw; line-height: 1.1; margin: 0.25cqw 0 0; font-weight: 700; }
+      .f1 .veil { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,11,16,0.92), rgba(7,11,16,0.38) 45%, rgba(7,11,16,0.92)); }
+      .f1 .hook { position: absolute; left: 3.4cqw; bottom: 3cqw; font-family: var(--serif); font-size: 3.1cqw; font-weight: 700; line-height: 1.05; }
+      .f1 .hook em { font-style: normal; color: var(--cyan); }
+
+      /* ---- frame 2: il filtro ---- */
+      .f2 .inner { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 1.4cqw; }
+      .f2 .rule { width: 34cqw; }
+      .f2 .num { font-family: var(--serif); font-size: 15cqw; font-weight: 700; line-height: 0.86; letter-spacing: -0.03em; }
+      .f2 .num .arrow { color: var(--muted); font-size: 7cqw; vertical-align: 0.9cqw; }
+      .f2 .num .to { color: var(--cyan); }
+      .f2 .cap { color: var(--muted); font-size: 1.5cqw; letter-spacing: 0.02em; }
+      .f2 .brand { font-family: var(--serif); font-size: 2.4cqw; font-weight: 700; }
+
+      /* ---- frame 3: la sintesi ---- */
+      .f3 .inner { padding: 2.4cqw 3cqw; display: flex; flex-direction: column; gap: 1.6cqw; }
+      .f3 .shot { border: 1px solid var(--line); overflow: hidden; height: 21cqw; position: relative; }
+      .f3 .shot img { width: 100%; }
+      .f3 .shot .zoom { position: absolute; border: 1px solid var(--cyan); box-shadow: 0 0 0 200cqw rgba(7,11,16,0.72); left: 8%; top: 62%; width: 44%; height: 26%; }
+      .f3 .labels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2cqw; }
+      .f3 .lab { border-top: 1px solid var(--line); padding-top: 0.8cqw; }
+      .f3 .lab .k { font-size: 0.95cqw; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cyan); }
+      .f3 .lab .v { font-family: var(--serif); font-size: 1.85cqw; font-weight: 700; margin-top: 0.3cqw; }
+
+      /* ---- frame 4: la storia ---- */
+      .f4 .inner { display: grid; grid-template-columns: 1.15fr 1fr; gap: 2cqw; padding: 2.4cqw 3cqw; }
+      .f4 .doc { border: 1px solid var(--line); padding: 1.6cqw; overflow: hidden; }
+      .f4 .doc h3 { font-family: var(--serif); font-size: 2.1cqw; font-weight: 700; line-height: 1.1; margin: 0 0 1cqw; }
+      .f4 .doc p { margin: 0 0 0.7cqw; font-size: 1.15cqw; color: var(--muted); }
+      .f4 .doc .skeleton { height: 0.62cqw; background: rgba(174,199,228,0.18); margin-bottom: 0.55cqw; }
+      .f4 .side { display: flex; flex-direction: column; gap: 1.2cqw; }
+      .f4 .box { border: 1px solid var(--line); padding: 1.2cqw; background: var(--card); }
+      .f4 .box .k { font-size: 0.9cqw; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cyan); }
+      .f4 .box p { font-family: var(--serif); font-size: 1.5cqw; line-height: 1.25; margin: 0.5cqw 0 0; }
+      .f4 .src { display: flex; gap: 0.8cqw; align-items: center; font-size: 1cqw; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+      .f4 .src .pill { border: 1px solid var(--line-strong); border-radius: 999px; padding: 0.25cqw 0.9cqw; }
+
+      /* ---- frame 5: le metriche ---- */
+      .f5 .inner { padding: 2.6cqw 3cqw; }
+      .f5 .h { font-family: var(--serif); font-size: 2.4cqw; font-weight: 700; margin-bottom: 1.4cqw; }
+      .f5 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1cqw; }
+      .f5 .c { border: 1px solid var(--line); background: var(--card); padding: 1.1cqw; }
+      .f5 .c .k { font-size: 0.85cqw; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+      .f5 .c .v { font-family: var(--serif); font-size: 2.7cqw; font-weight: 700; line-height: 1.02; margin-top: 0.3cqw; }
+      .f5 .c.c3 .v { font-size: 1.6cqw; }
+      .f5 .c .s { font-size: 0.9cqw; color: var(--muted); margin-top: 0.3cqw; }
+
+      /* ---- frame 6: la chiusura ---- */
+      .f6 .inner { display: grid; grid-template-columns: 1.3fr 1fr; }
+      .f6 .shot { position: relative; overflow: hidden; border-right: 1px solid var(--line); }
+      .f6 .shot img { width: 100%; }
+      .f6 .shot .mask { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(7,11,16,0.05), rgba(7,11,16,0.85)); }
+      .f6 .cta { display: flex; flex-direction: column; justify-content: center; gap: 1.1cqw; padding: 2.6cqw; }
+      .f6 .cta .brand { font-family: var(--serif); font-size: 3cqw; font-weight: 700; line-height: 1.02; }
+      .f6 .cta .url { font-size: 1.75cqw; letter-spacing: 0.06em; color: var(--cyan); }
+      .f6 .cta .sig { font-size: 1cqw; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+      .f6 .cta .sig img { width: 9cqw; opacity: 0.8; }
+
+      /* ---- mappa delle giunzioni + token ---- */
+      .seams { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+      .seamcard { border: 1px solid var(--line); padding: 16px 18px; }
+      .seamcard b { font-family: var(--serif); font-size: 17px; }
+      .seamcard p { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+      .tokens { display: grid; grid-template-columns: repeat(3, 1fr); gap: 26px; }
+      .tok { border: 1px solid var(--line); padding: 16px 18px; }
+      .tok h4 { margin: 0 0 10px; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cyan); }
+      .swatch { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; font-size: 13px; color: var(--muted); }
+      .dot { width: 15px; height: 15px; border: 1px solid var(--line-strong); }
+      .bans { margin: 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+      .bans li { margin-bottom: 5px; }
+      .todo { border: 1px dashed var(--line-strong); padding: 40px 20px; text-align: center; color: var(--muted); font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div class="kicker">Altair Nexus · promo</div>
+        <h1>Le notizie che contano — storyboard v1</h1>
+        <p class="dek">
+          Il rumore non è informazione: Altair Nexus riduce 151 fonti a 9 storie che contano.
+          Sei frame, 37 secondi, voce narrante italiana. Materiali reali catturati dal sito.
+        </p>
+        <div class="tags">
+          <span class="tag">16:9 master + 9:16 ricomposto</span>
+          <span class="tag">37 s · 6 frame · 15 righe di voce</span>
+          <span class="tag">preset cartesian · palette Altair Nexus</span>
+          <span class="tag">sottotitoli attivi</span>
+        </div>
+      </header>
+
+      <div class="actbar"><b>Atto I — Il rumore e il filtro</b><span>frame 01–02 · 12 s</span></div>
+      <div class="grid">
+        <div class="cell">
+          <div class="frame f1" id="frame-01">
+            <div class="inner">
+              <div class="cols">
+                <div class="col">
+                  <div class="t"><div class="cat">Geopolitica</div><h4>Attacchi Houthi, Riad promette una risposta «seria»</h4></div>
+                  <div class="t"><div class="cat">Mercati</div><h4>San Francisco incentiva la conversione degli uffici</h4></div>
+                  <div class="t"><div class="cat">Startup</div><h4>Apple punta su Huxe: assunzioni e licenza</h4></div>
+                </div>
+                <div class="col">
+                  <div class="t"><div class="cat">Geopolitica</div><h4>India, le opposizioni marciano verso la Corte suprema</h4></div>
+                  <div class="t"><div class="cat">Startup</div><h4>Ultrahuman e Abu Dhabi sviluppano un modello di età biologica</h4></div>
+                  <div class="t"><div class="cat">Geopolitica</div><h4>Yandex ferma un centro dati dopo un attacco ucraino</h4></div>
+                </div>
+                <div class="col">
+                  <div class="t"><div class="cat">Geopolitica</div><h4>Abramovich, la BBC denuncia documenti falsificati</h4></div>
+                  <div class="t"><div class="cat">Geopolitica</div><h4>Diesel russo, crescono le critiche al piano di Trump</h4></div>
+                  <div class="t"><div class="cat">Geopolitica</div><h4>Tregua energetica annunciata da Trump: Zelensky apre</h4></div>
+                </div>
+              </div>
+              <div class="veil"></div>
+              <div class="hook">151 fonti. <em>Ogni giorno.</em></div>
+            </div>
+          </div>
+          <div class="labelrow"><span class="name">01 · Il rumore</span><span class="id">frame-01 · 0.0–6.0s</span></div>
+          <p class="note"><b>Prima cosa che si muove:</b> le tre colonne scorrono verso l'alto a velocità diverse, con i titoli veri delle storie dell'edizione; la densità cresce fino a taglio secco sul nero.</p>
+          <span class="chip">cut →</span>
+        </div>
+
+        <div class="cell">
+          <div class="frame f2" id="frame-02">
+            <div class="inner">
+              <div class="hair rule"></div>
+              <div class="num">151 <span class="arrow">→</span> <span class="to">9</span></div>
+              <div class="cap">fonti analizzate · storie in edizione</div>
+              <div class="brand">Altair Nexus</div>
+              <div class="hair rule"></div>
+            </div>
+          </div>
+          <div class="labelrow"><span class="name">02 · Il filtro</span><span class="id">frame-02 · 6.0–12.0s</span></div>
+          <p class="note"><b>Prima cosa che si muove:</b> il 151 conta all'indietro fermandosi su 9 (il numero grande è il protagonista); il nome del prodotto si posa sotto, su hairline.</p>
+          <span class="chip">crossfade →</span>
+        </div>
+
+        <div class="cell">
+          <div class="frame f3" id="frame-03">
+            <div class="inner">
+              <div class="shot">
+                <img src="assets/brief-plate.png" alt="cattura reale della sezione Aion Brief" />
+                <div class="zoom"></div>
+              </div>
+              <div class="labels">
+                <div class="lab"><div class="k">Segnale dominante</div><div class="v">Startup</div></div>
+                <div class="lab"><div class="k">Tema principale</div><div class="v">Riposizionamento competitivo</div></div>
+                <div class="lab"><div class="k">Cosa osservare</div><div class="v">Capacità di trasformare annuncio in adozione reale</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="labelrow"><span class="name">03 · La sintesi del giorno</span><span class="id">frame-03 · 12.0–19.0s</span></div>
+          <p class="note"><b>Prima cosa che si muove:</b> la camera parte stretta sul riquadro «cosa osservare» e si allarga sulla sezione reale; poi le tre etichette si accendono una per una mentre la voce le nomina.</p>
+          <span class="chip">cut →</span>
+        </div>
+      </div>
+
+      <div class="actbar"><b>Atto II — Le prove</b><span>frame 03–05 · 21 s</span></div>
+      <div class="grid">
+        <div class="cell">
+          <div class="frame f4" id="frame-04">
+            <div class="inner">
+              <div class="doc">
+                <h3>Ultrahuman e Abu Dhabi sviluppano un modello di età biologica</h3>
+                <p>TechCrunch, l'accordo biennale con le autorità sanitarie combina indicatori clinici e dati dei dispositivi indossabili.</p>
+                <div class="skeleton" style="width: 96%"></div>
+                <div class="skeleton" style="width: 92%"></div>
+                <div class="skeleton" style="width: 88%"></div>
+                <div class="skeleton" style="width: 94%"></div>
+                <div class="skeleton" style="width: 70%"></div>
+              </div>
+              <div class="side">
+                <div class="box"><div class="k">L'opinione di Aion</div><p>Sul fronte startup il punto non è ripetere la cronaca, ma capire se conta la capacità di finanziare crescita, distribuzione e resistenza nel tempo.</p></div>
+                <div class="box"><div class="k">Perché conta</div><p>Il valore sanitario dipende dalla validazione del modello e dalle garanzie sull'uso delle informazioni.</p></div>
+                <div class="src"><span class="pill">Fonte: TechCrunch</span><span>Categoria · Startup</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="labelrow"><span class="name">04 · La storia smontata</span><span class="id">frame-04 · 19.0–27.0s</span></div>
+          <p class="note"><b>Prima cosa che si muove:</b> la pagina reale scorre verso l'alto sotto la voce (sintesi → opinione → perché conta); la fonte si illumina per ultima, quando la voce la nomina.</p>
+          <span class="chip">cut →</span>
+        </div>
+
+        <div class="cell">
+          <div class="frame f5" id="frame-05">
+            <div class="inner">
+              <div class="h">Stato dell'edizione</div>
+              <div class="cards">
+                <div class="c"><div class="k">News in edizione</div><div class="v">9</div><div class="s">Storie presenti nella selezione</div></div>
+                <div class="c"><div class="k">Fonti analizzate</div><div class="v">151</div><div class="s">Base del monitoraggio</div></div>
+                <div class="c"><div class="k">Ultimo aggiornamento</div><div class="v">12 ott, 17:04</div><div class="s">Refresh più recente</div></div>
+                <div class="c"><div class="k">Categoria più calda</div><div class="v">Geopolitica</div><div class="s">Lead medio più forte</div></div>
+                <div class="c"><div class="k">Intensità della giornata</div><div class="v">Alta</div><div class="s">Pressione editoriale</div></div>
+                <div class="c"><div class="k">Copertura categorie</div><div class="v">3/8</div><div class="s">Categorie attive oggi</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="labelrow"><span class="name">05 · Lo stato dell'edizione</span><span class="id">frame-05 · 27.0–33.0s</span></div>
+          <p class="note"><b>Prima cosa che si muove:</b> le sei card entrano in cascata sfalsata (0,08 s l'una dall'altra) su hairline, mentre la voce legge i numeri; il quadro poi tiene fermo.</p>
+          <span class="chip">cut →</span>
+        </div>
+
+        <div class="cell">
+          <div class="frame f6" id="frame-06">
+            <div class="inner">
+              <div class="shot">
+                <img src="assets/hero-plate.png" alt="cattura reale della testata" />
+                <div class="mask"></div>
+              </div>
+              <div class="cta">
+                <div class="brand">Le notizie che contano.</div>
+                <div class="url">nexus.universalis.it</div>
+                <div class="sig"><img src="assets/universalis.png" alt="Universalis Produzioni" /></div>
+              </div>
+            </div>
+          </div>
+          <div class="labelrow"><span class="name">06 · Le notizie che contano</span><span class="id">frame-06 · 33.0–37.0s</span></div>
+          <p class="note"><b>Frame tenuto:</b> qui non si muove nulla di proposito. L'URL resta fermo e leggibile per tre secondi: è la parte che produce il click.</p>
+          <span class="chip">fine</span>
+        </div>
+      </div>
+
+      <div class="actbar"><b>Le giunzioni</b><span>una direzione sola: il montaggio procede verso l'alto (i titoli salgono, le pagine salgono)</span></div>
+      <div class="seams">
+        <div class="seamcard"><b>01 → 02</b><p>Taglio secco. Il rumore si spegne sul nero e il numero appare già grande: nessuna dissolvenza sul momento chiave.</p></div>
+        <div class="seamcard"><b>02 → 03</b><p>Crossfade breve. Il numero si posa e la pagina reale entra in dissolvenza: si passa dalla promessa alla prova.</p></div>
+        <div class="seamcard"><b>03 → 04</b><p>Taglio secco. Dalla sintesi alla singola storia: stesso scorrimento verticale, continuità di gesto.</p></div>
+        <div class="seamcard"><b>04 → 05</b><p>Taglio secco sulla parola «numeri»: dal metodo alla scala.</p></div>
+        <div class="seamcard"><b>05 → 06</b><p>Taglio secco. Il movimento si ferma: è il frame tenuto della chiusura.</p></div>
+        <div class="seamcard"><b>Sottotitoli</b><p>Zona bassa riservata (ultimo 14% dell'altezza): nessun contenuto vitale lì dentro, in nessun frame.</p></div>
+      </div>
+
+      <div class="actbar"><b>Token e vincoli</b><span>preset cartesian rimappato sul brand</span></div>
+      <div class="tokens">
+        <div class="tok">
+          <h4>Palette</h4>
+          <div class="swatch"><span class="dot" style="background:#0c1119"></span> #0C1119 fondo</div>
+          <div class="swatch"><span class="dot" style="background:#edf1f5"></span> #EDF1F5 testo</div>
+          <div class="swatch"><span class="dot" style="background:#aeb8c5"></span> #AEB8C5 testo tenue</div>
+          <div class="swatch"><span class="dot" style="background:#78d8ee"></span> #78D8EE accento (dati, etichette)</div>
+          <div class="swatch"><span class="dot" style="background:#9ea7ff"></span> #9EA7FF accento 2</div>
+          <div class="swatch"><span class="dot" style="background:rgba(174,199,228,0.22)"></span> hairline rgba(174,199,228,.22)</div>
+        </div>
+        <div class="tok">
+          <h4>Tipografia</h4>
+          <p style="color:var(--muted);font-size:13px;margin:0">
+            <b style="color:var(--text)">Display</b> — P052 (Palatino), 700, da 60 a 260 px<br />
+            <b style="color:var(--text)">Chrome</b> — Nimbus Sans, 400/600, 22–32 px<br />
+            <b style="color:var(--text)">Etichette</b> — Nimbus Sans 700, maiuscolo, tracking 0,18 em
+          </p>
+          <p style="color:var(--muted);font-size:13px;margin:12px 0 0">Serif per i titoli, sans solo per etichette e dati: è la gerarchia del sito.</p>
+        </div>
+        <div class="tok">
+          <h4>Da non fare</h4>
+          <ul class="bans">
+            <li>Nessun glow, nessuna ombra colorata, nessun bordo spesso.</li>
+            <li>Nessuna immagine stock e nessuna faccia generata.</li>
+            <li>Nessun dato inventato: numeri e titoli sono quelli catturati.</li>
+            <li>Niente presentazione a schede: non una card nuova per ogni beat.</li>
+            <li>Niente movimento decorativo senza informazione.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
