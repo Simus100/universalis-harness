@@ -12,8 +12,8 @@
         #v04-occhiello { position: absolute; left: 60px; top: 150px; font-size: 17px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase; color: #78d8ee; }
         #v04-hero { position: absolute; left: 0; top: 200px; width: 1080px; height: 670px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); transform-origin: 0% 0%; }
         #v04-hero img { display: block; width: 1080px; height: auto; }
-        #v04-map { position: absolute; left: 60px; top: 260px; width: 960px; height: 990px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); opacity: 0; }
-        #v04-map img { display: block; width: 960px; height: auto; }
+        #v04-map { position: absolute; left: 0; top: 260px; width: 1080px; height: 1010px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); opacity: 0; }
+        #v04-map img { display: block; width: 1080px; height: auto; }
         #v04-scen { position: absolute; left: 0; top: 1300px; width: 1080px; height: 200px; overflow: hidden; border: 1px solid rgba(174,199,228,0.24); opacity: 0; }
         #v04-scen img { display: block; width: 1080px; height: auto; }
         #v04-velo { position: absolute; inset: 0; background: #0c1119; opacity: 0; }
@@ -29,14 +29,14 @@
         (function () {
           "use strict";
           const tl = gsap.timeline({ paused: true });
-          // il titolo del dossier entra spingendo dentro, poi si ritira e lascia il campo alla mappa
+          // la testata del dossier entra spingendo dentro ("quando una storia merita di più")
           tl.fromTo("#v04-hero", { scale: 1.05, opacity: 0 }, { scale: 1.0, opacity: 1, duration: 1.05, ease: "power2.out" }, 0.05);
-          tl.to("#v04-hero", { scale: 0.55, y: -110, opacity: 0.22, duration: 0.95, ease: "power3.inOut" }, 2.05);
-          // la mappa 3D: entra e la camera le va dentro, con un pan lento sul campo di nodi
+          // 2,05 s: la testata si ritira e la mappa prende il campo ("diventa un dossier")
+          tl.to("#v04-hero", { scale: 0.55, y: -110, opacity: 0.22, duration: 1.0, ease: "power3.inOut" }, 2.05);
           tl.fromTo("#v04-map", { opacity: 0, scale: 1.14 }, { opacity: 1, scale: 1.0, duration: 1.0, ease: "power2.out" }, 2.15);
-          tl.fromTo("#v04-map img", { y: 0, x: 0 }, { y: -70, x: -22, duration: 5.2, ease: "none" }, 2.15);
+          tl.fromTo("#v04-map img", { y: 0, x: 0 }, { y: -80, x: -34, duration: 5.2, ease: "none" }, 2.15);
           tl.to("#v04-hero", { opacity: 0.08, duration: 0.6, ease: "power1.out", overwrite: "auto" }, 3.1);
-          // le tre traiettorie salgono sul bordo basso: de-escalation, attrito, nuova escalation
+          // 4,90 s: la voce dice "tre scenari" e salgono le traiettorie
           tl.to("#v04-map", { opacity: 0.25, duration: 0.6, ease: "power2.in" }, 4.85);
           tl.fromTo("#v04-scen", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 4.9);
           tl.fromTo("#v04-velo", { opacity: 0 }, { opacity: 0.12, duration: 0.8, ease: "power1.in" }, 6.6);

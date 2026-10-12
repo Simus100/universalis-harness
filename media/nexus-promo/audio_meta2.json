@@ -11,7 +11,7 @@
    "file": "assets/sfx/impact.wav",
    "offset_s": 0.0,
    "duration_s": 0.9,
-   "volume": 1.2,
+   "volume": 2.2,
    "source": "host"
   },
   {
@@ -19,7 +19,7 @@
    "file": "assets/sfx/tick.wav",
    "offset_s": 2.1,
    "duration_s": 0.07,
-   "volume": 2.2,
+   "volume": 2.9,
    "source": "host"
   },
   {
@@ -27,7 +27,7 @@
    "file": "assets/sfx/whoosh.wav",
    "offset_s": 0.0,
    "duration_s": 0.85,
-   "volume": 1.6,
+   "volume": 2.0,
    "source": "host"
   },
   {
@@ -35,7 +35,7 @@
    "file": "assets/sfx/impact.wav",
    "offset_s": 0.12,
    "duration_s": 0.9,
-   "volume": 1.35,
+   "volume": 2.2,
    "source": "host"
   },
   {
@@ -43,7 +43,7 @@
    "file": "assets/sfx/whoosh.wav",
    "offset_s": 2.05,
    "duration_s": 0.85,
-   "volume": 1.3,
+   "volume": 2.0,
    "source": "host"
   },
   {
@@ -51,7 +51,7 @@
    "file": "assets/sfx/whoosh.wav",
    "offset_s": 0.0,
    "duration_s": 0.85,
-   "volume": 1.6,
+   "volume": 2.0,
    "source": "host"
   },
   {
@@ -59,7 +59,7 @@
    "file": "assets/sfx/tick.wav",
    "offset_s": 0.55,
    "duration_s": 0.07,
-   "volume": 2.2,
+   "volume": 2.9,
    "source": "host"
   },
   {
@@ -67,7 +67,7 @@
    "file": "assets/sfx/tick.wav",
    "offset_s": 1.15,
    "duration_s": 0.07,
-   "volume": 2.2,
+   "volume": 2.9,
    "source": "host"
   },
   {
@@ -75,7 +75,7 @@
    "file": "assets/sfx/tick.wav",
    "offset_s": 2.95,
    "duration_s": 0.07,
-   "volume": 2.2,
+   "volume": 2.9,
    "source": "host"
   },
   {
@@ -83,7 +83,7 @@
    "file": "assets/sfx/tick.wav",
    "offset_s": 3.6,
    "duration_s": 0.07,
-   "volume": 2.2,
+   "volume": 2.9,
    "source": "host"
   },
   {
@@ -91,7 +91,7 @@
    "file": "assets/sfx/riser.wav",
    "offset_s": 3.2,
    "duration_s": 2.0,
-   "volume": 1.4,
+   "volume": 3.5,
    "source": "host"
   },
   {
@@ -99,7 +99,7 @@
    "file": "assets/sfx/impact.wav",
    "offset_s": 0.05,
    "duration_s": 0.9,
-   "volume": 1.3,
+   "volume": 2.2,
    "source": "host"
   }
  ],

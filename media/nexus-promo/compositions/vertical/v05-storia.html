@@ -39,14 +39,16 @@
         (function () {
           "use strict";
           const tl = gsap.timeline({ paused: true });
-          tl.fromTo("#v05-doc", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 0.05);
-          tl.fromTo("#v05-page", { y: 0 }, { y: -180, duration: 5.5, ease: "power1.out" }, 0.05);
-          tl.to("#v05-page", { y: -260, duration: 2.05, ease: "power1.out" }, 5.55);
-          tl.to("#v05-c2", { opacity: 1, duration: 0.5, ease: "power2.out" }, 2.9);
-          tl.fromTo("#v05-c2", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.6 }, 2.9);
-          tl.to("#v05-c1", { opacity: 1, duration: 0.5, ease: "power2.out" }, 4.15);
-          tl.fromTo("#v05-c1", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.6 }, 4.15);
-          tl.to("#v05-fonte", { opacity: 1, duration: 0.5, ease: "power2.out" }, 5.7);
+          // la pagina reale scorre: traversata, non pan decorativo
+          tl.fromTo("#v05-doc", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 0.05);
+          tl.fromTo("#v05-page", { y: 0 }, { y: -150, duration: 5.0, ease: "power1.out" }, 0.05);
+          tl.to("#v05-page", { y: -210, duration: 1.8, ease: "power1.out" }, 5.05);
+          // 2,60 "perché conta" · 3,85 "la lettura di Aion" · 5,40 "con la fonte dichiarata"
+          tl.fromTo("#v05-c2", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.55, ease: "power1.out" }, 2.6);
+          tl.to("#v05-c2", { opacity: 1, duration: 0.45, ease: "power2.out" }, 2.6);
+          tl.fromTo("#v05-c1", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.55, ease: "power1.out" }, 3.85);
+          tl.to("#v05-c1", { opacity: 1, duration: 0.45, ease: "power2.out" }, 3.85);
+          tl.to("#v05-fonte", { opacity: 1, duration: 0.45, ease: "power2.out" }, 5.4);
           window.__timelines["v05-storia"] = tl;
           tl.seek(0);
         })();

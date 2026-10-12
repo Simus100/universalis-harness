@@ -78,28 +78,16 @@
         (function () {
           "use strict";
           const tl = gsap.timeline({ paused: true });
-
-          // 0,0–2,6  traversata della pagina reale: movimento costante, non pan decorativo.
-          tl.fromTo("#f05-doc", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power1.out" }, 0.05);
-          tl.fromTo(
-            "#f05-page",
-            { y: 0 },
-            { y: -240, duration: 5.5, ease: "power1.out" },
-            0.05,
-          );
-          tl.to("#f05-page", { y: -330, duration: 2.05, ease: "power1.out" }, 5.55);
-
-          // 2,9  "perché conta" — la card si accende mentre lo scorrimento rallenta.
-          tl.fromTo("#f05-c2", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.6, ease: "power1.out" }, 2.9);
-          tl.to("#f05-c2", { opacity: 1, duration: 0.5, ease: "power2.out" }, 2.9);
-
-          // 4,15  "e la lettura di Aion".
-          tl.fromTo("#f05-c1", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.6, ease: "power1.out" }, 4.15);
-          tl.to("#f05-c1", { opacity: 1, duration: 0.5, ease: "power2.out" }, 4.15);
-
-          // 5,7  la fonte, ultimo elemento: è il punto che distingue il prodotto.
-          tl.to("#f05-fonte", { opacity: 1, duration: 0.5, ease: "power2.out" }, 5.7);
-
+          // la pagina reale scorre: traversata, non pan decorativo
+          tl.fromTo("#f05-doc", { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" }, 0.05);
+          tl.fromTo("#f05-page", { y: 0 }, { y: -190, duration: 5.0, ease: "power1.out" }, 0.05);
+          tl.to("#f05-page", { y: -250, duration: 1.8, ease: "power1.out" }, 5.05);
+          // 2,60 "perché conta" · 3,85 "la lettura di Aion" · 5,40 "con la fonte dichiarata"
+          tl.fromTo("#f05-c2", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.55, ease: "power1.out" }, 2.6);
+          tl.to("#f05-c2", { opacity: 1, duration: 0.45, ease: "power2.out" }, 2.6);
+          tl.fromTo("#f05-c1", { backgroundColor: "rgba(255,255,255,0.03)" }, { backgroundColor: "rgba(120,216,238,0.06)", duration: 0.55, ease: "power1.out" }, 3.85);
+          tl.to("#f05-c1", { opacity: 1, duration: 0.45, ease: "power2.out" }, 3.85);
+          tl.to("#f05-fonte", { opacity: 1, duration: 0.45, ease: "power2.out" }, 5.4);
           window.__timelines["05-storia"] = tl;
           tl.seek(0);
         })();

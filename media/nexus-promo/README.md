@@ -5,6 +5,31 @@ Due formati, stesso audio e stesso montaggio: **16:9** (1920×1080) e **9:16** r
 40,0 s · **7 frame** · voce piper `it_IT-serena-high` · sottotitoli · bed musicale + 12 effetti sonori,
 tutto sintetizzato in ffmpeg.
 
+## Verifica di correttezza e tempi (fatta sulla v3)
+
+Controlli eseguiti **sul file renderizzato**, non solo sul progetto:
+
+| Cosa | Come | Esito |
+| --- | --- | --- |
+| Sincronizzazione voce↔immagine | fotogramma estratto dal MP4 ai timestamp esatti delle parole chiave | 13/13 momenti corretti (il 9 si assesta a 9,45 s sulla parola "nove"; le etichette, le card, la fonte e le traiettorie entrano tutte entro 0,2 s dalla parola che le nomina) |
+| Audio continuo | `volumedetect` ogni 2 s | nessun buco, da −15 a −22,6 dB |
+| Effetti udibili | confronto mean 0,3 s effetto vs contesto | impact +7,2 e +10,5 dB, impact dossier +4,3 dB, tick picco −7,1 dB, riser −17,1 → −12,4 dB in salita |
+| Movimento per scena | RMSE fra primo e ultimo fotogramma di ogni scena | nessuna scena congelata (0,04–0,15) |
+| Formato e durata | `ffprobe` | 1920×1080 e 1080×1920, 30 fps, 1200 fotogrammi, 40,000 s, audio AAC 48 kHz |
+| Controlli di qualità | `lint` + `check` | 0 errori, 0 warning di lint, contrasto WCAG AA su tutti i testi |
+
+### Due difetti trovati in questa passata (e corretti)
+
+1. **Timeline non ri-timata in 9 file su 14.** La sostituzione automatica delle timeline era fallita in
+   silenzio: id e durate erano aggiornati, i tempi interni no. Il sintomo peggiore era nel frame 02,
+   dove il contatore del 9 viveva a 5,55 s — **oltre la fine della scena (5,0 s)**: il video mostrava
+   sempre e solo "151 → 0". Da qui la regola: dopo ogni ri-timatura, verificare che ogni tween cada
+   **dentro** la durata del frame. Ora le timeline sono generate da un unico script
+   (`/tmp/gen_timelines.py`, ricostruibile) e validate da un inventario di stringhe-atteso.
+2. **Effetti sonori troppo deboli** (impact +2,5 dB sul contesto: non si sentivano) e **riser che finiva
+   di salire prima del colpo** invece di scaricargli dentro. Corretti alzando i volumi (impact 2,2 ·
+   whoosh 2,0 · tick 2,9 · riser 3,5) e rigenerando il riser senza fade-out finale.
+
 ## Differenze dalla v1 (perché è "di meglio")
 
 1. **Il rumore dura 5,9 s invece di 7,5** e il claim arriva prima: il primo taglio è a 5,9 s, non a 7,5.
@@ -29,8 +54,8 @@ tutto sintetizzato in ffmpeg.
 | Frame orizzontali | `compositions/frames/01..07-*.html` |
 | Frame verticali | `compositions/vertical/v01..v07-*.html` |
 | Audio (voci, bed, effetti) | `assets/voce2/`, `assets/sfx/`, `audio_meta2.json` |
-| Video finiti | `renders/nexus-promo-v2-16x9.mp4`, `renders/nexus-promo-v2-9x16.mp4` |
-| Video v1 (prima versione) | `renders/nexus-promo-16x9.mp4`, `renders/nexus-promo-9x16.mp4` |
+| Video finiti (v3) | `renders/nexus-promo-v3-16x9.mp4`, `renders/nexus-promo-v3-9x16.mp4` |
+| Versioni precedenti | `renders/nexus-promo-v2-*.mp4` (v2), `renders/nexus-promo-16x9.mp4`/`-9x16.mp4` (v1) |
 | Fotogrammi di controllo | `snapshots/` |
 
 `index.html` è la composizione **orizzontale** attiva (è quello che renderizza il CLI).

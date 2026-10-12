@@ -33,9 +33,11 @@
         (function () {
           "use strict";
           const tl = gsap.timeline({ paused: true });
-          tl.fromTo("#v03-shot", { scale: 1.32, x: 0, y: 120 }, { scale: 1.0, x: 0, y: 0, duration: 2.1, ease: "power2.out" }, 0.05);
+          // si parte stretti sul testo della sintesi, lo zoom-out parte da subito
+          tl.fromTo("#v03-shot", { scale: 1.26, x: 0, y: 88 }, { scale: 1.0, x: 0, y: 0, duration: 2.1, ease: "power2.out" }, 0.05);
+          // etichette sulle parole: "segnale" 12,20 · "tema" 13,72 · "osservare" 14,87 s
           ["#v03-lab1", "#v03-lab2", "#v03-lab3"].forEach(function (sel, i) {
-            const t = 1.65 + i * 1.15;
+            const t = 1.30 + i * 1.15;
             tl.fromTo(sel, { opacity: 0.14, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, t);
             tl.fromTo(sel + " .k", { color: "#aeb8c5" }, { color: "#78d8ee", duration: 0.4, ease: "power1.out" }, t + 0.1);
           });

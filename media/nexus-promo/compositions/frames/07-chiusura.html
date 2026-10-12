@@ -48,17 +48,14 @@
         (function () {
           "use strict";
           const tl = gsap.timeline({ paused: true });
-
-          // 0,05–1,7  la testata reale entra con un solo gesto, mentre la voce dice la promessa.
-          tl.fromTo("#f07-shot", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.95, ease: "power2.out" }, 0.05);
-          tl.fromTo("#f07-mask", { opacity: 0 }, { opacity: 1, duration: 0.95, ease: "power1.out" }, 0.05);
-
-          // 2,05–3,6  nome, indirizzo e firma: una rivelazione per frase, poi più nulla.
-          tl.fromTo("#f07-nome", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 2.05);
-          tl.fromTo("#f07-regola", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, 2.25);
-          tl.fromTo("#f07-url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 2.85);
-          tl.fromTo("#f07-firma", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 3.35);
-
+          // la testata reale entra con un solo gesto, mentre la voce dice la promessa
+          tl.fromTo("#f07-shot", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.85, ease: "power2.out" }, 0.05);
+          tl.fromTo("#f07-mask", { opacity: 0 }, { opacity: 1, duration: 0.85, ease: "power1.out" }, 0.05);
+          // 1,85 "Nexus" · 2,45 "universalis" · 3,00 la firma: poi non si muove più nulla
+          tl.fromTo("#f07-nome", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, 1.85);
+          tl.fromTo("#f07-regola", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, 2.0);
+          tl.fromTo("#f07-url", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, 2.45);
+          tl.fromTo("#f07-firma", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, 3.0);
           window.__timelines["07-chiusura"] = tl;
           tl.seek(0);
         })();

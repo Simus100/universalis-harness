@@ -69,22 +69,14 @@
         (function () {
           "use strict";
           const tl = gsap.timeline({ paused: true });
-
-          // 0,0–2,4  si parte stretti sul riquadro "cosa osservare" e lo zoom-out parte da subito.
-          tl.fromTo(
-            "#f03-shot",
-            { scale: 1.9, x: 0, y: 128 },
-            { scale: 1.0, x: 0, y: 0, duration: 2.45, ease: "power2.out" },
-            0.05,
-          );
-
-          // 3,9 / 4,7 / 5,4  le tre etichette si accendono quando la voce le nomina.
+          // si parte stretti sul testo della sintesi, lo zoom-out parte da subito
+          tl.fromTo("#f03-shot", { scale: 1.62, x: 0, y: 96 }, { scale: 1.0, x: 0, y: 0, duration: 2.1, ease: "power2.out" }, 0.05);
+          // etichette sulle parole: "segnale" 12,20 · "tema" 13,72 · "osservare" 14,87 s
           ["#f03-lab1", "#f03-lab2", "#f03-lab3"].forEach(function (sel, i) {
-            const t = 1.65 + i * 1.15;
-            tl.fromTo(sel, { opacity: 0.12, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, t);
+            const t = 1.30 + i * 1.15;
+            tl.fromTo(sel, { opacity: 0.14, y: 12 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, t);
             tl.fromTo(sel + " .k", { color: "#aeb8c5" }, { color: "#78d8ee", duration: 0.4, ease: "power1.out" }, t + 0.1);
           });
-
           window.__timelines["03-sintesi"] = tl;
           tl.seek(0);
         })();

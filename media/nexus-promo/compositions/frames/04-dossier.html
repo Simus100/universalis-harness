@@ -37,26 +37,19 @@
         (function () {
           "use strict";
           const tl = gsap.timeline({ paused: true });
-
-          // 0,0–2,0  la testata del report entra spingendo dentro (la voce: "quando una storia merita di più")
-          tl.fromTo("#f04-hero", { scale: 1.06, opacity: 0 }, { scale: 1.0, opacity: 1, duration: 1.1, ease: "power2.out" }, 0.05);
+          // la testata del dossier entra spingendo dentro ("quando una storia merita di più")
+          tl.fromTo("#f04-hero", { scale: 1.06, opacity: 0 }, { scale: 1.0, opacity: 1, duration: 1.05, ease: "power2.out" }, 0.05);
           tl.fromTo("#f04-dato", { opacity: 0, x: 26 }, { opacity: 1, x: 0, duration: 0.6, ease: "power2.out" }, 1.35);
-          // si ritira e lascia il campo alla mappa: il quadro cambia, la pagina è la stessa
-          tl.to("#f04-hero", { scale: 0.42, x: -30, y: -26, opacity: 0.35, duration: 1.0, ease: "power3.inOut" }, 2.05);
+          // 2,05 s: la testata si ritira e la mappa prende il campo ("diventa un dossier")
+          tl.to("#f04-hero", { scale: 0.42, y: -26, opacity: 0.35, duration: 1.0, ease: "power3.inOut" }, 2.05);
           tl.to("#f04-dato", { opacity: 0, x: 26, duration: 0.4, ease: "power2.in" }, 2.05);
-
-          // 2,1–4,8  la mappa 3D entra in campo e la camera le spinge dentro ("diventa un dossier: sei assi")
           tl.fromTo("#f04-map", { opacity: 0, scale: 1.18 }, { opacity: 1, scale: 1.0, duration: 1.0, ease: "power2.out" }, 2.15);
           tl.fromTo("#f04-map img", { y: 0, x: 0 }, { y: -44, x: -30, duration: 5.2, ease: "none" }, 2.15);
           tl.to("#f04-hero", { opacity: 0.15, duration: 0.6, ease: "power1.out", overwrite: "auto" }, 3.1);
-
-          // 4,8–7,5  le tre traiettorie salgono e si posano ("tre scenari, e i limiti dichiarati")
+          // 4,90 s: la voce dice "tre scenari" e salgono le traiettorie
           tl.to("#f04-map", { opacity: 0.22, duration: 0.6, ease: "power2.in" }, 4.85);
           tl.fromTo("#f04-scen", { opacity: 0, y: 70 }, { opacity: 1, y: 0, duration: 0.9, ease: "power3.out" }, 4.9);
-
-          // tenuta: il quadro composito resta leggibile e fermo
           tl.fromTo("#f04-velo", { opacity: 0 }, { opacity: 0.12, duration: 0.8, ease: "power1.in" }, 6.6);
-
           window.__timelines["04-dossier"] = tl;
           tl.seek(0);
         })();

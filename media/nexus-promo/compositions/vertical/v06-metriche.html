@@ -19,11 +19,20 @@
         .v06-card .v { font-family: "P052", serif; font-weight: 700; font-size: 56px; line-height: 1.02; margin-top: 10px; }
         .v06-card.small .v { font-size: 36px; }
         .v06-card .s { font-size: 15px; color: #aeb8c5; margin-top: 8px; }
+        #v06-forza { position: absolute; left: 60px; right: 60px; top: 1180px; opacity: 0; }
+        #v06-forza .k { font-size: 15px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #78d8ee; }
+        #v06-forza .t { font-family: "P052", serif; font-size: 28px; line-height: 1.35; color: #edf1f5; margin-top: 10px; }
+        #v06-forza .h { position: absolute; left: 0; right: 0; top: -18px; height: 1px; background: rgba(174,199,228,0.24); transform-origin: 0% 50%; }
       </style>
       <div id="v06-root" data-composition-id="v06-metriche" data-width="1080" data-height="1920" data-duration="5.2" data-fps="30">
         <div id="v06-occhiello">Metriche</div>
         <div id="v06-titolo">Stato dell'edizione</div>
         <div id="v06-riga"></div>
+        <div id="v06-forza">
+          <div class="h"></div>
+          <div class="k">Linea di forza</div>
+          <div class="t">Il baricentro si concentra sul trasferimento del rischio geopolitico verso energia, logistica e pricing di mercato.</div>
+        </div>
         <div id="v06-griglia">
           <div class="v06-card" id="v06-c1"><div class="top"></div><div class="k">News in edizione</div><div class="v">9</div><div class="s">Storie presenti nella selezione corrente.</div></div>
           <div class="v06-card" id="v06-c2"><div class="top"></div><div class="k">Fonti analizzate</div><div class="v">151</div><div class="s">Base iniziale del monitoraggio.</div></div>
@@ -37,14 +46,18 @@
         (function () {
           "use strict";
           const tl = gsap.timeline({ paused: true });
-          tl.fromTo("#v06-titolo", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, 0.05);
-          tl.fromTo("#v06-occhiello", { opacity: 0 }, { opacity: 1, duration: 0.45 }, 0.05);
-          tl.fromTo("#v06-riga", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, 0.35);
-          const entrate = [["#v06-c1", 0.55], ["#v06-c2", 1.15], ["#v06-c4", 3.05], ["#v06-c5", 3.70], ["#v06-c6", 4.45], ["#v06-c3", 5.05]];
+          tl.fromTo("#v06-titolo", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.05);
+          tl.fromTo("#v06-occhiello", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, 0.05);
+          tl.fromTo("#v06-riga", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, 0.3);
+          // cascata sulla voce: "Nove" 30,65 · "categoria" 32,08 · "intensità" 33,17 s
+          const entrate = [["#v06-c1", 0.35], ["#v06-c2", 0.85], ["#v06-c4", 1.75], ["#v06-c5", 2.75], ["#v06-c6", 3.45], ["#v06-c3", 4.05]];
           entrate.forEach(function (par) {
-            tl.fromTo(par[0], { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, par[1]);
-            tl.fromTo(par[0] + " .top", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.out" }, par[1] + 0.05);
+            tl.fromTo(par[0], { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, par[1]);
+            tl.fromTo(par[0] + " .top", { scaleX: 0 }, { scaleX: 1, duration: 0.6, ease: "power3.out" }, par[1] + 0.05);
           });
+          // la linea di forza reale dell'edizione chiude la griglia
+          tl.fromTo("#v06-forza", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 4.55);
+          tl.fromTo("#v06-forza .h", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "power3.out" }, 4.55);
           window.__timelines["v06-metriche"] = tl;
           tl.seek(0);
         })();
