@@ -135,15 +135,37 @@ stessi tre comandi con la nuova dimensione (nel file immagine e nel loop device)
 
 Restano valide le prassi che tengono fuori dalla home ciò che è grosso:
 
-- **i video si renderizzano fuori dalla home** (`/var/tmp/<progetto>`): i render producono file
-  temporanei grandi;
+- **i lavori pesanti si fanno nella cartella grande di ogni tester**, `/var/lib/testerXX/agent`:
+  sta sul disco da 193 GB (170 GB liberi), è **scrivibile dall'istanza** (è in `ReadWritePaths`) ed
+  è persistente. Verificato con un render vero da utente (`hyperframes init` + `render` in
+  `/var/lib/tester08/agent`, MP4 di 10 s prodotto);
+- **NON usare `/var/tmp` per gli utenti**: il loro servizio ha `PrivateTmp=yes`, quindi `/tmp` e
+  `/var/tmp` sono cartelle **private ed effimere** del servizio, non le cartelle di sistema: quello
+  che si scrive lì non è visibile agli altri e non è un posto dove conservare un risultato. (Per
+  `pi-harness`, che non ha `PrivateTmp`, `/var/tmp` va benissimo.)
 - **cache e browser condivisi restano in `/opt`**, mai copiati nelle home (Chrome Headless Shell,
-  engine di REA);
+  engine di REA); engine e Chrome sono in sola lettura per gli utenti: li usano, non li modificano;
 - quando si crea un progetto con `hyperframes init` conviene `HYPERFRAMES_SKIP_SKILLS=1` per non
   reinstallare le skill in `~/.agents/skills` (altrimenti: `bash scripts/skills-sync-istanze.sh
-  --applica` rimette i symlink);
-- nella home restano comunque `media/` (file generati in chat), `sessions/` e `backups/`: ora
-  c'è spazio, ma un lavoro con molte immagini o video può ancora riempirla.
+  --applica` rimette i symlink).
+
+## Cosa possono vedere e dove possono scrivere i tester
+
+Le due istanze dei tester girano con un servizio systemd **confinato**: `User=testerXX`,
+`ProtectSystem=strict` (tutto il sistema in sola lettura), `ProtectHome=read-only`,
+`ReadWritePaths=/home/testerXX /var/lib/testerXX/agent`, `PrivateTmp=yes`, `NoNewPrivileges=yes`.
+
+| | tester07 / tester08 |
+|---|---|
+| **Scrivono** | solo la loro home (948 MB) e `/var/lib/testerXX/agent` (193 GB) |
+| **Leggono** | la loro home, `/usr`, `/etc`, `/opt` (Chrome e Ghidra condivisi) |
+| **Non vedono** | `/root` (né il codice di pi-harness), la home dell'altro tester, `/usr/bin` e `/etc` in scrittura |
+| **File manager della dashboard** | confinato in `DASH_ROOT=/home/testerXX`: ogni percorso fuori risponde 403, anche attraverso un symlink |
+
+Le cartelle dei loro dati sono tutte dentro la home (`DASH_MEDIA_DIR`, `DASH_SESSION_DIR`,
+`DASH_BACKUP_DIR`, `DASH_SKILLS_DIR` = `/home/testerXX/...`), quindi ciò che l'utente vede dalla
+dashboard è esattamente il suo spazio; la cartella grande serve per i lavori che non devono
+consumare quell'armadietto.
 
 ## Nota di percorso
 

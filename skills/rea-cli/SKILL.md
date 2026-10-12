@@ -96,9 +96,13 @@ Catena tipica su un binario senza simboli (provata, ~65 s totali):
   .NET managed**, non iOS/macOS.
 - **Android non è configurato**: servono `jadx`, `apktool` e `adb`, non installati.
 - **WASM senza comando CLI** (vedi sopra): si usa WABT direttamente.
-- I **target di prova** stanno in `/opt/rea-tools/targets/` (leggibili da tutti); i file
-grandi che produci vanno in `/var/tmp`, non nella home degli utenti (le loro home sono
-filesystem piccoli da 322 MB).
+- I **target di prova** (binari di esempio, app Electron) stanno in `/opt/rea-tools/targets/`:
+  leggibili da tutte le istanze.
+- **Dove mettere i file grandi** dipende da chi lavora: questa istanza (`pi-harness`) scrive i
+  file generati in `media/` e può usare `/var/tmp`; le istanze dei tester (`tester07`, `tester08`)
+  hanno a disposizione solo la loro home (948 MB) e la loro cartella grande
+  `/var/lib/testerXX/agent` — **mai `/var/tmp`**, che nel loro servizio è privata ed effimera
+  (`PrivateTmp=yes`). Vedi `media/skill-istanze.md`.
 - **Engine esterni assenti**: Binwalk/Unblob (firmware), JEB (Android commerciale),
   process capture/Frida su hardware reale.
 - Le skill di REA sono installate in `~/.agents/skills/reverse-engineer-anything`
