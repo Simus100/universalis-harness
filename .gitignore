@@ -93,6 +93,11 @@ media/out_gemini-*.json
 # attribuzione (LICENSE + NOTICE nel repo) che qui non ha senso mantenere aggiornate.
 # Si reinstallano con: npx hyperframes skills update
 #                       (le workflow di creazione one-shot, es. pr-to-video, stanno a parte)
+# ATTENZIONE: quel CLI installa nelle cartelle GLOBALI (~/.agents/skills, ~/.claude/skills), dove
+# pi le legge una seconda volta e le segnala come "collisione" nella scheda Skill (e dove una
+# versione diversa può vincere in silenzio). Dopo un aggiornamento:
+#   bash scripts/skills-globali-ripulisci.sh --allinea
+# Storia e dettagli: media/tool-skill-collisioni.md · test: media/test-skill-collisioni.mjs
 skills/hyperframes/
 skills/hyperframes-*/
 skills/media-use/
