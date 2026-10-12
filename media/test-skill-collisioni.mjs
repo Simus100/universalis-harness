@@ -24,17 +24,28 @@
  *     bash scripts/skills-globali-ripulisci.sh --allinea
  *
  * Uso:  node media/test-skill-collisioni.mjs   (esce 1 se trova problemi)
+ *
+ * Verifica l'istanza corrente; per un'altra istanza dell'harness passane le variabili:
+ *   DASH_SKILLS_DIR=/home/tester08/skills HOME=/home/tester08 \
+ *   PI_CODING_AGENT_DIR=/var/lib/tester08/agent node media/test-skill-collisioni.mjs
  */
 
 import { existsSync, lstatSync, readdirSync, readFileSync, readlinkSync, realpathSync, statSync } from "node:fs";
-import { cwd } from "node:process";
+import { cwd, env } from "node:process";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DefaultResourceLoader, getAgentDir } from "@earendil-works/pi-coding-agent";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SKILLS_DIR = realpathSync(join(__dirname, "..", "skills"));
-const GLOBAL_DIRS = ["/root/.agents/skills", "/root/.pi/agent/skills"];
+// Parametrizzato: verifica l'istanza corrente, oppure un'altra passandone le variabili.
+//   DASH_SKILLS_DIR=/home/tester08/skills HOME=/home/tester08 \
+//   PI_CODING_AGENT_DIR=/var/lib/tester08/agent node media/test-skill-collisioni.mjs
+const SKILLS_DIR = realpathSync(env.DASH_SKILLS_DIR || join(__dirname, "..", "skills"));
+// Le cartelle globali dipendono da HOME e dall'agentDir: due istanze con HOME
+// diverso NON condividono le globali (è il motivo per cui le skill non sono
+// automaticamente disponibili su tutte le istanze).
+const GLOBAL_DIRS = [join(homedir(), ".agents", "skills"), join(getAgentDir(), "skills")];
 
 const problemi = [];
 
@@ -63,6 +74,8 @@ const origine = (filePath) => {
   return "[globale]";
 };
 
+console.log(`istanza: ${SKILLS_DIR}`);
+console.log(`globali: ${GLOBAL_DIRS.join(", ")}`);
 console.log(`skill caricate: ${skills.length}`);
 for (const s of skills) console.log(`  ${origine(s.filePath).padEnd(18)} ${s.name}`);
 
@@ -97,17 +110,17 @@ for (const gdir of GLOBAL_DIRS) {
     }
 
     if (lstat.isSymbolicLink()) {
-      // symlink: deve puntare a una skill reale dentro skills/
+      // symlink: deve puntare a una skill reale (con SKILL.md). La destinazione può
+      // stare in un'altra istanza dell'harness: le altre istanze leggono le globali
+      // condivise di root e il symlink è il modo con cui vedono le skill di pi-harness.
       try {
         const target = realpathSync(gpath);
-        if (!target.startsWith(SKILLS_DIR)) {
-          problemi.push(`symlink fuori da skills/: ${gpath} → ${target}`);
-          console.log(`\n⚠ ${gpath} → ${target} (fuori da skills/)`);
-        } else if (!existsSync(join(target, "SKILL.md"))) {
+        if (!existsSync(join(target, "SKILL.md"))) {
           problemi.push(`symlink senza SKILL.md: ${gpath}`);
           console.log(`\n⚠ ${gpath} → ${target} (senza SKILL.md)`);
         } else {
-          console.log(`\n  symlink ok: ${gpath} → ${readlinkSync(gpath)}`);
+          const dove = target.startsWith(SKILLS_DIR) ? "questa istanza" : "altra istanza";
+          console.log(`\n  symlink ok (${dove}): ${gpath} → ${readlinkSync(gpath)}`);
         }
       } catch {
         problemi.push(`symlink rotto: ${gpath}`);
