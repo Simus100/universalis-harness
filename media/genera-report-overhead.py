@@ -347,10 +347,12 @@ Nessun contenuto delle sessioni è stato letto per questo report: solo conteggi.
   {g_composizione}
   <figcaption>Ricostruzione locale ({n(ml["totale"])} token, 14 tool attivi). Percentuali sul totale
   ricostruito. Le definizioni dei tool si pagano a ogni richiesta anche quando il tool non viene
-  chiamato: è il caso di <code>browser</code> (589 token) in una sessione che non naviga nulla.</figcaption>
+  chiamato: è il caso di <code>browser</code> (589 token) in una sessione che non naviga nulla. Le
+  quote sono arrotondate all'unità: sommano a 99%, il totale è 100%.</figcaption>
 </figure>
 <table>
-  <caption>Composizione del contesto a riposo — ricostruzione locale del 13/10/2026</caption>
+  <caption>Composizione del contesto a riposo — ricostruzione locale del 13/10/2026. Le quote sono
+  arrotondate all'unità: la loro somma è 99%, il totale è 100%.</caption>
   <thead><tr><th>Voce</th><th class="num">Token</th><th class="num">Quota</th></tr></thead>
   <tbody>{righe_composizione}<tr><td><strong>Totale ricostruito</strong></td><td class="num"><strong>{n(ml["totale"])}</strong></td><td class="num">100%</td></tr></tbody>
 </table>
