@@ -1,0 +1,308 @@
+{
+  "titolo": "Costo di contesto a riposo dell'harness (misurato)",
+  "aggiornato": "2026-10-13",
+  "metodo": {
+    "overheadDefinizione": "tutto cio' che viene inviato al modello prima del primo messaggio dell'utente: system prompt + definizioni dei tool",
+    "misuraReale": "usage del provider (DeepSeek) al primo turno di sessione: token input + cacheRead, meno i token del primo messaggio utente",
+    "misuraLocale": "ricostruzione della sessione come la crea dashboard.mjs, conteggio con tiktoken o200k_base",
+    "sessioneMisurata": "2026-10-13, 14 tool attivi (subagent/bg_wait esclusi dal gate della dashboard)"
+  },
+  "misuraLocaleToken": {
+    "systemPrompt": 6112,
+    "toolDefinitions": 6383,
+    "totale": 12495,
+    "dettaglioSystemPrompt": [
+      {
+        "voce": "Note operative dell'istanza (8 sezioni)",
+        "tok": 1681
+      },
+      {
+        "voce": "Indice delle skill (27 skill)",
+        "tok": 4430
+      }
+    ],
+    "dettaglioTool": [
+      {
+        "voce": "Nucleo pi (read, bash, edit, write)",
+        "tok": 673
+      },
+      {
+        "voce": "Ricerca web (web_search, source_check, fetch_content, get_search_content)",
+        "tok": 3112
+      },
+      {
+        "voce": "ask_user (domande all'utente)",
+        "tok": 943
+      },
+      {
+        "voce": "browser pilotato",
+        "tok": 589
+      },
+      {
+        "voce": "memoria (cerca, grafo, wiki, episodio)",
+        "tok": 1064
+      }
+    ],
+    "toolEsclusiDalGate": [
+      {
+        "voce": "subagent + bg_wait (spenti di default)",
+        "tok": 5543
+      }
+    ]
+  },
+  "misuraRealeUltimaSessione": 13184,
+  "serieStorica": [
+    {
+      "data": "2026-09-19",
+      "overheadTok": 5214
+    },
+    {
+      "data": "2026-09-19",
+      "overheadTok": 4609
+    },
+    {
+      "data": "2026-09-19",
+      "overheadTok": 4610
+    },
+    {
+      "data": "2026-09-19",
+      "overheadTok": 4724
+    },
+    {
+      "data": "2026-09-20",
+      "overheadTok": 4733
+    },
+    {
+      "data": "2026-09-20",
+      "overheadTok": 5882
+    },
+    {
+      "data": "2026-09-20",
+      "overheadTok": 5886
+    },
+    {
+      "data": "2026-09-21",
+      "overheadTok": 5887
+    },
+    {
+      "data": "2026-09-21",
+      "overheadTok": 5884
+    },
+    {
+      "data": "2026-09-21",
+      "overheadTok": 5950
+    },
+    {
+      "data": "2026-09-21",
+      "overheadTok": 5882
+    },
+    {
+      "data": "2026-09-22",
+      "overheadTok": 5895
+    },
+    {
+      "data": "2026-09-23",
+      "overheadTok": 5881
+    },
+    {
+      "data": "2026-09-23",
+      "overheadTok": 5884
+    },
+    {
+      "data": "2026-09-23",
+      "overheadTok": 5884
+    },
+    {
+      "data": "2026-09-23",
+      "overheadTok": 5881
+    },
+    {
+      "data": "2026-09-24",
+      "overheadTok": 5882
+    },
+    {
+      "data": "2026-09-24",
+      "overheadTok": 5884
+    },
+    {
+      "data": "2026-09-24",
+      "overheadTok": 5952
+    },
+    {
+      "data": "2026-09-24",
+      "overheadTok": 6367
+    },
+    {
+      "data": "2026-09-24",
+      "overheadTok": 6367
+    },
+    {
+      "data": "2026-09-26",
+      "overheadTok": 6375
+    },
+    {
+      "data": "2026-09-26",
+      "overheadTok": 6369
+    },
+    {
+      "data": "2026-09-27",
+      "overheadTok": 6662
+    },
+    {
+      "data": "2026-09-28",
+      "overheadTok": 7024
+    },
+    {
+      "data": "2026-09-29",
+      "overheadTok": 7024
+    },
+    {
+      "data": "2026-10-04",
+      "overheadTok": 7626
+    },
+    {
+      "data": "2026-10-04",
+      "overheadTok": 7558
+    },
+    {
+      "data": "2026-10-05",
+      "overheadTok": 7783
+    },
+    {
+      "data": "2026-10-05",
+      "overheadTok": 8945
+    },
+    {
+      "data": "2026-10-05",
+      "overheadTok": 9324
+    },
+    {
+      "data": "2026-10-06",
+      "overheadTok": 9333
+    },
+    {
+      "data": "2026-10-07",
+      "overheadTok": 10830
+    },
+    {
+      "data": "2026-10-08",
+      "overheadTok": 9360
+    },
+    {
+      "data": "2026-10-08",
+      "overheadTok": 9361
+    },
+    {
+      "data": "2026-10-11",
+      "overheadTok": 9525
+    },
+    {
+      "data": "2026-10-11",
+      "overheadTok": 9525
+    },
+    {
+      "data": "2026-10-12",
+      "overheadTok": 12033
+    },
+    {
+      "data": "2026-10-12",
+      "overheadTok": 12218
+    },
+    {
+      "data": "2026-10-12",
+      "overheadTok": 12580
+    },
+    {
+      "data": "2026-10-13",
+      "overheadTok": 13184
+    }
+  ],
+  "serieStoricaSintesi": {
+    "n": 41,
+    "min": 4609,
+    "mediana": 6367,
+    "max": 13184
+  },
+  "confronto": [
+    {
+      "harness": "Questo harness (Universalis / pi)",
+      "tok": 13184,
+      "nota": "misura reale del provider, sessione del 13/10/2026",
+      "classe": "noi"
+    },
+    {
+      "harness": "pi (motore nudo, senza istanza)",
+      "tok": 1000,
+      "nota": "citato dalla richiesta di feature di GitHub Copilot CLI #2627",
+      "classe": "motore"
+    },
+    {
+      "harness": "OpenCode",
+      "tok": 7000,
+      "nota": "misura Studio Systima, stessa prova",
+      "classe": "altro"
+    },
+    {
+      "harness": "Codex CLI",
+      "tok": 8497,
+      "nota": "prompt minimale, evento turn.completed, gpt-5.x",
+      "classe": "altro"
+    },
+    {
+      "harness": "Cline",
+      "tok": 12465,
+      "nota": "solo system prompt (59.057 car); 12-16k per messaggio secondo gli utenti",
+      "classe": "altro"
+    },
+    {
+      "harness": "GitHub Copilot CLI",
+      "tok": 12956,
+      "nota": "system prompt 12.455 + definizioni dei tool",
+      "classe": "altro"
+    },
+    {
+      "harness": "Claude Code",
+      "tok": 29061,
+      "nota": "cartella vuota, MCP spento (38.805 in progetto reale)",
+      "classe": "altro"
+    }
+  ],
+  "fonti": [
+    {
+      "t": "Systima — Claude Code vs OpenCode: overhead misurato",
+      "u": "https://systima.ai/blog/claude-code-vs-opencode-token-overhead"
+    },
+    {
+      "t": "Start Debugging — come misurare l'overhead fisso di un agente",
+      "u": "https://startdebugging.net/2026/09/measure-an-agents-fixed-token-overhead-before-the-first-user-token/"
+    },
+    {
+      "t": "devaireviews — Claude Code: cosa costano davvero 33k token",
+      "u": "https://devaireviews.com/blog/claude-code-token-overhead/"
+    },
+    {
+      "t": "openai/codex #19212 — il system prompt e' troppo grande",
+      "u": "https://github.com/openai/codex/issues/19212"
+    },
+    {
+      "t": "gist alexfazio — esperimenti su codex exec (8.497 token di baseline)",
+      "u": "https://gist.github.com/alexfazio/359c17d84cb6a5af12bac88fa1db9770"
+    },
+    {
+      "t": "github/copilot-cli #2627 — overhead fisso del system prompt",
+      "u": "https://github.com/github/copilot-cli/issues/2627"
+    },
+    {
+      "t": "AI Security Distilled — il costo nascosto delle istruzioni di Copilot CLI",
+      "u": "https://copilot-autogent.github.io/ai-security-blog/blog/hidden-cost-of-instructions/"
+    },
+    {
+      "t": "Harry Wang — il system prompt di Cline (59.057 car / 12.465 token)",
+      "u": "https://www.harrywang.me/blog/cline"
+    },
+    {
+      "t": "google-gemini/gemini-cli #1597 — uso anomalo di token in ingresso",
+      "u": "https://github.com/google-gemini/gemini-cli/issues/1597"
+    }
+  ]
+}

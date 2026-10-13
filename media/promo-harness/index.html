@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Universalis Harness — promo</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #08111f;
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #08111f;
+        color: #eef2f9;
+        font-family: system-ui, sans-serif;
+      }
+      /* ---- fondale, sempre acceso ------------------------------------- */
+      #griglia {
+        position: absolute;
+        inset: -40px 0;
+        background-image: linear-gradient(to right, #172033 1px, transparent 1px);
+        background-size: 120px 100%;
+        opacity: 0.55;
+      }
+      #bagliore {
+        position: absolute;
+        left: 50%;
+        bottom: -320px;
+        width: 1500px;
+        height: 900px;
+        margin-left: -750px;
+        border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(91, 157, 255, 0.28), rgba(91, 157, 255, 0));
+        transform-origin: 50% 60%;
+      }
+      /* ---- scene ------------------------------------------------------ */
+      .clip.scena {
+        position: absolute;
+        inset: 0;
+      }
+      .dentro {
+        position: absolute;
+        inset: 0;
+        padding: 84px 120px 96px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+      .centro {
+        align-items: center;
+        text-align: center;
+      }
+      .occhio {
+        position: absolute;
+        top: 88px;
+        left: 120px;
+        margin: 0;
+        color: #8b97ac;
+        font-size: 23px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .titolo-scena {
+        margin: 0 0 20px;
+        font-size: 62px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        color: #eef2f9;
+      }
+      .sotto-titolo {
+        margin: 0 0 38px;
+        font-size: 27px;
+        color: #8b97ac;
+      }
+      /* ---- scena 1 ---------------------------------------------------- */
+      #s1-alone {
+        position: absolute;
+        top: 210px;
+        left: 50%;
+        width: 1300px;
+        height: 520px;
+        margin-left: -650px;
+        border-radius: 50%;
+        background: radial-gradient(closest-side, rgba(91, 157, 255, 0.3), rgba(91, 157, 255, 0));
+      }
+      #s1-titolo {
+        position: relative;
+        margin: 0;
+        font-size: 116px;
+        line-height: 1.05;
+        font-weight: 700;
+        letter-spacing: -0.035em;
+      }
+      #s1-titolo .due {
+        display: block;
+        color: #5b9dff;
+      }
+      #s1-nota {
+        position: relative;
+        margin: 44px 0 0;
+        font-size: 27px;
+        color: #c6cfdd;
+        max-width: 1500px;
+      }
+      /* ---- scena 2 — bento delle capacità ------------------------------ */
+      .bento {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+      .riga-card {
+        display: flex;
+        gap: 22px;
+      }
+      .card {
+        background: #172033;
+        border: 2px solid #243149;
+        border-radius: 16px;
+        padding: 26px 30px;
+      }
+      .card.grande {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: baseline;
+        gap: 30px;
+      }
+      .card.piccola {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+      .card h3 {
+        margin: 0 0 10px;
+        font-size: 33px;
+        font-weight: 600;
+        color: #eef2f9;
+        letter-spacing: -0.01em;
+      }
+      .card.grande h3 {
+        flex: 0 0 380px;
+        margin: 0;
+      }
+      .card p {
+        margin: 0;
+        font-size: 25px;
+        line-height: 1.42;
+        color: #c6cfdd;
+      }
+      .card .timbro {
+        display: inline-block;
+        margin-bottom: 14px;
+        font-size: 21px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #5b9dff;
+      }
+      /* ---- scena 3 — la prova ------------------------------------------ */
+      .riga-num {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        gap: 22px;
+      }
+      .num-grande {
+        font-family: monospace;
+        font-size: 168px;
+        line-height: 0.9;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #5b9dff;
+        font-variant-numeric: tabular-nums;
+      }
+      .unita {
+        font-size: 40px;
+        font-weight: 600;
+        color: #c6cfdd;
+        padding-bottom: 18px;
+      }
+      .barre {
+        margin-top: 48px;
+        display: flex;
+        flex-direction: column;
+        gap: 26px;
+      }
+      .riga-barra {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+      .nome {
+        flex: 0 0 400px;
+        margin: 0;
+        font-size: 30px;
+        color: #c6cfdd;
+      }
+      .nome.forte {
+        color: #eef2f9;
+        font-weight: 600;
+      }
+      .binario {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        height: 46px;
+      }
+      .barra {
+        height: 100%;
+        border-radius: 8px;
+        transform-origin: left center;
+        will-change: transform;
+      }
+      .valore {
+        flex: 0 0 200px;
+        margin: 0;
+        text-align: right;
+        white-space: nowrap;
+        font-family: monospace;
+        font-size: 32px;
+        font-weight: 600;
+        color: #eef2f9;
+        font-variant-numeric: tabular-nums;
+      }
+      .grigio {
+        background: #55617a;
+      }
+      .blu {
+        background: #5b9dff;
+      }
+      .claim {
+        margin: 42px 0 0;
+        font-size: 38px;
+        font-weight: 600;
+        color: #eef2f9;
+      }
+      .claim .via {
+        color: #5b9dff;
+        font-family: monospace;
+      }
+      /* ---- scena 4 — self-hosted --------------------------------------- */
+      .punti {
+        display: flex;
+        flex-direction: column;
+        gap: 26px;
+        margin-top: 8px;
+      }
+      .punto {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        font-size: 36px;
+        color: #eef2f9;
+      }
+      .punto .segno {
+        flex: 0 0 auto;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 3px solid #5b9dff;
+        display: grid;
+        place-items: center;
+        font-size: 22px;
+        color: #5b9dff;
+        line-height: 1;
+      }
+      .punto span.testo small {
+        display: block;
+        font-size: 24px;
+        color: #8b97ac;
+        margin-top: 6px;
+      }
+      #s4-nota {
+        margin: 46px 0 0;
+        font-size: 30px;
+        color: #c6cfdd;
+      }
+      /* ---- scena 5 — chiusura ------------------------------------------ */
+      #s5-titolo {
+        margin: 0;
+        font-size: 108px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #eef2f9;
+      }
+      #s5-sub {
+        margin: 24px 0 0;
+        font-size: 40px;
+        font-weight: 400;
+        color: #c6cfdd;
+        max-width: 1640px;
+      }
+      .chips {
+        display: flex;
+        gap: 18px;
+        margin-top: 40px;
+      }
+      .chip {
+        padding: 12px 26px;
+        border: 2px solid #2c3a55;
+        border-radius: 999px;
+        font-size: 26px;
+        color: #c6cfdd;
+        background: #172033;
+      }
+      #s5-cta {
+        margin: 44px 0 0;
+        font-size: 28px;
+        color: #8b97ac;
+      }
+      #s5-linea {
+        width: 220px;
+        height: 4px;
+        margin-top: 32px;
+        background: #5b9dff;
+        transform-origin: left center;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="promo-harness"
+      data-start="0"
+      data-duration="32"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="griglia"></div>
+      <div id="bagliore"></div>
+
+      <!-- ============ scena 1 — la promessa ============ -->
+      <section class="clip scena" id="s1" data-start="0" data-duration="5" data-track-index="0">
+        <div class="dentro centro" id="s1-in">
+          <p class="occhio" id="s1-occhio">Universalis Harness · dashboard self-hosted per agenti AI</p>
+          <div id="s1-alone"></div>
+          <h1 id="s1-titolo">
+            I tuoi file,
+            <span class="due">non solo una chat</span>
+          </h1>
+          <p id="s1-nota">
+            chat con costo visibile · file manager · obiettivi · pianificazioni · skill · browser · memoria
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ scena 2 — cosa sa fare ============ -->
+      <section class="clip scena" id="s2" data-start="5" data-duration="6.6" data-track-index="0">
+        <div class="dentro" id="s2-in">
+          <p class="titolo-scena">Cosa sa fare, in una giornata di lavoro</p>
+          <p class="sotto-titolo">un processo, nessun database: chat, file e lavoro pianificato nella stessa pagina</p>
+          <div class="bento">
+            <div class="riga-card">
+              <div class="card grande" id="s2-c1">
+                <h3>File e documenti</h3>
+                <p>
+                  Legge e scrive i tuoi file, mostra le immagini che gli indichi e apre i PDF pagina per
+                  pagina — con ricerca nel contenuto e salto alla riga trovata.
+                </p>
+              </div>
+            </div>
+            <div class="riga-card">
+              <div class="card piccola" id="s2-c2">
+                <span class="timbro">Obiettivi</span>
+                <p>Una catena di passaggi con avanzamento, e pianificazioni che lavorano da sole.</p>
+              </div>
+              <div class="card piccola" id="s2-c3">
+                <span class="timbro">Skill</span>
+                <p>Procedure stabili in formato aperto: report, video, giochi, libri.</p>
+              </div>
+              <div class="card piccola" id="s2-c4">
+                <span class="timbro">Browser</span>
+                <p>Apre siti reali, clicca e compila: prendi il controllo quando serve un umano.</p>
+              </div>
+              <div class="card piccola" id="s2-c5">
+                <span class="timbro">Memoria</span>
+                <p>Ricorda episodi, decisioni e file toccati — a tre prezzi diversi.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ scena 3 — la trasparenza ============ -->
+      <section class="clip scena" id="s3" data-start="11.6" data-duration="8.6" data-track-index="0">
+        <div class="dentro" id="s3-in">
+          <p class="titolo-scena">E ti dice quanto costa, prima di chiedertelo</p>
+          <p class="sotto-titolo">token di contesto inviati al modello prima del primo messaggio dell'utente</p>
+          <div class="riga-num">
+            <span class="num-grande" id="s3-num">0</span>
+            <span class="unita">token a riposo</span>
+          </div>
+          <div class="barre">
+            <div class="riga-barra">
+              <p class="nome">Claude Code</p>
+              <div class="binario"><div class="barra grigio" id="s3-bar1" style="width: 1000px"></div></div>
+              <p class="valore" id="s3-v1">0</p>
+            </div>
+            <div class="riga-barra">
+              <p class="nome forte">Universalis Harness</p>
+              <div class="binario"><div class="barra blu" id="s3-bar2" style="width: 454px"></div></div>
+              <p class="valore" id="s3-v2">0</p>
+            </div>
+          </div>
+          <p class="claim" id="s3-claim"><span class="via">2,2×</span> meno contesto, a ogni richiesta</p>
+        </div>
+      </section>
+
+      <!-- ============ scena 4 — sulla tua macchina ============ -->
+      <section class="clip scena" id="s4" data-start="20.2" data-duration="6.2" data-track-index="0">
+        <div class="dentro" id="s4-in">
+          <p class="titolo-scena">Gira sulla tua macchina, non su una piattaforma</p>
+          <div class="punti">
+            <div class="punto" id="s4-p1">
+              <span class="segno">▪</span>
+              <span class="testo">Nessun servizio esterno, nessuna dipendenza cloud
+                <small>un server, un processo, i tuoi file</small>
+              </span>
+            </div>
+            <div class="punto" id="s4-p2">
+              <span class="segno">▪</span>
+              <span class="testo">I tuoi dati restano tuoi
+                <small>chat, obiettivi, skill e memoria sono file leggibili</small>
+              </span>
+            </div>
+            <div class="punto" id="s4-p3">
+              <span class="segno">▪</span>
+              <span class="testo">Una persona per istanza, con limiti misurabili
+                <small>ospitata su un server gestito, oppure on-premise</small>
+              </span>
+            </div>
+          </div>
+          <p id="s4-nota">Il confine di sicurezza è la macchina: lo diciamo invece di nasconderlo.</p>
+        </div>
+      </section>
+
+      <!-- ============ scena 5 — chiusura ============ -->
+      <section class="clip scena" id="s5" data-start="26.4" data-duration="5.6" data-track-index="0">
+        <div class="dentro centro" id="s5-in">
+          <h2 id="s5-titolo">Universalis Harness</h2>
+          <p id="s5-sub">L'agente AI che lavora sui tuoi file, con la spesa sotto gli occhi</p>
+          <div class="chips" id="s5-chips">
+            <span class="chip">self-hosted</span>
+            <span class="chip">multi-istanza</span>
+            <span class="chip">costo visibile</span>
+            <span class="chip">memoria a lungo termine</span>
+          </div>
+          <div id="s5-linea"></div>
+          <p id="s5-cta">Licenze d'uso, istanze ospitate e installazioni on-premise su richiesta</p>
+        </div>
+      </section>
+
+      <!-- ============ voce fuori campo (piper, offline) ============ -->
+      <audio id="vo1" src="assets/vo-1.mp3" data-start="0.6" data-duration="3.36" data-track-index="9" data-volume="1"></audio>
+      <audio id="vo2" src="assets/vo-2.mp3" data-start="5.6" data-duration="4.84" data-track-index="9" data-volume="1"></audio>
+      <audio id="vo3" src="assets/vo-3.mp3" data-start="12.2" data-duration="6.23" data-track-index="9" data-volume="1"></audio>
+      <audio id="vo4" src="assets/vo-4.mp3" data-start="20.8" data-duration="4.33" data-track-index="9" data-volume="1"></audio>
+      <audio id="vo5" src="assets/vo-5.mp3" data-start="26.9" data-duration="3.31" data-track-index="9" data-volume="1"></audio>
+    </div>
+
+    <script>
+      const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      const tl = gsap.timeline({ paused: true });
+
+      /** Contatore seek-safe: il valore mostrato è funzione pura del tempo. */
+      function conta(selector, a, durata, at, ease) {
+        const el = document.querySelector(selector);
+        const proxy = { v: 0 };
+        tl.to(
+          proxy,
+          {
+            v: a,
+            duration: durata,
+            ease: ease || "power3.out",
+            onUpdate: () => {
+              el.textContent = fmt(Math.round(proxy.v));
+            },
+          },
+          at,
+        );
+      }
+
+      // ---- fondale ----
+      tl.fromTo("#bagliore", { scale: 0.94, opacity: 0.45 }, { scale: 1.05, opacity: 0.85, duration: 3.6, ease: "sine.inOut", repeat: 8, yoyo: true }, 0);
+      tl.fromTo("#griglia", { y: -22 }, { y: 22, duration: 32, ease: "none" }, 0);
+
+      // ================= scena 1 =================
+      tl.fromTo("#s1-in", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 0.1);
+      tl.fromTo("#s1-occhio", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.5 }, 0.2);
+      tl.fromTo("#s1-alone", { opacity: 0.1, scale: 0.9 }, { opacity: 0.8, scale: 1.06, duration: 1.6, ease: "sine.out" }, 0.3);
+      tl.fromTo("#s1-titolo", { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }, 0.45);
+      tl.fromTo("#s1-nota", { opacity: 0 }, { opacity: 1, duration: 0.6 }, 1.5);
+      tl.to("#s1-in", { opacity: 0, duration: 0.32 }, 4.68);
+
+      // ================= scena 2 =================
+      tl.fromTo("#s2-in", { opacity: 0 }, { opacity: 1, duration: 0.45 }, 5.15);
+      tl.fromTo("#s2 .titolo-scena", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5 }, 5.35);
+      tl.fromTo("#s2 .sotto-titolo", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 5.55);
+      tl.fromTo("#s2-c1", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, 5.9);
+      tl.fromTo("#s2 .riga-card:nth-child(2) .card", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.14, ease: "power2.out" }, 6.6);
+      tl.to("#s2-in", { opacity: 0, duration: 0.32 }, 11.28);
+
+      // ================= scena 3 =================
+      tl.fromTo("#s3-in", { opacity: 0 }, { opacity: 1, duration: 0.45 }, 11.75);
+      tl.fromTo("#s3 .titolo-scena", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5 }, 11.9);
+      tl.fromTo("#s3 .sotto-titolo", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 12.1);
+      conta("#s3-num", 13184, 2.2, 12.4);
+      tl.fromTo("#s3-num", { scale: 1 }, { scale: 1.03, duration: 0.16, ease: "power2.out" }, 14.62);
+      tl.to("#s3-num", { scale: 1, duration: 0.3, ease: "power2.inOut" }, 14.8);
+      tl.fromTo("#s3-bar1", { scaleX: 0 }, { scaleX: 1, duration: 1.2, ease: "power2.out" }, 15.5);
+      tl.fromTo("#s3-v1", { opacity: 0 }, { opacity: 1, duration: 0.35 }, 15.5);
+      conta("#s3-v1", 29061, 1.2, 15.5, "power2.out");
+      tl.fromTo("#s3-bar2", { scaleX: 0 }, { scaleX: 1, duration: 1.1, ease: "power2.out" }, 16.9);
+      tl.fromTo("#s3-v2", { opacity: 0 }, { opacity: 1, duration: 0.35 }, 16.9);
+      conta("#s3-v2", 13184, 1.1, 16.9, "power2.out");
+      tl.fromTo("#s3-claim", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5 }, 18.2);
+      tl.to("#s3-in", { opacity: 0, duration: 0.32 }, 19.88);
+
+      // ================= scena 4 =================
+      tl.fromTo("#s4-in", { opacity: 0 }, { opacity: 1, duration: 0.45 }, 20.35);
+      tl.fromTo("#s4 .titolo-scena", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5 }, 20.55);
+      tl.fromTo("#s4 .punto", { opacity: 0, x: -26 }, { opacity: 1, x: 0, duration: 0.55, stagger: 0.3, ease: "power2.out" }, 21.2);
+      tl.fromTo("#s4-nota", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 23.6);
+      tl.to("#s4-in", { opacity: 0, duration: 0.32 }, 26.08);
+
+      // ================= scena 5 =================
+      tl.fromTo("#s5-in", { opacity: 0 }, { opacity: 1, duration: 0.5 }, 26.6);
+      tl.fromTo("#s5-titolo", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, 26.9);
+      tl.fromTo("#s5-sub", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.6 }, 27.6);
+      tl.fromTo("#s5-chips .chip", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.14 }, 28.5);
+      tl.fromTo("#s5-linea", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power2.out" }, 29.3);
+      tl.fromTo("#s5-cta", { opacity: 0 }, { opacity: 1, duration: 0.6 }, 29.8);
+
+      window.__timelines["promo-harness"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>

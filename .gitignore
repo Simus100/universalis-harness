@@ -121,3 +121,12 @@ media/nexus-promo/renders/
 media/nexus-promo/snapshots/
 media/nexus-promo/assets/
 media/nexus-promo/builds/
+
+# ---- progetto video promo-harness: artefatti rigenerabili, non codice ----
+# Il render si rifà con `npx hyperframes render` dentro media/promo-harness/, la voce con
+# piper (vedi BRIEF.md), i fotogrammi di controllo e la cache di lavoro con `snapshot`.
+# Sono binari che cambiano a ogni iterazione del video: restano locali.
+media/promo-harness/renders/
+media/promo-harness/snapshots/
+media/promo-harness/assets/
+media/promo-harness/.hyperframes/

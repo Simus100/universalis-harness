@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quanto contesto costa l'harness prima che tu scriva — Universalis Harness</title>
+<meta name="description" content="Misura del costo di contesto a inizio sessione: 13.184 token, contro i 29.061 di Claude Code. Metodo, dati e confronto.">
+<style>
+  :root {
+    --bg:#08111f; --panel:#172033; --panel-2:#1d2634; --bordo:#243149;
+    --testo:#eef2f9; --testo-2:#c6cfdd; --attenuato:#8b97ac;
+    --blu:#5b9dff; --azzurro:#38bdf8; --viola:#8b5cff; --verde:#34d399; --giallo:#fbbf24; --rosso:#fb7185;
+    --s1:8px; --s2:16px; --s3:24px; --s4:32px; --s5:48px; --s6:64px;
+    --r:10px;
+    color-scheme: dark;
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    margin:0; background:var(--bg); color:var(--testo);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+    font-size:16px; line-height:1.6;
+  }
+  .foglio { max-width:1080px; margin:0 auto; padding:var(--s6) var(--s3) var(--s6); }
+  header.hero { border-bottom:1px solid var(--bordo); padding-bottom:var(--s5); margin-bottom:var(--s5); }
+  .occhiello {
+    font-size:0.8125rem; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--azzurro); margin:0 0 var(--s2);
+  }
+  h1 { font-size:clamp(1.9rem,4.6vw,2.9rem); line-height:1.14; margin:0 0 var(--s2); letter-spacing:-.02em; }
+  h1 .num { color:var(--blu); font-variant-numeric:tabular-nums; }
+  .sommario { font-size:1.125rem; color:var(--testo-2); max-width:62ch; margin:0; }
+  h2 {
+    font-size:1.5625rem; line-height:1.2; margin:var(--s6) 0 var(--s2); letter-spacing:-.01em;
+  }
+  h2:first-of-type { margin-top:var(--s5); }
+  h3 { font-size:1.0625rem; margin:var(--s4) 0 var(--s1); }
+  p { max-width:72ch; }
+  p, li, td { color:var(--testo-2); }
+  strong { color:var(--testo); font-weight:600; }
+  a { color:var(--blu); }
+  a:focus-visible, summary:focus-visible { outline:2px solid var(--azzurro); outline-offset:2px; border-radius:4px; }
+  code {
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+    background:var(--panel); border:1px solid var(--bordo); border-radius:5px; padding:1px 5px; color:var(--testo);
+  }
+  /* --- indicatori --- */
+  .kpi { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:var(--s3); margin:var(--s5) 0; }
+  .kpi .uno { background:var(--panel); border:1px solid var(--bordo); border-radius:var(--r); padding:var(--s3); }
+  .kpi .val {
+    font-size:clamp(1.75rem,3.4vw,2.375rem); line-height:1.05; font-weight:700;
+    font-variant-numeric:tabular-nums; color:var(--testo); margin:0 0 var(--s1);
+  }
+  .kpi .val .u { font-size:.5em; font-weight:600; color:var(--attenuato); margin-left:2px; }
+  .kpi .et { font-size:.8125rem; letter-spacing:.04em; text-transform:uppercase; color:var(--azzurro); margin:0 0 var(--s1); }
+  .kpi .cf { font-size:.875rem; color:var(--testo-2); margin:0; }
+  .kpi .cf .via { color:var(--verde); font-weight:600; }
+  /* --- blocchi --- */
+  .pannello { background:var(--panel); border:1px solid var(--bordo); border-radius:var(--r); padding:var(--s3) var(--s3) var(--s2); margin:var(--s3) 0; }
+  figure { margin:var(--s3) 0; }
+  .graf { width:100%; height:auto; display:block; background:var(--panel-2); border:1px solid var(--bordo); border-radius:var(--r); padding:10px 12px; }
+  .g-et { fill:var(--testo-2); font-size:14px; }
+  .g-val { fill:var(--testo); font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; }
+  .g-nota { fill:var(--attenuato); font-size:11.5px; }
+  .g-asse { fill:var(--attenuato); font-size:11.5px; font-variant-numeric:tabular-nums; }
+  figcaption { font-size:.875rem; color:var(--attenuato); margin-top:var(--s1); max-width:76ch; }
+  .claim { font-size:1.0625rem; font-weight:600; color:var(--testo); margin:var(--s4) 0 var(--s1); }
+  .sintesi { background:linear-gradient(180deg,var(--panel) 0%,var(--panel-2) 100%); border:1px solid var(--bordo); border-left:3px solid var(--blu); border-radius:var(--r); padding:var(--s3) var(--s3) var(--s2); }
+  .sintesi p { max-width:74ch; }
+  ul, ol { max-width:74ch; padding-left:1.2em; }
+  li { margin:var(--s1) 0; }
+  /* --- tabelle --- */
+  table { width:100%; border-collapse:collapse; margin:var(--s2) 0; font-size:.9375rem; }
+  caption { text-align:left; font-size:.875rem; color:var(--attenuato); margin-bottom:var(--s1); }
+  th, td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--bordo); vertical-align:top; }
+  th { color:var(--testo); font-size:.8125rem; letter-spacing:.03em; text-transform:uppercase; border-bottom:1px solid var(--attenuato); }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .nota-cella { color:var(--attenuato); font-size:.875rem; }
+  tr.riga-noi td { background:rgba(91,157,255,.10); color:var(--testo); }
+  tr.riga-noi td:first-child::before { content:"▪ "; color:var(--blu); }
+  details { border:1px solid var(--bordo); border-radius:var(--r); padding:var(--s2) var(--s3); background:var(--panel); margin:var(--s3) 0; }
+  summary { cursor:pointer; color:var(--testo); font-weight:600; }
+  .due-col { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:var(--s3); }
+  .mini { background:var(--panel-2); border:1px solid var(--bordo); border-radius:var(--r); padding:var(--s2) var(--s3); }
+  .mini h3 { margin-top:0; }
+  .mini p { margin:0; font-size:.9375rem; }
+  .cta { background:var(--panel); border:1px solid var(--blu); border-radius:var(--r); padding:var(--s3); margin:var(--s4) 0 var(--s2); }
+  .cta p { margin:0 0 var(--s1); }
+  footer { border-top:1px solid var(--bordo); margin-top:var(--s6); padding-top:var(--s3); color:var(--attenuato); font-size:.875rem; }
+  .limite { font-size:.9375rem; }
+  @media (max-width:640px) {
+    .foglio { padding:var(--s4) var(--s2); }
+    .g-et { font-size:16px; }
+    .g-nota { display:none; }
+  }
+  @media print {
+    body { background:#fff; color:#111; }
+    .pannello, .graf, .kpi .uno, .sintesi, details, .cta, .mini { background:#fff; border-color:#bbb; }
+    p, li, td, .g-et, .g-val, .g-nota, .g-asse { color:#111; fill:#111; }
+    a { color:#000; }
+    h2 { break-after:avoid; }
+    figure { break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="foglio">
+
+<header class="hero">
+  <p class="occhiello">Universalis Harness · misura del 13 ottobre 2026 · dati riproducibili</p>
+  <h1>Prima che tu scriva una parola, l'harness ha già mandato <span class="num">13.184</span> token.
+      Claude Code ne manda <span class="num">29.061</span>.</h1>
+  <p class="sommario">Un agente AI paga un pedaggio fisso a ogni richiesta: istruzioni, elenco dei
+  tool, indice delle skill. L'abbiamo misurato su questa istanza in due modi indipendenti — la
+  contabilità del provider e una ricostruzione locale — e confrontato con gli harness più usati.
+  Il risultato: metà di Claude Code, e una leva concreta per abbassarlo ancora.</p>
+</header>
+
+<div class="kpi">
+  <div class="uno">
+    <p class="et">Costo di contesto a riposo</p>
+    <p class="val">13.184<span class="u">token</span></p>
+    <p class="cf">Misurato dal provider al primo turno · Claude Code: 29.061 (2.2×)</p>
+  </div>
+  <div class="uno">
+    <p class="et">Prefisso servito dalla cache</p>
+    <p class="val">97,5<span class="u">%</span></p>
+    <p class="cf"><span class="via">12.928 token su 13.259</span>: la parte ripetuta si ripaga quasi tutta da sola</p>
+  </div>
+  <div class="uno">
+    <p class="et">Solo definizioni dei tool</p>
+    <p class="val">6.383<span class="u">token</span></p>
+    <p class="cf">14 tool attivi, dal <code>read</code> a <code>ask_user</code></p>
+  </div>
+  <div class="uno">
+    <p class="et">Tenuto fuori dal gate</p>
+    <p class="val">5.543<span class="u">token</span></p>
+    <p class="cf"><code>subagent</code> e <code>bg_wait</code> restano spenti: si accendono quando servono</p>
+  </div>
+</div>
+
+<section class="sintesi">
+  <h2 style="margin-top:0">In una riga</h2>
+  <p><strong>Un harness onesto non nasconde il proprio costo: lo dichiara, lo misura e lo rende
+  configurabile.</strong> Questa istanza costa 13.184 token di contesto prima della prima
+  parola — 2.2 volte meno di Claude Code (29.061) e in linea con Copilot CLI
+  (12.956) e Cline (12.465) — e può scendere a circa 2.354 token spegnendo skill e tool
+  che non servono a quel lavoro (somma delle voci misurate: note dell'istanza 1.681 + nucleo di
+  pi 673, non una configurazione provata). Il motore sotto, <code>pi</code>, da solo pesa circa 1.000
+  token: <strong>quasi tutto il pedaggio viene da ciò che l'istanza aggiunge, non dalla fabbrica</strong>,
+  ed è esattamente la parte che possiamo decidere.</p>
+</section>
+
+<h2>La domanda</h2>
+<p>Ogni agente che lavora sui file manda al modello, a ogni richiesta, un blocco di istruzioni e
+l'elenco dei suoi strumenti. È il pedaggio che si paga anche quando la richiesta è «rinomina questa
+cartella». Su una finestra da 128.000 token, 13.184 token sono l'10% del
+budget speso in anticipo; su un abbonamento a consumo è voce di costo fissa per ogni turno.</p>
+<p>La domanda di questo report non è «è tanto o poco?» — senza un termine di paragone è una domanda
+senza risposta. È: <strong>quanto costa questa istanza, da dove viene ogni token, e come si
+confronta con chi usa gli strumenti più diffusi?</strong></p>
+
+<h2>Metodo in breve</h2>
+<div class="due-col">
+  <div class="mini">
+    <h3>Misura 1 — la contabilità del provider</h3>
+    <p>Dai log delle sessioni: token di <em>input</em> più <em>cacheRead</em> della prima risposta,
+    meno i token del primo messaggio dell'utente. È il numero che il provider fattura davvero. Sul
+    campione di <strong>41 sessioni</strong> (19/09 – 13/10) va da 4.609 a 13.184
+    token, mediana 6.367.</p>
+  </div>
+  <div class="mini">
+    <h3>Misura 2 — ricostruzione locale</h3>
+    <p>Si ricrea la sessione come la crea la dashboard (stesse estensioni, stesse skill, stessa nota
+    di sistema) e si contano i caratteri di ciò che parte: <code>system prompt</code>
+    6.112 token + definizioni dei tool 6.383 token =
+    <strong>12.495</strong>. Conteggio con tokenizzatore o200k_base.</p>
+  </div>
+</div>
+<p>Le due strade convergono entro il 6% (12.495 stimati contro 13.184 fatturati: la
+differenza è il formato dei messaggi e il tokenizzatore del modello). Quando divergono, nel report
+vince il numero fatturato; la ricostruzione serve a <em>spiegare</em> la composizione.
+Nessun contenuto delle sessioni è stato letto per questo report: solo conteggi.</p>
+
+<h2>Da dove vengono i 13.184 token</h2>
+<p class="claim">Il 46% è fatto di tool, il 35% di indice delle skill: il motore è la voce più piccola del conto.</p>
+<figure>
+  <svg class="graf" viewBox="0 0 900 238" role="img" aria-labelledby="g1-t" aria-describedby="g1-d" preserveAspectRatio="xMidYMid meet">
+<title id="g1-t">Confronto in token</title>
+<desc id="g1-d">Barre orizzontali, scala da zero a 6.000 token. Ogni barra riporta il valore in cifre accanto al nome.</desc>
+<text class="g-et" x="250" y="36" text-anchor="end">Tool delle estensioni</text>
+<rect x="280" y="20" width="485" height="24" rx="4" fill="#5b9dff"/>
+<text class="g-val" x="775" y="37">5.708</text>
+<text class="g-nota" x="280" y="56">web_search · source_check · fetch_content · get_search_content · ask_user · browser · memoria (46%)</text>
+<text class="g-et" x="250" y="90" text-anchor="end">Indice delle 27 skill</text>
+<rect x="280" y="74" width="377" height="24" rx="4" fill="#38bdf8"/>
+<text class="g-val" x="667" y="91">4.430</text>
+<text class="g-nota" x="280" y="110">descrizione e percorso di ogni skill, inviate a ogni richiesta (35%)</text>
+<text class="g-et" x="250" y="144" text-anchor="end">Note operative dell'istanza</text>
+<rect x="280" y="128" width="143" height="24" rx="4" fill="#8b5cff"/>
+<text class="g-val" x="433" y="145">1.681</text>
+<text class="g-nota" x="280" y="164">lingua, cartelle, memoria, goal, disegni, decisore locale (13%)</text>
+<text class="g-et" x="250" y="198" text-anchor="end">Nucleo di pi (read, bash, edit, write)</text>
+<rect x="280" y="182" width="57" height="24" rx="4" fill="#34d399"/>
+<text class="g-val" x="347" y="199">673</text>
+<text class="g-nota" x="280" y="218">il motore: la parte che non cresce (5%)</text>
+</svg>
+  <figcaption>Ricostruzione locale (12.495 token, 14 tool attivi). Percentuali sul totale
+  ricostruito. Le definizioni dei tool si pagano a ogni richiesta anche quando il tool non viene
+  chiamato: è il caso di <code>browser</code> (589 token) in una sessione che non naviga nulla.</figcaption>
+</figure>
+<table>
+  <caption>Composizione del contesto a riposo — ricostruzione locale del 13/10/2026</caption>
+  <thead><tr><th>Voce</th><th class="num">Token</th><th class="num">Quota</th></tr></thead>
+  <tbody><tr><td>Tool delle estensioni</td><td class="num">5.708</td><td class="num">46%</td></tr>
+<tr><td>Indice delle 27 skill</td><td class="num">4.430</td><td class="num">35%</td></tr>
+<tr><td>Note operative dell'istanza</td><td class="num">1.681</td><td class="num">13%</td></tr>
+<tr><td>Nucleo di pi (read, bash, edit, write)</td><td class="num">673</td><td class="num">5%</td></tr><tr><td><strong>Totale ricostruito</strong></td><td class="num"><strong>12.495</strong></td><td class="num">100%</td></tr></tbody>
+</table>
+
+<h2>Il confronto con gli harness più usati</h2>
+<p class="claim">Nella stessa classe di prodotto, questa istanza sta a metà strada: meno della metà di
+Claude Code, ma il doppio di Codex CLI.</p>
+<figure>
+  <svg class="graf" viewBox="0 0 900 400" role="img" aria-labelledby="g2-t" aria-describedby="g2-d" preserveAspectRatio="xMidYMid meet">
+<title id="g2-t">Confronto in token</title>
+<desc id="g2-d">Barre orizzontali, scala da zero a 39.000 token. Ogni barra riporta il valore in cifre accanto al nome.</desc>
+<text class="g-et" x="250" y="36" text-anchor="end">pi (motore nudo, senza istanza)</text>
+<rect x="280" y="20" width="13" height="24" rx="4" fill="#34d399"/>
+<text class="g-val" x="303" y="37">1.000</text>
+<text class="g-nota" x="280" y="56">citato dalla richiesta di feature di GitHub Copilot CLI #2627</text>
+<text class="g-et" x="250" y="90" text-anchor="end">OpenCode</text>
+<rect x="280" y="74" width="92" height="24" rx="4" fill="#8b97ac"/>
+<text class="g-val" x="382" y="91">7.000</text>
+<text class="g-nota" x="280" y="110">misura Studio Systima, stessa prova</text>
+<text class="g-et" x="250" y="144" text-anchor="end">Codex CLI</text>
+<rect x="280" y="128" width="111" height="24" rx="4" fill="#8b97ac"/>
+<text class="g-val" x="401" y="145">8.497</text>
+<text class="g-nota" x="280" y="164">prompt minimale, evento turn.completed, gpt-5.x</text>
+<text class="g-et" x="250" y="198" text-anchor="end">Cline</text>
+<rect x="280" y="182" width="163" height="24" rx="4" fill="#8b97ac"/>
+<text class="g-val" x="453" y="199">12.465</text>
+<text class="g-nota" x="280" y="218">solo system prompt (59.057 car); 12-16k per messaggio secondo gli utenti</text>
+<text class="g-et" x="250" y="252" text-anchor="end">GitHub Copilot CLI</text>
+<rect x="280" y="236" width="169" height="24" rx="4" fill="#8b97ac"/>
+<text class="g-val" x="459" y="253">12.956</text>
+<text class="g-nota" x="280" y="272">system prompt 12.455 + definizioni dei tool</text>
+<text class="g-et" x="250" y="306" text-anchor="end">Universalis Harness (questo)</text>
+<rect x="280" y="290" width="172" height="24" rx="4" fill="#5b9dff"/>
+<rect x="280" y="290" width="172" height="24" rx="4" fill="none" stroke="#eef2f9" stroke-width="1.5"/>
+<text class="g-val" x="462" y="307">13.184</text>
+<text class="g-nota" x="280" y="326">misura reale del provider, sessione del 13/10/2026</text>
+<text class="g-et" x="250" y="360" text-anchor="end">Claude Code</text>
+<rect x="280" y="344" width="380" height="24" rx="4" fill="#8b97ac"/>
+<text class="g-val" x="670" y="361">29.061</text>
+<text class="g-nota" x="280" y="380">cartella vuota, MCP spento (38.805 in progetto reale)</text>
+</svg>
+  <figcaption>Token inviati al modello <em>prima</em> del contenuto dell'utente. Misure raccolte da
+  fonti pubbliche (vedi <a href="#fonti">fonti</a>) con metodi diversi: vanno lette come ordini di
+  grandezza, non al token. Per Cline la cifra copre <em>solo</em> il system prompt: il totale reale è
+  più alto. Per Claude Code, in un progetto vero con file di istruzioni la misura sale a 38.805.</figcaption>
+</figure>
+<table>
+  <caption>Overhead di input a inizio sessione, per harness</caption>
+  <thead><tr><th>Harness</th><th class="num">Token</th><th class="num">vs noi</th><th>Nota sulla misura</th></tr></thead>
+  <tbody><tr><td>Claude Code</td><td class="num">29.061</td><td class="num">2.20×</td><td class="nota-cella">cartella vuota, MCP spento (38.805 in progetto reale)</td></tr>
+<tr class=riga-noi><td>Questo harness (Universalis / pi)</td><td class="num">13.184</td><td class="num">1.00×</td><td class="nota-cella">misura reale del provider, sessione del 13/10/2026</td></tr>
+<tr><td>GitHub Copilot CLI</td><td class="num">12.956</td><td class="num">0.98×</td><td class="nota-cella">system prompt 12.455 + definizioni dei tool</td></tr>
+<tr><td>Cline</td><td class="num">12.465</td><td class="num">0.95×</td><td class="nota-cella">solo system prompt (59.057 car); 12-16k per messaggio secondo gli utenti</td></tr>
+<tr><td>Codex CLI</td><td class="num">8.497</td><td class="num">0.64×</td><td class="nota-cella">prompt minimale, evento turn.completed, gpt-5.x</td></tr>
+<tr><td>OpenCode</td><td class="num">7.000</td><td class="num">0.53×</td><td class="nota-cella">misura Studio Systima, stessa prova</td></tr>
+<tr><td>pi (motore nudo, senza istanza)</td><td class="num">1.000</td><td class="num">0.08×</td><td class="nota-cella">citato dalla richiesta di feature di GitHub Copilot CLI #2627</td></tr></tbody>
+</table>
+<p><strong>La lettura onesta.</strong> Claude Code paga istruzioni molto più ricche — e le sue
+funzioni di ricerca, gestione dei file e sotto-agenti sono più numerose — quindi il confronto non
+dice «chi è meglio», dice <strong>quanto margine c'è</strong>. Un harness che lavora su una macchina
+del cliente e serve una persona per istanza può permettersi di accendere solo ciò che quella persona
+usa: è la stessa ragione per cui questa istanza tiene spenti <code>subagent</code> e
+<code>bg_wait</code> (5.543 token) finché non servono.</p>
+
+<h2>L'overhead cresce con l'istanza, non con il motore</h2>
+<p class="claim">4.609 token il 19 settembre, 13.184 il 13 ottobre: +186% in 24 giorni di lavoro reale.</p>
+<figure>
+  <svg class="graf" viewBox="0 0 900 360" role="img" aria-labelledby="g3-t" aria-describedby="g3-d" preserveAspectRatio="xMidYMid meet">
+<title id="g3-t">L'overhead è quasi triplicato in 24 giorni di lavoro</title>
+<desc id="g3-d">Spezzata delle 41 sessioni dal 2026-09-19 al 2026-10-13: da 4.609 a 13.184 token. Asse verticale da zero a 14.000 token.</desc>
+<line x1="78" y1="296.0" x2="872" y2="296.0" stroke="#243149" stroke-width="1"/><text class="g-asse" x="68" y="300.0" text-anchor="end">0</text><line x1="78" y1="260.0" x2="872" y2="260.0" stroke="#243149" stroke-width="1"/><text class="g-asse" x="68" y="264.0" text-anchor="end">2.000</text><line x1="78" y1="224.0" x2="872" y2="224.0" stroke="#243149" stroke-width="1"/><text class="g-asse" x="68" y="228.0" text-anchor="end">4.000</text><line x1="78" y1="188.0" x2="872" y2="188.0" stroke="#243149" stroke-width="1"/><text class="g-asse" x="68" y="192.0" text-anchor="end">6.000</text><line x1="78" y1="152.0" x2="872" y2="152.0" stroke="#243149" stroke-width="1"/><text class="g-asse" x="68" y="156.0" text-anchor="end">8.000</text><line x1="78" y1="116.0" x2="872" y2="116.0" stroke="#243149" stroke-width="1"/><text class="g-asse" x="68" y="120.0" text-anchor="end">10.000</text><line x1="78" y1="80.0" x2="872" y2="80.0" stroke="#243149" stroke-width="1"/><text class="g-asse" x="68" y="84.0" text-anchor="end">12.000</text><line x1="78" y1="44.0" x2="872" y2="44.0" stroke="#243149" stroke-width="1"/><text class="g-asse" x="68" y="48.0" text-anchor="end">14.000</text>
+<path d="M78.0,202.1 L97.8,213.0 L117.7,213.0 L137.6,211.0 L157.4,210.8 L177.2,190.1 L197.1,190.1 L217.0,190.0 L236.8,190.1 L256.6,188.9 L276.5,190.1 L296.4,189.9 L316.2,190.1 L336.1,190.1 L355.9,190.1 L375.8,190.1 L395.6,190.1 L415.5,190.1 L435.3,188.9 L455.2,181.4 L475.0,181.4 L494.9,181.2 L514.7,181.4 L534.5,176.1 L554.4,169.6 L574.2,169.6 L594.1,158.7 L614.0,160.0 L633.8,155.9 L653.7,135.0 L673.5,128.2 L693.4,128.0 L713.2,101.1 L733.1,127.5 L752.9,127.5 L772.8,124.6 L792.6,124.6 L812.5,79.4 L832.3,76.1 L852.2,69.6 L872.0,58.7 L872,296 L78,296 Z" fill="#5b9dff" opacity="0.14"/>
+<path d="M78.0,202.1 L97.8,213.0 L117.7,213.0 L137.6,211.0 L157.4,210.8 L177.2,190.1 L197.1,190.1 L217.0,190.0 L236.8,190.1 L256.6,188.9 L276.5,190.1 L296.4,189.9 L316.2,190.1 L336.1,190.1 L355.9,190.1 L375.8,190.1 L395.6,190.1 L415.5,190.1 L435.3,188.9 L455.2,181.4 L475.0,181.4 L494.9,181.2 L514.7,181.4 L534.5,176.1 L554.4,169.6 L574.2,169.6 L594.1,158.7 L614.0,160.0 L633.8,155.9 L653.7,135.0 L673.5,128.2 L693.4,128.0 L713.2,101.1 L733.1,127.5 L752.9,127.5 L772.8,124.6 L792.6,124.6 L812.5,79.4 L832.3,76.1 L852.2,69.6 L872.0,58.7" fill="none" stroke="#5b9dff" stroke-width="2.5" stroke-linejoin="round"/>
+<circle cx="78.0" cy="202.1" r="3" fill="#5b9dff"/><circle cx="97.8" cy="213.0" r="3" fill="#5b9dff"/><circle cx="117.7" cy="213.0" r="3" fill="#5b9dff"/><circle cx="137.6" cy="211.0" r="3" fill="#5b9dff"/><circle cx="157.4" cy="210.8" r="3" fill="#5b9dff"/><circle cx="177.2" cy="190.1" r="3" fill="#5b9dff"/><circle cx="197.1" cy="190.1" r="3" fill="#5b9dff"/><circle cx="217.0" cy="190.0" r="3" fill="#5b9dff"/><circle cx="236.8" cy="190.1" r="3" fill="#5b9dff"/><circle cx="256.6" cy="188.9" r="3" fill="#5b9dff"/><circle cx="276.5" cy="190.1" r="3" fill="#5b9dff"/><circle cx="296.4" cy="189.9" r="3" fill="#5b9dff"/><circle cx="316.2" cy="190.1" r="3" fill="#5b9dff"/><circle cx="336.1" cy="190.1" r="3" fill="#5b9dff"/><circle cx="355.9" cy="190.1" r="3" fill="#5b9dff"/><circle cx="375.8" cy="190.1" r="3" fill="#5b9dff"/><circle cx="395.6" cy="190.1" r="3" fill="#5b9dff"/><circle cx="415.5" cy="190.1" r="3" fill="#5b9dff"/><circle cx="435.3" cy="188.9" r="3" fill="#5b9dff"/><circle cx="455.2" cy="181.4" r="3" fill="#5b9dff"/><circle cx="475.0" cy="181.4" r="3" fill="#5b9dff"/><circle cx="494.9" cy="181.2" r="3" fill="#5b9dff"/><circle cx="514.7" cy="181.4" r="3" fill="#5b9dff"/><circle cx="534.5" cy="176.1" r="3" fill="#5b9dff"/><circle cx="554.4" cy="169.6" r="3" fill="#5b9dff"/><circle cx="574.2" cy="169.6" r="3" fill="#5b9dff"/><circle cx="594.1" cy="158.7" r="3" fill="#5b9dff"/><circle cx="614.0" cy="160.0" r="3" fill="#5b9dff"/><circle cx="633.8" cy="155.9" r="3" fill="#5b9dff"/><circle cx="653.7" cy="135.0" r="3" fill="#5b9dff"/><circle cx="673.5" cy="128.2" r="3" fill="#5b9dff"/><circle cx="693.4" cy="128.0" r="3" fill="#5b9dff"/><circle cx="713.2" cy="101.1" r="3" fill="#5b9dff"/><circle cx="733.1" cy="127.5" r="3" fill="#5b9dff"/><circle cx="752.9" cy="127.5" r="3" fill="#5b9dff"/><circle cx="772.8" cy="124.6" r="3" fill="#5b9dff"/><circle cx="792.6" cy="124.6" r="3" fill="#5b9dff"/><circle cx="812.5" cy="79.4" r="3" fill="#5b9dff"/><circle cx="832.3" cy="76.1" r="3" fill="#5b9dff"/><circle cx="852.2" cy="69.6" r="3" fill="#5b9dff"/><circle cx="872.0" cy="58.7" r="3" fill="#5b9dff"/>
+<text class="g-nota" x="84" y="190.1">4.609 token · 19 settembre</text>
+<text class="g-nota" x="866" y="44.7" text-anchor="end">13.184 token · 13 ottobre</text>
+<text class="g-asse" x="78.0" y="318" text-anchor="middle">19/09</text><text class="g-asse" x="276.5" y="318" text-anchor="middle">21/09</text><text class="g-asse" x="475.0" y="318" text-anchor="middle">24/09</text><text class="g-asse" x="673.5" y="318" text-anchor="middle">05/10</text><text class="g-asse" x="872.0" y="318" text-anchor="middle">13/10</text>
+<text class="g-asse" x="68" y="28" text-anchor="end">token</text>
+</svg>
+  <figcaption>Tutte le 41 sessioni misurate, in ordine cronologico: token di contesto a inizio
+  sessione (input + cacheRead meno il primo messaggio). I gradini corrispondono ai giorni in cui
+  l'istanza è cambiata — skill installate, tool di estensione accesi, note operative aggiunte: la
+  lettura è coerente con i dati, la causa precisa non è tracciata, quindi non la attribuiamo.</figcaption>
+</figure>
+<p>Il motore (<code>pi</code>) è la parte stabile: ~1.000 token. Tutto il resto è
+<strong>contenuto dell'istanza</strong> — e quindi è una decisione, non un destino. Un'istanza
+ospitata per un cliente che usa chat e file manager, senza browser né ricerca web, parte da un
+pedaggio molto più basso della stessa istanza con tutto acceso.</p>
+
+<h2>Cosa c'è in cambio: il contesto che resta libero</h2>
+<p>Il pedaggio non è un lusso: è <em>ciò che l'agente sa fare</em>. Quelle voci comprano capacità
+reali, e il report le mostra per quello che sono — costo e funzione, affiancati.</p>
+<table>
+  <caption>Ogni voce di costo, e cosa abilita</caption>
+  <thead><tr><th>Voce (token)</th><th>Cosa compra</th><th>Si può spegnere?</th></tr></thead>
+  <tbody>
+    <tr><td>Ricerca web (3.112)</td><td>Cercare sul web, verificare un'affermazione su fonti, scaricare una pagina o un PDF, rileggere un risultato già scaricato</td><td>Sì: su istanze chiuse o offline è la prima da togliere</td></tr>
+    <tr><td>Indice delle skill (4.430)</td><td>27 procedure riutilizzabili — report, video, giochi, memoria — lette per intero <em>solo</em> quando il compito corrisponde</td><td>Sì: si tengono le skill dell'uso reale, non il catalogo</td></tr>
+    <tr><td>Domande all'utente (943)</td><td>Chiedere invece di indovinare, con opzioni e scadenze, dentro la conversazione</td><td>Sconsigliato: è la voce che evita i lavori sbagliati</td></tr>
+    <tr><td>Memoria (1.064)</td><td>Ricordare episodi, decisioni e file toccati a tre prezzi diversi: mappa ~300 token, pagina ~500, frammenti qualche centinaio</td><td>No: è ciò che evita di ripagare il contesto di ieri</td></tr>
+    <tr><td>Browser pilotato (589)</td><td>Navigare siti reali, leggere l'albero di accessibilità, compilare moduli, con Chrome in sandbox verificata</td><td>Sì: spento di default</td></tr>
+    <tr><td>Note operative dell'istanza (1.681)</td><td>Lingua, cartelle del progetto, regole della memoria, formato dei disegni</td><td>Si accorciano, non si azzerano</td></tr>
+    <tr><td>Nucleo di pi (673)</td><td>Leggere, scrivere, modificare file ed eseguire comandi — il mestiere di base</td><td>No</td></tr>
+    <tr><td><code>subagent</code> + <code>bg_wait</code> (5.543)</td><td>Lavori paralleli in sotto-agenti e attese in secondo piano</td><td>Spenti di default, esclusi dal contesto dal gate dei tool</td></tr>
+  </tbody>
+</table>
+<figure>
+  <svg class="graf" viewBox="0 0 900 130" role="img" aria-labelledby="g4-t" aria-describedby="g4-d" preserveAspectRatio="xMidYMid meet">
+<title id="g4-t">Confronto in token</title>
+<desc id="g4-d">Barre orizzontali, scala da zero a 20.000 token. Ogni barra riporta il valore in cifre accanto al nome.</desc>
+<text class="g-et" x="280" y="36" text-anchor="end">Default di oggi (14 tool, 27 skill)</text>
+<rect x="310" y="20" width="316" height="24" rx="4" fill="#5b9dff"/>
+<rect x="310" y="20" width="316" height="24" rx="4" fill="none" stroke="#eef2f9" stroke-width="1.5"/>
+<text class="g-val" x="636" y="37">13.184</text>
+<text class="g-nota" x="310" y="56">misura del provider, sessione del 13/10/2026</text>
+<text class="g-et" x="280" y="90" text-anchor="end">+ subagent e bg_wait, se accesi</text>
+<rect x="310" y="74" width="133" height="24" rx="4" fill="#fbbf24"/>
+<text class="g-val" x="453" y="91">5.543</text>
+<text class="g-nota" x="310" y="110">oggi restano fuori dal contesto grazie al gate dei tool</text>
+</svg>
+  <figcaption>Il gate dei tool in cifre. Le due barre misurano cose diverse e non si sommano: la
+  prima è il contesto che si paga oggi, la seconda sono i token che <em>entrerebbero in più</em>
+  accendendo <code>subagent</code> e <code>bg_wait</code> — ed è la ragione per cui restano spenti
+  finché un lavoro non li richiede davvero.</figcaption>
+</figure>
+
+<h2>Che cos'è, in pratica, questa istanza</h2>
+<p>Il soggetto della misura non è un esperimento ma uno strumento di lavoro quotidiano: una dashboard
+web self-hosted che dà a un agente AI le mani sui file di chi la usa, con la spesa sotto gli occhi.</p>
+<div class="due-col">
+  <div class="mini">
+    <h3>Cosa fa</h3>
+    <p>Chat agentica che mostra pensiero, tool e <strong>costo</strong> di ogni turno; file manager
+    con ricerca nel contenuto; obiettivi a catena con avanzamento; pianificazioni cron; skill nel
+    formato aperto Agent Skills; browser pilotato con presa di controllo umana; lettura di immagini e
+    PDF; disegni SVG dentro la risposta; ascolto delle risposte con voce <em>sul server</em>; memoria
+    a lungo termine consultabile per grafo, wiki e frammenti.</p>
+  </div>
+  <div class="mini">
+    <h3>Per chi, e come si installa</h3>
+    <p>Professionisti e piccole strutture che vogliono un agente che tocchi davvero i propri
+    documenti; team tecnici che vogliono un'interfaccia web sopra un agente da riga di comando con
+    costi controllati; chi ospita per altri. <strong>Due modi:</strong> istanza ospitata su server
+    gestito (una persona per istanza, quote e limiti misurabili) oppure <strong>on-premise</strong>,
+    in una cartella, senza servizi esterni, database o dipendenze cloud.</p>
+  </div>
+</div>
+<h3>Quello che non promettiamo</h3>
+<ul class="limite">
+  <li>L'agente ha accesso a una shell e ai file della root dell'istanza: <strong>il confine di
+  sicurezza è la macchina</strong>, non l'applicazione.</li>
+  <li>Il modello di accesso è pensato per <strong>una persona per istanza</strong>, non per
+  organizzazioni con ruoli e permessi.</li>
+  <li>Nella modalità ospitata non c'è fatturazione automatica: è gestita a parte.</li>
+  <li>L'overhead di contesto non è zero e non scende a zero: le voci della tabella qui sopra sono
+  scelte, e ogni scelta ha un prezzo che questo report dichiara.</li>
+</ul>
+
+<div class="cta">
+  <h2 style="margin:0 0 var(--s2)">Il pedaggio è una decisione, non un destino</h2>
+  <p>Se il vincolo è il costo per richiesta, si accende solo ciò che serve e si misura. Se il vincolo
+  è la capacità, si paga il pedaggio e si guarda il valore che restituisce. In entrambi i casi la
+  differenza con un harness «tutto acceso» è di decine di migliaia di token al giorno.</p>
+  <p><strong>Licenze d'uso commerciale, istanze ospitate e installazioni on-premise su richiesta</strong>
+  (software proprietario, tutti i diritti riservati). Il codice è pubblico per trasparenza e
+  valutazione: si può leggere, misurare e contestare ogni numero di questo report.</p>
+</div>
+
+<h2>Metodo, limiti, e cosa non stiamo dicendo</h2>
+<ul>
+  <li><strong>Misure eterogenee.</strong> I numeri degli altri harness vengono da fonti pubbliche con
+  tokenizzatori, perimetri e versioni diversi (Claude Code conta ~3.000 token in più in un progetto
+  reale). Il confronto è utile per l'ordine di grandezza, non per la terza cifra.</li>
+  <li><strong>Tokenizer.</strong> La ricostruzione locale usa o200k_base; DeepSeek, il modello di
+  questa istanza, ha un vocabolario proprio: la ricostruzione sottostima di circa il 5,5%.</li>
+  <li><strong>La cache cambia il costo, non il contesto.</strong> Il 97,5%
+  di prefisso servito da cache rende il pedaggio economico in soldi, non gratuito in finestra: i token
+  occupati restano occupati.</li>
+  <li><strong>Serie storica senza cause.</strong> La curva sale mentre l'istanza cresce; non abbiamo
+  un registro che leghi ogni gradino a una modifica precisa, quindi non lo affermiamo.</li>
+  <li><strong>Nessun dato di terzi.</strong> Dalle sessioni sono stati letti solo i conteggi di token,
+  mai i contenuti. Nel dataset pubblicato non c'è testo delle conversazioni.</li>
+</ul>
+
+<h2 id="fonti">Dati e fonti</h2>
+<table>
+  <caption>Dettaglio della ricostruzione locale (token stimati, o200k_base). Le singole voci sono
+  arrotondate all'unità: la loro somma può differire di qualche token dal totale misurato.</caption>
+  <thead><tr><th>Voce</th><th class="num">Token</th></tr></thead>
+  <tbody>
+    <tr><td>Nucleo pi (read, bash, edit, write)</td><td class="num">673</td></tr>
+<tr><td>Ricerca web (web_search, source_check, fetch_content, get_search_content)</td><td class="num">3.112</td></tr>
+<tr><td>ask_user (domande all'utente)</td><td class="num">943</td></tr>
+<tr><td>browser pilotato</td><td class="num">589</td></tr>
+<tr><td>memoria (cerca, grafo, wiki, episodio)</td><td class="num">1.064</td></tr>
+<tr><td>Note operative dell'istanza (8 sezioni)</td><td class="num">1.681</td></tr>
+<tr><td>Indice delle skill (27 skill)</td><td class="num">4.430</td></tr>
+<tr><td>subagent + bg_wait (spenti di default)</td><td class="num">5.543</td></tr>
+    <tr><td><strong>Totale a riposo (senza subagent/bg_wait)</strong></td><td class="num"><strong>12.492</strong></td></tr>
+  </tbody>
+</table>
+<details>
+  <summary>Serie storica completa — 41 sessioni, dal 2026-09-19 al 2026-10-13</summary>
+  <table>
+    <caption>Token di contesto a inizio sessione (input + cacheRead meno il primo messaggio utente)</caption>
+    <thead><tr><th>#</th><th>Data</th><th class="num">Token</th></tr></thead>
+    <tbody><tr><td>1</td><td>2026-09-19</td><td class="num">5.214</td></tr>
+<tr><td>2</td><td>2026-09-19</td><td class="num">4.609</td></tr>
+<tr><td>3</td><td>2026-09-19</td><td class="num">4.610</td></tr>
+<tr><td>4</td><td>2026-09-19</td><td class="num">4.724</td></tr>
+<tr><td>5</td><td>2026-09-20</td><td class="num">4.733</td></tr>
+<tr><td>6</td><td>2026-09-20</td><td class="num">5.882</td></tr>
+<tr><td>7</td><td>2026-09-20</td><td class="num">5.886</td></tr>
+<tr><td>8</td><td>2026-09-21</td><td class="num">5.887</td></tr>
+<tr><td>9</td><td>2026-09-21</td><td class="num">5.884</td></tr>
+<tr><td>10</td><td>2026-09-21</td><td class="num">5.950</td></tr>
+<tr><td>11</td><td>2026-09-21</td><td class="num">5.882</td></tr>
+<tr><td>12</td><td>2026-09-22</td><td class="num">5.895</td></tr>
+<tr><td>13</td><td>2026-09-23</td><td class="num">5.881</td></tr>
+<tr><td>14</td><td>2026-09-23</td><td class="num">5.884</td></tr>
+<tr><td>15</td><td>2026-09-23</td><td class="num">5.884</td></tr>
+<tr><td>16</td><td>2026-09-23</td><td class="num">5.881</td></tr>
+<tr><td>17</td><td>2026-09-24</td><td class="num">5.882</td></tr>
+<tr><td>18</td><td>2026-09-24</td><td class="num">5.884</td></tr>
+<tr><td>19</td><td>2026-09-24</td><td class="num">5.952</td></tr>
+<tr><td>20</td><td>2026-09-24</td><td class="num">6.367</td></tr>
+<tr><td>21</td><td>2026-09-24</td><td class="num">6.367</td></tr>
+<tr><td>22</td><td>2026-09-26</td><td class="num">6.375</td></tr>
+<tr><td>23</td><td>2026-09-26</td><td class="num">6.369</td></tr>
+<tr><td>24</td><td>2026-09-27</td><td class="num">6.662</td></tr>
+<tr><td>25</td><td>2026-09-28</td><td class="num">7.024</td></tr>
+<tr><td>26</td><td>2026-09-29</td><td class="num">7.024</td></tr>
+<tr><td>27</td><td>2026-10-04</td><td class="num">7.626</td></tr>
+<tr><td>28</td><td>2026-10-04</td><td class="num">7.558</td></tr>
+<tr><td>29</td><td>2026-10-05</td><td class="num">7.783</td></tr>
+<tr><td>30</td><td>2026-10-05</td><td class="num">8.945</td></tr>
+<tr><td>31</td><td>2026-10-05</td><td class="num">9.324</td></tr>
+<tr><td>32</td><td>2026-10-06</td><td class="num">9.333</td></tr>
+<tr><td>33</td><td>2026-10-07</td><td class="num">10.830</td></tr>
+<tr><td>34</td><td>2026-10-08</td><td class="num">9.360</td></tr>
+<tr><td>35</td><td>2026-10-08</td><td class="num">9.361</td></tr>
+<tr><td>36</td><td>2026-10-11</td><td class="num">9.525</td></tr>
+<tr><td>37</td><td>2026-10-11</td><td class="num">9.525</td></tr>
+<tr><td>38</td><td>2026-10-12</td><td class="num">12.033</td></tr>
+<tr><td>39</td><td>2026-10-12</td><td class="num">12.218</td></tr>
+<tr><td>40</td><td>2026-10-12</td><td class="num">12.580</td></tr>
+<tr><td>41</td><td>2026-10-13</td><td class="num">13.184</td></tr></tbody>
+  </table>
+</details>
+<h3>Fonti esterne</h3>
+<ul><li><a href="https://systima.ai/blog/claude-code-vs-opencode-token-overhead">Systima — Claude Code vs OpenCode: overhead misurato</a></li>
+<li><a href="https://startdebugging.net/2026/09/measure-an-agents-fixed-token-overhead-before-the-first-user-token/">Start Debugging — come misurare l'overhead fisso di un agente</a></li>
+<li><a href="https://devaireviews.com/blog/claude-code-token-overhead/">devaireviews — Claude Code: cosa costano davvero 33k token</a></li>
+<li><a href="https://github.com/openai/codex/issues/19212">openai/codex #19212 — il system prompt e' troppo grande</a></li>
+<li><a href="https://gist.github.com/alexfazio/359c17d84cb6a5af12bac88fa1db9770">gist alexfazio — esperimenti su codex exec (8.497 token di baseline)</a></li>
+<li><a href="https://github.com/github/copilot-cli/issues/2627">github/copilot-cli #2627 — overhead fisso del system prompt</a></li>
+<li><a href="https://copilot-autogent.github.io/ai-security-blog/blog/hidden-cost-of-instructions/">AI Security Distilled — il costo nascosto delle istruzioni di Copilot CLI</a></li>
+<li><a href="https://www.harrywang.me/blog/cline">Harry Wang — il system prompt di Cline (59.057 car / 12.465 token)</a></li>
+<li><a href="https://github.com/google-gemini/gemini-cli/issues/1597">google-gemini/gemini-cli #1597 — uso anomalo di token in ingresso</a></li></ul>
+<p class="limite">Dataset misurato: <code>media/overhead-contesto-harness.json</code> · questo report è
+generato da <code>media/genera-report-overhead.py</code> e si può rigenerare dai dati.</p>
+
+<footer>
+  <p>Universalis Harness — report generato il 2026-10-13. Un solo file HTML, nessuna risorsa
+  esterna: si apre offline e si archivia. Licenza del software: proprietaria, tutti i diritti
+  riservati.</p>
+</footer>
+
+</div>
+</body>
+</html>
