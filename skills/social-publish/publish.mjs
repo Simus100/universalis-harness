@@ -15,7 +15,7 @@
  * Credenziali (mai in chat, mai nel repository): in /root/pi-harness/.env
  *   FB_PAGE_ID=<id della Pagina>
  *   FB_PAGE_TOKEN=<token di Pagina, non dell'utente>
- *   FB_API_VERSION=v23.0        (la versione corrente indicata dalla documentazione Meta)
+ *   FB_API_VERSION=v26.0        (la versione corrente indicata dalla documentazione Meta)
  */
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { resolve, basename } from "node:path";
@@ -36,7 +36,7 @@ function loadEnv(path) {
 const env = { ...loadEnv(ENV_FILE), ...process.env };
 const PAGE_ID = env.FB_PAGE_ID;
 const TOKEN = env.FB_PAGE_TOKEN;
-const VERSION = env.FB_API_VERSION || "v23.0";
+const VERSION = env.FB_API_VERSION || "v26.0";
 const API = `https://graph.facebook.com/${VERSION}`;
 
 const mask = (s) => (s ? `${String(s).slice(0, 4)}…${String(s).slice(-3)} (${String(s).length} caratteri)` : "(assente)");
