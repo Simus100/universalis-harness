@@ -305,3 +305,60 @@ istanze**. Con `/home/tester07` a `755` e i file `644`, l'utente `tester08` legg
 Dopo il cambio: `sudo -u tester08 ls /home/tester07` → *Permission denied* (e viceversa), i servizi
 `pi-tester07` e `pi-tester08` riavviati e attivi, 8422 e 8423 → 200. **La lezione vale per ogni
 istanza futura sotto `/home`**: crearla non basta, i permessi di default di `adduser` non isolano.
+
+## 2026-10-14 — il codice delle due istanze limitate è tornato pari alla principale
+
+**Perché.** Le dashboard di `tester_07` e `tester_08` erano ferme al **5 ottobre** (`dashboard.mjs`
+226.466 B, `codeHash 0605a50db4bc7b16`), mentre la principale era dell'11. Le **skill** però erano
+state allineate il 12 ottobre: le istanze limitate avevano `immagini` e `video`, che documentano
+blocchi e route (```` ```pdf ````, ```` ```video ````, `GET /api/pdf`, `/api/video`, la voce TTS)
+**che il loro codice non aveva**. Chiesto «leggi questo PDF» o «mostra il video», l'agente tentava
+chiamate inesistenti. È emerso nel controllo chiesto prima di una prova con un potenziale cliente.
+
+**Cosa è stato portato** (identico nelle due istanze): `dashboard.mjs`, `dashboard.html`,
+`manifest.webmanifest`, `sw.js`, tutti i `media/*.mjs` (**90 moduli**, 14 dei quali mancavano:
+`tts.mjs`, `decision-m-portiere/valuta/paragone-generativo.mjs` e i test nuovi) e i
+`media/memoria/*.mjs` (9).
+
+**Metodo — fusione a tre vie, 0 conflitti.** La base è stata trovata confrontando i commit della
+principale con i file dell'ospite (quello con la differenza minima, cioè le sole personalizzazioni):
+`55b20cb` per `dashboard.mjs` (149 righe di differenza) e `5d005cd` per `dashboard.html` (61).
+`git merge-file -p <principale> <base> <ospite>`: **zero marcatori di conflitto** in entrambi i file.
+Le personalizzazioni sono conservate con gli stessi conteggi di prima (`LOCK_MODEL` 5,
+`THINKING_DISABLED` 8, `QUOTA_MB` 5, `quotaInfo` 2, `ensureQuota` 4, `quotaChanged` 5,
+`refreshQuota` 5, `fmtBytes` 4; nell'HTML la voce **«spazio»** con l'icona `i-quota`,
+`applyLocks(st)` e `option:disabled`). La **sezione GitHub del prompt non è stata ripristinata**
+(le istanze limitate non pubblicano sul repository) e la sezione Decision_M resta com'era, con la
+feature spenta (`DASH_DECISION_M=off`).
+
+**Backup.** `/root/updates/20261014-133707-tester07/` e `…-tester08/` (22 MB ciascuno, 665 e 654
+file, con `IMPRONTE.sha256`) più una copia essenziale in `backups/propagazione-20261014-133707/`
+dentro ogni istanza.
+
+| file | prima (entrambe) | dopo (entrambe) |
+|---|---|---|
+| `dashboard.mjs` | 226.466 B, `0605a50db4bc7b16` | **267.794 B, `493e68bc81a02fad`** |
+| `dashboard.html` | 395.466 B | **452.122 B, `4b608e9ac2214a41`** |
+| moduli `media/*.mjs` | 76 | **90** (pari alla principale) |
+
+**Verifiche eseguite dopo il riavvio** (su 8422 e 8423): impronta in esecuzione = impronta su disco
+(`493e68bc81a02fad`); `/`, `/api/state`, `/api/progetto`, `/api/memoria`, `/memoria`,
+`/svg-sanitize.mjs`, `/sw.js`, `/manifest.webmanifest` → 200; `/login` → 303 con cookie di sessione
+e 401 con credenziali sbagliate; `POST /api/model` → **403**; `locked.model=true`,
+`thinking.disabled=['max']`, quota `24,8 MB` e `23,8 MB` su 1700 MB; `node --check` sul `.mjs` e sui
+blocchi `<script>` dell'HTML; **route nuove provate con file veri**: `GET /api/pdf?meta=1` → 200,
+`GET /api/pdf?testo=1` → testo estratto con `pdftotext`, `GET /api/video` con `Range: bytes=0-99` →
+**206** con `Content-Range`; un turno reale dell'agente su entrambe che legge il PDF e risponde col
+blocco ```` ```pdf ````; isolamento incrociato fra le due home ancora chiuso; HTTPS pubblico 401
+(TLS valido) su `tester07.89-117-59-173.sslip.io`, `tester08.89-117-59-173.sslip.io` e
+`htester.universalisproduzioni.it`; journal senza errori. Lo script di controllo è
+`media/verifica-istanze-tester.sh`.
+
+**Ripulito** quanto creato dal collaudo: `prova-lettura.pdf`, `prova-video.mp4`, le sessioni di
+prova (nuova sessione **vuota** pronta all'uso) e l'episodio di memoria nato da quei turni; memoria
+ricostruita (07: 432 file/3390 frammenti, 08: 430/3376).
+
+**La lezione, per la prossima volta.** La propagazione **non è automatica**: se cambia il codice
+della principale, le istanze limitate restano indietro, mentre `scripts/skills-sync-istanze.sh`
+continua ad allineare le *skill*. È così che skill e codice possono divergere, ed è un difetto che
+si nota solo quando il cliente chiede la funzione promessa dalla skill.
