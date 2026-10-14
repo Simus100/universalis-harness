@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "preferences": {
+    "style_preset.product-launch-video": {
+      "value": "blue-professional",
+      "confirmed_in": [
+        "demo-harness"
+      ],
+      "updated_at": "2026-10-14T12:35:59.352Z"
+    }
+  },
+  "sightings": {}
+}

@@ -130,3 +130,21 @@ media/promo-harness/renders/
 media/promo-harness/snapshots/
 media/promo-harness/assets/
 media/promo-harness/.hyperframes/
+
+# ---- progetto video demo-harness (video di introduzione, 60s) ----
+# Il render si rifà con `npx hyperframes render` dentro media/demo-harness/, la voce con
+# genera-voce.sh (piper, offline), i fotogrammi di controllo con `hyperframes snapshot`.
+# Sono binari che cambiano a ogni iterazione del video: restano locali, il progetto
+# (copione, storyboard, composizioni, script) è versionato.
+media/demo-harness/renders/
+media/demo-harness/snapshots/
+media/demo-harness/assets/
+media/demo-harness/.hyperframes/
+media/demo-harness/node_modules/
+
+# ---- demo-harness: materiale di lavoro intermedio ----
+# `capture/extracted/` è il percorso no-capture: la palette e i testi da cui è nato il design.
+# Il nome `tokens.json` fa scattare il controllo di sicurezza del sync e, per quanto il contenuto
+# siano solo colori e font (nessun segreto), non serve nel repository: l'esito è già in
+# `frame.md` (design system versionato) e in `BRIEF.md` (brief).
+media/demo-harness/capture/

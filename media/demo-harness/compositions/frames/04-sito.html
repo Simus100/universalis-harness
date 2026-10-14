@@ -1,0 +1,137 @@
+<template>
+  <style>
+    #f4, #f4 * { box-sizing: border-box; }
+    #f4 {
+      position: relative; width: 100%; height: 100%; overflow: hidden;
+      font-family: system-ui, sans-serif;
+      color: #eef2f9; background: #000000;
+    }
+    #f4 .promptbar {
+      position: absolute; left: 210px; top: 84px; width: 1500px; height: 92px;
+      background: #0f131a; border: 1px solid #2b3240; border-radius: 14px;
+      display: flex; align-items: center; gap: 16px; padding: 0 26px;
+      font-family: ui-monospace, monospace; font-size: 25px; color: #eef2f9;
+    }
+    #f4 .promptbar .tag { font-family: system-ui, sans-serif; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; color: #8a93a6; }
+    #f4 .caret { display: inline-block; width: 13px; height: 27px; background: #5b9dff; vertical-align: -5px; margin-left: 2px; }
+    /* finestra del browser */
+    #f4 .win {
+      position: absolute; left: 210px; top: 208px; width: 1500px; height: 470px;
+      background: #0f131a; border: 1px solid #2b3240; border-radius: 14px; overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    #f4 .winbar {
+      height: 56px; flex: none; display: flex; align-items: center; gap: 12px;
+      padding: 0 20px; border-bottom: 1px solid #1c222b; background: #0b0e14;
+    }
+    #f4 .dotrow { display: flex; gap: 7px; }
+    #f4 .dotrow i { width: 11px; height: 11px; border-radius: 50%; background: #2b3240; }
+    #f4 .url {
+      flex: 1; height: 32px; border-radius: 8px; background: #0f131a; border: 1px solid #1c222b;
+      display: flex; align-items: center; padding: 0 14px;
+      font-family: ui-monospace, monospace; font-size: 17px; color: #a3adc0;
+    }
+    #f4 .url b { color: #c6cfdd; font-weight: 500; }
+    #f4 .page { position: relative; flex: 1; overflow: hidden; padding: 26px 30px; }
+    #f4 .page h3 { margin: 0 0 6px 0; font-size: 30px; color: #eef2f9; }
+    #f4 .page .sub { font-size: 18px; color: #8a93a6; margin-bottom: 22px; }
+    #f4 .pricerow {
+      display: grid; grid-template-columns: 1fr 190px; align-items: center;
+      padding: 14px 0; border-bottom: 1px solid #141a23; font-size: 21px; color: #c6cfdd;
+    }
+    #f4 .pricerow span:last-child { font-family: ui-monospace, monospace; text-align: right; }
+    #f4 .pricerow.mark { background: rgba(91,157,255,0.10); border-radius: 8px; padding-left: 12px; padding-right: 12px; }
+    #f4 .scanner {
+      position: absolute; left: 30px; right: 30px; top: 40px; height: 2px; background: #5b9dff; opacity: 0.9;
+      box-shadow: 0 0 18px rgba(91,157,255,0.8);
+    }
+    /* confronto */
+    #f4 .cards { position: absolute; left: 210px; top: 700px; width: 1500px; display: flex; gap: 26px; }
+    #f4 .card {
+      flex: 1; height: 160px; border-radius: 14px; padding: 22px 26px;
+      background: #0f131a; border: 1px solid #2b3240;
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    #f4 .card .k { font-size: 17px; letter-spacing: 0.06em; text-transform: uppercase; color: #8a93a6; }
+    #f4 .card .v { font-family: ui-monospace, monospace; font-size: 42px; color: #eef2f9; }
+    #f4 .card.new { border-color: rgba(91,157,255,0.5); }
+    #f4 .card.new .v { color: #5b9dff; }
+    #f4 .diff {
+      position: absolute; left: 50%; top: -20px; margin-left: -58px;
+      width: 116px; height: 44px; border-radius: 999px;
+      background: #5b9dff; color: #06101f; font-weight: 700; font-size: 21px;
+      display: grid; place-items: center;
+    }
+  </style>
+
+  <div data-hf-id="hf-o0de" id="f4" data-composition-id="04-sito" data-width="1920" data-height="1080" data-duration="11.5">
+    <div data-hf-id="hf-0lbo" class="promptbar" id="f4-prompt">
+      <span data-hf-id="hf-qnj7" class="tag">richiesta</span>
+      <span data-hf-id="hf-wtv4" id="f4-text"></span><span data-hf-id="hf-7tqw" class="caret" id="f4-caret"></span>
+    </div>
+
+    <div data-hf-id="hf-wevn" class="win" id="f4-win">
+      <div data-hf-id="hf-txzx" class="winbar">
+        <span data-hf-id="hf-gv76" class="dotrow"><i data-hf-id="hf-wt6k"></i><i data-hf-id="hf-zeb8"></i><i data-hf-id="hf-y7e5"></i></span>
+        <span data-hf-id="hf-j4e9" class="url">https://<b data-hf-id="hf-pauj">fornitore-rossi.it</b>/listino-2026</span>
+      </div>
+      <div data-hf-id="hf-uno3" class="page" id="f4-page">
+        <h3 data-hf-id="hf-3sea">Listino 2026 · condizioni di fornitura</h3>
+        <div data-hf-id="hf-f07n" class="sub">Aggiornamento del 2 aprile 2026</div>
+        <div data-hf-id="hf-hy0h" class="pricerow pr"><span data-hf-id="hf-bi61">Vino rosso — cartone 12 bottiglie</span><span data-hf-id="hf-hvci">48,50 €</span></div>
+        <div data-hf-id="hf-kl0l" class="pricerow pr"><span data-hf-id="hf-0rid">Vino bianco — cartone 12 bottiglie</span><span data-hf-id="hf-p7at">42,00 €</span></div>
+        <div data-hf-id="hf-lrxo" class="pricerow pr"><span data-hf-id="hf-0ljy">Olio — lattina 5 litri</span><span data-hf-id="hf-s38u">31,90 €</span></div>
+        <div data-hf-id="hf-ldmn" class="pricerow pr"><span data-hf-id="hf-zuqh">Consegna su bancale</span><span data-hf-id="hf-4gjs">18,00 €</span></div>
+        <div data-hf-id="hf-pyqf" class="scanner" id="f4-scanner"></div>
+      </div>
+    </div>
+
+    <div data-hf-id="hf-n627" class="cards" id="f4-cards">
+      <div data-hf-id="hf-o83l" class="card old" id="f4-old">
+        <div data-hf-id="hf-7ntv" class="k">listino di marzo</div>
+        <div data-hf-id="hf-1pdg" class="v">42,00 €</div>
+      </div>
+      <div data-hf-id="hf-fbq9" class="card new" id="f4-new">
+        <div data-hf-id="hf-wcuj" class="k">listino di aprile</div>
+        <div data-hf-id="hf-mslv" class="v">48,50 €</div>
+        <div data-hf-id="hf-ogmh" class="diff" id="f4-diff">+15%</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const FULL = "controlla sul sito del fornitore se il listino e' cambiato";
+      const text = document.getElementById("f4-text");
+      const caret = document.getElementById("f4-caret");
+      const tl = gsap.timeline({ paused: true });
+
+      // Scene 1 — il nuovo prompt si scrive
+      const st = { n: 0 };
+      tl.to(caret, { autoAlpha: 0, duration: 0.4, repeat: 2, yoyo: true, ease: "none", overwrite: "auto" }, 0);
+      tl.to(
+        st,
+        { n: FULL.length, duration: 1.6, ease: "none", onUpdate: function () { text.textContent = FULL.slice(0, Math.round(st.n)); } },
+        0.2
+      );
+      tl.to(caret, { autoAlpha: 0, duration: 0.2, overwrite: "auto" }, 1.9);
+
+      // Scene 2 — la finestra si apre e la pagina viene scorsa
+      tl.fromTo(document.getElementById("f4-win"), { opacity: 0, y: 20, scale: 0.985 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" }, 2.2);
+      tl.fromTo("#f4-page .pr", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.09, ease: "power2.out" }, 2.7);
+      tl.fromTo(document.getElementById("f4-scanner"), { y: 0, opacity: 0 }, { y: 210, opacity: 0.9, duration: 1.5, ease: "power1.inOut" }, 3.1);
+      tl.to(document.getElementById("f4-scanner"), { opacity: 0, duration: 0.4 }, 4.7);
+      tl.fromTo("#f4-page .pricerow:nth-of-type(3)", { backgroundColor: "rgba(0,0,0,0)" }, { backgroundColor: "rgba(91,157,255,0.10)", duration: 0.5 }, 4.8);
+
+      // Scene 3 — il confronto entra da lati opposti
+      tl.fromTo(document.getElementById("f4-old"), { opacity: 0, x: -60, rotateY: 10 }, { opacity: 1, x: 0, rotateY: 0, duration: 0.7, ease: "power3.out" }, 5.6);
+      tl.fromTo(document.getElementById("f4-new"), { opacity: 0, x: 60, rotateY: -10 }, { opacity: 1, x: 0, rotateY: 0, duration: 0.7, ease: "power3.out" }, 5.6);
+      tl.fromTo(document.getElementById("f4-diff"), { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(2)" }, 6.6);
+
+      // tenuta
+      tl.to({}, { duration: 4.2 }, 7.3);
+
+      window.__timelines["04-sito"] = tl;
+    })();
+  </script>
+</template>

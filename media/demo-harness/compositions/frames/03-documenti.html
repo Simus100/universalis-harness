@@ -1,0 +1,161 @@
+<template>
+  <style>
+    #f3, #f3 * { box-sizing: border-box; }
+    #f3 {
+      position: relative; width: 100%; height: 100%; overflow: hidden;
+      font-family: system-ui, sans-serif;
+      color: #eef2f9; background: #000000;
+    }
+    /* casella del prompt, in alto */
+    #f3 .promptbar {
+      position: absolute; left: 210px; top: 90px; width: 1500px; height: 96px;
+      background: #0f131a; border: 1px solid #2b3240; border-radius: 14px;
+      display: flex; align-items: center; gap: 16px; padding: 0 26px;
+      font-family: ui-monospace, monospace; font-size: 26px; color: #eef2f9;
+    }
+    #f3 .promptbar .tag {
+      font-family: system-ui, sans-serif; font-size: 15px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #8a93a6;
+    }
+    #f3 .caret { display: inline-block; width: 13px; height: 28px; background: #5b9dff; vertical-align: -5px; margin-left: 2px; }
+    /* riga di stato */
+    #f3 .work {
+      position: absolute; left: 210px; top: 214px; width: 1500px;
+      display: flex; align-items: center; gap: 14px;
+      font-size: 22px; color: #c6cfdd;
+    }
+    #f3 .spin { width: 14px; height: 14px; border-radius: 50%; background: #5b9dff; }
+    #f3 .chips { display: flex; gap: 8px; margin-left: 18px; }
+    #f3 .chip {
+      width: 44px; height: 30px; border-radius: 6px;
+      background: #0f131a; border: 1px solid #2b3240;
+      display: grid; place-items: center;
+      font-family: ui-monospace, monospace; font-size: 13px; color: #6b7488;
+    }
+    #f3 .chip.on { border-color: rgba(91,157,255,0.55); color: #c6cfdd; background: rgba(91,157,255,0.10); }
+    /* pannelli */
+    #f3 .panels { position: absolute; left: 210px; top: 286px; width: 1500px; height: 560px; display: flex; gap: 26px; }
+    #f3 .doc {
+      width: 500px; height: 100%; background: #e9edf5; border-radius: 10px; padding: 26px;
+      color: #10151d; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    #f3 .doc .head { font-size: 20px; font-weight: 700; letter-spacing: 0.02em; }
+    #f3 .doc .meta { font-size: 14px; color: #5b6472; margin-top: 6px; }
+    #f3 .doc .rule { height: 1px; background: #c3cad6; margin: 18px 0; }
+    #f3 .doc .row { height: 11px; background: #cfd6e0; border-radius: 4px; margin-bottom: 12px; }
+    #f3 .doc .row.s { width: 62%; }
+    #f3 .doc .amount {
+      margin-top: 26px; border: 2px solid #5b9dff; border-radius: 8px; padding: 12px 14px;
+      font-family: ui-monospace, monospace; font-size: 26px; color: #10151d;
+    }
+    #f3 .table {
+      flex: 1; height: 100%; background: #0f131a; border: 1px solid #2b3240; border-radius: 14px;
+      padding: 22px 24px; overflow: hidden;
+    }
+    #f3 .tr { display: grid; grid-template-columns: 150px 1fr 170px 200px; gap: 14px; align-items: center; }
+    #f3 .th { font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; color: #8a93a6; padding-bottom: 12px; border-bottom: 1px solid #1c222b; }
+    #f3 .rowline {
+      font-family: ui-monospace, monospace; font-size: 21px; color: #c6cfdd;
+      padding: 13px 0; border-bottom: 1px solid #141a23;
+    }
+    #f3 .rowline .num { color: #eef2f9; }
+    #f3 .total {
+      margin-top: 18px; display: flex; justify-content: space-between; align-items: center;
+      font-size: 22px; color: #8a93a6;
+    }
+    #f3 .total b {
+      font-family: ui-monospace, monospace; font-size: 34px; color: #5b9dff; font-weight: 600;
+    }
+  </style>
+
+  <div data-hf-id="hf-142c" id="f3" data-composition-id="03-documenti" data-width="1920" data-height="1080" data-duration="12.5">
+    <div data-hf-id="hf-dizp" class="promptbar" id="f3-prompt">
+      <span data-hf-id="hf-qnj7" class="tag">richiesta</span>
+      <span data-hf-id="hf-mr8d" id="f3-text"></span><span data-hf-id="hf-rmc7" class="caret" id="f3-caret"></span>
+    </div>
+
+    <div data-hf-id="hf-hejm" class="work" id="f3-work">
+      <span data-hf-id="hf-vypv" class="spin" id="f3-spin"></span>
+      <span data-hf-id="hf-lt8b" id="f3-worktext">leggo i file della cartella…</span>
+      <span data-hf-id="hf-pv5r" class="chips" id="f3-chips"></span>
+    </div>
+
+    <div data-hf-id="hf-86bp" class="panels">
+      <div data-hf-id="hf-ozj0" class="doc" id="f3-doc">
+        <div data-hf-id="hf-uy6t" class="head">FATTURA 2026 / 041</div>
+        <div data-hf-id="hf-naab" class="meta">Fornitore · 12 marzo 2026 · protocollo 2026041</div>
+        <div data-hf-id="hf-a46i" class="rule"></div>
+        <div data-hf-id="hf-thy4" class="row"></div>
+        <div data-hf-id="hf-lt04" class="row"></div>
+        <div data-hf-id="hf-52af" class="row s"></div>
+        <div data-hf-id="hf-6biv" class="row s"></div>
+        <div data-hf-id="hf-h87l" class="amount" id="f3-amount">1.240,00 €</div>
+      </div>
+
+      <div data-hf-id="hf-262o" class="table" id="f3-table">
+        <div data-hf-id="hf-k0e6" class="tr th"><span data-hf-id="hf-6evl">data</span><span data-hf-id="hf-q5cl">fornitore</span><span data-hf-id="hf-fcmp">numero</span><span data-hf-id="hf-95h1">importo</span></div>
+        <div data-hf-id="hf-98q2" class="tr rowline r"><span data-hf-id="hf-dzf1">12/03/2026</span><span data-hf-id="hf-j5nr">Cantina Rossi</span><span data-hf-id="hf-bjwl" class="num">2026/041</span><span data-hf-id="hf-3owk">1.240,00 €</span></div>
+        <div data-hf-id="hf-gh7y" class="tr rowline r"><span data-hf-id="hf-ayuv">18/03/2026</span><span data-hf-id="hf-6fbh">Impianti Blu</span><span data-hf-id="hf-dxqr" class="num">2026/047</span><span data-hf-id="hf-3xsf">860,00 €</span></div>
+        <div data-hf-id="hf-gviz" class="tr rowline r"><span data-hf-id="hf-y9dk">24/03/2026</span><span data-hf-id="hf-1zds">Studio Vega</span><span data-hf-id="hf-x21t" class="num">2026/052</span><span data-hf-id="hf-tskj">2.150,00 €</span></div>
+        <div data-hf-id="hf-h9u0" class="tr rowline r"><span data-hf-id="hf-bsf7">02/04/2026</span><span data-hf-id="hf-ikjn">Tipografia Nove</span><span data-hf-id="hf-a0kz" class="num">2026/061</span><span data-hf-id="hf-a0ro">430,00 €</span></div>
+        <div data-hf-id="hf-ehot" class="tr rowline r"><span data-hf-id="hf-rmit">08/04/2026</span><span data-hf-id="hf-twxz">Cantina Rossi</span><span data-hf-id="hf-b6jt" class="num">2026/070</span><span data-hf-id="hf-pc6k">1.240,00 €</span></div>
+        <div data-hf-id="hf-2nao" class="total" id="f3-total"><span data-hf-id="hf-oorl">totale delle fatture lette</span><b data-hf-id="hf-m5pc">12.480,00 €</b></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const FULL = "leggi le fatture in media/fatture e fammi la tabella";
+      const text = document.getElementById("f3-text");
+      const caret = document.getElementById("f3-caret");
+      const chips = document.getElementById("f3-chips");
+      const tl = gsap.timeline({ paused: true });
+
+      // le dodici pastiglie dei file
+      for (let i = 0; i < 12; i++) {
+        const c = document.createElement("span");
+        c.className = "chip";
+        c.textContent = "p" + (i + 1);
+        chips.appendChild(c);
+      }
+
+      // Scene 1 — il prompt si completa
+      const st = { n: 0 };
+      tl.fromTo(text, { opacity: 1 }, { opacity: 1, duration: 0.01 }, 0);
+      tl.to(caret, { autoAlpha: 0, duration: 0.4, repeat: 2, yoyo: true, ease: "none", overwrite: "auto" }, 0);
+      tl.to(
+        st,
+        {
+          n: FULL.length, duration: 1.9, ease: "none",
+          onUpdate: function () { text.textContent = FULL.slice(0, Math.round(st.n)); },
+        },
+        0.3
+      );
+      tl.to(caret, { autoAlpha: 0, duration: 0.2, overwrite: "auto" }, 2.25);
+      tl.fromTo(document.getElementById("f3-prompt"), { y: -8 }, { y: -18, duration: 0.5, ease: "power2.out" }, 2.4);
+
+      // Scene 2 — la lavorazione: le dodici fatture si accendono a gruppi di tre
+      tl.fromTo(document.getElementById("f3-work"), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 2.5);
+      tl.to({}, { duration: 0.01 }, 2.5);
+      tl.fromTo("#f3-chips .chip", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.13, ease: "power2.out" }, 2.8);
+      tl.fromTo("#f3-chips .chip", { backgroundColor: "#0f131a" }, { backgroundColor: "rgba(91,157,255,0.10)", borderColor: "rgba(91,157,255,0.55)", duration: 0.3, stagger: 0.13, immediateRender: false }, 3.0);
+      tl.to(document.getElementById("f3-spin"), { autoAlpha: 0.35, duration: 0.5, repeat: 5, yoyo: true, ease: "none" }, 2.6);
+
+      // Scene 3 — anteprima e tabella
+      tl.fromTo(document.getElementById("f3-doc"), { opacity: 0, x: -26 }, { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }, 4.4);
+      tl.fromTo(document.getElementById("f3-amount"), { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 5.0);
+      tl.fromTo(document.getElementById("f3-table"), { opacity: 0 }, { opacity: 1, duration: 0.4 }, 4.6);
+      tl.fromTo("#f3-table .r", { opacity: 0, x: 22 }, { opacity: 1, x: 0, duration: 0.45, stagger: 0.42, ease: "power3.out" }, 5.2);
+
+      // Scene 4 — il totale
+      tl.fromTo(document.getElementById("f3-total"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 8.0);
+      tl.fromTo("#f3-table .total b", { scale: 0.94 }, { scale: 1, duration: 0.5, ease: "back.out(1.6)" }, 8.3);
+
+      // tenuta
+      tl.to({}, { duration: 2.4 }, 10.1);
+
+      window.__timelines["03-documenti"] = tl;
+    })();
+  </script>
+</template>

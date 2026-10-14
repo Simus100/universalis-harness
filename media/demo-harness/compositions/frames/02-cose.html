@@ -1,0 +1,145 @@
+<template>
+  <style>
+    #f2, #f2 * { box-sizing: border-box; }
+    #f2 {
+      position: relative; width: 100%; height: 100%; overflow: hidden;
+      font-family: system-ui, sans-serif;
+      color: #eef2f9; background: #000000;
+    }
+    #f2 .stage {
+      position: absolute; left: 60px; top: 60px; width: 1800px; height: 900px;
+      transform-origin: 50% 63%;
+      display: flex; gap: 22px;
+    }
+    /* ---------- barra laterale ---------- */
+    #f2 .side {
+      width: 320px; height: 100%; background: #0f131a;
+      border: 1px solid #2b3240; border-radius: 16px; padding: 26px 22px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    #f2 .side-title {
+      font-size: 19px; font-weight: 600; color: #eef2f9; margin-bottom: 6px;
+    }
+    #f2 .side-title span { color: #5b9dff; }
+    #f2 .side-sub { font-size: 14px; color: #8a93a6; margin-bottom: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
+    #f2 .voice {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 14px; border-radius: 10px; font-size: 19px; color: #c6cfdd;
+    }
+    #f2 .voice.is-on { background: rgba(91,157,255,0.12); color: #eef2f9; border: 1px solid rgba(91,157,255,0.35); }
+    #f2 .voice i { width: 9px; height: 9px; border-radius: 50%; background: #2b3240; }
+    #f2 .voice.is-on i { background: #5b9dff; }
+    #f2 .side-foot { margin-top: auto; font-size: 14px; color: #6b7488; }
+
+    /* ---------- area conversazione ---------- */
+    #f2 .main { flex: 1; display: flex; flex-direction: column; gap: 18px; }
+    #f2 .top {
+      height: 74px; background: #0f131a; border: 1px solid #2b3240; border-radius: 16px;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+    }
+    #f2 .top-name { font-size: 21px; font-weight: 600; }
+    #f2 .top-name em { font-style: normal; color: #8a93a6; font-weight: 400; font-size: 18px; }
+    #f2 .pill {
+      font-family: ui-monospace, monospace; font-size: 16px; color: #c6cfdd;
+      border: 1px solid #2b3240; border-radius: 999px; padding: 7px 14px;
+    }
+    #f2 .thread { flex: 1; display: flex; flex-direction: column; gap: 16px; padding: 6px 6px 0 6px; }
+    #f2 .msg-user {
+      align-self: flex-end; max-width: 70%;
+      background: rgba(91,157,255,0.13); border: 1px solid rgba(91,157,255,0.32);
+      border-radius: 14px 14px 4px 14px; padding: 18px 22px;
+      font-family: ui-monospace, monospace; font-size: 22px; line-height: 32px; color: #eef2f9;
+    }
+    #f2 .msg-agent {
+      align-self: flex-start; max-width: 78%;
+      background: #0f131a; border: 1px solid #2b3240; border-radius: 14px 14px 14px 4px;
+      padding: 18px 22px; font-size: 21px; line-height: 32px; color: #c6cfdd;
+    }
+    #f2 .msg-agent .row { display: flex; align-items: center; gap: 10px; }
+    #f2 .dot { width: 10px; height: 10px; border-radius: 50%; background: #34d399; }
+    #f2 .composer {
+      height: 132px; background: #0f131a; border: 1px solid #2b3240; border-radius: 16px;
+      padding: 20px 24px;
+    }
+    #f2 .composer .ph { font-family: ui-monospace, monospace; font-size: 22px; color: #8a93a6; }
+    #f2 .composer .bar2 { display: flex; justify-content: space-between; margin-top: 24px; font-size: 16px; color: #6b7488; }
+    #f2 .status {
+      height: 62px; background: #0f131a; border: 1px solid #2b3240; border-radius: 16px;
+      display: flex; align-items: center; gap: 34px; padding: 0 24px;
+      font-family: ui-monospace, monospace; font-size: 17px; color: #a3adc0;
+    }
+    #f2 .status b { color: #c6cfdd; font-weight: 500; }
+    #f2 .status .cost { color: #5b9dff; }
+  </style>
+
+  <div data-hf-id="hf-mm4r" id="f2" data-composition-id="02-cose" data-width="1920" data-height="1080" data-duration="9">
+    <div data-hf-id="hf-7dpd" class="stage" id="f2-stage">
+      <div data-hf-id="hf-fxe9" class="side" id="f2-side">
+        <div data-hf-id="hf-4n0c" class="side-title" id="f2-side-title">Universalis <span data-hf-id="hf-yqtb">Harness</span></div>
+        <div data-hf-id="hf-sag4" class="side-sub">dashboard</div>
+        <div data-hf-id="hf-teps" class="voice is-on"><i data-hf-id="hf-wt6k"></i>Conversazione</div>
+        <div data-hf-id="hf-trj8" class="voice g1"><i data-hf-id="hf-zeb8"></i>File</div>
+        <div data-hf-id="hf-fsr1" class="voice g1"><i data-hf-id="hf-y7e5"></i>Obiettivi</div>
+        <div data-hf-id="hf-cy0x" class="voice g2"><i data-hf-id="hf-ylp6"></i>Memoria</div>
+        <div data-hf-id="hf-pent" class="voice g2"><i data-hf-id="hf-0l8b"></i>Competenze</div>
+        <div data-hf-id="hf-fsom" class="side-foot" id="f2-side-foot">sul tuo server</div>
+      </div>
+
+      <div data-hf-id="hf-k15r" class="main">
+        <div data-hf-id="hf-assx" class="top" id="f2-top">
+          <div data-hf-id="hf-c8u8" class="top-name">Sessione <em data-hf-id="hf-ix2h">· fatture da sistemare</em></div>
+          <div data-hf-id="hf-4yp7" class="pill" id="f2-model">agente locale</div>
+        </div>
+
+        <div data-hf-id="hf-jyqg" class="thread">
+          <div data-hf-id="hf-2a4h" class="msg-user" id="f2-q">Ho una cartella di fatture da sistemare, me le metti in tabella?</div>
+          <div data-hf-id="hf-w5cv" class="msg-agent" id="f2-a">
+            <div data-hf-id="hf-thy4" class="row"><span data-hf-id="hf-9gry" class="dot"></span><span data-hf-id="hf-tosg">Posso farlo. Leggo i file della cartella e preparo la tabella.</span></div>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-goo7" class="composer" id="f2-composer">
+          <div data-hf-id="hf-vufw" class="ph">Scrivi una richiesta in italiano…</div>
+          <div data-hf-id="hf-swmv" class="bar2"><span data-hf-id="hf-gpce">Invio per eseguire</span><span data-hf-id="hf-8mif">allegati · cartelle</span></div>
+        </div>
+
+        <div data-hf-id="hf-i2dz" class="status" id="f2-status">
+          <span data-hf-id="hf-s370">contesto <b data-hf-id="hf-gvwd">12%</b></span>
+          <span data-hf-id="hf-ahkh">memoria <b data-hf-id="hf-erwy">118 appunti</b></span>
+          <span data-hf-id="hf-b67v">costo di questo turno <b data-hf-id="hf-p9eu" class="cost">0,004 €</b></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const stage = document.getElementById("f2-stage");
+      const tl = gsap.timeline({ paused: true });
+
+      // un unico allontanamento: dalla casella alla dashboard intera
+      tl.fromTo(stage, { scale: 1.62 }, { scale: 1, duration: 3.6, ease: "power2.inOut" }, 0);
+      tl.fromTo(
+        document.getElementById("f2-composer"),
+        { borderColor: "rgba(91,157,255,0.75)" },
+        { borderColor: "#2b3240", duration: 1.2, ease: "power2.out" },
+        0
+      );
+      // la conversazione era già li'
+      tl.fromTo(document.getElementById("f2-q"), { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0.1);
+      tl.fromTo(document.getElementById("f2-a"), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.6);
+      // le sezioni si materializzano in due gruppi
+      tl.fromTo("#f2-side .g1", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, stagger: 0.12, ease: "power3.out" }, 2.2);
+      tl.fromTo("#f2-side .g2", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.5, stagger: 0.12, ease: "power3.out" }, 3.4);
+      tl.fromTo(document.getElementById("f2-top"), { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 4.6);
+      tl.fromTo(document.getElementById("f2-model"), { opacity: 0 }, { opacity: 1, duration: 0.4 }, 4.9);
+      // la barra di stato entra dal basso
+      tl.fromTo(document.getElementById("f2-status"), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 5.2);
+      tl.fromTo(document.getElementById("f2-side-foot"), { opacity: 0 }, { opacity: 1, duration: 0.5 }, 5.6);
+      // tenuta
+      tl.to({}, { duration: 1.6 }, 7.4);
+
+      window.__timelines["02-cose"] = tl;
+    })();
+  </script>
+</template>

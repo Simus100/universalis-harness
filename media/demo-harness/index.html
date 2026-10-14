@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #eef2f9;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-qbnw" id="root" data-composition-id="main" data-start="0" data-duration="60" data-width="1920" data-height="1080">
+      <div data-hf-id="hf-dobw" id="el-01-richiesta" class="scene" data-composition-id="01-richiesta" data-composition-src="compositions/frames/01-richiesta.html" data-start="0" data-duration="7" data-track-index="0"></div>
+      <audio data-hf-id="hf-8cd8" id="el-01-richiesta-voice" src="assets/vo-1.mp3" data-start="0" data-duration="6.5" data-track-index="10" data-volume="1"></audio>
+
+      <div data-hf-id="hf-bb1b" id="el-02-cose" class="scene" data-composition-id="02-cose" data-composition-src="compositions/frames/02-cose.html" data-start="6.5" data-duration="9" data-track-index="1"></div>
+      <audio data-hf-id="hf-ja9t" id="el-02-cose-voice" src="assets/vo-2.mp3" data-start="6.5" data-duration="9" data-track-index="10" data-volume="1"></audio>
+
+      <div data-hf-id="hf-fxlu" id="el-03-documenti" class="scene" data-composition-id="03-documenti" data-composition-src="compositions/frames/03-documenti.html" data-start="15.5" data-duration="12.5" data-track-index="0"></div>
+      <audio data-hf-id="hf-r23y" id="el-03-documenti-voice" src="assets/vo-3.mp3" data-start="15.5" data-duration="12.5" data-track-index="10" data-volume="1"></audio>
+
+      <div data-hf-id="hf-pio5" id="el-04-sito" class="scene" data-composition-id="04-sito" data-composition-src="compositions/frames/04-sito.html" data-start="28" data-duration="11.5" data-track-index="1"></div>
+      <audio data-hf-id="hf-88gt" id="el-04-sito-voice" src="assets/vo-4.mp3" data-start="28" data-duration="11.5" data-track-index="10" data-volume="1"></audio>
+
+      <div data-hf-id="hf-4og4" id="el-05-produrre" class="scene" data-composition-id="05-produrre" data-composition-src="compositions/frames/05-produrre.html" data-start="39.5" data-duration="11.5" data-track-index="0"></div>
+      <audio data-hf-id="hf-fot3" id="el-05-produrre-voice" src="assets/vo-5.mp3" data-start="39.5" data-duration="11" data-track-index="10" data-volume="1"></audio>
+
+      <div data-hf-id="hf-eti3" id="el-06-chiusura" class="scene" data-composition-id="06-chiusura" data-composition-src="compositions/frames/06-chiusura.html" data-start="50.5" data-duration="9.5" data-track-index="1"></div>
+      <audio data-hf-id="hf-r6tz" id="el-06-chiusura-voice" src="assets/vo-6.mp3" data-start="50.5" data-duration="9.5" data-track-index="10" data-volume="1"></audio>
+
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+      // ── frame transitions (injected by transitions.mjs) ──
+      (function () { var tl = window.__timelines["main"];
+        tl.to("#el-01-richiesta", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 6.5);
+        tl.fromTo("#el-02-cose", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 6.5);
+        tl.to("#el-05-produrre", { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 50.5);
+        tl.fromTo("#el-06-chiusura", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 50.5);
+        tl.to({}, { duration: 60 }, 0); // full-span anchor — main.duration() == composition total (Studio master duration)
+      })();
+    </script>
+  </body>
+</html>
