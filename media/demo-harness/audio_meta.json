@@ -6,7 +6,8 @@
     { "frame": 3, "path": "assets/vo-3.mp3" },
     { "frame": 4, "path": "assets/vo-4.mp3" },
     { "frame": 5, "path": "assets/vo-5.mp3" },
-    { "frame": 6, "path": "assets/vo-6.mp3" }
+    { "frame": 6, "path": "assets/vo-6.mp3" },
+    { "frame": 7, "path": "assets/vo-7.mp3" }
   ],
   "sfx": []
 }

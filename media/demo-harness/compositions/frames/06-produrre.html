@@ -1,0 +1,145 @@
+<template>
+  <style>
+    #f6, #f6 * { box-sizing: border-box; }
+    #f6 {
+      position: relative; width: 100%; height: 100%; overflow: hidden;
+      font-family: system-ui, sans-serif;
+      color: #eef2f9; background: #000000;
+    }
+    #f6 .promptbar {
+      position: absolute; left: 210px; top: 84px; width: 1500px; height: 92px;
+      background: #0f131a; border: 1px solid #2b3240; border-radius: 14px;
+      display: flex; align-items: center; gap: 16px; padding: 0 26px;
+      font-family: ui-monospace, monospace; font-size: 25px; color: #eef2f9;
+    }
+    #f6 .promptbar .tag { font-family: system-ui, sans-serif; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; color: #8a93a6; }
+    #f6 .caret { display: inline-block; width: 13px; height: 27px; background: #5b9dff; vertical-align: -5px; margin-left: 2px; }
+    /* pannello del lavoro */
+    #f6 .work {
+      position: absolute; left: 210px; top: 208px; width: 900px; height: 470px;
+      background: #0f131a; border: 1px solid #2b3240; border-radius: 14px; padding: 26px 28px;
+    }
+    #f6 .work h3 { margin: 0 0 20px 0; font-size: 21px; color: #c6cfdd; font-weight: 500; }
+    #f6 .phase { display: flex; align-items: center; gap: 14px; padding: 13px 0; font-size: 23px; color: #8a93a6; }
+    #f6 .phase .mk {
+      width: 26px; height: 26px; border-radius: 50%; border: 2px solid #2b3240; flex: none;
+      display: grid; place-items: center; font-size: 15px; color: #c6cfdd;
+    }
+    #f6 .phase.done { color: #c6cfdd; }
+    #f6 .phase.done .mk { background: #34d399; border-color: #34d399; }
+    #f6 .phase.now { color: #eef2f9; }
+    #f6 .phase.now .mk { border-color: #5b9dff; color: #eef2f9; box-shadow: 0 0 0 5px rgba(91,157,255,0.15); }
+    #f6 .trackbar { margin-top: 22px; height: 10px; border-radius: 999px; background: #1c222b; overflow: hidden; }
+    #f6 .fill { height: 100%; width: 0%; background: #5b9dff; border-radius: 999px; }
+    #f6 .pct { margin-top: 12px; display: flex; justify-content: space-between; font-family: ui-monospace, monospace; font-size: 18px; color: #8a93a6; }
+    /* il risultato: un video dentro la conversazione */
+    #f6 .out {
+      position: absolute; left: 1140px; top: 208px; width: 570px;
+      background: #0f131a; border: 1px solid #2b3240; border-radius: 14px; overflow: hidden;
+    }
+    #f6 .poster {
+      position: relative; height: 300px;
+      background: linear-gradient(140deg, #101a2c 0%, #0b1220 55%, #0d1a2e 100%);
+      display: grid; place-items: center;
+    }
+    #f6 .poster .grid {
+      position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(91,157,255,0.10) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(91,157,255,0.10) 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+    #f6 .poster .word { position: relative; font-size: 30px; color: #eef2f9; letter-spacing: 0.01em; }
+    #f6 .poster .word em { font-style: normal; color: #5b9dff; }
+    #f6 .play {
+      position: relative; width: 78px; height: 78px; border-radius: 50%;
+      background: rgba(91,157,255,0.92); display: grid; place-items: center;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+    }
+    #f6 .play i { width: 0; height: 0; border-left: 22px solid #06101f; border-top: 14px solid transparent; border-bottom: 14px solid transparent; margin-left: 6px; }
+    #f6 .meta { padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; }
+    #f6 .meta .name { font-size: 20px; color: #c6cfdd; }
+    #f6 .meta .len { font-family: ui-monospace, monospace; font-size: 18px; color: #8a93a6; }
+    #f6 .done {
+      display: flex; align-items: center; gap: 10px; padding: 0 22px 20px 22px;
+      font-size: 19px; color: #34d399;
+    }
+    #f6 .done i { width: 9px; height: 9px; border-radius: 50%; background: #34d399; }
+  </style>
+
+  <div data-hf-id="hf-fb92" id="f6" data-composition-id="06-produrre" data-width="1920" data-height="1080" data-duration="11">
+    <div data-hf-id="hf-fldn" class="promptbar" id="f6-prompt">
+      <span data-hf-id="hf-qnj7" class="tag">richiesta</span>
+      <span data-hf-id="hf-qocz" id="f6-text"></span><span data-hf-id="hf-3uqt" class="caret" id="f6-caret"></span>
+    </div>
+
+    <div data-hf-id="hf-u2g4" class="work" id="f6-work">
+      <h3 data-hf-id="hf-ktfk">Sto preparando il video</h3>
+      <div data-hf-id="hf-81jx" class="phase" id="f6-p1"><span data-hf-id="hf-tmws" class="mk">1</span>scaletta e testi</div>
+      <div data-hf-id="hf-c8gj" class="phase" id="f6-p2"><span data-hf-id="hf-sfzp" class="mk">2</span>scene e grafica</div>
+      <div data-hf-id="hf-qdh0" class="phase" id="f6-p3"><span data-hf-id="hf-suaq" class="mk">3</span>voce fuori campo</div>
+      <div data-hf-id="hf-tdiu" class="phase" id="f6-p4"><span data-hf-id="hf-uttv" class="mk">4</span>montaggio e tempi</div>
+      <div data-hf-id="hf-v9s3" class="phase" id="f6-p5"><span data-hf-id="hf-v84w" class="mk">5</span>render finale</div>
+      <div data-hf-id="hf-tu6o" class="trackbar"><div data-hf-id="hf-v2mw" class="fill" id="f6-fill"></div></div>
+      <div data-hf-id="hf-icn1" class="pct"><span data-hf-id="hf-fuwi" id="f6-stage">inizio…</span><span data-hf-id="hf-2fac" id="f6-pct">0%</span></div>
+    </div>
+
+    <div data-hf-id="hf-zb6u" class="out" id="f6-out">
+      <div data-hf-id="hf-mhuf" class="poster">
+        <div data-hf-id="hf-kxq8" class="grid"></div>
+        <div data-hf-id="hf-0ewq" class="word">il tuo <em data-hf-id="hf-ysj5">listino</em> in 30 secondi</div>
+        <div data-hf-id="hf-yc2g" class="play" id="f6-play" style="position:absolute; right:26px; bottom:26px;"><i data-hf-id="hf-wt6k"></i></div>
+      </div>
+      <div data-hf-id="hf-puvz" class="meta">
+        <span data-hf-id="hf-sevv" class="name">video-listino.mp4</span>
+        <span data-hf-id="hf-v2pq" class="len">0:30 · 1920×1080</span>
+      </div>
+      <div data-hf-id="hf-grw2" class="done" id="f6-done"><i data-hf-id="hf-zeb8"></i>render completato, il file e' qui</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const FULL = "prepara un video di 30 secondi con questi dati";
+      const text = document.getElementById("f6-text");
+      const caret = document.getElementById("f6-caret");
+      const phases = ["f6-p1", "f6-p2", "f6-p3", "f6-p4", "f6-p5"].map((id) => document.getElementById(id));
+      const stageNames = ["scaletta e testi…", "scene e grafica…", "voce fuori campo…", "montaggio e tempi…", "render finale…"];
+      const tl = gsap.timeline({ paused: true });
+
+      // Scene 1 — il prompt si scrive e parte
+      const st = { n: 0 };
+      tl.to(caret, { autoAlpha: 0, duration: 0.4, repeat: 1, yoyo: true, ease: "none", overwrite: "auto" }, 0);
+      tl.to(
+        st,
+        { n: FULL.length, duration: 1.4, ease: "none", onUpdate: function () { text.textContent = FULL.slice(0, Math.round(st.n)); } },
+        0.15
+      );
+      tl.to(caret, { autoAlpha: 0, duration: 0.15, overwrite: "auto" }, 1.6);
+      tl.fromTo(document.getElementById("f6-prompt"), { y: 0 }, { y: -12, duration: 0.35, ease: "power2.out" }, 1.7);
+
+      // Scene 2 — il lavoro: le fasi si accendono e si spuntano, la barra cresce
+      tl.fromTo(document.getElementById("f6-work"), { opacity: 0, x: -22 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 1.8);
+      const marks = ["1", "2", "3", "4", "5"];
+      phases.forEach((el, i) => {
+        const at = 2.1 + i * 0.78;
+        tl.set(el, { className: "phase now" }, at);
+        tl.to(el.querySelector(".mk"), { backgroundColor: "rgba(91,157,255,0.16)", duration: 0.25 }, at);
+        tl.set(el, { className: "phase done" }, at + 0.62);
+        tl.set(el.querySelector(".mk"), { textContent: "✓", backgroundColor: "#34d399", color: "#06101f" }, at + 0.62);
+        tl.call(function () { document.getElementById("f6-stage").textContent = stageNames[i]; }, null, at);
+        tl.call(function () { document.getElementById("f6-pct").textContent = Math.round(((i + 1) / 5) * 100) + "%"; }, null, at + 0.62);
+      });
+      tl.fromTo(document.getElementById("f6-fill"), { width: "0%" }, { width: "100%", duration: 3.9, ease: "power1.inOut" }, 2.1);
+
+      // Scene 3 — il risultato entra nella conversazione
+      tl.fromTo(document.getElementById("f6-out"), { opacity: 0, y: 26, scale: 0.97 }, { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "power3.out" }, 5.3);
+      tl.fromTo(document.getElementById("f6-play"), { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(2)" }, 5.9);
+      tl.fromTo(document.getElementById("f6-done"), { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 6.6);
+
+      // tenuta
+      tl.to({}, { duration: 4.0 }, 7.5);
+
+      window.__timelines["06-produrre"] = tl;
+    })();
+  </script>
+</template>

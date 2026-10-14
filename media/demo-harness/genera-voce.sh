@@ -18,6 +18,7 @@ mkdir -p "$OUT"
 declare -a LINES=(
 "Qualcuno scrive una richiesta, in italiano, come la scriverebbe a un collega. Nessun comando da imparare."
 "Questa e' l'harness. Una dashboard sul tuo server, con dentro un agente che lavora sui tuoi file. I tuoi file, non quelli di qualcun altro."
+"E non e' solo conversazione: tiene gli obiettivi con i loro passi, pianifica il lavoro, ricorda quello che ha gia' fatto, e all'occorrenza impara nuove competenze."
 "Primo caso: legge i documenti. PDF, scansioni, foto. Prende i dati che servono e li mette in tabella. Dodici fatture, in un colpo solo."
 "Secondo caso: va sui siti che gli indichi, legge le pagine e ti dice cos'e' cambiato. Anche quando il sito non offre nessun file da scaricare."
 "Terzo caso: produce. Report, immagini, video. Il risultato arriva qui, nella stessa conversazione. Non un link: il file."

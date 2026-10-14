@@ -1,0 +1,162 @@
+<template>
+  <style>
+    #f3, #f3 * { box-sizing: border-box; }
+    #f3 {
+      position: relative; width: 100%; height: 100%; overflow: hidden;
+      font-family: system-ui, sans-serif; color: #eef2f9; background: #000000;
+    }
+    #f3 .eyebrow {
+      position: absolute; left: 210px; top: 96px;
+      font-size: 17px; letter-spacing: 0.14em; text-transform: uppercase; color: #8a93a6;
+    }
+    #f3 .headline {
+      position: absolute; left: 210px; top: 128px;
+      font-size: 40px; font-weight: 600; color: #eef2f9;
+    }
+    #f3 .card {
+      position: absolute; background: #0f131a; border: 1px solid #2b3240; border-radius: 16px;
+      padding: 26px 28px; overflow: hidden;
+    }
+    #f3 .card h4 { margin: 0; font-size: 27px; font-weight: 600; color: #eef2f9; }
+    #f3 .card .sub { margin-top: 8px; font-size: 19px; color: #a3adc0; line-height: 27px; }
+    #f3 .card .accentline { position: absolute; left: 0; top: 0; width: 4px; height: 100%; background: #5b9dff; opacity: 0; }
+
+    /* card guida: i goal */
+    #f3 .goal { left: 210px; top: 246px; width: 810px; height: 386px; border-color: rgba(91,157,255,0.40); }
+    #f3 .goal h4 { font-size: 32px; }
+    #f3 .goal .meta { position: absolute; right: 28px; top: 30px; font-family: ui-monospace, monospace; font-size: 18px; color: #8a93a6; }
+    #f3 .steps { margin-top: 26px; display: flex; flex-direction: column; gap: 16px; }
+    #f3 .step { display: flex; align-items: center; gap: 14px; font-size: 23px; color: #a3adc0; }
+    #f3 .step .mk {
+      width: 26px; height: 26px; border-radius: 7px; border: 2px solid #2b3240; flex: none;
+      display: grid; place-items: center; font-size: 16px; color: #c6cfdd;
+    }
+    #f3 .step.on { color: #eef2f9; }
+    #f3 .step.on .mk { background: #34d399; border-color: #34d399; color: #06101f; }
+    #f3 .goalbar { position: absolute; left: 28px; right: 28px; bottom: 28px; height: 8px; border-radius: 999px; background: #1c222b; overflow: hidden; }
+    #f3 .goalbar i { display: block; height: 100%; width: 0%; background: #5b9dff; }
+
+    /* card piccole */
+    #f3 .pianifica { left: 1046px; top: 246px; width: 664px; height: 182px; }
+    #f3 .memoria  { left: 1046px; top: 450px; width: 664px; height: 182px; }
+    #f3 .competenze { left: 210px; top: 656px; width: 500px; height: 224px; }
+    #f3 .filecard { left: 736px; top: 656px; width: 500px; height: 224px; }
+    #f3 .costocard { left: 1262px; top: 656px; width: 448px; height: 224px; }
+    #f3 .chips { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+    #f3 .chip {
+      font-family: ui-monospace, monospace; font-size: 17px; color: #c6cfdd;
+      border: 1px solid #2b3240; border-radius: 999px; padding: 6px 13px;
+    }
+    #f3 .chip.on { border-color: rgba(91,157,255,0.55); color: #5b9dff; background: rgba(91,157,255,0.10); }
+    #f3 .big {
+      margin-top: 20px; font-family: ui-monospace, monospace; font-size: 40px; color: #5b9dff;
+    }
+    #f3 .sub2 { margin-top: 10px; font-size: 18px; color: #8a93a6; }
+    #f3 .ico { position: absolute; right: 26px; top: 26px; opacity: 0.85; }
+  </style>
+
+  <div id="f3" data-composition-id="03-funzioni" data-width="1920" data-height="1080" data-duration="11">
+    <div class="eyebrow" id="f3-eyebrow">cosa c'e' dentro</div>
+    <div class="headline" id="f3-headline">Non solo una conversazione</div>
+
+    <div class="card goal" id="f3-goal">
+      <h4>Goal</h4>
+      <div class="meta" id="f3-goalmeta">0 di 3</div>
+      <div class="sub">un obiettivo scritto a passi, con i suoi controlli</div>
+      <div class="steps">
+        <div class="step s1"><span class="mk">1</span>Raccogliere le fatture della cartella</div>
+        <div class="step s2"><span class="mk">2</span>Preparare la tabella con i totali</div>
+        <div class="step s3"><span class="mk">3</span>Consegnare il file al commercialista</div>
+      </div>
+      <div class="goalbar"><i id="f3-goalbar"></i></div>
+    </div>
+
+    <div class="card pianifica" id="f3-pianifica">
+      <h4>Pianificazioni</h4>
+      <div class="sub">il lavoro che deve avvenire da solo</div>
+      <div class="chips">
+        <span class="chip">ogni mattina 8:00</span>
+        <span class="chip">ogni giovedi' 18:00</span>
+      </div>
+    </div>
+
+    <div class="card memoria" id="f3-memoria">
+      <h4>Memoria</h4>
+      <div class="sub">ricorda cosa ha gia' fatto e perche'</div>
+      <div class="chips">
+        <span class="chip on">118 appunti</span>
+        <span class="chip">decisioni prese</span>
+      </div>
+    </div>
+
+    <div class="card competenze" id="f3-competenze">
+      <h4>Competenze</h4>
+      <div class="sub2">impara una capacita' nuova quando serve</div>
+      <div class="chips">
+        <span class="chip">PDF</span>
+        <span class="chip">siti web</span>
+        <span class="chip">video</span>
+      </div>
+    </div>
+
+    <div class="card filecard" id="f3-file">
+      <h4>File</h4>
+      <div class="sub2">cartelle, ricerca dentro i documenti, zip</div>
+      <div class="chips">
+        <span class="chip">contratti</span>
+        <span class="chip">fatture</span>
+        <span class="chip">listini</span>
+      </div>
+    </div>
+
+    <div class="card costocard" id="f3-costo">
+      <h4>Costo</h4>
+      <div class="sub2">ogni turno dice quanto e' costato</div>
+      <div class="big" id="f3-euro">0,004 €</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      const card = (id) => document.getElementById(id);
+
+      // intestazione
+      tl.fromTo(card("f3-eyebrow"), { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0);
+      tl.fromTo(card("f3-headline"), { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 0.15);
+
+      // la voce nomina gli obiettivi: la card si apre e i passi si spuntano
+      tl.fromTo(card("f3-goal"), { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.55, ease: "power3.out" }, 0.6);
+      tl.fromTo("#f3-goal .accentline", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 0.7);
+      tl.fromTo("#f3-goal .s1 .mk", { scale: 0, backgroundColor: "#0f131a" }, { scale: 1, duration: 0.3, ease: "back.out(2)" }, 1.5);
+      tl.to("#f3-goal .s1 .mk", { backgroundColor: "#34d399", borderColor: "#34d399", color: "#06101f", duration: 0.25 }, 1.6);
+      tl.set("#f3-goal .s1 .mk", { textContent: "✓" }, 1.6);
+      tl.to("#f3-goal .s1", { color: "#eef2f9", duration: 0.25 }, 1.6);
+      tl.fromTo("#f3-goalbar", { width: "0%" }, { width: "34%", duration: 0.6, ease: "power2.out" }, 1.7);
+      tl.call(function () { document.getElementById("f3-goalmeta").textContent = "1 di 3"; }, null, 1.7);
+      tl.to("#f3-goal .s2 .mk", { backgroundColor: "#34d399", borderColor: "#34d399", color: "#06101f", duration: 0.25 }, 3.0);
+      tl.set("#f3-goal .s2 .mk", { textContent: "✓" }, 3.0);
+      tl.to("#f3-goal .s2", { color: "#eef2f9", duration: 0.25 }, 3.0);
+      tl.fromTo("#f3-goalbar", { width: "34%" }, { width: "66%", duration: 0.5, ease: "power2.out", immediateRender: false }, 3.1);
+      tl.call(function () { document.getElementById("f3-goalmeta").textContent = "2 di 3"; }, null, 3.1);
+
+      // pianificazioni, memoria, competenze: ognuna al suo nome nella voce
+      tl.fromTo(card("f3-pianifica"), { opacity: 0, x: 26 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 4.1);
+      tl.fromTo("#f3-pianifica .chip", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, ease: "power2.out" }, 4.4);
+      tl.fromTo(card("f3-memoria"), { opacity: 0, x: 26 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, 5.9);
+      tl.fromTo("#f3-memoria .chip", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, ease: "power2.out" }, 6.2);
+      tl.fromTo(card("f3-competenze"), { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 7.9);
+      tl.fromTo("#f3-competenze .chip", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.1, ease: "power2.out" }, 8.2);
+
+      // il resto del quadro si completa
+      tl.fromTo(card("f3-file"), { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 8.7);
+      tl.fromTo(card("f3-costo"), { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, 9.0);
+      tl.fromTo(card("f3-euro"), { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" }, 9.3);
+
+      // tenuta
+      tl.to({}, { duration: 1.4 }, 9.6);
+
+      window.__timelines["03-funzioni"] = tl;
+    })();
+  </script>
+</template>

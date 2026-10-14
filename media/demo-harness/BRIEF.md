@@ -8,7 +8,7 @@ destination: mp4-web
 aspect: 1920x1080
 language: it
 audience: "un potenziale cliente che non conosce il prodotto e non e' del mestiere: titolare o responsabile di una piccola struttura, da introdurre all'harness"
-length: 60s
+length: 70s
 angle: "una giornata con l'harness: qualcuno scrive, l'agente esegue, il risultato appare — tre casi d'uso concreti in sequenza, chiusi dalla dichiarazione che il video stesso e' stato fatto con l'harness"
 ---
 
@@ -25,8 +25,13 @@ esempi... video simulativo di qualcuno che scrive un prompt e poi ottiene il ris
 esempi e casi d'uso... facile da comprendere».
 
 Assunzioni prese perche' l'utente non ha risposto entro il tempo: angolo «una giornata con
-l'harness», 16:9 da circa 60 secondi, voce narrata in italiano, lavoro in autonomia con il piano
-(copione e storyboard) presentato come anteprima.
+l'harness», 16:9, voce narrata in italiano, lavoro in autonomia con il piano (copione e storyboard)
+presentato come anteprima.
+
+Revisione del 14/10/2026 (chiesta dall'utente): il video cita per nome le funzioni della dashboard,
+non solo le lascia intuire. E' nato il **frame 3 — «Cosa c'e' dentro»**, una tavola dove obiettivi,
+pianificazioni, memoria, competenze, file e costo del turno si accendono uno alla volta mentre la voce
+li nomina; la durata passa da 60 a 71 secondi.
 
 ## Assets
 
