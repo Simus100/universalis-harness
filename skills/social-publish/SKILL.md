@@ -1,6 +1,6 @@
 ---
 name: social-publish
-description: Pubblica un post su una Pagina Facebook con la Pages API ufficiale di Meta (testo, oppure testo con immagine), verifica che il token di Pagina funzioni, e prepara l'invio senza inviarlo con --dry-run. Usala quando l'utente chiede di pubblicare, programmare o verificare un post su una Pagina Facebook. Non serve per creare una Pagina (non esiste API: si fa dall'interfaccia, da una persona) né per pubblicare su profili personali, gruppi o Marketplace.
+description: "Pubblica un post su una Pagina Facebook con la Pages API ufficiale di Meta (testo, oppure testo con immagine), verifica che il token di Pagina funzioni, e prepara l'invio senza inviarlo con --dry-run. Usala quando l'utente chiede di pubblicare, programmare o verificare un post su una Pagina Facebook. Non serve per creare una Pagina (non esiste API: si fa dall'interfaccia, da una persona) né per pubblicare su profili personali, gruppi o Marketplace."
 ---
 
 # Pubblicare su una Pagina Facebook

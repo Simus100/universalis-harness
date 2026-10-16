@@ -165,7 +165,11 @@ section("3. SKILL — creazione, frontmatter, caricamento, eliminazione");
 
   for (const n of ["prova-skill", "skill-duepunti"]) await call("POST", "/api/skills/delete", { name: n });
   list = await call("GET", "/api/skills");
-  check("eliminazione delle skill riuscita", (list.json?.skills?.length ?? 0) === 0);
+  // Non si conta l'elenco intero: accanto alle skill di questa istanza ci sono quelle di
+  // terzi (il gruppo HyperFrames), quindi zero non è un risultato possibile. Si verifica
+  // che siano sparite LE DUE DI PROVA, che è quello che il test ha creato.
+  const rimaste = (list.json?.skills || []).filter((s) => s.name === "prova-skill" || s.name === "skill-duepunti");
+  check("eliminazione delle skill riuscita", rimaste.length === 0, JSON.stringify(rimaste.map((s) => s.name)));
 }
 
 /* ─────────────────────────── 4. TOOL BROWSER ─────────────────────────── */

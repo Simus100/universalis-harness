@@ -89,6 +89,21 @@ Ingrandimento (`⤢ adatta → 1:1 → 2×`) e schermo intero (`⛶`) sono class
 comandi resta **sopra** l'overlay (`z-index: 90`): senza quello, su un telefono senza Esc, il
 riquadro diventerebbe una trappola da cui si esce solo ricaricando la pagina.
 
+**Riga «scrivi qui / incolla» (`#liveTypeBar`).** Compare **solo** con il controllo in mano
+all'utente (`hidden` gestito in `applyLive`), perché nel caso normale deve togliere zero altezza al
+riquadro del browser. Contiene il campo `#liveTypeBox` (classe `.liveurl`, quindi 44px da dito su
+schermo stretto) e i pulsanti `⇩ incolla`, `⌫`, `⏎`, tutti a 44px su mobile. Il campo è una
+**tastiera**, non un secondo campo di testo: `input` e `paste` inoltrano e svuotano, i tasti che non
+producono testo (Backspace, Enter, frecce) passano dal listener `keydown` del campo verso la CLI.
+Sopra le 12 battute l'inoltro passa da `POST /api/browser/inserttext` (un inserimento solo) invece
+che da un evento di tasto per carattere.
+
+**Guasti visibili.** `sendInput` controlla la risposta: se il canale degli input non è pronto
+(ponte caduto, flusso spento) lo dice nel log della vista, **una volta sola** (`liveInputKoAvvisato`,
+azzerato al primo invio riuscito) per non riempire il log di righe identiche, e `liveSendText`
+smette di sparare eventi. Prima l'esito veniva ignorato: si scriveva e non succedeva niente senza
+sapere perché — il tipo di guasto che fa sembrare rotta la vista mentre il difetto è nel canale.
+
 ## 6. Movimento
 
 `@media (prefers-reduced-motion: reduce)` spegne il fluttuare del logo nella schermata vuota e le

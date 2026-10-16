@@ -1,9 +1,9 @@
 == smoke test post-riavvio ==
-quando: 2026-09-23 18:53:10 CEST
-servizio : active  ·  avviato: Wed 2026-09-23 18:53:10 CEST
-risposta : /api/health → 401  (dopo 3 tentativi)
-versione : dashboard-2026-09-21.2
-pid      : 491535 · node v26.8.2
+quando: 2026-10-16 21:45:37 CEST
+servizio : active  ·  avviato: Fri 2026-10-16 21:45:10 CEST
+risposta : /api/health → 401  (dopo 1 tentativi)
+versione : dashboard-2026-09-27.1
+pid      : 633513 · node v26.8.2
   ok  auth-bruteforce-limit
   ok  auth-progressive-backoff
   ok  login-page-session
@@ -22,7 +22,7 @@ pid      : 491535 · node v26.8.2
   ok  stream-replay
   ok  stream-snapshot
   ok  stream-segments
-pagina   : 276755 byte
+pagina   : 454945 byte
   ok   class="pill feat-btn"
   ok   id="compactBtn"
   ok   id="connTxt"
@@ -39,10 +39,10 @@ senza credenziali: 401  (atteso 401)
 manifest : Universalis Harness
 favicon  : 200 1702B
 -- ultime righe del servizio:
-   Sep 23 18:53:13 vmi3171743 node[491535]: sessioni: /root/pi-harness/sessions
-   Sep 23 18:53:13 vmi3171743 node[491535]: fuso orario (pianificazioni): Europe/Rome — ora locale: 23/09/2026, 18:53:13
-   Sep 23 18:53:13 vmi3171743 node[491535]: subagent: disponibile (OFF di default, max 3 per richiesta)
-   Sep 23 18:53:13 vmi3171743 node[491535]: auth -> utente: pi  password: ***
-   Sep 23 18:53:13 vmi3171743 node[491535]: login: pagina /login + cookie di sessione (720h) · Basic accettato · anti brute-force: 8 tentativi → attese progressive 15s, 30s, 60s, 120s, 300s, 600s, 900s
-   Sep 23 18:53:13 vmi3171743 node[491535]: segreto di sessione: /root/pi-harness/.session-secret
+   Oct 16 21:45:15 vmi3171743 node[633513]: fuso orario (pianificazioni): Europe/Rome — ora locale: 16/10/2026, 21:45:15
+   Oct 16 21:45:15 vmi3171743 node[633513]: subagent: disponibile (OFF di default, max 3 per richiesta)
+   Oct 16 21:45:15 vmi3171743 node[633513]: auth -> utente: pi  password: ***
+   Oct 16 21:45:15 vmi3171743 node[633513]: login: pagina /login + cookie di sessione (720h) · Basic accettato · anti brute-force: 8 tentativi → attese progressive 15s, 30s, 60s, 120s, 300s, 600s, 900s
+   Oct 16 21:45:15 vmi3171743 node[633513]: segreto di sessione: /root/pi-harness/.session-secret
+   Oct 16 21:45:15 vmi3171743 node[633513]: Decision_M: feature disponibile (spenta) · porta 8017 · 4b q4_k_m · 6 thread
 == fine ==

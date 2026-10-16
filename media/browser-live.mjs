@@ -27,6 +27,11 @@ const execFileAsync = promisify(execFile);
 
 const DEFAULT_MAX_FPS = 3;
 
+/** Tetto del testo inserito in un colpo solo (incolla). Il testo viaggia come argomento
+ *  della CLI (array, non shell): nessuna shell injection, ma un tetto tiene comunque
+ *  la richiesta e il comando entro limiti ragionevoli. */
+export const MAX_PASTE = 8192;
+
 export function createBrowserLive({
   bin = "/usr/bin/agent-browser",
   user = "pi-browser",
@@ -357,6 +362,28 @@ export function createBrowserLive({
     return k;
   }
 
+  /**
+   * Inserisce testo nel campo ATTIVO del browser, senza eventi di tasto («incolla»).
+   *
+   * Perché serve: il canale della live view manda i tasti uno per uno, quindi un testo
+   * lungo (o un codice di verifica) va digitato per intero — e da telefono è impossibile,
+   * perché lì non c'è una tastiera fisica. La CLI ha `keyboard inserttext`, che scrive il
+   * testo direttamente come inserimento: è anche il modo giusto per i caratteri che il
+   * singolo tasto non copre bene (accenti, simboli, spazi doppi).
+   */
+  async function insertText(text) {
+    const t = String(text ?? "");
+    if (!t.trim()) throw new Error("niente da inserire: il testo è vuoto");
+    if (t.length > MAX_PASTE) throw new Error(`testo troppo lungo (massimo ${MAX_PASTE} caratteri)`);
+    // caratteri di controllo (esclusi tab, a capo e ritorno carrello): non hanno senso da incollare
+    // e potrebbero diventare comandi per la CLI
+    if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(t)) {
+      throw new Error("il testo contiene caratteri di controllo non ammessi");
+    }
+    await cli(["keyboard", "inserttext", t]);
+    return t.length;
+  }
+
   function snapshot() {
     return {
       watching: !!ws,
@@ -379,5 +406,5 @@ export function createBrowserLive({
     return { ...lastFrame, ageNowMs: lastFrame.ts ? Date.now() - lastFrame.ts : null };
   }
 
-  return { start, stop, input, snapshot, send, lastFrame: lastFrameNow, setMaxFps, reload, press, open };
+  return { start, stop, input, snapshot, send, lastFrame: lastFrameNow, setMaxFps, reload, press, insertText, open };
 }

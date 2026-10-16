@@ -59,6 +59,10 @@ echo "########## 7c/10 matrice funzionale in browser vero (invio, stop, storico,
 node media/test-funzionalita-browser.mjs || rc=1
 echo
 
+echo "########## 7d/10 scrivere nel browser dalla live view (scrivi qui, incolla, tasti, guasti visibili) ##########"
+node media/test-live-input.mjs || rc=1
+echo
+
 echo "########## 8/10 runtime con il modello (stop, modifica, rigenera) ##########"
 bash media/test-chat.sh || rc=1
 echo

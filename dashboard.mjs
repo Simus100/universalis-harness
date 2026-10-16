@@ -5171,6 +5171,23 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // incolla nel campo ATTIVO del browser: inserimento diretto, senza eventi di tasto.
+    // Serve a non digitare per intero testi lunghi e codici di verifica (e da telefono è
+    // l'unico modo: lì non c'è tastiera fisica). Vale solo in modalità human, perché è
+    // l'utente che incolla: in modalità agente l'agente ha i suoi strumenti.
+    if (req.method === "POST" && url.pathname === "/api/browser/inserttext") {
+      const body = await readBody(req, 64 * 1024);
+      if (browserControlMode !== "human") {
+        return json(res, 409, { error: "il controllo è dell'agente: premi 'prendi il controllo' per scrivere tu nel browser" });
+      }
+      try {
+        const chars = await browserLive.insertText(body.text);
+        return json(res, 200, { ok: true, chars });
+      } catch (e) {
+        return json(res, 400, { error: String(e?.message || e) });
+      }
+    }
+
     // ricarica la pagina attiva. I frame arrivano solo ai CAMBIAMENTI, quindi su una pagina
     // ferma questo è il modo per ottenere un'immagine nuova (e per non farla sembrare bloccata)
     if (req.method === "POST" && url.pathname === "/api/browser/reload") {

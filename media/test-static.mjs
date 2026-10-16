@@ -358,7 +358,9 @@ check(
 );
 check(
   "la lista si ridisegna anche a drawer chiuso (badge 'attiva' mai stantio)",
-  /addEventListener\("sessions", \(e\) => \{[\s\S]{0,300}renderSessions\(\);/.test(html),
+  // il registratore è `esOn` (che riattacca i listener quando lo stream si riconnette):
+  // il controllo è che il ridisegno stia nell'handler, non come lo si registra
+  /(?:esOn|addEventListener)\("sessions", \(e\) => \{[\s\S]{0,300}renderSessions\(\);/.test(html),
 );
 check(
   "il ridisegno della chat non forza più lo scroll in fondo",
@@ -389,7 +391,7 @@ check(
 );
 check(
   "tool_end aggiorna l'esito della card (✓ / ✗)",
-  /addEventListener\("tool_end"/.test(html) && /function endToolCard/.test(html),
+  /(?:esOn|addEventListener)\("tool_end"/.test(html) && /function endToolCard/.test(html),
 );
 check(
   "lo snapshot a segmenti ricostruisce il messaggio in ordine",

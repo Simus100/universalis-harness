@@ -755,6 +755,11 @@ body.v-open { overflow: hidden; }
 .livechatlog.expanded { height: 38vh; }
 .livechatlog.hidden { display: none; }
 .livebar { flex: none; }
+/* Riga «scrivi qui / incolla»: compare SOLO quando il controllo è tuo, quindi nel caso
+ * normale non ruba altezza al riquadro del browser. Su telefono è l'unico modo per scrivere
+ * dentro la pagina: lì non c'è una tastiera fisica, e quei tasti non esistono. */
+#liveTypeBar[hidden] { display: none; }
+#liveTypeBar { padding-top: 4px; }
 .livechat { flex: none; }
 .livechatlog .lm { padding: 3px 8px; border-radius: var(--radius); white-space: pre-wrap; word-break: break-word; }
 .livechatlog .lm.you { background: rgba(139,92,255,.16); align-self: flex-end; max-width: 86%; }
@@ -787,6 +792,9 @@ body.v-open { overflow: hidden; }
   .livechatlog { height: 76px; }
   .livechatlog.expanded { height: 30vh; }
   .livechatin input { font-size: var(--fs-lg); }
+  /* i bersagli da dito della riga tastiera: 44px come il campo indirizzi */
+  #liveTypeBar .ghost { min-height: 44px; padding: 0 10px; }
+  #liveTypeBar { padding-top: 2px; }
 }
 /* Il pulsante del log porta un pallino quando ci sono messaggi arrivati a log chiuso. */
 #liveLogToggle.nuovo::after { content: " ●"; color: var(--accent); }
@@ -1910,6 +1918,14 @@ footer {
       <button class="ghost" id="liveScrollUp" type="button" title="Scorri su">↑</button>
       <button class="ghost" id="liveScrollDown" type="button" title="Scorri giù">↓</button>
       <span id="liveStats"></span>
+    </div>
+    <div class="livebar livetype" id="liveTypeBar" hidden>
+      <input class="liveurl" id="liveTypeBox" type="text" spellcheck="false" autocomplete="off"
+             autocapitalize="off" autocorrect="off"
+             placeholder="scrivi qui: i tasti vanno al campo attivo del sito" />
+      <button class="ghost" id="livePasteBtn" type="button" title="Incolla nel campo attivo del sito il testo degli appunti (se il browser non li concede, incolla nel riquadro qui a fianco)">⇩<span class="lbl-largo"> incolla</span></button>
+      <button class="ghost" id="liveBackspaceBtn" type="button" title="Cancella un carattere nel campo attivo del sito">⌫</button>
+      <button class="ghost" id="liveEnterBtn" type="button" title="Invio nel campo attivo del sito">⏎</button>
     </div>
     <div class="livechat">
       <div class="livechathead">
@@ -7080,6 +7096,13 @@ function applyLive(live, control) {
         : "i comandi scritti qui riguardano il browser mostrato";
   }
   $("liveStage").classList.toggle("control", liveControl === "human");
+  // la riga «scrivi qui / incolla» si vede solo quando guidi tu: nel caso normale non
+  // toglie altezza al riquadro del browser
+  const tb = $("liveTypeBar");
+  if (tb) {
+    tb.hidden = liveControl !== "human";
+    if (tb.hidden && document.activeElement === $("liveTypeBox")) $("liveTypeBox").blur();
+  }
   $("liveEmpty").style.display = liveLastFrame ? "none" : "flex";
 }
 
@@ -7222,16 +7245,33 @@ async function liveNavigate(input) {
 }
 
 async function sendInput(payload) {
-  if (liveControl !== "human") return;
+  if (liveControl !== "human") return false;
   try {
-    await fetch("/api/browser/input", {
+    const r = await fetch("/api/browser/input", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
     });
-  } catch {
-    /* niente */
+    if (!r.ok) {
+      // Un tasto che non arriva è un guasto SILENZIOSO: chi scrive crede di aver scritto e
+      // invece la pagina non ha ricevuto niente. Si dice, ma una volta sola: altrimenti un
+      // canale giù riempirebbe il log di righe identiche.
+      avvisaInputKo((await r.json().catch(() => ({}))).error || `errore ${r.status}`);
+      return false;
+    }
+    liveInputKoAvvisato = false;
+    return true;
+  } catch (e) {
+    avvisaInputKo(e.message);
+    return false;
   }
+}
+
+let liveInputKoAvvisato = false;
+function avvisaInputKo(motivo) {
+  if (liveInputKoAvvisato) return;
+  liveInputKoAvvisato = true;
+  liveChatPush("err", `i tasti non sono arrivati al browser (${motivo}). Riprova: il ponte si riattacca da sé.`);
 }
 
 /* ---- chat dentro la vista live: comandi all'agente senza cambiare vista ---- */
@@ -7579,7 +7619,7 @@ $("liveControl").onclick = async () => {
   await setControl(liveControl === "human" ? "agent" : "human");
   if (liveControl === "human") {
     $("liveInput").blur();
-    liveChatPush("tool", "controllo tuo: clicca nel riquadro per cliccare, «⌨ → browser» per digitare");
+    liveChatPush("tool", "controllo tuo: clicca nel riquadro per cliccare; per scrivere usa il riquadro «scrivi qui» o «⇩ incolla» (tasti fisici: «⌨ → browser»)");
   }
 };
 $("liveSend").onclick = () => liveChatSend();
@@ -7699,7 +7739,7 @@ $("liveFocusBtn").onclick = () => {
     liveChatPush("tool", "prima premi «prendi il controllo», poi i tasti andranno al browser");
     return;
   }
-  liveChatPush("tool", "tastiera verso il browser attiva: clicca nel riquadro e scrivi");
+  liveChatPush("tool", "tastiera fisica verso il browser: clicca nel riquadro e scrivi (da telefono usa il riquadro «scrivi qui»)");
 };
 $("liveInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -7767,6 +7807,114 @@ async function pressKeys(combo) {
     liveChatPush("err", e.message);
   }
 }
+
+/* ---- riga «scrivi qui / incolla»: scrivere nel sito anche da telefono ----
+ * Il problema che risolve: i tasti sono un canale per così dire fisico, quindi senza tastiera
+ * fisica (telefono) non si scriveva nulla, e un testo lungo andava digitato per intero.
+ * Qui la sorgente è un CAMPO: tocchi, si apre la tastiera di sistema, e quello che scrivi va al
+ * campo attivo del sito. Il campo non trattiene il testo (si svuota a ogni inoltro), così non
+ * sembra che il testo sia in due posti: è una tastiera, non un secondo campo. */
+
+/** Oltre questa lunghezza conviene un inserimento solo (`inserttext`) invece di un evento di
+ *  tasto per carattere: meno giri e nessun rischio di caratteri persi su testi lunghi. */
+const LIVE_TEXT_CARATTERI = 12;
+
+/** Manda del testo al campo attivo del browser. Corto: carattere per carattere dallo stream
+ *  (canale WebSocket: l'ordine è garantito). Lungo: `/api/browser/inserttext`, un solo giro. */
+async function liveSendText(text, { avvisa = true } = {}) {
+  if (liveControl !== "human") {
+    liveChatPush("err", "prima premi «prendi il controllo»");
+    return false;
+  }
+  const t = String(text || "");
+  if (!t) return false;
+  if (t.length > LIVE_TEXT_CARATTERI) {
+    try {
+      const r = await fetch("/api/browser/inserttext", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text: t }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        liveChatPush("err", j.error || `inserimento non riuscito (${r.status})`);
+        return false;
+      }
+      if (avvisa) liveChatPush("tool", `inseriti ${j.chars} caratteri nel campo attivo`);
+      return true;
+    } catch (e) {
+      liveChatPush("err", e.message);
+      return false;
+    }
+  }
+  for (const ch of t) {
+    const arrivato = await sendInput({ type: "input_keyboard", eventType: "keyDown", key: ch, text: ch });
+    await sendInput({ type: "input_keyboard", eventType: "keyUp", key: ch });
+    if (!arrivato) return false; // canale giù: si smette di sparare eventi (l'avviso è già uscito)
+  }
+  return true;
+}
+
+/** Il campo è una tastiera: quello che ci finisce dentro (digitato, dettato o incollato) parte
+ *  subito verso il browser e il campo torna vuoto. */
+function liveTypeFlush(text) {
+  $("liveTypeBox").value = "";
+  liveSendText(text);
+}
+
+$("liveTypeBox").addEventListener("input", (e) => {
+  const v = e.target.value;
+  if (!v) return;
+  liveTypeFlush(v);
+});
+$("liveTypeBox").addEventListener("paste", (e) => {
+  // l'incolla nel campo NON deve restare nel campo: va al sito. È anche la via di ripiego
+  // quando il browser non concede al pulsante «incolla» la lettura degli appunti.
+  const t = e.clipboardData ? e.clipboardData.getData("text") : "";
+  e.preventDefault();
+  if (t) liveTypeFlush(t);
+});
+$("liveTypeBox").addEventListener("keydown", (e) => {
+  // i tasti che non producono testo passano dalla CLI (lo stream non li copre)
+  const COMBO = {
+    Backspace: "Backspace", Delete: "Delete", Enter: "Enter", Tab: "Tab", Escape: "Escape",
+    ArrowUp: "ArrowUp", ArrowDown: "ArrowDown", ArrowLeft: "ArrowLeft", ArrowRight: "ArrowRight",
+    Home: "Home", End: "End", PageUp: "PageUp", PageDown: "PageDown",
+  };
+  if (COMBO[e.key]) {
+    e.preventDefault();
+    pressKeys(COMBO[e.key]);
+  }
+});
+
+/** Legge il testo dagli appunti. Può fallire per permesso negato, contesto non sicuro o
+ *  browser che non lo permette: in quel caso si dice cosa fare invece di non fare nulla. */
+async function liveReadClipboard() {
+  try {
+    if (!navigator.clipboard || !navigator.clipboard.readText) return "";
+    return await navigator.clipboard.readText();
+  } catch {
+    return "";
+  }
+}
+
+$("livePasteBtn").onclick = async () => {
+  if (liveControl !== "human") {
+    liveChatPush("err", "prima premi «prendi il controllo», poi incolla");
+    return;
+  }
+  let t = await liveReadClipboard();
+  if (!t) {
+    // niente appunti leggibili: il campo è la via sicura (tocco lungo o Ctrl+V)
+    $("liveTypeBox").focus();
+    liveChatPush("tool", "non riesco a leggere gli appunti: incolla il testo nel riquadro «scrivi qui» — va diretto al sito");
+    return;
+  }
+  const inviato = await liveSendText(t, { avvisa: false });
+  if (inviato) liveChatPush("tool", `incollati ${t.length} caratteri nel campo attivo`);
+};
+$("liveBackspaceBtn").onclick = () => pressKeys("Backspace");
+$("liveEnterBtn").onclick = () => pressKeys("Enter");
 $("progettoBack").onclick = () => showTab("chat");
 $("filesBack").onclick = () => showTab("chat");
 $("agendaBack").onclick = () => showTab("chat");

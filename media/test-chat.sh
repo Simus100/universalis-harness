@@ -60,7 +60,7 @@ check "snippet presenti" "1" "$(echo "$res" | python3 -c "import json,sys;r=json
 
 
 echo "== 4b. ricerca nei file =="
-fr=$(curl -s $AUTH "$B/api/search/files?q=media-guard")
+fr=$(curl -s $AUTH "$B/api/search/files?q=media-guard&path=pi-harness")
 check "trovato media-guard in dashboard.mjs" "1" "$(echo "$fr" | python3 -c "import json,sys;r=json.load(sys.stdin)['results'];print(1 if any(x['path']=='pi-harness/dashboard.mjs' and 'media-guard' in x['text'] for x in r) else 0)")"
 check "ricerca file con path relativo" "1" "$(curl -s $AUTH "$B/api/search/files?q=MEDIA_GUARD_EXT&path=pi-harness" | python3 -c "import json,sys;print(1 if json.load(sys.stdin)['results'] else 0)")"
 NOPE="qqzzxx$(date +%s%N)"

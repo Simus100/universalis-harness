@@ -1012,7 +1012,10 @@ esistente**: nessuna porta nuova, nessuna modifica a Caddy, nessun endpoint espo
 | `▶ guarda` / `⏸ ferma` | apre/chiude il flusso dei frame (`POST /api/browser/watch`) |
 | `🖐 prendi il controllo` / `↩ restituisci` | passa il browser a te (`POST /api/browser/control`) |
 | click nell'immagine | inoltra il click al browser, con coordinate scalate sulla dimensione reale del frame |
-| `⌨ → browser` | porta i tasti al browser invece che alla chat |
+| `⌨ → browser` | porta i tasti **fisici** al browser invece che alla chat (richiede «prendi il controllo») |
+| **riga «scrivi qui»** | compare **solo quando il controllo è tuo** e serve a scrivere nel sito **anche senza tastiera fisica**: tocchi il riquadro, si apre la tastiera di sistema, e quello che scrivi va al **campo attivo** della pagina. Il riquadro non trattiene il testo (si svuota a ogni inoltro): è una tastiera, non un secondo campo |
+| **`⇩ incolla`** | inserisce nel campo attivo il testo degli appunti (`POST /api/browser/inserttext`, inserimento diretto senza eventi di tasto). Se il browser non concede la lettura degli appunti, la vista lo dice e ti manda al riquadro: lì l'incolla va al sito comunque |
+| **`⌫` / `⏎`** | cancellano e inviano nel campo attivo del sito: sono i due tasti che da telefono non si possono premere |
 | tastiera completa | caratteri singoli dallo stream (immediato); **Backspace, Tab, frecce, Home/End, F1-F12 e le scorciatoie** (Ctrl+A/C/V/Z…) passano dalla CLI, perché lo stream accetta solo `key`+`text` e senza testo il browser non riceve l'evento |
 | `▴ log` | log della chat a tre stati: compatto (88px) → espanso → nascosto. **Su telefono parte nascosto** (lascia spazio al riquadro) e il pulsante mostra un pallino ● quando arrivano messaggi a log chiuso |
 | `⤢ adatta / 1:1 / 2×` | **ingrandisce il riquadro**: adattato alla finestra → pagina alla sua dimensione reale → al doppio. Serve a *leggere* una pagina, non solo a vederla: in 1:1 e 2× ci si muove con lo scorrimento (dito o rotellina) |
@@ -1031,7 +1034,18 @@ pagina desktop si legge davvero, invece di essere rimpicciolita a un francobollo
 
 **Il lock anti-conflitto:** quando prendi il controllo, il tool `browser` **rifiuta** di agire e
 spiega perché. Così agente e persona non si contendono lo stesso browser. Il controllo torna
-all'agente con `↩ restituisci`.
+all'agente con `↩ restituisci`. Le due funzioni che servono proprio in quel momento — **scrivere
+nel campo attivo** e **incollare** — restano tue: non passano dal tool dell'agente, quindi il lock
+non te le toglie.
+
+**Niente guasti silenziosi:** se il canale degli input non è pronto (ponte caduto, flusso
+spento, vista non aperta), la vista **lo dice nel log** invece di lasciarti credere di aver
+scritto. Il ponte si riattacca da sé, quindi il più delle volte basta riprovare.
+
+**Cosa non si può fare, e non è una svista:** il browser è `Chrome headless` e l'IP del server è
+un datacenter. Meta blocca un login da lì **prima** di guardare come è arrivata la password
+(captcha/checkpoint). Se un sito fa quella domanda, la strada non è la live view: si usa l'API
+ufficiale o lo fa una persona dal proprio dispositivo.
 
 Note operative:
 - i frame arrivano **quando la pagina cambia** (delta), non a intervalli fissi: una pagina ferma
