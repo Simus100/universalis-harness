@@ -78,8 +78,11 @@ password e senza mai fare login automatico.
    - Copia anche il campo `id` della Pagina: è il `FB_PAGE_ID`.
 6. **Token che dura** (consigliato, per non rifarlo ogni due mesi): in **Business Settings →
    Utenti di sistema** crea un utente di sistema, assegnagli la Pagina con ruolo amministratore,
-   genera un token con gli stessi tre permessi. Questo token dura molto più a lungo e non dipende
-   dalla tua sessione nel browser.
+   genera un token con gli stessi tre permessi (e, se compare, `business_management`), scegliendo
+   la durata **senza scadenza** invece di 60 giorni. Questo token dura molto più a lungo e non
+   dipende dalla tua sessione nel browser. Se nell'interfaccia il pulsante per generare il token
+   non c'è, si fa con una chiamata: `POST /{id-utente-di-sistema}/access_tokens` con app e permessi
+   (dal Graph API Explorer, usando un token di un admin reale).
 7. **Verifica** che il token sia quello giusto: un token di *Pagina* inizia con una stringa lunga e
    quando lo usi risponde con il nome della Pagina (lo controlliamo nel passo 3 della Parte 4).
 

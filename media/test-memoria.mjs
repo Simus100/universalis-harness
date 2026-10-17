@@ -693,7 +693,9 @@ await prova("chiudere una chat archivia la sessione precedente e aggiorna la vis
   // La pagina autonoma non deve restare uno snapshot servito a oltranza.
   assert(/atl\.mtimeMs < gra\.mtimeMs/.test(src), "la rotta /memoria non rigenera l'atlante quando il grafo è più recente");
   const html = readFileSync("dashboard.html", "utf8");
-  assert(/es\.addEventListener\("memoria"/.test(html), "la vista non reagisce all'aggiornamento della memoria");
+  // Il listener SSE passa da `esOn` (la connessione si ricrea da sola se muore in silenzio):
+  // cercare la vecchia chiamata diretta faceva fallire il test su codice sano.
+  assert(/esOn\("memoria"/.test(html), "la vista non reagisce all'aggiornamento della memoria");
   assert(/dataset\.tab === "memoria"\) caricaMemoria\(\)/.test(html), "l'evento non ricarica la vista aperta");
   return "archivio in coda, annuncio alla dashboard, atlante rigenerato";
 });
@@ -718,6 +720,10 @@ await prova("i controlli del disegno sono nel markup e collegati", async () => {
   assert(/memoriaAtlante\?\.zoom\(1\.25\)/.test(html) && /memoriaAtlante\?\.zoom\(0\.8\)/.test(html), "i pulsanti di zoom non sono collegati");
   assert(/memoriaAtlante\?\.adatta\(\)/.test(html), "il pulsante «adatta» non è collegato");
   assert(/toggleRelazione\(id\)/.test(html), "la legenda delle relazioni non è cliccabile");
+  // I filtri devono mostrare lo stato VERO del disegno: la memoria si aggiorna da sé sotto gli
+  // occhi (evento SSE) e i pulsanti non devono riaccendersi da soli.
+  assert(/stratoAcceso|relazioneAccesa/.test(html), "i pulsanti dei filtri non leggono lo stato del disegno");
+  assert(/riagganciaNodoMemoria/.test(html), "il pannello del nodo non si riaggancia al grafo aggiornato");
   return "modo, adatta, −, ＋ e legenda cliccabile";
 });
 
@@ -853,6 +859,100 @@ await prova("nella mappa nessun nodo si sovrappone e nessuna etichetta sta sopra
     at.seleziona(0);
     assert(at.vista.selezionato === 0, "la selezione non è registrata");
     return `${etichette.length} etichette senza sovrapposizioni, nodi a ≥${minima.toFixed(0)} px`;
+  } finally {
+    chiudi();
+  }
+});
+
+await prova("quando il grafo cambia, i nodi e i vicini esposti sono quelli nuovi", async () => {
+  const chiudi = apriAmbienteBrowser();
+  try {
+    const { createAtlante } = await import("./memoria/atlante.mjs");
+    const v = await datiVista();
+    const at = createAtlante({ canvas: canvasFinto(1200, 700), dati: v });
+
+    // Il grafo cresce IN MEZZO, non in coda: è il caso vero (un episodio nuovo entra per data
+    // e sposta gli indici di tutti i nodi che seguono).
+    const v2 = JSON.parse(JSON.stringify(v));
+    v2.nodi.splice(3, 0, { id: "prova-nuovo", n: "nodo entrato in mezzo", s: "episodio", a: v.nodi[0].a, g: 2, f: "" });
+    v2.archi.push({ a: 3, b: 4, r: Object.keys(v2.colori)[0] });
+    at.seleziona(0);
+    const idScelto = at.nodi[0].id;
+    const relSpenta = Object.keys(v.colori)[0];
+    at.toggleStrato("artefatto");
+    at.toggleRelazione(relSpenta);
+    const vecchio = at.nodi;
+    at.aggiorna(v2);
+
+    assert(at.nodi !== vecchio, "l'elenco dei nodi è rimasto quello del grafo precedente");
+    assert(at.nodi.length === v2.nodi.length, `nodi esposti ${at.nodi.length} invece di ${v2.nodi.length}`);
+    assert(at.vicini.length === v2.nodi.length, `vicini esposti ${at.vicini.length} invece di ${v2.nodi.length}`);
+    assert(at.nodi.some((n) => n.id === "prova-nuovo"), "il nodo nuovo non si legge da fuori");
+    assert(!at.vicini.flat().some((c) => !at.nodi[c.verso]), "un collegamento punta a un nodo che non esiste più");
+    assert(at.nodi[at.vista.selezionato]?.id === idScelto, "il nodo scelto si è perso nell'aggiornamento");
+    assert(!at.vista.stratiAttivi.has("artefatto"), "lo strato spento si è riacceso da solo");
+    assert(!at.vista.relazioniAttive.has(relSpenta), "la relazione spenta si è riaccesa da sola");
+
+    // Un riordino completo: nessuna posizione può restare quella di prima per caso.
+    const v3 = JSON.parse(JSON.stringify(v));
+    v3.nodi = v3.nodi.slice().reverse();
+    v3.archi = [];
+    at.aggiorna(v3);
+    assert(at.nodi.length === v3.nodi.length, "grafo riordinato: i nodi non sono quelli nuovi");
+    assert(at.nodi.every((n) => n.posM.every(Number.isFinite)), "grafo riordinato: posizioni non calcolate");
+
+    // Grafo svuotato e grafo assente: la vista non deve rompersi né restare indietro.
+    at.aggiorna({ nodi: [], archi: [], aree: {}, strati: {}, colori: {} });
+    at.ridisegna();
+    assert(at.nodi.length === 0 && at.vista.selezionato === null, "svuotando il grafo restano nodi fantasma");
+    at.aggiorna({});
+    at.ridisegna();
+    return `${v2.nodi.length} nodi aggiornati, nodo scelto e filtri conservati`;
+  } finally {
+    chiudi();
+  }
+});
+
+await prova("il disegno si riadatta quando il riquadro cambia, senza strappare lo zoom manuale", async () => {
+  const chiudi = apriAmbienteBrowser();
+  try {
+    const { createAtlante } = await import("./memoria/atlante.mjs");
+    const v = await datiVista();
+    const canvas = canvasFinto(1200, 700);
+    const at = createAtlante({ canvas, dati: v });
+    const k0 = at.vista.k;
+
+    // Rotazione del telefono: cambia l'altezza. Il fondo scala del canvas e l'inquadratura
+    // devono seguire, altrimenti il grafo resta disegnato per il riquadro di prima.
+    canvas.clientHeight = 400;
+    at.ridisegna();
+    assert(canvas.height === 400, "il fondo scala del canvas non segue l'altezza");
+    assert(at.vista.k !== k0, "cambiando l'altezza l'inquadratura non si rifà");
+    const txPrima = at.vista.tx;
+    canvas.clientWidth = 700;
+    at.ridisegna();
+    assert(canvas.width === 700, "il fondo scala del canvas non segue la larghezza");
+    assert(at.vista.tx !== txPrima && at.vista.tx === 350, "cambiando la larghezza il disegno non si ricentra");
+
+    // Chi ha zoomato con le mani non se lo vede strappare da un ridimensionamento.
+    at.zoom(2.5);
+    const kManuale = at.vista.k;
+    canvas.clientWidth = 1500;
+    canvas.clientHeight = 800;
+    at.ridisegna();
+    assert(at.vista.k === kManuale, "il ridimensionamento ha strappato lo zoom manuale");
+    at.adatta();
+    assert(at.vista.k !== kManuale, "«adatta» non riporta al grafo intero");
+
+    // Vista creata mentre il canvas è a 0×0 (scheda nascosta): non si inquadra il vuoto.
+    const c2 = canvasFinto(0, 0);
+    const at2 = createAtlante({ canvas: c2, dati: v });
+    assert(!at2.vista.adattata, "con il canvas a 0×0 la vista si dichiara già inquadrata");
+    c2.clientWidth = 1280;
+    c2.clientHeight = 720;
+    at2.ridisegna();
+    assert(at2.vista.adattata && at2.vista.k > 0.14, `alla prima dimensione utile k=${at2.vista.k}`);
+    return "altezza, larghezza, zoom manuale e canvas a 0×0";
   } finally {
     chiudi();
   }

@@ -5629,6 +5629,7 @@ async function disegnaAtlante() {
   } else {
     memoriaAtlante.aggiorna(v);
     costruisciFiltriMemoria(v);
+    riagganciaNodoMemoria();
   }
   aggiornaControlliMemoria();
   $("memoriaHint").textContent = `${v.nodi.length} nodi · ${String(v.generato || "").slice(0, 16).replace("T", " ")}`;
@@ -5653,16 +5654,40 @@ function aggiornaControlliMemoria() {
   if (gira) gira.hidden = modo !== "orbita";
 }
 
+/**
+ * Il pannello laterale tiene il nodo che si stava leggendo. La memoria si muove da sé (fine
+ * turno, chat chiusa, giro periodico) e la vista aperta si rilegge: quell'oggetto è allora del
+ * grafo PRECEDENTE, e il suo indice non vale più perché i nodi nuovi possono entrare in mezzo.
+ * Si riaggancia al nodo corrente per id — stesso nome, stessi collegamenti — e se il nodo non
+ * esiste più lo dice, invece di mostrare una scheda orfana con i collegamenti di un altro.
+ */
+function riagganciaNodoMemoria() {
+  if (!memoriaNodoScelto || !memoriaAtlante) return;
+  const fresco = memoriaAtlante.nodi.find((n) => n.id === memoriaNodoScelto.id);
+  if (fresco) {
+    memoriaAtlante.seleziona(fresco.i);
+    memoriaNodoScelto = fresco;
+    return;
+  }
+  memoriaNodoScelto = null;
+  $("memDettaglio").innerHTML = '<div class="mem-vuoto">Il nodo che stavi leggendo non è più nel grafo (la memoria è stata ricostruita).</div>';
+}
+
 function costruisciFiltriMemoria(v) {
   const strati = $("memStrati");
   const aree = $("memAree");
   strati.innerHTML = "";
   aree.innerHTML = "";
+  // Lo stato dei pulsanti è quello VERO del disegno, non «tutti accesi»: quando la memoria si
+  // aggiorna da sé sotto gli occhi, gli strati che l'utente aveva spento devono restare spenti.
+  const stratoAcceso = (id) => memoriaAtlante?.vista.stratiAttivi.has(id) ?? true;
+  const areaAccesa = (id) => memoriaAtlante?.vista.areeAttive.has(id) ?? true;
+  const relazioneAccesa = (id) => memoriaAtlante?.vista.relazioniAttive.has(id) ?? true;
   for (const [id, st] of Object.entries(v.strati || {})) {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "mem-pill";
-    b.setAttribute("aria-pressed", "true");
+    b.setAttribute("aria-pressed", stratoAcceso(id) ? "true" : "false");
     b.style.color = st.colore;
     b.innerHTML = '<span class="led"></span>' + escHtml(st.label);
     b.onclick = () => {
@@ -5676,7 +5701,7 @@ function costruisciFiltriMemoria(v) {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "mem-pill";
-    b.setAttribute("aria-pressed", "true");
+    b.setAttribute("aria-pressed", areaAccesa(id) ? "true" : "false");
     b.style.color = ar.colore;
     b.innerHTML = '<span class="led"></span>' + escHtml(ar.label) + " <em>" + conta(id) + "</em>";
     b.onclick = () => {
@@ -5692,7 +5717,7 @@ function costruisciFiltriMemoria(v) {
   for (const [id, r] of Object.entries(v.colori || {})) {
     const b = document.createElement("button");
     b.type = "button";
-    b.setAttribute("aria-pressed", "true");
+    b.setAttribute("aria-pressed", relazioneAccesa(id) ? "true" : "false");
     b.innerHTML = '<i style="background:' + r.colore + '"></i>' + escHtml(r.label);
     b.onclick = () => {
       memoriaAtlante?.toggleRelazione(id);

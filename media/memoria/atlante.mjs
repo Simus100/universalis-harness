@@ -107,6 +107,10 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     ty: 0,
     k: 1,
     adattata: false,
+    // L'utente ha spostato o ingrandito la mappa con le sue mani: da quel momento il riquadro
+    // che cambia (rotazione del telefono, finestra ridimensionata) non gli strappa l'inquadratura.
+    // Il pulsante ⤢ (adatta) è lì per tornare a vedere tutto, ed è lui a rimetterlo a false.
+    manuale: false,
     // comuni
     selezionato: null,
     hover: null,
@@ -128,15 +132,26 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
   const stratoLabel = (id) => (dati.strati?.[id] || {}).label || id;
   const raggioNodo = (g) => Math.min(9, 3 + Math.sqrt(g || 0) * 1.5);
 
-  function geometria() {
+  /**
+   * `precedente` è lo stato della vista PRIMA di un aggiornamento dei dati: filtri spenti, nodo
+   * scelto e lente. La memoria si muove da sé (fine turno, chat chiusa, giro periodico) e la
+   * vista aperta si rilegge: senza questo, ogni aggiornamento riaccendeva gli strati che
+   * l'utente aveva spento e gli toglieva il nodo che stava leggendo.
+   */
+  function geometria(precedente = null) {
     strati = Object.entries(dati.strati || {}).sort((a, b) => a[1].ordine - b[1].ordine);
     aree = Object.keys(dati.aree || {});
     const indiceStrato = new Map(strati.map(([id], i) => [id, i]));
     const indiceArea = new Map(aree.map((a, i) => [a, i]));
     gradoMax = Math.max(1, ...(dati.nodi || []).map((n) => n.g || 0));
-    vista.stratiAttivi = new Set(strati.map(([id]) => id));
-    vista.areeAttive = new Set(aree);
-    vista.relazioniAttive = new Set(Object.keys(dati.colori || {}));
+    // Si conservano gli SPENTI, non gli accesi: strati, aree e relazioni che compaiono adesso
+    // nascono accesi (una memoria che cresce non deve crescere invisibile).
+    const accesi = (tutti, spentiPrima) => new Set(tutti.filter((id) => !spentiPrima.has(id)));
+    const spenti = precedente?.spenti || {};
+    vista.stratiAttivi = accesi(strati.map(([id]) => id), spenti.strati || new Set());
+    vista.areeAttive = accesi(aree.slice(), spenti.aree || new Set());
+    vista.relazioniAttive = accesi(Object.keys(dati.colori || {}), spenti.relazioni || new Set());
+    if (precedente) vista.lente = precedente.lente || 0;
     vista.selezionato = null;
     vista.hover = null;
     vista.dentroLente = null;
@@ -182,6 +197,13 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
         colore: (dati.strati[n.s] || {}).colore || "#8b97ac",
       };
     });
+
+    // Il nodo che si stava leggendo torna al suo posto, ritrovato per ID: dopo un aggiornamento
+    // gli indici cambiano (i nodi nuovi possono entrare in mezzo), l'identità no.
+    if (precedente?.selezionatoId) {
+      const ritrovato = nodi.findIndex((n) => n.id === precedente.selezionatoId);
+      if (ritrovato >= 0) vista.selezionato = ritrovato;
+    }
 
     // `inverso` dice il VERSO dell'arco rispetto al nodo che lo guarda: serve a scrivere
     // l'etichetta giusta accanto al vicino («ha toccato» vs «è stato toccato da»).
@@ -403,9 +425,14 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
    *  vede quindi una struttura più fitta: i nomi arrivano con lo zoom, che è a un pizzico di
    *  distanza — ed è meglio di un ingrandimento forzato che mostrerebbe solo un angolo. */
   function inquadraMappa() {
-    const larghezza = Math.max(1, canvas.clientWidth);
-    const altezza = Math.max(1, canvas.clientHeight);
+    // Riquadro non ancora disposto (vista appena mostrata, canvas a 0×0): non si inquadra un
+    // mondo dentro zero pixel, si aspetta il primo fotogramma utile. Segnare «adattata» qui
+    // lasciava il grafo minuscolo per sempre.
+    if (canvas.clientWidth < 40 || canvas.clientHeight < 40) return;
+    const larghezza = canvas.clientWidth;
+    const altezza = canvas.clientHeight;
     if (!mondo.w || !mondo.h) return;
+    vista.manuale = false;
     const k = Math.max(0.12, Math.min(2.4, Math.min((larghezza * 0.94) / mondo.w, (altezza * 0.9) / mondo.h)));
     vista.k = k;
     // Il grafo è centrato sul mondo: l'origine è il bordo sinistro, il centro in x è 0.
@@ -896,19 +923,42 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
 
   // ------------------------------------------------------------------ ciclo
 
+  // Ultima dimensione del riquadro per cui il canvas e l'inquadratura sono stati calcolati.
+  // Senza questo confronto una rotazione del telefono, una finestra ridimensionata o il pannello
+  // laterale che si chiude lasciavano il grafo con lo zoom e lo spostamento del riquadro
+  // precedente: disegnato «correttamente» ma in un angolo, con mezzo schermo vuoto.
+  let ultimaDim = "";
+
   function disegna() {
     // Vista nascosta (altra scheda della dashboard) o finestra in secondo piano: non si
     // disegna. Il ciclo resta attivo ma non costa: un canvas in una scheda chiusa che
     // brucia CPU è il modo classico per rovinare una dashboard su telefono.
-    if (!canvas.clientWidth || !canvas.clientHeight || document.hidden) return;
+    if (!canvas.clientWidth || !canvas.clientHeight || document.hidden) { ultimaDim = ""; return; }
     if (vista.modo === "orbita" && vista.rotante && vista.selezionato === null) vista.ang += 0.0016;
     calcolaLente();
     const dpr = Math.min(2, devicePixelRatio || 1);
-    if (canvas.width !== Math.floor(canvas.clientWidth * dpr)) {
-      canvas.width = Math.floor(canvas.clientWidth * dpr);
-      canvas.height = Math.floor(canvas.clientHeight * dpr);
+    // Il riquadro si misura su ENTRAMBE le dimensioni: guardando solo la larghezza, una finestra
+    // che cambia solo in altezza (barra del browser che sparisce, tastiera che si apre) lasciava
+    // il disegno stirato, perché il fondo scala del canvas era rimasto quello di prima.
+    const w = Math.floor(canvas.clientWidth * dpr);
+    const h = Math.floor(canvas.clientHeight * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+      ultimaDim = ""; // il cambio di fondo scala vale come cambio di riquadro
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const dim = canvas.clientWidth + "×" + canvas.clientHeight;
+    if (dim !== ultimaDim) {
+      ultimaDim = dim;
+      // Riquadro nuovo: l'inquadratura va rifatta. Ma chi ha già spostato o ingrandito la mappa
+      // con le mani non se la vede strappare — torna a vedere tutto con ⤢ (o il tasto 0).
+      if (vista.modo === "mappa") {
+        if (!vista.manuale) inquadraMappa();
+      } else {
+        inquadraOrbita();
+      }
+    }
     if (vista.modo === "mappa") {
       if (!vista.adattata) inquadraMappa();
       disegnaMappa();
@@ -1000,6 +1050,7 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
         if (vista.modo === "mappa") {
           const fattore = d / pizzico.d;
           vista.k = Math.max(0.12, Math.min(4, pizzico.k * fattore));
+          vista.manuale = true;
         } else {
           vista.dist = Math.max(16, Math.min(70, pizzico.dist - (d - pizzico.d) * 0.12));
         }
@@ -1014,6 +1065,7 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     if (vista.modo === "mappa") {
       vista.tx = gesto.tx + dx;
       vista.ty = gesto.ty + dy;
+      vista.manuale = true;
     } else {
       vista.rotante = false;
       vista.ang = gesto.ang + dx * 0.008;
@@ -1063,6 +1115,7 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
       vista.k = Math.max(0.12, Math.min(4, vista.k * fattore));
       vista.tx = p.x - prima.x * vista.k;
       vista.ty = p.y - prima.y * vista.k;
+      vista.manuale = true;
     } else {
       vista.dist = Math.max(16, Math.min(70, vista.dist + e.deltaY * 0.03));
     }
@@ -1106,6 +1159,7 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
 
   /** Adatta la vista al contenuto (mappa: rivedere tutto; orbita: reinquadrare). */
   function adatta() {
+    vista.manuale = false;
     if (vista.modo === "mappa") inquadraMappa();
     else inquadraOrbita();
     sporca();
@@ -1144,6 +1198,7 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
       vista.k = Math.max(0.12, Math.min(4, vista.k * fattore));
       vista.tx = cx - prima.x * vista.k;
       vista.ty = cy - prima.y * vista.k;
+      vista.manuale = true;
     } else {
       vista.dist = Math.max(16, Math.min(70, vista.dist - (fattore - 1) * 14));
     }
@@ -1152,15 +1207,32 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
 
   return {
     vista,
-    nodi,
-    vicini,
+    // `nodi` e `vicini` sono riassegnati a ogni `geometria()`: esposti per valore restavano
+    // quelli del PRIMO grafo, e chi li legge da fuori (il pannello dei collegamenti della
+    // dashboard, l'atlante autonomo) mostrava nodi vecchi o `undefined` dopo un aggiornamento.
+    // Con il getter si legge sempre il grafo che si sta disegnando.
+    get nodi() { return nodi; },
+    get vicini() { return vicini; },
     m2s,
     proietta: proiettaOrbita,
     ridisegna: () => { sporca(); disegna(); sporco = false; },
     aggiorna(d) {
+      // Lo stato della vista si legge PRIMA di sostituire i dati: sono gli id dei filtri spenti
+      // e del nodo scelto che vanno portati nel grafo nuovo.
+      const spenti = {
+        strati: new Set(strati.map(([id]) => id).filter((id) => !vista.stratiAttivi.has(id))),
+        aree: new Set(aree.filter((a) => !vista.areeAttive.has(a))),
+        relazioni: new Set(Object.keys(dati.colori || {}).filter((r) => !vista.relazioniAttive.has(r))),
+      };
+      const precedente = {
+        spenti,
+        selezionatoId: vista.selezionato === null ? null : nodi[vista.selezionato]?.id ?? null,
+        lente: vista.lente,
+      };
       dati = d;
       vista.adattata = false;
-      geometria();
+      vista.manuale = false; // il grafo è cambiato: la vecchia inquadratura non vale più
+      geometria(precedente);
       if (vista.modo === "mappa") inquadraMappa();
       else inquadraOrbita();
       sporca();

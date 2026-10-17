@@ -39,9 +39,17 @@ FB_PAGE_TOKEN=<token di pagina>
 FB_API_VERSION=<versione corrente dell'API, vedi nota>
 ```
 
-Nota sulla versione: la Graph API usa un numero di versione che cambia ogni pochi mesi
-(es. `v23.0`). Va presa dalla documentazione ufficiale al momento del setup, non copiata da qui:
+Nota sulla versione: la Graph API usa un numero di versione che cambia ogni pochi mesi.
+**Verificato il 16/10/2026:** la versione corrente è **`v26.0`** (rilasciata il 29/07/2026, senza
+data di scadenza annunciata) — è anche quella provata da `publish.mjs` come default. Le versioni
+da `v20.0` in giù sono già scadute o in scadenza, quindi non copiare valori vecchi da esempi in rete:
 una versione sbagliata risponde con un errore esplicito, ma è tempo perso.
+
+Nota sui permessi: i tre necessari per **pubblicare** sono `pages_manage_posts`,
+`pages_manage_metadata`, `pages_show_list`; per **leggere e moderare** reazioni e commenti servono
+in più `pages_read_engagement` (in alcune pagine della doc compare con il nome
+`pages_manage_read_engagement`) e `pages_manage_engagement`. Se usi un **utente di sistema**, per
+generare e gestire il suo token serve anche `business_management`.
 
 ## Cosa potrà fare l'agente, e cosa no
 
