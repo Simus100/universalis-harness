@@ -28,8 +28,18 @@ personale sul server, pubblicazione ripetibile e tracciabile.
    Per leggere e moderare, in più: `pages_read_engagement`, `pages_manage_engagement`.
 4. **Generare un token di Pagina**: Graph API Explorer o *Business Settings* → utenti di sistema.
    Il token di Pagina è quello che serve per pubblicare *come* la Pagina.
-   Attenzione alla scadenza: i token da utente durano poche ore, quelli di un utente di sistema
-   durano a lungo (consigliati per una gestione continuativa).
+   Attenzione alla scadenza (verificato sulla doc *Long-Lived Access Tokens*, 18/10/2026):
+   - `GET /{user-id}/accounts` con un token utente **breve** restituisce un token di Pagina
+     **breve** (scade in ore).
+   - con un token utente **long-lived** (≈60 giorni, da
+     `GET /oauth/access_token?grant_type=fb_exchange_token&client_id=…&client_secret=…&fb_exchange_token=…`)
+     lo stesso `GET /{user-id}/accounts` restituisce un token di Pagina **senza data di scadenza**
+     (si invalida solo se cambia password, si revoca l'app o si rimuove il ruolo sulla Pagina).
+     È la strada più semplice per avere un token stabile senza Business Manager.
+   - in alternativa, il token di un **utente di sistema** di Business Manager: non scade e non
+     dipende da una persona, ma richiede un Business account con l'app rivendicata.
+   Per pubblicare serve che chi genera il token possa svolgere il task `CREATE_CONTENT` sulla
+   Pagina: il campo `tasks` in `/accounts` lo mostra.
 5. **Mettere i valori in `.env`** (ignorato da git, permessi 600). **Mai in chat, mai nel
    repository, mai in un file sotto `media/`** — `media/` è pubblicato:
 
@@ -60,6 +70,14 @@ generare e gestire il suo token serve anche `business_management`.
 | Rispondere a un commento | `POST /{comment-id}/comments` | firma «Aion», dichiarata come AI |
 | Cancellare o modificare un post | `DELETE` / `POST` | solo su richiesta esplicita del titolare |
 | Creare la Pagina | non esiste | umano, una volta |
+
+Dettagli degli endpoint, verificati il 18/10/2026 sulla reference v26.0:
+
+- `POST /{page-id}/feed` — servono almeno `message` (testo) oppure `link`; `published` (default
+  `true`) e `scheduled_publish_time` (timestamp UNIX, da 10 minuti a 75 giorni) per programmare.
+- `POST /{page-id}/photos` — `source` (file) oppure `url` (immagine già online), `caption` per il
+  testo, `published=false` per caricarla *senza* pubblicarla: poi si allega al post con
+  `attached_media=[{media_fbid: <id foto>}]`. Così una foto non resta orfana se il post fallisce.
 
 ## Paletti che restano
 

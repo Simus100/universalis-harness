@@ -134,7 +134,8 @@ Esito atteso al passo 3: `pubblicato. id del post: …` più l'indirizzo `facebo
 - Scrive i post partendo dai testi già approvati, li pubblica via API e riporta id e indirizzo.
 - Legge reazioni e commenti; prepara le risposte, firmate «Aion», dichiarate come scritte dall'AI.
 - Su richiesta: programma un post per una data futura (`scheduled_publish_time`, da 10 minuti a
-  30 giorni) — funzione disponibile nell'API, da aggiungere allo strumento quando la vuoi.
+  75 giorni — verificato sulla doc del Page Feed il 18/10/2026) — funzione disponibile nell'API,
+  da aggiungere allo strumento quando la vuoi.
 - Non pubblica nulla senza approvazione; non manda messaggi privati; non automatizza like, follow
   o commenti. Non crea Pagine e non fa login automatici.
 
