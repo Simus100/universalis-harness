@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Aion · AI News — immagine del profilo</title>
+  <desc>Monogramma A geometrico, con gradiente blu-viola, su fondo notte e punto verde di segnale in alto a destra.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080b13"/>
+      <stop offset="0.55" stop-color="#060810"/>
+      <stop offset="1" stop-color="#0b1020"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.46" r="0.55">
+      <stop offset="0" stop-color="#5b9dff" stop-opacity="0.34"/>
+      <stop offset="0.55" stop-color="#8b5cff" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="0.12" y1="0" x2="0.88" y2="1">
+      <stop offset="0" stop-color="#b3d3ff"/>
+      <stop offset="0.42" stop-color="#5b9dff"/>
+      <stop offset="1" stop-color="#8b5cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="512" fill="url(#glow)"/>
+  <circle cx="512" cy="512" r="448" fill="none" stroke="#1a2130" stroke-width="4"/>
+  <path fill="url(#mark)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/>
+  <circle cx="826" cy="300" r="46" fill="#34d399"/>
+  <circle cx="826" cy="300" r="74" fill="none" stroke="#34d399" stroke-opacity="0.28" stroke-width="10"/>
+</svg>

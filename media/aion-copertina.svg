@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="624" viewBox="0 0 1640 624">
+  <title>Aion · AI News — copertina</title>
+  <desc>Copertina 1640x624. Nella fascia centrale sicura per il mobile stanno il nome della testata, il titolo «L'AI spiegata in tre righe» e la riga «Cosa succede, perché conta, cosa puoi farci». Ai lati, nodi di rete e le parole chiave del tema.</desc>
+  <defs>
+    <linearGradient id="cbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080b13"/>
+      <stop offset="0.6" stop-color="#060810"/>
+      <stop offset="1" stop-color="#0a0f1d"/>
+    </linearGradient>
+    <linearGradient id="acc" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5b9dff"/>
+      <stop offset="1" stop-color="#8b5cff"/>
+    </linearGradient>
+    <radialGradient id="cglow" cx="0.5" cy="0.5" r="0.6">
+      <stop offset="0" stop-color="#5b9dff" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1640" height="624" fill="url(#cbg)"/>
+  <ellipse cx="820" cy="312" rx="640" ry="300" fill="url(#cglow)"/>
+  <g stroke="#1b2434" stroke-width="2">
+    <line x1="0" y1="156" x2="1640" y2="156"/>
+    <line x1="0" y1="468" x2="1640" y2="468"/>
+  </g>
+  <g fill="#131b29">
+    <circle cx="120" cy="120" r="7"/><circle cx="200" cy="200" r="5"/><circle cx="96" cy="330" r="6"/>
+    <circle cx="180" cy="470" r="5"/><circle cx="262" cy="380" r="7"/><circle cx="80" cy="540" r="4"/>
+    <circle cx="1520" cy="110" r="6"/><circle cx="1430" cy="220" r="5"/><circle cx="1556" cy="360" r="7"/>
+    <circle cx="1466" cy="500" r="4"/><circle cx="1372" cy="410" r="5"/>
+  </g>
+  <g stroke="#1e2a3d" stroke-width="3">
+    <line x1="120" y1="120" x2="200" y2="200"/><line x1="96" y1="330" x2="262" y2="380"/>
+    <line x1="180" y1="470" x2="262" y2="380"/><line x1="1520" y1="110" x2="1430" y2="220"/>
+    <line x1="1556" y1="360" x2="1466" y2="500"/><line x1="1372" y1="410" x2="1466" y2="500"/>
+  </g>
+  <g text-anchor="middle" font-family="DejaVu Sans">
+    <text x="820" y="236" font-size="19" letter-spacing="9" fill="#7f93b4">AION · AI NEWS</text>
+    <rect x="754" y="258" width="132" height="4" rx="2" fill="url(#acc)"/>
+    <text x="820" y="330" font-size="54" font-weight="bold" fill="#f2f6ff">L'AI spiegata</text>
+    <text x="820" y="388" font-size="54" font-weight="bold" fill="#f2f6ff">in tre righe.</text>
+    <text x="820" y="436" font-size="21" fill="#9fb0c9">Cosa succede · perché conta · cosa puoi farci</text>
+  </g>
+  <text x="820" y="570" text-anchor="middle" font-family="DejaVu Sans" font-size="14" letter-spacing="5" fill="#161e2b">MODELLI · CHIP · REGOLE · LAVORO · AGENTI · DATI · OPEN SOURCE · RICERCA</text>
+</svg>
