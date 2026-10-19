@@ -95,6 +95,13 @@ serve un 2FA o un CAPTCHA, prendi il controllo: la chat resta accanto alla pagin
 riquadro si ingrandisce (1:1 e 2×) o va a schermo intero, perché una pagina ridotta a un francobollo
 non si legge.
 
+**Pubblicazione sui social con l'API ufficiale.** Su una Pagina Facebook autorizzata, l'agente
+pubblica testo e immagini tramite le Pages API di Meta: nessun browser pilotato, nessun controllo
+anti-bot da aggirare, nessuna password condivisa. Ogni persona collega i **propri** canali con le
+proprie credenziali in un profilo separato (`social/<nome>.env`, fuori dal repository, permessi
+`600`), verifica i permessi prima di scrivere, e pubblica solo testi approvati. La procedura guidata
+per collegarsi è la skill `social-connect`; la condotta di pubblicazione è `social-publish`.
+
 **Domande all'utente invece di supposizioni.** Quando una richiesta è ambigua, l'agente pone la
 domanda *dentro la conversazione*, con opzioni concrete e scadenze esplicite, e aspetta la risposta.
 

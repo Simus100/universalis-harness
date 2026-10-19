@@ -13,7 +13,12 @@
  *   node skills/social-publish/publish.mjs post --text "..." --unpublished   (prova invisibile)
  *   node skills/social-publish/publish.mjs --dry-run post --text "prova"     (non invia nulla)
  *   node skills/social-publish/publish.mjs accounts          (pagine gestite dal token utente)
- *   node skills/social-publish/publish.mjs use <id|nome>     (scrive quella Pagina in .env)
+ *   node skills/social-publish/publish.mjs use <id|nome>     (scrive quella Pagina nel profilo)
+ *   node skills/social-publish/publish.mjs perms             (permessi reali del token)
+ *   node skills/social-publish/publish.mjs nuovo <nome>      (crea social/<nome>.env da modello)
+ *   node skills/social-publish/publish.mjs profili           (chi ha un profilo su questa istanza)
+ *
+ * --profilo <nome>  usa social/<nome>.env invece di .env (una persona = un profilo).
  *
  * Credenziali (mai in chat, mai nel repository): in /root/pi-harness/.env
  *   FB_PAGE_ID=<id della Pagina>
@@ -21,11 +26,27 @@
  *   FB_API_VERSION=v26.0        (la versione corrente indicata dalla documentazione Meta)
  *   FB_USER_TOKEN=<token utente, facoltativo>  serve solo ad `accounts` e `use`
  */
-import { readFileSync, writeFileSync, existsSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, statSync, readdirSync, mkdirSync } from "node:fs";
 import { resolve, basename } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "../..");
-const ENV_FILE = process.env.SOCIAL_ENV_FILE || resolve(ROOT, ".env");
+const SOCIAL_DIR = resolve(ROOT, "social");
+
+// Profilo = una persona (o un'istanza tester) con le SUE credenziali, in social/<nome>.env.
+// Il nome finisce in un percorso: solo lettere, cifre, trattino e underscore.
+function nomeProfiloValido(n) {
+  return /^[a-z0-9][a-z0-9_-]{0,40}$/i.test(n);
+}
+
+const _argv = process.argv.slice(2);
+const _iProf = _argv.indexOf("--profilo");
+const PROFILO = ((_iProf === -1 ? "" : _argv[_iProf + 1]) || process.env.SOCIAL_PROFILE || "").trim();
+if (PROFILO && !nomeProfiloValido(PROFILO)) {
+  console.error(`nome di profilo non valido: «${PROFILO}» (ammessi lettere, cifre, - e _)`);
+  process.exit(2);
+}
+const ENV_FILE =
+  process.env.SOCIAL_ENV_FILE || (PROFILO ? resolve(SOCIAL_DIR, `${PROFILO}.env`) : resolve(ROOT, ".env"));
 
 function loadEnv(path) {
   const out = {};
@@ -108,7 +129,15 @@ const dryRun = argv.includes("--dry-run");
 // post NON pubblicato: resta sulla Pagina senza comparire nel feed — serve per provare che
 // l'API risponde, senza che nessuno lo veda. Si cancella con DELETE /{post-id}.
 const unpublished = argv.includes("--unpublished");
-const args = argv.filter((a) => a !== "--dry-run" && a !== "--unpublished");
+const args = (() => {
+  const out = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--dry-run" || argv[i] === "--unpublished") continue;
+    if (argv[i] === "--profilo") { i++; continue; }
+    out.push(argv[i]);
+  }
+  return out;
+})();
 const cmd = args[0];
 const get = (name) => {
   const i = args.indexOf(name);
@@ -122,19 +151,95 @@ const HELP = `publish.mjs — pubblica su una Pagina Facebook (Pages API ufficia
        [--unpublished]                   crea il post senza mostrarlo nel feed (prova)
   accounts                               elenca le Pagine del token utente (token mascherati)
   perms                                  quali permessi ha DAVVERO il token (diagnosi)
+  nuovo <nome>                           crea social/<nome>.env (un profilo per persona)
+  profili                                elenca i profili presenti su questa istanza
   use <id|nome>                          sceglie una Pagina e la scrive in .env
 
-  --dry-run   mostra cosa verrebbe inviato, senza contattare Meta
+  --dry-run          mostra cosa verrebbe inviato, senza contattare Meta
+  --profilo <nome>   usa social/<nome>.env invece di .env (una persona = un profilo)
 
 Credenziali in ${ENV_FILE}: FB_PAGE_TOKEN (obbligatorio), FB_PAGE_ID (facoltativo:
 si ricava dal token), FB_API_VERSION, FB_USER_TOKEN (solo per accounts/use)`;
 
-if (!cmd || !["check", "post", "accounts", "use", "perms", "help"].includes(cmd)) {
+if (!cmd || !["check", "post", "accounts", "use", "perms", "nuovo", "profili", "help"].includes(cmd)) {
   console.log(HELP);
   process.exit(cmd ? 2 : 0);
 }
 if (cmd === "help") {
   console.log(HELP);
+  process.exit(0);
+}
+
+if (cmd === "nuovo") {
+  const nome = (args[1] || "").trim();
+  if (!nome) {
+    console.error("serve un nome di profilo: publish.mjs nuovo mario");
+    console.error("crea social/mario.env, il file con le credenziali di UNA persona.");
+    process.exit(2);
+  }
+  if (!nomeProfiloValido(nome)) {
+    console.error(`nome non valido: «${nome}» (lettere, cifre, - e _)`);
+    process.exit(2);
+  }
+  const file = resolve(SOCIAL_DIR, `${nome}.env`);
+  if (existsSync(file)) {
+    console.log(`il profilo «${nome}» esiste già: ${file}`);
+    console.log("(non lo tocco: per ripartire da zero rinominalo o cancellalo tu)");
+    process.exit(0);
+  }
+  const modello = `# Profilo social «${nome}» — credenziali di UNA persona.
+# Questo file NON va nel repository e non va incollato in chat:
+#   - tiene permessi 600 (solo il tuo utente lo legge);
+#   - la cartella social/ è esclusa da git.
+#
+# COME SI COMPILA (guida completa: skills/social-connect/SKILL.md)
+# 1. crea l'app Meta e abilita i permessi pages_show_list, pages_read_engagement,
+#    pages_manage_posts, pages_manage_metadata (caso d'uso «Manage everything on your Page»);
+# 2. genera un token UTENTE con quei permessi e incollalo qui sotto, dopo FB_USER_TOKEN=;
+# 3. node skills/social-publish/publish.mjs --profilo ${nome} perms     ← deve elencare pages_manage_posts
+# 4. node skills/social-publish/publish.mjs --profilo ${nome} accounts  ← elenco delle Pagine
+# 5. node skills/social-publish/publish.mjs --profilo ${nome} use <id>  ← sceglie la Pagina
+# 6. node skills/social-publish/publish.mjs --profilo ${nome} check
+#
+# FB_USER_TOKEN serve solo ai primi passi (elenco Pagine e scelta); dopo puoi toglierlo e
+# tenere i due valori di Pagina, che sono il minimo necessario per pubblicare.
+
+FB_USER_TOKEN=
+FB_API_VERSION=v26.0
+`;
+  mkdirSync(SOCIAL_DIR, { recursive: true });
+  writeFileSync(file, modello, { mode: 0o600 });
+  console.log(`creato: ${file} (permessi 600)`);
+  console.log(`prossimo passo: incolla lì il token utente, poi`);
+  console.log(`  node skills/social-publish/publish.mjs --profilo ${nome} perms`);
+  console.log("guida completa: skills/social-connect/SKILL.md");
+  process.exit(0);
+}
+
+if (cmd === "profili") {
+  if (!existsSync(SOCIAL_DIR)) {
+    console.log(`nessun profilo: la cartella ${SOCIAL_DIR} non esiste ancora.`);
+    console.log("per crearne uno: node skills/social-publish/publish.mjs nuovo <nome>");
+    process.exit(0);
+  }
+  const files = readdirSync(SOCIAL_DIR).filter((f) => f.endsWith(".env")).sort();
+  const principale = existsSync(resolve(ROOT, ".env")) ? loadEnv(resolve(ROOT, ".env")) : {};
+  const righe = [];
+  if (principale.FB_PAGE_TOKEN || principale.FB_USER_TOKEN) {
+    righe.push({ nome: "(principale, .env)", pagina: principale.FB_PAGE_ID || "?", token: mask(principale.FB_PAGE_TOKEN) });
+  }
+  for (const f of files) {
+    const e = loadEnv(resolve(SOCIAL_DIR, f));
+    righe.push({ nome: f.replace(/\.env$/, ""), pagina: e.FB_PAGE_ID || "?", token: mask(e.FB_PAGE_TOKEN) });
+  }
+  if (!righe.length) {
+    console.log("nessun profilo configurato.");
+    console.log("per crearne uno: node skills/social-publish/publish.mjs nuovo <nome>");
+    process.exit(0);
+  }
+  console.log(`${righe.length} profili su questa istanza:\n`);
+  for (const r of righe) console.log(`- ${r.nome}\n    Pagina: ${r.pagina}\n    token : ${r.token}`);
+  console.log("\nusare un profilo: publish.mjs --profilo <nome> check");
   process.exit(0);
 }
 

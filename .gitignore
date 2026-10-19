@@ -7,6 +7,13 @@
 *credentials*
 *password*
 
+# ---- credenziali social per persona (una cartella, un file per utente) ----
+# `social/<nome>.env` contiene i token con cui l'agente pubblica SUI CANALI DI UNA PERSONA:
+# sono password operative, non configurazione. La cartella non si pubblica mai, nemmeno quando
+# il file è "vuoto": la struttura dei profili direbbe chi è collegato e con quale Pagina.
+# Si creano con: node skills/social-publish/publish.mjs nuovo <nome>   (vedi skills/social-connect)
+social/
+
 # ---- dati e stato delle istanze ----
 sessions/
 backups/

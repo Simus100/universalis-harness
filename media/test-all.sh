@@ -94,6 +94,10 @@ echo "########## 9c/10 documenti PDF (browser vero: card in chat e lettore a pag
 node media/test-pdf-ui.mjs || rc=1
 echo
 
+echo "########## 9d/10 strumento social: profili, dry-run, rifiuto dei percorsi ##########"
+node media/test-social-publish.mjs || rc=1
+echo
+
 bash media/test-api.sh stop >/dev/null 2>&1
 echo
 echo "########## nota ##########"

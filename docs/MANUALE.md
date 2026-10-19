@@ -638,6 +638,32 @@ riusata, export, preferenze) e i controlli statici in `node media/test-static.mj
   **riga**; un clic apre il file nell'editor con il cursore (e la vista) sulla riga trovata.
   Limiti: 200 risultati, 4000 file scansionati, 8 s di tempo massimo (indicato come «troncato»).
 
+### Pubblicazione sui social (Pages API di Meta)
+L'agente pubblica su una Pagina Facebook con l'**API ufficiale**, non pilotando il browser: nessun
+challenge anti-bot, nessuna sessione personale sul server, pubblicazione ripetibile.
+
+```bash
+node skills/social-publish/publish.mjs perms                # permessi reali del token (diagnosi)
+node skills/social-publish/publish.mjs accounts             # Pagine del token utente, token mascherati
+node skills/social-publish/publish.mjs use <id>             # sceglie la Pagina e la scrive nel profilo
+node skills/social-publish/publish.mjs check                # verifica che il token funzioni
+node skills/social-publish/publish.mjs post --text "…" [--image media/foto.png]
+node skills/social-publish/publish.mjs post --text "…" --unpublished   # prova invisibile nel feed
+node skills/social-publish/publish.mjs nuovo <nome>         # crea social/<nome>.env (profilo di una persona)
+node skills/social-publish/publish.mjs profili              # chi è collegato su questa istanza
+```
+
+- **Un profilo per persona**: `.env` è del titolare dell'istanza; `social/<nome>.env` è di un'altra
+  persona (per esempio un utente tester) e si usa con `--profilo <nome>`. La cartella `social/` è in
+  `.gitignore`, i file hanno permessi `600`, e nessun token viene mai stampato in chiaro.
+- **L'id della Pagina non è obbligatorio**: con un token di Pagina lo strumento lo ricava da `GET /me`.
+  `use`/`accounts`/`perms` invece vogliono un token **utente** (un token di Pagina identifica una sola
+  Pagina e `/me/permissions` non esiste per lui).
+- **Diagnosi prima di riprovare**: se un post torna `403 · codice 200` il token è stato emesso senza
+  `pages_manage_posts`; si rigenera il token, non si ritenta. `perms` lo dice in una riga.
+- La procedura completa per collegare una persona nuova (app Meta, caso d'uso, permessi, token) è la
+  skill **`social-connect`**; la condotta di pubblicazione è la skill **`social-publish`**.
+
 ### Export e copia
 - **⬇ md** in alto nel drawer: scarica la chat attiva in **Markdown**
   (intestazioni utente/assistant, elenco dei tool usati, errori, allegati).
@@ -794,6 +820,11 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
 - **HTTPS** grazie a Caddy (certificato Let's Encrypt, rinnovo automatico): credenziali e
   contenuti viaggiano cifrati. La dashboard ascolta **solo su 127.0.0.1** (`DASH_HOST`), quindi
   non è raggiungibile direttamente da internet: l'unica porta aperta è quella di Caddy.
+- **credenziali dei social**: `.env` contiene quelle del titolare; `social/<nome>.env` quelle di
+  ogni altra persona, con permessi `600`. La cartella `social/` è in `.gitignore` e i token non
+  vengono mai stampati in chiaro dagli strumenti (`mask` mostra 4 caratteri e gli ultimi 3). Un token
+  incollato in chat resta invece nei log della conversazione: per questo la procedura guidata
+  (`skills/social-connect`) lo fa scrivere direttamente nel file, non in un messaggio.
 - accesso in **due modi**, accettati su tutte le rotte (asset PWA inclusi):
   1. **pagina di login** (`/login`) servita dall'app + **cookie di sessione firmato** con HMAC
      (HttpOnly, SameSite=Lax, `Secure` quando arriva da HTTPS; durata `DASH_SESSION_TTL_MS`,
@@ -878,6 +909,7 @@ node media/test-pdf.mjs          # documenti PDF: metadati, testo per pagina e p
 node media/test-pdf-ui.mjs       # documenti PDF nel browser vero: card con la prima pagina, lettore a pagine (avanti/indietro, zoom, tastiera), apertura dal file manager, non-regressione (istanze su :8484/:8485)
 node media/test-video.mjs        # video: magic number (HTML e AVIF camuffati da mp4 rifiutati), richieste parziali 206/416, byte identici all'originale, meta, percorsi, tetto (istanza di prova su :8498)
 node media/test-video-ui.mjs     # video in chat nel browser vero: player con metadati reali, seek che si applica, frame DECODIFICATO su canvas, fallimenti con motivo, non-regressione (istanze su :8486/:8487)
+node media/test-social-publish.mjs # strumento social: aiuto, profili, dry-run senza rete, rifiuto dei percorsi nel nome del profilo
 node media/check-skills.mjs     # regole delle Agent Skills su tutte le skill: YAML, name, descrizione col «quando usarla», markup attivo, corpo, file citati
 node media/test-skill-groups-ui.mjs # gruppi nella vista skill (browser vero): cartella chiusa all'apertura, apre con tutte le sue skill, le nostre restano in elenco, nessuna sparisce (istanze su :8488/:8489)
 node media/test-static.mjs       # coerenza HTML/server (id, endpoint, cablaggio) — nessuna rete

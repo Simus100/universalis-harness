@@ -8,6 +8,17 @@ description: "Pubblica un post su una Pagina Facebook con la Pages API ufficiale
 La strada è l'API ufficiale, non il browser. Motivi: nessun challenge anti-bot, nessuna sessione
 di un profilo personale lasciata sulla macchina, pubblicazione ripetibile e tracciabile.
 
+**Per collegare una persona nuova** (titolare o utente tester) la guida passo-passo è
+`skills/social-connect/SKILL.md`: creazione dell'app Meta, permessi minimi, generazione del token e
+profilo personale. Questa skill presuppone che il profilo esista già.
+
+## Di chi sono le credenziali
+
+- `.env` è il profilo del **titolare dell'istanza** (la sua Pagina, esclusiva sua).
+- `social/<nome>.env` è il profilo di **un'altra persona** (es. un utente tester): credenziali sue,
+  permessi `600`, cartella `social/` esclusa da git. Ogni comando accetta `--profilo <nome>`.
+  `publish.mjs profili` mostra chi è collegato, con i token mascherati.
+
 ## Prerequisiti (una volta sola, li fa il titolare)
 
 1. La Pagina esiste (creata dall'interfaccia: vedi `media/pagina-facebook-harness.md`).
@@ -24,7 +35,12 @@ Il dettaglio passo-passo è in `media/pagina-facebook-api.md`.
 ## Uso
 
 ```bash
-# 0. diagnosi: quali permessi ha DAVVERO il token (se il post viene rifiutato, partire da qui)
+# 0. crea il profilo di una persona nuova (file con le istruzioni dentro) / chi è già collegato
+node skills/social-publish/publish.mjs nuovo mario
+node skills/social-publish/publish.mjs profili
+node skills/social-publish/publish.mjs --profilo mario check      # ogni comando accetta --profilo
+
+# 0b. diagnosi: quali permessi ha DAVVERO il token (se il post viene rifiutato, partire da qui)
 node skills/social-publish/publish.mjs perms
 
 # 0b. quali Pagine gestisce il token utente (token mascherati, mai in chiaro)
