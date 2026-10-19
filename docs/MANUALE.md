@@ -820,6 +820,11 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
 - **HTTPS** grazie a Caddy (certificato Let's Encrypt, rinnovo automatico): credenziali e
   contenuti viaggiano cifrati. La dashboard ascolta **solo su 127.0.0.1** (`DASH_HOST`), quindi
   non è raggiungibile direttamente da internet: l'unica porta aperta è quella di Caddy.
+- **segreti finiti per sbaglio nella memoria**: gli episodi si generano da soli riassumendo la
+  conversazione, quindi un token incollato in chat può finire in un episodio e nell'indice. Il
+  comando `bash scripts/memoria-rimuovi-segreti.sh` li elenca (token Meta, chiavi OpenAI/Anthropic,
+  GitHub, Slack, Google, HuggingFace) e con `--applica` li sostituisce con `[SEGRETO-RIMOSSO]`,
+  verificando che i JSON della memoria restino validi. Non tocca `.env`, `social/` né `sessions/`.
 - **credenziali dei social**: `.env` contiene quelle del titolare; `social/<nome>.env` quelle di
   ogni altra persona, con permessi `600`. La cartella `social/` è in `.gitignore` e i token non
   vengono mai stampati in chiaro dagli strumenti (`mask` mostra 4 caratteri e gli ultimi 3). Un token
