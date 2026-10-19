@@ -22,10 +22,17 @@ personale sul server, pubblicazione ripetibile e tracciabile.
    Serve il suo **ID** (Impostazioni → Informazioni sulla Pagina; oppure dall'URL).
 2. **App Meta** su developers.facebook.com → *My Apps* → *Create App* → tipo **Business**.
    L'app la crea il titolare, dal suo account: è una cosa che resta sua.
-3. **Aggiungere il prodotto "Facebook Login"** e configurare le richieste di permesso per le Pagine.
-   Permessi necessari per pubblicare:
-   `pages_manage_posts`, `pages_manage_metadata`, `pages_show_list`
-   Per leggere e moderare, in più: `pages_read_engagement`, `pages_manage_engagement`.
+3. **Caso d'uso "Manage everything on your Page" e personalizzazione dei permessi.**
+   Le app create oggi (2025-2026) partono da un *caso d'uso* (use case) che porta con sé solo
+   `business_management`, `pages_show_list`, `public_profile`: `pages_manage_posts` e gli altri
+   **non sono "non disponibili", sono da aggiungere**. Nel pannello dell'app: **Dashboard →
+   casi d'uso → «Gestisci tutto nella tua Pagina» → Personalizza** e premere **+ Aggiungi** su
+   `pages_manage_metadata`, `pages_manage_posts`, `pages_read_engagement` (in più
+   `pages_manage_engagement`, `pages_read_user_content`, `publish_video` se servono). Se il caso
+   d'uso non c'è: **Dashboard → Aggiungi caso d'uso → "Manage everything on your Page"**.
+   Dopo l'aggiunta il token va **rigenerato**: quello vecchio non contiene i permessi nuovi.
+   Verificato sulla doc *Customize the Pages use case* il 18/10/2026. Non serve né App Review né
+   Business verification per pubblicare sulla **propria** Pagina con un'app in modalità Sviluppo.
 4. **Generare un token di Pagina**: Graph API Explorer o *Business Settings* → utenti di sistema.
    Il token di Pagina è quello che serve per pubblicare *come* la Pagina.
    Attenzione alla scadenza (verificato sulla doc *Long-Lived Access Tokens*, 18/10/2026):
