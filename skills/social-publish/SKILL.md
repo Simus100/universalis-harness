@@ -24,7 +24,10 @@ Il dettaglio passo-passo è in `media/pagina-facebook-api.md`.
 ## Uso
 
 ```bash
-# 0. quali Pagine gestisce il token utente (token mascherati, mai in chiaro)
+# 0. diagnosi: quali permessi ha DAVVERO il token (se il post viene rifiutato, partire da qui)
+node skills/social-publish/publish.mjs perms
+
+# 0b. quali Pagine gestisce il token utente (token mascherati, mai in chiaro)
 node skills/social-publish/publish.mjs accounts
 node skills/social-publish/publish.mjs use 123456789     # sceglie quella e la scrive in .env
 
@@ -62,6 +65,7 @@ poi la allega al post. Così, se la seconda fallisce, non resta una foto orfana 
 |---|---|---|
 | codice 190 | token scaduto o non valido | rigenerare il token di Pagina e aggiornare `.env` |
 | codice 200 / subcode 2069030 | endpoint non supportato su questa versione API | controllare `FB_API_VERSION` |
+| codice 200 «requires both pages_read_engagement and pages_manage_posts» | **il token non contiene `pages_manage_posts`**: capita quando il token è stato generato prima di abilitare i permessi nel caso d'uso | aggiungere il permesso al caso d'uso (Dashboard → Personalizza), poi **rigenerare il token**: un token nuovo. `publish.mjs perms` mostra cosa ha davvero |
 | codice 10, 200 | manca un permesso o il ruolo sulla Pagina | verificare i permessi dell'app e il ruolo del titolare |
 | codice 4, 17, 32 | limite di frequenza (rate limit) | attendere; non ritentare in ciclo |
 

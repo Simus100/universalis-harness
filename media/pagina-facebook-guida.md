@@ -159,6 +159,7 @@ Esito atteso al passo 3: `pubblicato. id del post: …` più l'indirizzo `facebo
 | `check` → errore codice 190 | token scaduto o copiato male | rigenera il token di Pagina e aggiorna `.env` |
 | `check` → errore codice 10 / 200 | manca un permesso o il ruolo sulla Pagina | verifica i tre permessi e di essere admin della Pagina |
 | `check` → `configurazione incompleta` | variabili assenti in `.env` | controlla i nomi: `FB_PAGE_ID`, `FB_PAGE_TOKEN` |
+| errore codice 200 «requires both pages_read_engagement and pages_manage_posts» | il token è stato generato **prima** di abilitare `pages_manage_posts`, oppure il permesso non è stato aggiunto al caso d'uso | controlla con `publish.mjs perms`, aggiungi il permesso in Dashboard → Personalizza e **rigenera il token** |
 | codice 200 subcode 2069030 | `FB_API_VERSION` non più supportata | metti la versione corrente indicata dalla doc Meta |
 | Meta chiede la revisione dell'app | stai usando l'app per conto di terzi | per la tua Pagina non serve: resta in modalità sviluppo |
 | La Pagina non compare in `/me/accounts` | ruolo mancante sulla Pagina | in Impostazioni Pagina → Ruoli, aggiungiti come amministratore |

@@ -10,6 +10,7 @@
  *   node skills/social-publish/publish.mjs check
  *   node skills/social-publish/publish.mjs post --text "testo del post"
  *   node skills/social-publish/publish.mjs post --text "..." --image media/foto.png
+ *   node skills/social-publish/publish.mjs post --text "..." --unpublished   (prova invisibile)
  *   node skills/social-publish/publish.mjs --dry-run post --text "prova"     (non invia nulla)
  *   node skills/social-publish/publish.mjs accounts          (pagine gestite dal token utente)
  *   node skills/social-publish/publish.mjs use <id|nome>     (scrive quella Pagina in .env)
@@ -104,7 +105,10 @@ async function callApi(url, options) {
 // ---- argomenti ----
 const argv = process.argv.slice(2);
 const dryRun = argv.includes("--dry-run");
-const args = argv.filter((a) => a !== "--dry-run");
+// post NON pubblicato: resta sulla Pagina senza comparire nel feed — serve per provare che
+// l'API risponde, senza che nessuno lo veda. Si cancella con DELETE /{post-id}.
+const unpublished = argv.includes("--unpublished");
+const args = argv.filter((a) => a !== "--dry-run" && a !== "--unpublished");
 const cmd = args[0];
 const get = (name) => {
   const i = args.indexOf(name);
@@ -115,7 +119,9 @@ const HELP = `publish.mjs — pubblica su una Pagina Facebook (Pages API ufficia
 
   check                                  verifica che il token di Pagina funzioni
   post --text "..." [--image file.png]   pubblica un post
+       [--unpublished]                   crea il post senza mostrarlo nel feed (prova)
   accounts                               elenca le Pagine del token utente (token mascherati)
+  perms                                  quali permessi ha DAVVERO il token (diagnosi)
   use <id|nome>                          sceglie una Pagina e la scrive in .env
 
   --dry-run   mostra cosa verrebbe inviato, senza contattare Meta
@@ -123,12 +129,42 @@ const HELP = `publish.mjs — pubblica su una Pagina Facebook (Pages API ufficia
 Credenziali in ${ENV_FILE}: FB_PAGE_TOKEN (obbligatorio), FB_PAGE_ID (facoltativo:
 si ricava dal token), FB_API_VERSION, FB_USER_TOKEN (solo per accounts/use)`;
 
-if (!cmd || !["check", "post", "accounts", "use", "help"].includes(cmd)) {
+if (!cmd || !["check", "post", "accounts", "use", "perms", "help"].includes(cmd)) {
   console.log(HELP);
   process.exit(cmd ? 2 : 0);
 }
 if (cmd === "help") {
   console.log(HELP);
+  process.exit(0);
+}
+
+if (cmd === "perms") {
+  // Senza processo che muore: alcuni token (es. di Pagina) rispondono 400 su /me/permissions.
+  const candidati = [
+    ["FB_USER_TOKEN (utente)", USER_TOKEN],
+    ["FB_PAGE_TOKEN (Pagina)", TOKEN],
+  ].filter(([, t]) => t);
+  if (!candidati.length) {
+    console.error(`nessun token in ${ENV_FILE}`);
+    process.exit(1);
+  }
+  for (const [etichetta, t] of candidati) {
+    try {
+      const res = await fetch(`${API}/me/permissions?access_token=${encodeURIComponent(t)}`);
+      const data = await res.json();
+      if (!res.ok || data?.error) {
+        console.log(`${etichetta}: non interrogabile (${data?.error?.message || res.status})`);
+        continue;
+      }
+      const concessi = (data.data || []).filter((x) => x.status === "granted").map((x) => x.permission);
+      console.log(`${etichetta}: ${concessi.sort().join(", ") || "(nessuno)"}`);
+      const servono = ["pages_manage_posts", "pages_show_list"];
+      const mancano = servono.filter((x) => !concessi.includes(x));
+      if (mancano.length) console.log(`  ⚠ manca ${mancano.join(", ")}: senza pages_manage_posts il post viene rifiutato (codice 200)`);
+    } catch (e) {
+      console.log(`${etichetta}: errore ${e?.message || e}`);
+    }
+  }
   process.exit(0);
 }
 
@@ -234,6 +270,7 @@ if (cmd === "post") {
       const b = statSync(image).size;
       console.log(`  immagine     : ${basename(image)} (${(b / 1024).toFixed(0)} KB) → caricata come non pubblicata, poi allegata al post`);
     }
+    console.log(`  visibilità   : ${unpublished ? "NON pubblicato (invisibile nel feed)" : "pubblico"}`);
     console.log(`  chiamate previste: ${image ? 2 : 1} (upload foto + pubblicazione)`);
     process.exit(0);
   }
@@ -255,13 +292,19 @@ if (cmd === "post") {
   const body = new URLSearchParams();
   body.set("access_token", TOKEN);
   if (text) body.set("message", text);
+  if (unpublished) body.set("published", "false");
   if (mediaFbid) body.set("attached_media", JSON.stringify([{ media_fbid: mediaFbid }]));
   const post = await callApi(`${API}/${PAGE_ID}/feed`, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body,
   });
-  console.log(`pubblicato. id del post: ${post.id}`);
-  console.log(`indirizzo: https://www.facebook.com/${post.id}`);
+  if (unpublished) {
+    console.log(`creato NON pubblicato (invisibile nel feed). id: ${post.id}`);
+    console.log("per renderlo visibile serve un nuovo post con published=true; per eliminarlo: DELETE /" + post.id);
+  } else {
+    console.log(`pubblicato. id del post: ${post.id}`);
+    console.log(`indirizzo: https://www.facebook.com/${post.id}`);
+  }
   process.exit(0);
 }
