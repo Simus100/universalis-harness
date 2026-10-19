@@ -47,6 +47,10 @@ personale sul server, pubblicazione ripetibile e tracciabile.
      dipende da una persona, ma richiede un Business account con l'app rivendicata.
    Per pubblicare serve che chi genera il token possa svolgere il task `CREATE_CONTENT` sulla
    Pagina: il campo `tasks` in `/accounts` lo mostra.
+   Con **più Pagine** la strada comoda è un token **utente** in `FB_USER_TOKEN`: `accounts` elenca
+   tutte le Pagine con id, permessi e token (mascherati), `use <id>` scrive in `.env` la coppia
+   `FB_PAGE_ID`/`FB_PAGE_TOKEN` di quella scelta. L'id quindi non serve copiarlo a mano: con un
+   token di Pagina `check` lo ricava da `GET /me`.
 5. **Mettere i valori in `.env`** (ignorato da git, permessi 600). **Mai in chat, mai nel
    repository, mai in un file sotto `media/`** — `media/` è pubblicato:
 

@@ -13,15 +13,21 @@ di un profilo personale lasciata sulla macchina, pubblicazione ripetibile e trac
 1. La Pagina esiste (creata dall'interfaccia: vedi `media/pagina-facebook-harness.md`).
 2. Un'app Meta con i permessi `pages_manage_posts`, `pages_manage_metadata`, `pages_show_list`
    (in più `pages_read_engagement` e `pages_manage_engagement` per leggere e moderare).
-3. Un **token di Pagina** (non un token utente: dura poche ore) messo in `.env`, che è fuori dal
-   repository: `FB_PAGE_ID`, `FB_PAGE_TOKEN`, `FB_API_VERSION`. Mai in chat, mai in `media/`
-   (quella cartella è pubblicata su GitHub).
+3. Un **token di Pagina** messo in `.env`, che è fuori dal repository: `FB_PAGE_TOKEN`
+   (obbligatorio), `FB_PAGE_ID` (facoltativo: si ricava dal token), `FB_API_VERSION`. Mai in chat,
+   mai in `media/` (quella cartella è pubblicata su GitHub).
+   Per gestire **più Pagine**: `FB_USER_TOKEN` (token utente) abilita `accounts` e `use`; ogni
+   Pagina ha il suo token, e `use` scrive in `.env` quello scelto — così non si copia nulla a mano.
 
 Il dettaglio passo-passo è in `media/pagina-facebook-api.md`.
 
 ## Uso
 
 ```bash
+# 0. quali Pagine gestisce il token utente (token mascherati, mai in chiaro)
+node skills/social-publish/publish.mjs accounts
+node skills/social-publish/publish.mjs use 123456789     # sceglie quella e la scrive in .env
+
 # 1. verifica che il token funzioni (una chiamata, risponde con il nome della Pagina)
 node skills/social-publish/publish.mjs check
 
@@ -31,6 +37,9 @@ node skills/social-publish/publish.mjs --dry-run post --text "..." --image media
 # 3. pubblica davvero
 node skills/social-publish/publish.mjs post --text "..." [--image media/foto.png]
 ```
+
+L'id della Pagina non è indispensabile: con un token di Pagina `check` lo ricava da `GET /me`.
+`use` aggiorna `.env` preservando le altre righe e senza mai stampare il token in chiaro.
 
 Il post con immagine fa due chiamate: carica la foto come *non pubblicata* (`published=false`) e
 poi la allega al post. Così, se la seconda fallisce, non resta una foto orfana nel feed.

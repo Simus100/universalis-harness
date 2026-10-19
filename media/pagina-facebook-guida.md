@@ -107,6 +107,17 @@ FB_PAGE_TOKEN=<il token di Pagina>
 FB_API_VERSION=v26.0
 ```
 
+Se gestisci **più Pagine**, al posto del solo token di Pagina metti il token **utente**:
+
+```
+FB_USER_TOKEN=<token utente>
+FB_API_VERSION=v26.0
+```
+
+poi `node skills/social-publish/publish.mjs accounts` elenca le Pagine (id, permessi, token
+mascherati) e `... use <id>` scrive in `.env` la Pagina scelta. L'id da solo non è obbligatorio:
+con un token di Pagina lo strumento lo ricava da `GET /me`.
+
 Salva (`Ctrl+O`, invio, `Ctrl+X`). Il file è già ignorato da git e a permessi `600`.
 
 ---
