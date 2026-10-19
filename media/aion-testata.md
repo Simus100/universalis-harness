@@ -113,7 +113,7 @@ Verificato il 19/10/2026 con chiamate reali alla Graph API v26.0.
 |---|---|---|
 | **Nome** → `Aion · AI News` | Oggi la Pagina si chiama solo «Aion»: chi la trova non capisce il tema | Impostazioni della Pagina → Informazioni sulla Pagina → Nome. *L'API risponde «does not have the capability»* |
 | **Username** → `@aionainews` | Indirizzo corto e riconoscibile | Impostazioni → Nome utente. *Anche questo non è scrivibile via API* |
-| **Copertina** (`media/aion-copertina.png`) | È ancora vuota | Pagina → Modifica copertina. *L'API risponde «An unknown error has occurred»* |
+| **Copertina** (`media/aion-copertina@2x.png`) | È ancora vuota | Pagina → Modifica copertina. *L'API risponde «An unknown error has occurred»* |
 | **Pulsante** «Scopri di più» → `https://www.universalis.it/Lab/aion.html` | Porta il traffico sul sito | Pagina → Modifica pulsante d'azione |
 | **Verifica della Pagina** (facoltativa) | Dà il segnale blu quando ci sarà un volume | Impostazioni → Verifica |
 
@@ -126,6 +126,28 @@ immagine del profilo, primo post.
 - Permessi attivi: `pages_manage_posts`, `pages_manage_metadata`, `pages_read_engagement`.
 - Strumento di pubblicazione: `skills/social-publish/publish.mjs`.
 - Card dei post: `node scripts/card-aion.mjs --kicker … --titolo "riga1|riga2" --accento … --out media/card-x`.
+  Il corpo del titolo è calcolato misurando il testo (non stimato), e il blocco resta centrato
+  nella stessa fascia qualunque sia la lunghezza.
+
+## Risoluzioni (regola: si carica sempre il @2x)
+
+Facebook mostra le immagini su schermi ad alta densità e ricomprime: un file a 1x appare morbido.
+Il disegno è vettoriale (SVG), quindi si rende alla dimensione che serve senza perdita.
+
+| Cosa | File da caricare | Dimensione | Note |
+|---|---|---|---|
+| Immagine del profilo | `media/aion-logo@2x.png` | 2048×2048 | FB la mostra a 170 px: il 2x serve per retina |
+| Copertina | `media/aion-copertina@2x.png` | 3280×1248 | il 1x resta per l'anteprima |
+| Card dei post | `media/card-*@2x.png` | 2400×1260 | quelle 1x non vanno pubblicate |
+
+Comandi:
+```bash
+rsvg-convert -w 2048 -h 2048 -o media/aion-logo@2x.png media/aion-logo.svg
+rsvg-convert -w 3280 -h 1248 -o media/aion-copertina@2x.png media/aion-copertina.svg
+```
+
+- Categoria secondaria: `POST /{page-id}` con `category_list` viene rifiutato
+  («must be a valid ID string») — la categoria unica attuale va bene e resta.
 - **Insight**: leggibili via `GET /{page-id}/insights` con metriche `page_post_engagements`,
   `page_follows`, `page_views_total`, `page_media_view` (verificato). Le metriche di reach
   storiche (`page_impressions_unique`) non sono più valide in v26.0.

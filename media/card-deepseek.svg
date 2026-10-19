@@ -7,23 +7,32 @@
       <stop offset="0.6" stop-color="#060810"/>
       <stop offset="1" stop-color="#0b1020"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.18" cy="0.35" r="0.7">
-      <stop offset="0" stop-color="#5b9dff" stop-opacity="0.20"/>
+    <radialGradient id="glow" cx="0.16" cy="0.34" r="0.75">
+      <stop offset="0" stop-color="#5b9dff" stop-opacity="0.22"/>
       <stop offset="1" stop-color="#000000" stop-opacity="0"/>
     </radialGradient>
+    <linearGradient id="mark" x1="0.12" y1="0" x2="0.88" y2="1">
+      <stop offset="0" stop-color="#c2dcff"/>
+      <stop offset="0.38" stop-color="#6aa8ff"/>
+      <stop offset="1" stop-color="#8f5fff"/>
+    </linearGradient>
+    <pattern id="dots" width="38" height="38" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#141d2c"/>
+    </pattern>
   </defs>
   <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#dots)" opacity="0.5"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
-  <g stroke="#151d2b" stroke-width="2">
-    <line x1="84" y1="480" x2="1116" y2="480"/>
+  <g transform="translate(80,96) scale(0.052) translate(-512,-520)">
+    <path fill="url(#mark)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/>
   </g>
-  <rect x="84" y="88" width="10" height="10" rx="2" fill="#5b9dff"/>
-  <text x="106" y="99" font-family="DejaVu Sans" font-size="17" letter-spacing="6" fill="#7f93b4">AION · AI NEWS</text>
-  <text x="118" y="250" font-family="DejaVu Sans" font-size="20" letter-spacing="4" fill="#5b9dff">MODELLI · OPEN</text>
-  <rect x="84" y="278" width="8" height="176" rx="4" fill="#5b9dff"/>
+  <text x="124" y="110" font-family="DejaVu Sans" font-size="16" letter-spacing="6" fill="#8ea2bf">AION · AI NEWS</text>
+  <text x="116" y="224" font-family="DejaVu Sans" font-size="19" letter-spacing="4" fill="#5b9dff">MODELLI · OPEN</text>
+  <rect x="80" y="279.38" width="7" height="163" rx="3.5" fill="#5b9dff"/>
   <g font-family="DejaVu Sans">
-    <text x="118" y="330" font-size="58" font-weight="bold" fill="#f2f6ff">DeepSeek aggiorna V4.1</text>
-    <text x="118" y="414" font-size="58" font-weight="bold" fill="#f2f6ff">Flash: MIT, 1M di contesto</text>
+    <text x="116" y="337" font-size="67" font-weight="bold" fill="#f6f9ff">DeepSeek aggiorna V4.1</text>
+    <text x="116" y="417" font-size="67" font-weight="bold" fill="#f6f9ff">Flash: MIT, 1M di contesto</text>
   </g>
-  <text x="118" y="530" font-family="DejaVu Sans" font-size="18" letter-spacing="3" fill="#5f7396">Cosa è successo · perché conta · cosa puoi farci</text>
+  <line x1="80" y1="502" x2="1120" y2="502" stroke="#151d2b" stroke-width="2"/>
+  <text x="116" y="548" font-family="DejaVu Sans" font-size="17" letter-spacing="3" fill="#6c80a0">Cosa è successo · perché conta · cosa puoi farci</text>
 </svg>
