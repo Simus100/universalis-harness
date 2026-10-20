@@ -21,10 +21,11 @@
       <stop offset="0" stop-color="#5b9dff"/>
       <stop offset="1" stop-color="#8b5cff"/>
     </linearGradient>
-    <linearGradient id="mark" x1="0.15" y1="0" x2="0.85" y2="1">
-      <stop offset="0" stop-color="#b3d3ff"/>
-      <stop offset="0.42" stop-color="#5b9dff"/>
-      <stop offset="1" stop-color="#8b5cff"/>
+    <linearGradient id="markTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bcd8ff"/><stop offset="1" stop-color="#6f9fe8"/>
+    </linearGradient>
+    <linearGradient id="markBot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8168e6"/><stop offset="1" stop-color="#6b52d8"/>
     </linearGradient>
     <pattern id="dots" width="41" height="41" patternUnits="userSpaceOnUse">
       <circle cx="1" cy="1" r="1" fill="#1c2637"/>
@@ -60,10 +61,14 @@
 
   <!-- logotipo: icona A + nome, otticamente centrato -->
   <g transform="translate(820,194)">
-    <g transform="translate(-129,0) scale(0.0815) translate(-512,-520)">
-      <path fill="url(#mark)" fill-rule="evenodd"
-            d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/>
-    </g>
+    <g transform="translate(-129,0) scale(0.08518518518518518) translate(-512,-520)">
+    <defs>
+      <clipPath id="lk-t"><polygon points="-800,-900 1700,-900 1700,1697 -800,-803"/></clipPath>
+      <clipPath id="lk-b"><polygon points="-800,-781 1700,1719 1700,1900 -800,1900"/></clipPath>
+    </defs>
+    <g clip-path="url(#lk-t)"><path fill="url(#markTop)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
+    <g clip-path="url(#lk-b)"><path fill="url(#markBot)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
+  </g>
     <text x="-87" y="6" font-family="DejaVu Sans" font-size="18" letter-spacing="8" fill="#98abc8">AION · AI NEWS</text>
   </g>
 

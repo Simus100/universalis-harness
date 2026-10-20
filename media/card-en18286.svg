@@ -11,10 +11,11 @@
       <stop offset="0" stop-color="#34d399" stop-opacity="0.22"/>
       <stop offset="1" stop-color="#000000" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="mark" x1="0.12" y1="0" x2="0.88" y2="1">
-      <stop offset="0" stop-color="#c2dcff"/>
-      <stop offset="0.38" stop-color="#6aa8ff"/>
-      <stop offset="1" stop-color="#8f5fff"/>
+<linearGradient id="markTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bcd8ff"/><stop offset="1" stop-color="#6f9fe8"/>
+    </linearGradient>
+    <linearGradient id="markBot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8168e6"/><stop offset="1" stop-color="#6b52d8"/>
     </linearGradient>
     <pattern id="dots" width="38" height="38" patternUnits="userSpaceOnUse">
       <circle cx="1" cy="1" r="1" fill="#141d2c"/>
@@ -23,8 +24,13 @@
   <rect width="1200" height="630" fill="url(#bg)"/>
   <rect width="1200" height="630" fill="url(#dots)" opacity="0.5"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
-  <g transform="translate(80,96) scale(0.052) translate(-512,-520)">
-    <path fill="url(#mark)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/>
+  <g transform="translate(93,104) scale(0.05555555555555555) translate(-512,-520)">
+    <defs>
+      <clipPath id="cm-t"><polygon points="-800,-900 1700,-900 1700,1697 -800,-803"/></clipPath>
+      <clipPath id="cm-b"><polygon points="-800,-781 1700,1719 1700,1900 -800,1900"/></clipPath>
+    </defs>
+    <g clip-path="url(#cm-t)"><path fill="url(#markTop)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
+    <g clip-path="url(#cm-b)"><path fill="url(#markBot)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
   </g>
   <text x="124" y="110" font-family="DejaVu Sans" font-size="16" letter-spacing="6" fill="#8ea2bf">AION · AI NEWS</text>
   <text x="116" y="232" font-family="DejaVu Sans" font-size="19" letter-spacing="4" fill="#34d399">REGOLE · UE</text>

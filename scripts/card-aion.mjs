@@ -11,6 +11,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { markGroup, MARK_DEFS } from './aion-mark.mjs';
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((acc, v, i, a) => {
@@ -53,8 +54,6 @@ const testo = righe
   .map((r, i) => `    <text x="${pad + 36}" y="${yPrima + i * interlinea}" font-size="${size}" font-weight="bold" fill="#f6f9ff">${esc(r)}</text>`)
   .join('\n');
 
-const ICONA = 'M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z';
-
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <title>${esc(kicker)} — ${esc(righe.join(' '))}</title>
   <desc>Card per un post di Aion · AI News: categoria in alto, titolo grande, marchio in basso.</desc>
@@ -68,10 +67,11 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
       <stop offset="0" stop-color="${accento}" stop-opacity="0.22"/>
       <stop offset="1" stop-color="#000000" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="mark" x1="0.12" y1="0" x2="0.88" y2="1">
-      <stop offset="0" stop-color="#c2dcff"/>
-      <stop offset="0.38" stop-color="#6aa8ff"/>
-      <stop offset="1" stop-color="#8f5fff"/>
+<linearGradient id="markTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bcd8ff"/><stop offset="1" stop-color="#6f9fe8"/>
+    </linearGradient>
+    <linearGradient id="markBot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8168e6"/><stop offset="1" stop-color="#6b52d8"/>
     </linearGradient>
     <pattern id="dots" width="38" height="38" patternUnits="userSpaceOnUse">
       <circle cx="1" cy="1" r="1" fill="#141d2c"/>
@@ -80,9 +80,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   <rect width="${W}" height="${H}" fill="url(#bg)"/>
   <rect width="${W}" height="${H}" fill="url(#dots)" opacity="0.5"/>
   <rect width="${W}" height="${H}" fill="url(#glow)"/>
-  <g transform="translate(${pad},96) scale(0.052) translate(-512,-520)">
-    <path fill="url(#mark)" fill-rule="evenodd" d="${ICONA}"/>
-  </g>
+  ${markGroup(pad + 13, 104, 30, 'cm')}
   <text x="${pad + 44}" y="${110}" font-family="DejaVu Sans" font-size="16" letter-spacing="6" fill="#8ea2bf">AION · AI NEWS</text>
   <text x="${pad + 36}" y="${yKicker}" font-family="DejaVu Sans" font-size="19" letter-spacing="4" fill="${accento}">${esc(kicker.toUpperCase())}</text>
   <rect x="${pad}" y="${yBarTop}" width="7" height="${altezzaBlocco + 16}" rx="3.5" fill="${accento}"/>

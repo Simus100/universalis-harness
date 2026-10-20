@@ -1,37 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <title>Aion · AI News — immagine del profilo</title>
-  <desc>Monogramma A geometrico con gradiente blu-viola su fondo notte, cornice sottile e punto verde di segnale.</desc>
+  <desc>Monogramma A attraversato da un taglio a 45 gradi: metà alta blu, metà bassa viola, e un punto verde in alto a destra per lo stato online.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0a1120"/>
-      <stop offset="0.55" stop-color="#060810"/>
-      <stop offset="1" stop-color="#0c1226"/>
+      <stop offset="0" stop-color="#0a1120"/><stop offset="0.55" stop-color="#060810"/><stop offset="1" stop-color="#0c1226"/>
     </linearGradient>
     <radialGradient id="glow" cx="0.5" cy="0.44" r="0.58">
-      <stop offset="0" stop-color="#5b9dff" stop-opacity="0.38"/>
-      <stop offset="0.5" stop-color="#8b5cff" stop-opacity="0.13"/>
-      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0" stop-color="#5b9dff" stop-opacity="0.32"/><stop offset="0.5" stop-color="#8b5cff" stop-opacity="0.12"/><stop offset="1" stop-color="#000000" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="mark" x1="0.12" y1="0" x2="0.88" y2="1">
-      <stop offset="0" stop-color="#c2dcff"/>
-      <stop offset="0.38" stop-color="#6aa8ff"/>
-      <stop offset="1" stop-color="#8f5fff"/>
+    <radialGradient id="signal" cx="0.5" cy="0.45" r="0.6"><stop offset="0" stop-color="#5ff0bb"/><stop offset="1" stop-color="#22b98a"/></radialGradient>
+    
+    <linearGradient id="markTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bcd8ff"/><stop offset="1" stop-color="#6f9fe8"/>
     </linearGradient>
-    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2a3a55" stop-opacity="0"/>
-      <stop offset="0.5" stop-color="#2a3a55" stop-opacity="0.9"/>
-      <stop offset="1" stop-color="#2a3a55" stop-opacity="0"/>
+    <linearGradient id="markBot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8168e6"/><stop offset="1" stop-color="#6b52d8"/>
     </linearGradient>
-    <radialGradient id="signal" cx="0.5" cy="0.45" r="0.6">
-      <stop offset="0" stop-color="#5ff0bb"/>
-      <stop offset="1" stop-color="#22b98a"/>
-    </radialGradient>
   </defs>
   <rect width="1024" height="1024" fill="url(#bg)"/>
   <circle cx="512" cy="512" r="512" fill="url(#glow)"/>
-  <circle cx="512" cy="512" r="446" fill="none" stroke="url(#edge)" stroke-width="3"/>
-  <circle cx="512" cy="512" r="470" fill="none" stroke="#141b29" stroke-width="2"/>
-  <path fill="url(#mark)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/>
-  <circle cx="812" cy="306" r="34" fill="url(#signal)"/>
-  <circle cx="812" cy="306" r="56" fill="none" stroke="#34d399" stroke-opacity="0.22" stroke-width="9"/>
+  <circle cx="512" cy="512" r="452" fill="none" stroke="#1b2434" stroke-width="3"/>
+  <g transform="translate(505,540) scale(1.1851851851851851) translate(-512,-520)">
+    <defs>
+      <clipPath id="lg-t"><polygon points="-800,-900 1700,-900 1700,1697 -800,-803"/></clipPath>
+      <clipPath id="lg-b"><polygon points="-800,-781 1700,1719 1700,1900 -800,1900"/></clipPath>
+    </defs>
+    <g clip-path="url(#lg-t)"><path fill="url(#markTop)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
+    <g clip-path="url(#lg-b)"><path fill="url(#markBot)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
+  </g>
+  <circle cx="806" cy="296" r="36" fill="url(#signal)"/>
+  <circle cx="806" cy="296" r="59.4" fill="none" stroke="#34d399" stroke-opacity="0.22" stroke-width="9.36"/>
 </svg>
