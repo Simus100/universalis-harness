@@ -155,3 +155,8 @@ media/demo-harness/node_modules/
 # siano solo colori e font (nessun segreto), non serve nel repository: l'esito è già in
 # `frame.md` (design system versionato) e in `BRIEF.md` (brief).
 media/demo-harness/capture/
+
+# `videos/` è la cartella di lavoro dei video HyperFrames e delle scene intermedie: contiene
+# MP4 e PNG grandi, rigenerabili da script. Il video finito per l'utente sta in `media/`
+# (anche lì `media/*.mp4` è ignorato: si rigenera e non serve nel repository).
+videos/
