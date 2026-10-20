@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
-  <title>Gergo — «Pesi aperti» non vuol dire open source</title>
+  <title>Gergo #1 — «Pesi aperti» non vuol dire open source</title>
   <desc>Card per un post di Aion · AI News: categoria in alto, titolo grande, marchio in basso.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -33,7 +33,7 @@
     <g clip-path="url(#cm-b)"><path fill="url(#markBot)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
   </g>
   <text x="124" y="110" font-family="DejaVu Sans" font-size="16" letter-spacing="6" fill="#8ea2bf">AION · AI NEWS</text>
-  <text x="116" y="223" font-family="DejaVu Sans" font-size="19" letter-spacing="4" fill="#34d399">GERGO</text>
+  <text x="116" y="223" font-family="DejaVu Sans" font-size="19" letter-spacing="4" fill="#34d399">GERGO #1</text>
   <rect x="80" y="278.52" width="7" height="166" rx="3.5" fill="#34d399"/>
   <g font-family="DejaVu Sans">
     <text x="116" y="337" font-size="68" font-weight="bold" fill="#f6f9ff">«Pesi aperti» non vuol</text>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <title>95% — Cache di ingresso · Gemini 4 Argon</title>
+  <desc>Card «un numero»: la cifra grande al centro del discorso, con il contesto sotto.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#080b13"/><stop offset="0.6" stop-color="#060810"/><stop offset="1" stop-color="#0b1020"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.2" cy="0.42" r="0.8">
+      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.20"/><stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="38" height="38" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#141d2c"/>
+    </pattern>
+    
+    <linearGradient id="markTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bcd8ff"/><stop offset="1" stop-color="#6f9fe8"/>
+    </linearGradient>
+    <linearGradient id="markBot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8168e6"/><stop offset="1" stop-color="#6b52d8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#dots)" opacity="0.5"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g transform="translate(93,104) scale(0.05555555555555555) translate(-512,-520)">
+    <defs>
+      <clipPath id="cm-t"><polygon points="-800,-900 1700,-900 1700,1697 -800,-803"/></clipPath>
+      <clipPath id="cm-b"><polygon points="-800,-781 1700,1719 1700,1900 -800,1900"/></clipPath>
+    </defs>
+    <g clip-path="url(#cm-t)"><path fill="url(#markTop)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
+    <g clip-path="url(#cm-b)"><path fill="url(#markBot)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
+  </g>
+  <text x="124" y="110" font-family="DejaVu Sans" font-size="16" letter-spacing="6" fill="#8ea2bf">AION · AI NEWS</text>
+  <text x="80" y="205" font-family="DejaVu Sans" font-size="19" letter-spacing="3" fill="#fbbf24">CACHE DI INGRESSO · GEMINI 4 ARGON</text>
+  <text x="74" y="400" font-family="DejaVu Sans" font-size="200" font-weight="bold" fill="#f6f9ff">95%</text>
+  <g font-family="DejaVu Sans">
+    <text x="80" y="470" font-size="28" fill="#a7b8d0">quello che paghi per il contesto che rileggi</text>
+    <text x="80" y="512" font-size="28" fill="#a7b8d0">non è quello che paghi per chiederlo</text>
+  </g>
+  <line x1="80" y1="548" x2="1120" y2="548" stroke="#151d2b" stroke-width="2"/>
+  <text x="80" y="588" font-family="DejaVu Sans" font-size="17" letter-spacing="3" fill="#6c80a0">Cosa è successo · perché conta · cosa puoi farci</text>
+</svg>
