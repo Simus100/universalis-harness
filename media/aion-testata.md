@@ -99,6 +99,7 @@ bot. Sono le tre cause più comuni di Pagina disabilitata e di reach azzerata.
 | Quando | Cosa | Stato |
 |---|---|---|
 | 19/10 23:28 | Presentazione della Pagina (con copertina) | pubblicato |
+| 20/10 20:56 | **Video promo** «Ti risparmio mezz'ora al giorno» — 20 s verticale, classificato da Facebook come **reel** | pubblicato |
 | 20/10 08:00 | La prima norma armonizzata dell'AI Act (EN 18286:2026) | programmato |
 | 20/10 12:30 | DeepSeek V4.1-Flash-1017: MIT, pesi aperti, 1M di contesto | programmato |
 | 21/10 | Analisi: gli agenti che passano l'80% del tempo ad aspettare una persona | da verificare alla fonte |
@@ -128,6 +129,14 @@ immagine del profilo, primo post.
 - Card dei post: `node scripts/card-aion.mjs --kicker … --titolo "riga1|riga2" --accento … --out media/card-x`.
   Il corpo del titolo è calcolato misurando il testo (non stimato), e il blocco resta centrato
   nella stessa fascia qualunque sia la lunghezza.
+
+## Video
+
+Il promo vive in `media/aion-promo.mp4` (1080×1920, 30 fps, con audio sintetizzato da ffmpeg: nessun
+diritto di terzi). Le scene sono PNG generati da script, il montaggio è ffmpeg: tagli netti più una
+banda diagonale luminosa che attraversa lo schermo a ogni cambio scena.
+Un video verticale caricato con `POST /{page-id}/videos` viene classificato da Facebook come **reel**:
+il `permalink_url` lo conferma (`/reel/<id>/`).
 
 ## Risoluzioni (regola: si carica sempre il @2x)
 
