@@ -1,0 +1,68 @@
+REEL «IL FILTRO» — Aion · AI News
+Cosa dare a Veo 3, cosa restituire, dove metterlo.
+=====================================================================
+
+COSA C'È IN QUESTA CARTELLA
+
+  veo/1-rumore.txt         prompt della clip A  (0,0 – 5,0 s)
+  veo/2-taglio.txt         prompt della clip B  (5,0 – 10,0 s)
+  veo/3-tre-righe.txt      prompt della clip C  (10,0 – 13,4 s)
+  veo/0-negative-prompt.txt  negative prompt, uguale per tutte e tre
+  keyframe/key1.png        frame 0 da dare alla clip A (facoltativo ma consigliato)
+  keyframe/key2.png        frame 0 da dare alla clip B
+  keyframe/key3.png        frame 0 da dare alla clip C
+  ../animatic.mp4          montaggio di prova: GUARDALO PRIMA di generare
+
+=====================================================================
+
+I TRE PASSI
+
+1. Guardo animatic.mp4. Se il ritmo o un testo non tornano, si cambia qui: costa un
+   minuto. Dopo i render, cambiare un testo costa un render.
+
+2. Genero le tre clip in Veo:
+      aspect ratio ............ 9:16 (1080×1920)
+      durata .................. 8 s  (ne bastano 5 / 5 / 3,4: il resto è margine di taglio)
+      persone ................. nessuna
+      audio ................... spento, o solo ambient (la musica è nostra)
+      testo nell'immagine ..... NIENTE. Veo non sa scrivere in italiano: i testi li
+                                mette il montaggio, in overlay, con le card Aion.
+   Prompt: incollo il contenuto di veo/N-*.txt. Negative prompt: veo/0-negative-prompt.txt.
+   Immagine di partenza (se il mio accesso la permette): keyframe/keyN.png come FIRST FRAME.
+   Se genero solo da testo, i keyframe non servono — anzi, con un'immagine iniziale
+   troppo piatta il movimento può bloccarsi.
+
+3. Rinomino gli mp4 e li metto qui:
+      ../clip/shotA.mp4      ← clip A (rumore)
+      ../clip/shotB.mp4      ← clip B (taglio a 45°)
+      ../clip/shotC.mp4      ← clip C (tre righe)
+   Poi, dalla radice dell'istanza:
+      node media/aion-reel-filtro/assemble.mjs
+   Esce ../aion-reel-filtro.mp4: 1080×1920, 30 fps, 17,2 s, con i testi, il marchio
+   e il letto sonoro. Le clip più lunghe del beat vengono tagliate, le più corte
+   congelate sull'ultimo frame: non serve un render perfetto al decimo di secondo.
+
+=====================================================================
+
+DOVE GUARDARE IL RISULTATO
+
+  0,0 – 5,0    rumore, il testo entra:  «Ogni giorno: annunci, demo, benchmark.»
+  5,0 – 10,0   il taglio a 45°:        «Quasi niente ti cambia la giornata.»
+  10,0 – 13,4  tre righe di luce:      «Ne restano poche. Le scegliamo noi.»
+  13,4 – 17,2  coda col marchio:       «L'AI spiegata in tre righe.»
+
+Il taglio a 45° non è un effetto: è il segno del marchio Aion. Se ondeggia o si spezza,
+la clip B va rigenerata — è l'unica delle tre che non si può tagliare in montaggio.
+
+=====================================================================
+
+COSA NON VA BENE (e va rigenerato, non aggiustato)
+
+  · persone, mani, volti, uffici, città, robot, cervelli, circuiti stampati
+  · numeri, lettere, loghi, watermark nell'immagine
+  · bagliori "da videogioco", lens flare, luce calda/arancione
+  · movimento veloce, camera a mano, tagli interni alla clip
+  · nella clip C: più o meno di tre righe
+
+Regola della testata (media/aion-testata.md, punto 3): nessuna finta fotografia.
+Per questo le clip sono solo luce, polvere e forme, e i testi sono nostri.

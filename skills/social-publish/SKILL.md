@@ -53,8 +53,12 @@ node skills/social-publish/publish.mjs check
 # 2. prova a vuoto: costruisce la richiesta e mostra cosa invierebbe, senza contattare Meta
 node skills/social-publish/publish.mjs --dry-run post --text "..." --image media/foto.png
 
-# 3. pubblica davvero
+# 3. pubblica davvero (uno solo fra --image e --video: Facebook accetta un allegato per post)
 node skills/social-publish/publish.mjs post --text "..." [--image media/foto.png]
+node skills/social-publish/publish.mjs post --text "..." --video media/reel.mp4
+
+# il video si carica su /{page-id}/videos in multipart: un verticale 9:16 diventa un REEL
+# (permalink /reel/<id>/). Il limite di peso è 1024 MB, verificato prima di inviare.
 
 # 4. i numeri: raccogli e leggi (storia in media/social-insights/, esclusa da git)
 node skills/social-publish/insights.mjs raccogli

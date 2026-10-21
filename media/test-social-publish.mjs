@@ -66,6 +66,19 @@ console.log("== profilo temporaneo: dry-run senza rete ==");
   check("dry-run del post: nessuna chiamata dichiarata", /nessuna richiesta inviata/.test(p.out));
   const u = run(["--profilo", "mario", "--dry-run", "post", "--text", "ciao", "--unpublished"], { SOCIAL_ENV_FILE: file });
   check("--unpublished dichiarato nel dry-run", /NON pubblicato/.test(u.out));
+
+  // --video: il verticale passa da /videos (reel), non da /feed, e il tipo si verifica prima di inviare
+  const vid = join(dir, "reel.mp4");
+  writeFileSync(vid, Buffer.alloc(2048, 7));
+  const v = run(["--profilo", "mario", "--dry-run", "post", "--text", "ciao", "--video", vid], { SOCIAL_ENV_FILE: file });
+  check("dry-run video: endpoint /videos", /\/1234567890\/videos/.test(v.out));
+  check("dry-run video: dichiara il possibile reel", /reel/.test(v.out));
+  check("dry-run video: nessuna chiamata inviata", /nessuna richiesta inviata/.test(v.out));
+  const vn = run(["--profilo", "mario", "--dry-run", "post", "--text", "ciao", "--video", join(dir, "manca.mp4")], { SOCIAL_ENV_FILE: file });
+  check("video inesistente → exit 2", vn.code === 2 && /non trovato/.test(vn.out));
+  const vi = run(["--profilo", "mario", "--dry-run", "post", "--text", "ciao", "--video", vid, "--image", vid], { SOCIAL_ENV_FILE: file });
+  check("video e immagine insieme rifiutati", vi.code === 2 && /un solo tipo/.test(vi.out));
+
   rmSync(dir, { recursive: true, force: true });
 }
 

@@ -163,3 +163,14 @@ media/demo-harness/capture/
 # MP4 e PNG grandi, rigenerabili da script. Il video finito per l'utente sta in `media/`
 # (anche lì `media/*.mp4` è ignorato: si rigenera e non serve nel repository).
 videos/
+
+# ---- reel Aion: derivati rigenerabili ----
+# animatic, sfondi di prova e pacchetto di consegna si rigenerano con
+# media/aion-reel-filtro/make-assets.mjs e assemble.mjs: sono binari pesanti, non lavoro da versionare
+media/aion-reel-filtro/animatic/
+media/aion-reel-filtro/animatic.mp4
+media/aion-reel-filtro/clip/
+media/aion-reel-filtro/overlay/
+media/aion-reel-filtro/keyframe/
+media/aion-reel-filtro/anteprima-storyboard.jpg
+media/*-consegna.zip

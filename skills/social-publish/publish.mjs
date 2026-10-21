@@ -10,6 +10,7 @@
  *   node skills/social-publish/publish.mjs check
  *   node skills/social-publish/publish.mjs post --text "testo del post"
  *   node skills/social-publish/publish.mjs post --text "..." --image media/foto.png
+ *   node skills/social-publish/publish.mjs post --text "..." --video media/reel.mp4
  *   node skills/social-publish/publish.mjs post --text "..." --unpublished   (prova invisibile)
  *   node skills/social-publish/publish.mjs --dry-run post --text "prova"     (non invia nulla)
  *   node skills/social-publish/publish.mjs accounts          (pagine gestite dal token utente)
@@ -148,6 +149,7 @@ const HELP = `publish.mjs — pubblica su una Pagina Facebook (Pages API ufficia
 
   check                                  verifica che il token di Pagina funzioni
   post --text "..." [--image file.png]   pubblica un post
+       [--video file.mp4]                pubblica un video (un verticale diventa un reel)
        [--unpublished]                   crea il post senza mostrarlo nel feed (prova)
   accounts                               elenca le Pagine del token utente (token mascherati)
   perms                                  quali permessi ha DAVVERO il token (diagnosi)
@@ -363,8 +365,15 @@ if (cmd === "check") {
 if (cmd === "post") {
   const text = get("--text");
   const image = get("--image");
-  if (!text && !image) { console.error("serve --text (e facoltativamente --image)"); process.exit(2); }
+  const video = get("--video");
+  if (!text && !image && !video) { console.error("serve --text (e facoltativamente --image o --video)"); process.exit(2); }
   if (image && !existsSync(image)) { console.error(`immagine non trovata: ${image}`); process.exit(2); }
+  if (image && video) { console.error("--image e --video insieme: Facebook accetta un solo tipo di allegato per post"); process.exit(2); }
+  if (video) {
+    if (!existsSync(video)) { console.error(`video non trovato: ${video}`); process.exit(2); }
+    const mb = statSync(video).size / 1048576;
+    if (mb > 1024) { console.error(`video troppo grande: ${mb.toFixed(0)} MB (limite della Pagina 1024 MB)`); process.exit(2); }
+  }
 
   if (dryRun) {
     console.log("[dry-run] nessuna richiesta inviata a Meta.");
@@ -375,12 +384,40 @@ if (cmd === "post") {
       const b = statSync(image).size;
       console.log(`  immagine     : ${basename(image)} (${(b / 1024).toFixed(0)} KB) → caricata come non pubblicata, poi allegata al post`);
     }
+    if (video) {
+      const b = statSync(video).size;
+      console.log(`  video        : ${basename(video)} (${(b / 1048576).toFixed(1)} MB) → POST /{page}/videos (se verticale, Meta lo tratta come reel)`);
+      console.log(`  endpoint     : ${API}/${PAGE_ID || "<FB_PAGE_ID>"}/videos`);
+    }
     console.log(`  visibilità   : ${unpublished ? "NON pubblicato (invisibile nel feed)" : "pubblico"}`);
-    console.log(`  chiamate previste: ${image ? 2 : 1} (upload foto + pubblicazione)`);
+    console.log(`  chiamate previste: ${video ? 2 : image ? 2 : 1} (upload ${video ? "video" : "foto"}, poi pubblicazione)`);
     process.exit(0);
   }
   if (!needConfig()) process.exit(1);
   await resolvePageId();
+
+  if (video) {
+    // Il video si carica su /videos con il file nel multipart: un verticale (9:16) diventa un reel.
+    const form = new FormData();
+    form.append("access_token", TOKEN);
+    form.append("source", new Blob([readFileSync(video)]), basename(video));
+    if (text) form.append("description", text);
+    if (unpublished) form.append("published", "false");
+    const up = await callApi(`${API}/${PAGE_ID}/videos`, { method: "POST", body: form });
+    if (!up.id) { console.error("caricamento riuscito ma senza id: risposta inattesa", up); process.exit(1); }
+    if (unpublished) {
+      console.log(`video caricato NON pubblicato. id: ${up.id}`);
+      process.exit(0);
+    }
+    let link = "";
+    try {
+      const d = await callApi(`${API}/${up.id}?fields=permalink_url&access_token=${encodeURIComponent(TOKEN)}`);
+      if (d.permalink_url) link = d.permalink_url;
+    } catch { /* il post esiste comunque: il permalink è un di più */ }
+    console.log(`pubblicato (video). id: ${up.id}`);
+    console.log(`indirizzo: ${link || `https://www.facebook.com/${up.id}`}`);
+    process.exit(0);
+  }
 
   let mediaFbid;
   if (image) {
