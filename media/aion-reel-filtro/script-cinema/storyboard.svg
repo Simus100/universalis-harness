@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1978" height="911" viewBox="0 0 1978 911">
+<defs>
+  
+    <linearGradient id="markTop" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#bcd8ff"/><stop offset="1" stop-color="#6f9fe8"/>
+    </linearGradient>
+    <linearGradient id="markBot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8168e6"/><stop offset="1" stop-color="#6b52d8"/>
+    </linearGradient>
+  <radialGradient id="signal" cx="0.5" cy="0.5" r="0.5">
+    <stop offset="0" stop-color="#5ff0bd"/><stop offset="1" stop-color="#34d399"/>
+  </radialGradient>
+  <linearGradient id="bgPanel" x1="0" y1="0" x2="0.4" y2="1">
+    <stop offset="0" stop-color="#0d1526"/><stop offset="1" stop-color="#05070c"/>
+  </linearGradient>
+  <linearGradient id="lama" x1="0" y1="1" x2="1" y2="0">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0.15"/>
+    <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.95"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0.2"/>
+  </linearGradient>
+  <filter id="blur18"><feGaussianBlur stdDeviation="18"/></filter>
+  <filter id="blur6"><feGaussianBlur stdDeviation="6"/></filter>
+  <filter id="blur3"><feGaussianBlur stdDeviation="3"/></filter>
+  <filter id="glow"><feGaussianBlur stdDeviation="4"/></filter>
+  <clipPath id="clip-S1"><rect x="0" y="0" width="300" height="533" rx="10"/></clipPath>
+  <clipPath id="clip-S2"><rect x="0" y="0" width="300" height="533" rx="10"/></clipPath>
+  <clipPath id="clip-S3"><rect x="0" y="0" width="300" height="533" rx="10"/></clipPath>
+  <clipPath id="clip-S4"><rect x="0" y="0" width="300" height="533" rx="10"/></clipPath>
+  <clipPath id="clip-S5"><rect x="0" y="0" width="300" height="533" rx="10"/></clipPath>
+  <clipPath id="clip-S6"><rect x="0" y="0" width="300" height="533" rx="10"/></clipPath></defs>
+<rect width="1978" height="911" fill="#080b12"/>
+<text x="34" y="62" font-family="DejaVu Sans" font-size="30" font-weight="bold" fill="#f6f9ff">Aion · «Il filtro» — tavola di regia</text>
+<text x="34" y="92" font-family="DejaVu Sans" font-size="16" fill="#96a9c4">Reel verticale 9:16 · 20 s · 24 fps · cinque generazioni + coda tipografica · organico → geometrico</text>
+<text x="1944" y="62" text-anchor="end" font-family="DejaVu Sans" font-size="14" fill="#96a9c4">storyboard disegnato, non generato</text>
+
+  <g transform="translate(34,128)">
+    <rect x="-1" y="-1" width="302" height="535" rx="11" fill="none" stroke="#1e2a42" stroke-width="1.5"/>
+    <g clip-path="url(#clip-S1)"><g><rect width="300" height="533" fill="url(#bgPanel)"/>
+      <g filter="url(#blur18)"><circle cx="125" cy="123" r="82" fill="#8b5cff" fill-opacity="0.30"/>
+<circle cx="206" cy="134" r="71" fill="#8b5cff" fill-opacity="0.36"/>
+<circle cx="242" cy="200" r="69" fill="#8b5cff" fill-opacity="0.18"/>
+<circle cx="183" cy="195" r="50" fill="#5b9dff" fill-opacity="0.38"/>
+<circle cx="185" cy="167" r="56" fill="#5b9dff" fill-opacity="0.18"/>
+<circle cx="131" cy="241" r="69" fill="#5b9dff" fill-opacity="0.22"/>
+<circle cx="147" cy="80" r="54" fill="#5b9dff" fill-opacity="0.50"/>
+<circle cx="206" cy="178" r="42" fill="#8b5cff" fill-opacity="0.36"/>
+<circle cx="122" cy="90" r="68" fill="#8b5cff" fill-opacity="0.20"/>
+</g>
+      <ellipse cx="85" cy="302" rx="6" ry="8" fill="#5b9dff" fill-opacity="0.23" filter="url(#blur3)"/>
+<ellipse cx="19" cy="359" rx="4" ry="6" fill="#5b9dff" fill-opacity="0.10" filter="url(#blur3)"/>
+<ellipse cx="178" cy="142" rx="10" ry="13" fill="#cfe0ff" fill-opacity="0.07" filter="url(#blur3)"/>
+<ellipse cx="188" cy="178" rx="5" ry="8" fill="#5b9dff" fill-opacity="0.19" filter="url(#blur3)"/>
+<ellipse cx="13" cy="199" rx="9" ry="13" fill="#5b9dff" fill-opacity="0.23" filter="url(#blur3)"/>
+<ellipse cx="34" cy="138" rx="9" ry="13" fill="#5b9dff" fill-opacity="0.09" filter="url(#blur3)"/>
+<ellipse cx="206" cy="148" rx="10" ry="14" fill="#cfe0ff" fill-opacity="0.07" filter="url(#blur3)"/>
+<ellipse cx="207" cy="477" rx="8" ry="12" fill="#5b9dff" fill-opacity="0.06" filter="url(#blur3)"/>
+<ellipse cx="181" cy="172" rx="10" ry="14" fill="#5b9dff" fill-opacity="0.16" filter="url(#blur3)"/>
+<ellipse cx="218" cy="290" rx="3" ry="5" fill="#cfe0ff" fill-opacity="0.24" filter="url(#blur3)"/>
+<ellipse cx="88" cy="35" rx="2" ry="3" fill="#5b9dff" fill-opacity="0.19" filter="url(#blur3)"/>
+<ellipse cx="8" cy="313" rx="8" ry="12" fill="#5b9dff" fill-opacity="0.07" filter="url(#blur3)"/>
+<ellipse cx="126" cy="371" rx="4" ry="5" fill="#cfe0ff" fill-opacity="0.05" filter="url(#blur3)"/>
+<ellipse cx="299" cy="377" rx="8" ry="11" fill="#cfe0ff" fill-opacity="0.21" filter="url(#blur3)"/>
+<ellipse cx="107" cy="143" rx="3" ry="4" fill="#cfe0ff" fill-opacity="0.15" filter="url(#blur3)"/>
+<ellipse cx="277" cy="87" rx="10" ry="14" fill="#cfe0ff" fill-opacity="0.09" filter="url(#blur3)"/>
+<ellipse cx="37" cy="276" rx="7" ry="9" fill="#cfe0ff" fill-opacity="0.07" filter="url(#blur3)"/>
+<ellipse cx="247" cy="393" rx="10" ry="14" fill="#cfe0ff" fill-opacity="0.15" filter="url(#blur3)"/>
+<ellipse cx="141" cy="268" rx="7" ry="10" fill="#cfe0ff" fill-opacity="0.23" filter="url(#blur3)"/>
+<ellipse cx="160" cy="100" rx="10" ry="14" fill="#cfe0ff" fill-opacity="0.25" filter="url(#blur3)"/>
+<ellipse cx="299" cy="23" rx="5" ry="7" fill="#5b9dff" fill-opacity="0.23" filter="url(#blur3)"/>
+<ellipse cx="293" cy="420" rx="9" ry="12" fill="#5b9dff" fill-opacity="0.11" filter="url(#blur3)"/>
+<ellipse cx="205" cy="184" rx="3" ry="4" fill="#cfe0ff" fill-opacity="0.20" filter="url(#blur3)"/>
+<ellipse cx="114" cy="135" rx="10" ry="14" fill="#5b9dff" fill-opacity="0.24" filter="url(#blur3)"/>
+<ellipse cx="109" cy="469" rx="9" ry="13" fill="#5b9dff" fill-opacity="0.22" filter="url(#blur3)"/>
+<ellipse cx="160" cy="227" rx="10" ry="14" fill="#5b9dff" fill-opacity="0.25" filter="url(#blur3)"/>
+</g></g>
+    <text x="0" y="559" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#5b9dff">S1</text>
+    <text x="34" y="559" font-family="DejaVu Sans" font-size="14" fill="#96a9c4">0,00 – 3,00</text>
+    <text x="0" y="581" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#f6f9ff">INK</text>
+    <text x="0" y="603" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">macro · 100mm f/2.8 · push-in</text><text x="0" y="620" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">silenzio tipografico</text>
+  </g>
+  <g transform="translate(356,128)">
+    <rect x="-1" y="-1" width="302" height="535" rx="11" fill="none" stroke="#1e2a42" stroke-width="1.5"/>
+    <g clip-path="url(#clip-S2)"><g><rect width="300" height="533" fill="url(#bgPanel)"/>
+      <path d="M-40,70 Q150,40 340,20"
+         stroke="#cfe0ff" stroke-opacity="0.28" stroke-width="2.5" fill="none" filter="url(#blur3)"/>
+<path d="M-34,104 Q150,70 340,42"
+         stroke="#5b9dff" stroke-opacity="0.28" stroke-width="2.5" fill="none" filter="url(#blur3)"/>
+<path d="M-28,138 Q150,100 340,64"
+         stroke="#cfe0ff" stroke-opacity="0.28" stroke-width="2.5" fill="none" filter="url(#blur3)"/>
+<path d="M-22,172 Q150,130 340,86"
+         stroke="#5b9dff" stroke-opacity="0.28" stroke-width="2.5" fill="none" filter="url(#blur3)"/>
+<path d="M-16,206 Q150,160 340,108"
+         stroke="#cfe0ff" stroke-opacity="0.28" stroke-width="2.5" fill="none" filter="url(#blur3)"/>
+<path d="M-10,240 Q150,190 340,130"
+         stroke="#5b9dff" stroke-opacity="0.28" stroke-width="2.5" fill="none" filter="url(#blur3)"/>
+<path d="M-4,274 Q150,220 340,152"
+         stroke="#cfe0ff" stroke-opacity="0.28" stroke-width="2.5" fill="none" filter="url(#blur3)"/>
+<path d="M2,308 Q150,250 340,174"
+         stroke="#5b9dff" stroke-opacity="0.28" stroke-width="2.5" fill="none" filter="url(#blur3)"/>
+<path d="M8,342 Q150,280 340,196"
+         stroke="#cfe0ff" stroke-opacity="0.28" stroke-width="2.5" fill="none" filter="url(#blur3)"/>
+      <ellipse cx="264" cy="58" rx="90" ry="46" fill="#eaf3ff" fill-opacity="0.30" filter="url(#blur18)"/>
+      <text x="22" y="330" font-family="DejaVu Sans"
+  font-size="19" font-weight="bold" fill="#f6f9ff">Ogni giorno:</text><text x="22" y="354" font-family="DejaVu Sans"
+  font-size="19" font-weight="bold" fill="#f6f9ff">annunci, demo,</text><text x="22" y="378" font-family="DejaVu Sans"
+  font-size="19" font-weight="bold" fill="#f6f9ff">benchmark.</text></g></g>
+    <text x="0" y="559" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#5b9dff">S2</text>
+    <text x="34" y="559" font-family="DejaVu Sans" font-size="14" fill="#96a9c4">3,00 – 6,40</text>
+    <text x="0" y="581" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#f6f9ff">ORIENT</text>
+    <text x="0" y="603" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">la corrente allinea · tilt 2°</text><text x="0" y="620" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">entra il primo testo</text>
+  </g>
+  <g transform="translate(678,128)">
+    <rect x="-1" y="-1" width="302" height="535" rx="11" fill="none" stroke="#1e2a42" stroke-width="1.5"/>
+    <g clip-path="url(#clip-S3)"><g><rect width="300" height="533" fill="#070a12"/>
+      <polygon points="0,0 300,0 300,181.22 0,479.7" fill="#5b9dff" fill-opacity="0.22"/>
+      <polygon points="0,479.7 300,181.22 300,533 0,533" fill="#8b5cff" fill-opacity="0.26"/>
+      <circle cx="63" cy="78" r="53" fill="#8b5cff" fill-opacity="0.21"/>
+<circle cx="124" cy="87" r="46" fill="#8b5cff" fill-opacity="0.25"/>
+<circle cx="152" cy="137" r="45" fill="#8b5cff" fill-opacity="0.12"/>
+<circle cx="107" cy="133" r="32" fill="#5b9dff" fill-opacity="0.27"/>
+<circle cx="109" cy="112" r="36" fill="#5b9dff" fill-opacity="0.13"/>
+<circle cx="67" cy="168" r="44" fill="#5b9dff" fill-opacity="0.15"/>
+
+      <polygon points="0,482.365 300,183.885 300,199.875 0,498.355" fill="#05070c" fill-opacity="0.95"/>
+      <polygon points="0,471.705 300,173.225 300,178.555 0,477.035" fill="url(#lama)" filter="url(#glow)"/>
+      <polygon points="0,473.30400000000003 300,174.824 300,176.95600000000002 0,475.43600000000004" fill="#ffffff" fill-opacity="0.9"/>
+      <text x="22" y="330" font-family="DejaVu Sans"
+  font-size="19" font-weight="bold" fill="#f6f9ff">Quasi niente</text><text x="22" y="354" font-family="DejaVu Sans"
+  font-size="19" font-weight="bold" fill="#f6f9ff">ti cambia la</text><text x="22" y="378" font-family="DejaVu Sans"
+  font-size="19" font-weight="bold" fill="#f6f9ff">giornata.</text></g></g>
+    <text x="0" y="559" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#5b9dff">S3</text>
+    <text x="34" y="559" font-family="DejaVu Sans" font-size="14" fill="#96a9c4">6,40 – 10,00</text>
+    <text x="0" y="581" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#f6f9ff">THE CUT</text>
+    <text x="0" y="603" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">la lama a 45° · camera FISSA</text><text x="0" y="620" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">il fotogramma chiave</text>
+  </g>
+  <g transform="translate(1000,128)">
+    <rect x="-1" y="-1" width="302" height="535" rx="11" fill="none" stroke="#1e2a42" stroke-width="1.5"/>
+    <g clip-path="url(#clip-S4)"><g><rect width="300" height="533" fill="url(#bgPanel)"/>
+      <g filter="url(#blur18)"><circle cx="84" cy="249" r="63" fill="#8b5cff" fill-opacity="0.13"/>
+<circle cx="180" cy="262" r="55" fill="#8b5cff" fill-opacity="0.16"/>
+<circle cx="224" cy="341" r="53" fill="#8b5cff" fill-opacity="0.08"/>
+<circle cx="154" cy="335" r="39" fill="#5b9dff" fill-opacity="0.17"/>
+<circle cx="156" cy="301" r="43" fill="#5b9dff" fill-opacity="0.08"/>
+</g>
+      <text x="22" y="330" font-family="DejaVu Sans"
+  font-size="19" font-weight="bold" fill="#f6f9ff">Ne restano poche.</text><text x="22" y="354" font-family="DejaVu Sans"
+  font-size="19" font-weight="bold" fill="#f6f9ff">Le scegliamo noi.</text>
+      <rect x="40" y="405" width="220" height="3" rx="1.5" fill="#eaf3ff" opacity="0.9" filter="url(#glow)"/>
+              <rect x="40" y="405" width="220" height="1.5" rx="0.75" fill="#ffffff"/>
+<rect x="40" y="431" width="220" height="3" rx="1.5" fill="#eaf3ff" opacity="0.9" filter="url(#glow)"/>
+              <rect x="40" y="431" width="220" height="1.5" rx="0.75" fill="#ffffff"/>
+<rect x="40" y="457" width="220" height="3" rx="1.5" fill="#eaf3ff" opacity="0.9" filter="url(#glow)"/>
+              <rect x="40" y="457" width="220" height="1.5" rx="0.75" fill="#ffffff"/></g></g>
+    <text x="0" y="559" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#5b9dff">S4</text>
+    <text x="34" y="559" font-family="DejaVu Sans" font-size="14" fill="#96a9c4">10,00 – 13,60</text>
+    <text x="0" y="581" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#f6f9ff">THREE LINES</text>
+    <text x="0" y="603" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">l’inchiostro cade · tre rette</text><text x="0" y="620" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">nel terzo inferiore</text>
+  </g>
+  <g transform="translate(1322,128)">
+    <rect x="-1" y="-1" width="302" height="535" rx="11" fill="none" stroke="#1e2a42" stroke-width="1.5"/>
+    <g clip-path="url(#clip-S5)"><g><rect width="300" height="533" fill="#04060a"/>
+      <rect x="40" y="405" width="220" height="2" fill="#eaf3ff" opacity="0.30"/>
+      <rect x="40" y="431" width="220" height="2" fill="#eaf3ff" opacity="0.16"/>
+      <rect x="40" y="457" width="220" height="2" fill="#eaf3ff" opacity="0.06"/>
+      <circle cx="260" cy="405" r="4.5" fill="url(#signal)" filter="url(#glow)"/></g></g>
+    <text x="0" y="559" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#5b9dff">S5</text>
+    <text x="34" y="559" font-family="DejaVu Sans" font-size="14" fill="#96a9c4">13,60 – 17,00</text>
+    <text x="0" y="581" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#f6f9ff">ALIVE</text>
+    <text x="0" y="603" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">si spengono in ordine</text><text x="0" y="620" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">resta il punto verde</text>
+  </g>
+  <g transform="translate(1644,128)">
+    <rect x="-1" y="-1" width="302" height="535" rx="11" fill="none" stroke="#1e2a42" stroke-width="1.5"/>
+    <g clip-path="url(#clip-S6)"><g><rect width="300" height="533" fill="#05070c"/>
+      <g transform="translate(150,150) scale(0.17777777777777778) translate(-512,-520)">
+    <defs>
+      <clipPath id="sb-t"><polygon points="-800,-900 1700,-900 1700,1697 -800,-803"/></clipPath>
+      <clipPath id="sb-b"><polygon points="-800,-781 1700,1719 1700,1900 -800,1900"/></clipPath>
+    </defs>
+    <g clip-path="url(#sb-t)"><path fill="url(#markTop)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
+    <g clip-path="url(#sb-b)"><path fill="url(#markBot)" fill-rule="evenodd" d="M466,250 L558,250 L810,790 L720,790 L664.2,664 L359.8,664 L304,790 L214,790 Z M512,320 L626.2,578 L397.8,578 Z"/></g>
+  </g>
+      <circle cx="208" cy="108" r="7" fill="url(#signal)"/>
+      <text x="150" y="330" text-anchor="middle" font-family="DejaVu Sans" font-size="25"
+        font-weight="bold" fill="#f6f9ff">L’AI spiegata</text>
+      <text x="150" y="360" text-anchor="middle" font-family="DejaVu Sans" font-size="25"
+        font-weight="bold" fill="#f6f9ff">in tre righe.</text>
+      <rect x="90" y="384" width="60" height="3" rx="1.5" fill="#5b9dff"/>
+      <text x="150" y="412" text-anchor="middle" font-family="DejaVu Sans" font-size="12"
+        fill="#96a9c4">ogni giorno, con la fonte</text></g></g>
+    <text x="0" y="559" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#5b9dff">S6</text>
+    <text x="34" y="559" font-family="DejaVu Sans" font-size="14" fill="#96a9c4">17,00 – 20,00</text>
+    <text x="0" y="581" font-family="DejaVu Sans" font-size="15" font-weight="bold" fill="#f6f9ff">FIRMA</text>
+    <text x="0" y="603" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">coda tipografica, in post</text><text x="0" y="620" font-family="DejaVu Sans" font-size="12.5" fill="#96a9c4">silenzio, poi una nota</text>
+  </g>
+<rect x="34.0" y="849" width="284.5" height="16" rx="3"
+    fill="#20304d"/>
+  <text x="40.0" y="863" font-family="DejaVu Sans" font-size="10.5" fill="#96a9c4">3.0s</text><rect x="320.5" y="849" width="322.7" height="16" rx="3"
+    fill="#20304d"/>
+  <text x="326.5" y="863" font-family="DejaVu Sans" font-size="10.5" fill="#96a9c4">3.4s</text><rect x="645.2" y="849" width="341.8" height="16" rx="3"
+    fill="#5b9dff"/>
+  <text x="651.2" y="863" font-family="DejaVu Sans" font-size="10.5" fill="#05070c">3.6s</text><rect x="989.0" y="849" width="341.8" height="16" rx="3"
+    fill="#20304d"/>
+  <text x="995.0" y="863" font-family="DejaVu Sans" font-size="10.5" fill="#96a9c4">3.6s</text><rect x="1332.8" y="849" width="322.7" height="16" rx="3"
+    fill="#20304d"/>
+  <text x="1338.8" y="863" font-family="DejaVu Sans" font-size="10.5" fill="#96a9c4">3.4s</text><rect x="1657.5" y="849" width="284.5" height="16" rx="3"
+    fill="#34d399"/>
+  <text x="1663.5" y="863" font-family="DejaVu Sans" font-size="10.5" fill="#96a9c4">3.0s</text>
+<text x="34" y="831" font-family="DejaVu Sans" font-size="13" fill="#96a9c4">ritmo dei tagli: 3,0 · 3,4 · 3,6 · 3,6 · 3,4 · 3,0 — si allarga fino al picco e si chiude sulla firma</text>
+</svg>
