@@ -64,6 +64,25 @@ Sabato: **«Cosa è contato»**, cinque voci con un numero ciascuna. Domenica: s
 5. **Niente clickbait, niente engagement comprato, niente gruppi e messaggi privati.**
 6. Se una notizia è un rumor, o non si pubblica, o si scrive «rumor» nella prima riga.
 
+## Misurare (il raccoglitore)
+
+```bash
+node skills/social-publish/insights.mjs raccogli    # scarica e salva (idempotente)
+node skills/social-publish/insights.mjs report      # ultimi 7 giorni: tassi, reach per post, per orario
+node skills/social-publish/insights.mjs report --giorni 14 --scrivi
+```
+
+Dati in `media/social-insights/<id-pagina>.json` — **esclusi da git** (sono numeri di una Pagina,
+non codice). Cosa Meta concede oggi, verificato il 21/10/2026 con chiamate reali su v26.0:
+`page_media_view`, `page_post_engagements`, `page_follows` per la Pagina; `post_media_view`
+lifetime per ogni post, più reazioni, commenti e condivisioni. `page_impressions` e
+`post_impressions_unique` sono state **deprecate**: chiederle dà «must be a valid insights metric»,
+che sembra un problema di permessi e non lo è.
+
+Una raccolta al giorno basta e si può ricostruire: la serie della Pagina torna indietro di 14
+giorni da sola. Il salvataggio serve per i post (Meta dà il reach lifetime, ma se un post viene
+cancellato sparisce) e per i giorni che escono dalla finestra.
+
 ## Cosa guardare (e quando decidere)
 
 Con 0 follower i numeri assoluti non dicono nulla. Si guarda il **tasso**, non il volume:

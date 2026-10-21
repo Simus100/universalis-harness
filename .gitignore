@@ -16,6 +16,9 @@ social/
 
 # ---- dati e stato delle istanze ----
 sessions/
+# performance delle Pagine social (numeri di reach/engagement raccolti dagli insight):
+# sono dati di una Pagina, cambiano ogni giorno e non servono a nessuno fuori da questa macchina
+media/social-insights/
 backups/
 node_modules/
 download/

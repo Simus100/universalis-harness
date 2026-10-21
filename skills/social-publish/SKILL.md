@@ -55,7 +55,16 @@ node skills/social-publish/publish.mjs --dry-run post --text "..." --image media
 
 # 3. pubblica davvero
 node skills/social-publish/publish.mjs post --text "..." [--image media/foto.png]
+
+# 4. i numeri: raccogli e leggi (storia in media/social-insights/, esclusa da git)
+node skills/social-publish/insights.mjs raccogli
+node skills/social-publish/insights.mjs report [--giorni 14] [--scrivi]
 ```
+
+`insights.mjs` legge `page_media_view`, `page_post_engagements`, `page_follows` e il
+`post_media_view` lifetime di ogni post. `page_impressions` e `post_impressions_unique` sono
+deprecate da Meta: se servono quei numeri, non è un permesso mancante e non si risolve con un
+permesso in più.
 
 L'id della Pagina non è indispensabile: con un token di Pagina `check` lo ricava da `GET /me`.
 `use` aggiorna `.env` preservando le altre righe e senza mai stampare il token in chiaro.
