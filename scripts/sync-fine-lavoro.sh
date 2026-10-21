@@ -21,25 +21,43 @@
 # Uso:
 #   bash scripts/sync-fine-lavoro.sh "messaggio breve del lavoro"     # pubblica
 #   bash scripts/sync-fine-lavoro.sh --anteprima ["messaggio"]        # solo controllo + anteprima
-#   bash scripts/sync-fine-lavoro.sh --forza "messaggio"              # salta il controllo di sicurezza (sconsigliato)
+#   bash scripts/sync-fine-lavoro.sh --forza "messaggio"              # NON salta il controllo (vedi nota)
+#
+# `--forza` è accettata per non trasformare un vecchio comando in un messaggio di commit
+# sbagliato, ma NON salta il controllo di sicurezza: era documentata come scorciatoia e non lo è
+# mai stata nel codice. Meglio un'opzione che non fa quello che promette, dichiarato, di una
+# scorciatoia silenziosa. Se un file è legittimo: una riga in .gitignore, col motivo.
 set -uo pipefail
-cd /root/pi-harness || exit 1
+# La radice è sovrascrivibile SOLO per collaudare questo gate su una copia
+# (`scripts/test-gate-sicurezza.sh`): un gate che non si può far scattare di proposito non si
+# può verificare, e un controllo non verificato si rompe in silenzio.
+RADICE="${PI_HARNESS_ROOT:-/root/pi-harness}"
+cd "$RADICE" || exit 1
 
 MODO="pubblica"
 case "${1:-}" in
   --anteprima|--dry-run) MODO="anteprima"; shift ;;
-  --forza) MODO="forza"; shift ;;
+  --forza) MODO="forza"; echo "nota: --forza non salta il controllo di sicurezza; vedi l'intestazione dello script" >&2; shift ;;
 esac
 MESSAGGIO="${1:-sync $(date '+%Y-%m-%d %H:%M')}"
 
-# Elementi che NON devono mai finire in un commit pubblicato. Il controllo è volutamente
-# prudente: meglio un falso allarme (si guarda l'elenco e si decide) che un dato personale
-# pubblicato per distrazione.
-# `media/memoria/` è elencata per intero: i dati della memoria (indice, grafo, wiki, episodi,
-# atlante) non si pubblicano mai — il repository è pubblico e l'indice concentra gli estratti
-# di tutto il lavoro in un file solo. Il CODICE della memoria (media/memoria/*.mjs) NON è
-# toccato da questo pattern, quindi continua a pubblicarsi normalmente.
-RISERVATI='(^|/)\.env$|\.session-secret|\.github-access|\.github-remote|(^|/)sessions/|(^|/)backups/|node_modules/|media/uploads/|password|secret|token|CU2026|out_gemini|media/memoria/(indice|grafo|atlante|stato|dialogo|sorgenti)\\.(json|html|jsonl)|media/memoria/(wiki|episodi)/'
+# Elementi che NON devono mai finire in un commit pubblicato. L'elenco vive in
+# `scripts/riservati.pattern` (lo legge anche `scripts/preflight-sicurezza.sh`): qui si legge e
+# si unisce in alternanza. Se l'elenco manca o è vuoto si ABORTISCE: un controllo che, non
+# riuscendo a leggere le proprie regole, concludesse «nessun file riservato» sarebbe peggio che
+# non averlo — direbbe di sì senza aver guardato.
+ELENCO_RISERVATI="$RADICE/scripts/riservati.pattern"
+if [ ! -s "$ELENCO_RISERVATI" ]; then
+  echo "✘ controllo di sicurezza non eseguibile: manca $ELENCO_RISERVATI" >&2
+  echo "  Nulla è stato committato né pubblicato." >&2
+  exit 3
+fi
+RISERVATI=$(grep -v -e '^[[:space:]]*#' -e '^[[:space:]]*$' "$ELENCO_RISERVATI" | paste -sd'|' -)
+if [ -z "$RISERVATI" ]; then
+  echo "✘ controllo di sicurezza non eseguibile: $ELENCO_RISERVATI non contiene regole" >&2
+  echo "  Nulla è stato committato né pubblicato." >&2
+  exit 3
+fi
 
 # `-uall` NON è un dettaglio: senza, git presenta una cartella mai tracciata come una voce sola
 # (`media/nuova/`) e il controllo di sicurezza guarda il NOME DELLA CARTELLA, non i file dentro.
@@ -68,8 +86,8 @@ if [ -n "$sospetti" ]; then
   echo
   echo "  Nulla è stato committato né pubblicato."
   echo "  Se un file è legittimo, escludilo con una riga in .gitignore (col motivo) e riprova;"
-  echo "  l'opzione --forza salta questo controllo ed è sconsigliata: una volta in un commit, il contenuto"
-  echo "  resta nella storia del repository anche dopo una rimozione."
+  echo "  una volta in un commit, il contenuto resta nella storia del repository anche dopo una"
+  echo "  rimozione: per questo non esiste una scorciatoia che salti questo controllo."
   exit 2
 fi
 echo "  ✓ controllo di sicurezza: nessun file riservato nell'elenco"

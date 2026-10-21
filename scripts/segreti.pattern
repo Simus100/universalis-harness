@@ -1,0 +1,29 @@
+# segreti.pattern — UNICO posto dove vivono i pattern dei segreti riconoscibili.
+#
+# Lo leggono due script, e devono leggere lo stesso elenco:
+#   scripts/memoria-rimuovi-segreti.sh   ripulisce la memoria a lungo termine
+#   scripts/preflight-sicurezza.sh       cerca un segreto in ciò che è già versionato
+# Averli in un file solo è il motivo per cui questo file esiste: due copie dei pattern
+# divergono sempre, e quella che resta indietro è quella che credi aggiornata.
+#
+# FORMATO: nome<TAB>espressione regolare        (una riga per tipo; # = commento)
+# La regex è scritta in forma compatibile con `grep -E` e con `re` di Python.
+# Si cercano SOLTANTO segreti con un prefisso o una forma riconoscibile. NON si cerca
+# "password", "token", "secret" come parole: compaiono in .gitignore e nei commenti, e un
+# gate che grida al lupo si aggira con --forza e da lì non lo guarda più nessuno.
+# CONVENZIONE: se la regex ha un gruppo 1, è il contesto da PRESERVARE in una sostituzione
+# (per esempio il carattere che precede `sk-`, che serve a non prendere «task-…»).
+# CONFINE A SINISTRA `(^|[^A-Za-z0-9])`: è obbligatorio, e non è pedanteria. Il primo giorno di
+# vita di questo elenco, senza confine, il pattern Meta ha prodotto quattro falsi positivi dentro
+# i font woff2 incorporati in base64 (`data:font/woff2;base64,d09GMgABAAAAA…`): in base64 la
+# sequenza `EAA` capita da sola. Un token vero in un file di configurazione è preceduto da `=`,
+# da una virgola o da una virgoletta; dentro un blob è preceduto da una lettera.
+# Aggiungere una riga qui allarga la ricerca per tutti e due gli script: meglio un pattern
+# preciso in più che un pattern vago in più.
+Meta/Facebook	(^|[^A-Za-z0-9])EAA[A-Za-z0-9_-]{40,}
+OpenAI/Anthropic	(^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{20,}
+GitHub	(ghp_|gho_|ghs_|github_pat_)[A-Za-z0-9_]{20,}
+Slack	xox[abp]-[A-Za-z0-9-]{10,}
+Google API	AIza[0-9A-Za-z_-]{30,}
+HuggingFace	hf_[A-Za-z0-9]{20,}
+AWS access key	AKIA[0-9A-Z]{16}

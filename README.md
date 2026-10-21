@@ -148,6 +148,7 @@ obiettivi, pianificazioni e skill sono file leggibili.
 | Contenuto non attendibile | l'SVG del modello passa da un sanitizzatore con whitelist e viene reso come immagine, mai nel DOM |
 | Browser | sandbox di Chrome verificata prima di ogni azione, utente di sistema dedicato, nessuna shell |
 | Segreti fuori dal codice | credenziali in `.env` con permessi ristretti, segreto di sessione in file separato, esclusi dal versionamento |
+| Pubblicazione senza segreti | `scripts/sync-fine-lavoro.sh` ferma il commit (esce 2, fail-closed) se nell'elenco c'è un percorso riservato; `scripts/preflight-sicurezza.sh` guarda ciò che è già nella storia e i permessi locali. Regole in `scripts/riservati.pattern` e `scripts/segreti.pattern`, collaudate da `scripts/test-gate-sicurezza.sh` |
 
 **Limiti, detti chiaramente.** L'agente ha accesso a una shell e ai file della root dell'istanza:
 il confine di sicurezza è la macchina (o il container) su cui gira, non l'applicazione. Il modello di
@@ -175,6 +176,7 @@ ruoli e permessi. Nella modalità ospitata non c'è fatturazione automatica: è 
 | [`docs/ISTANZE.md`](docs/ISTANZE.md) | come convivono più istanze sullo stesso server (porte, utenti, limiti, isolamento) |
 | [`docs/RICOSTRUZIONE.md`](docs/RICOSTRUZIONE.md) | ripristino da zero: prerequisiti, servizi, quote, sandbox |
 | [`docs/SYNC-GITHUB.md`](docs/SYNC-GITHUB.md) | cosa viene pubblicato in questo repository e cosa resta fuori |
+| [`docs/SICUREZZA.md`](docs/SICUREZZA.md) | i controlli contro i segreti: gate del sync, preflight, come si collaudano e che cosa un esito verde **non** dice |
 | [`docs/INTERFACCIA.md`](docs/INTERFACCIA.md) | sistema visivo della dashboard: token, sfondo nero, contrasti, misure su telefono |
 | [`docs/RIPRISTINO-RESTYLING.md`](docs/RIPRISTINO-RESTYLING.md) | come tornare alla dashboard precedente al restyling del 2026-10-04 |
 

@@ -10,8 +10,9 @@
 #   scripts/memoria-rimuovi-segreti.sh            # elenca e basta (nessuna modifica)
 #   scripts/memoria-rimuovi-segreti.sh --applica  # sostituisce con [SEGRETO-RIMOSSO]
 #
-# Cosa cerca: token Meta (EAA…), chiavi OpenAI/Anthropic, GitHub, Slack, Google API, HuggingFace.
-# Non tocca sessioni, .env né social/: lì i segreti devono stare (sono i posti deputati).
+# Cosa cerca: i pattern di `scripts/segreti.pattern` — UNICO posto dove vivono (li legge anche
+# `scripts/preflight-sicurezza.sh`). Non tocca sessioni, .env né social/: lì i segreti devono
+# stare, sono i posti deputati.
 set -uo pipefail
 
 RADICE="$(cd "$(dirname "$0")/.." && pwd)"
@@ -22,19 +23,31 @@ APPLICA=0
 [[ "${1:-}" == "--applica" ]] && APPLICA=1
 [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]] && { sed -n '2,16p' "$0"; exit 0; }
 
-python3 - "$TARGET" "$APPLICA" <<'PY'
+PATTERN="$RADICE/scripts/segreti.pattern"
+[[ -f "$PATTERN" ]] || { echo "elenco dei pattern non trovato: $PATTERN" >&2; exit 1; }
+
+python3 - "$TARGET" "$APPLICA" "$PATTERN" <<'PY'
 import os, re, sys, json
 
-target, applica = sys.argv[1], sys.argv[2] == "1"
-segreti = [
-    ("Meta/Facebook", re.compile(r"EAA[A-Za-z0-9_\-]{40,}")),
-    # `sk-` da solo prende anche parole come "task-…": serve un confine a sinistra.
-    ("OpenAI/Anthropic", re.compile(r"(?<![A-Za-z0-9])sk-[A-Za-z0-9_\-]{20,}")),
-    ("GitHub", re.compile(r"(ghp_|gho_|ghs_|github_pat_)[A-Za-z0-9_]{20,}")),
-    ("Slack", re.compile(r"xox[abp]-[A-Za-z0-9\-]{10,}")),
-    ("Google API", re.compile(r"AIza[0-9A-Za-z_\-]{30,}")),
-    ("HuggingFace", re.compile(r"hf_[A-Za-z0-9]{20,}")),
-]
+target, applica, pattern_file = sys.argv[1], sys.argv[2] == "1", sys.argv[3]
+
+segreti = []
+for riga in open(pattern_file, encoding="utf-8"):
+    riga = riga.rstrip("\n")
+    if not riga.strip() or riga.lstrip().startswith("#"):
+        continue
+    nome, _, espressione = riga.partition("\t")
+    if not espressione:
+        sys.exit(f"riga malformata in {pattern_file} (serve nome<TAB>regex): {riga!r}")
+    segreti.append((nome.strip(), re.compile(espressione)))
+if not segreti:
+    sys.exit(f"nessun pattern in {pattern_file}: un elenco vuoto direbbe «nessun segreto» sempre")
+
+
+def maschera(m):
+    """Sostituisce il segreto preservando il gruppo 1, quando c'è: è il contesto
+    (per esempio il carattere prima di `sk-`) che la regex ha dovuto consumare."""
+    return (m.group(1) or "") + "[SEGRETO-RIMOSSO]" if m.groups() else "[SEGRETO-RIMOSSO]"
 
 trovati, toccati = [], []
 for root, _, files in os.walk(target):
@@ -46,7 +59,7 @@ for root, _, files in os.walk(target):
             continue
         originale, conteggi = s, []
         for nome, pat in segreti:
-            s, n = pat.subn("[SEGRETO-RIMOSSO]", s)
+            s, n = pat.subn(maschera, s)
             if n:
                 conteggi.append((nome, n))
         if conteggi:

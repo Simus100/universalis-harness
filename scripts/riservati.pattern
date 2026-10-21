@@ -1,0 +1,31 @@
+# riservati.pattern — UNICO posto dove è definito che cosa NON deve essere pubblicato.
+#
+# Lo leggono due script:
+#   scripts/sync-fine-lavoro.sh     controlla l'elenco di ciò che sta per essere committato
+#   scripts/preflight-sicurezza.sh  controlla ciò che è GIÀ nella storia del repository
+# Due copie di questo elenco divergono, e quella che resta indietro è quella che credi attiva.
+#
+# FORMATO: una espressione regolare per riga (grep -E, applicata al PERCORSO, case-insensitive).
+# # = commento. Le righe vengono unite in alternanza: `a` e `b` diventano `a|b`.
+# Non mettere `|` come alternativa interna con gruppi parziali: l'unione è piatta.
+# Il controllo è volutamente prudente: meglio un falso allarme (si guarda l'elenco e si decide)
+# che un dato personale pubblicato per distrazione.
+#
+# Nota su `media/memoria/`: i dati della memoria (indice, grafo, wiki, episodi, atlante) non si
+# pubblicano mai — il repository è pubblico e l'indice concentra gli estratti di tutto il lavoro.
+# Il CODICE della memoria (media/memoria/*.mjs) non è toccato da questi pattern.
+\.env$
+\.session-secret
+\.github-access
+\.github-remote
+(^|/)sessions/
+(^|/)backups/
+node_modules/
+media/uploads/
+media/memoria/(indice|grafo|atlante|stato|dialogo|sorgenti)\.(json|html|jsonl)
+media/memoria/(wiki|episodi)/
+password
+secret
+token
+CU2026
+out_gemini
