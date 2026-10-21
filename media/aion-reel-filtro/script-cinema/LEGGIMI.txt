@@ -1,51 +1,69 @@
 AION «IL FILTRO» — script di regia · checklist di produzione
 =====================================================================
 
-20,0 s · 9:16 · 24 fps · 5 generazioni Veo + 1 coda tipografica in post
+28,0 s · 9:16 · 24 fps · 7 generazioni Veo + 1 coda tipografica in post
+Atto I «il filtro» 0,00–16,40 · ponte · Atto II «il futuro» 16,40–23,80 · firma 23,80–28,00
 
 FILE
-  SCRIPT.md                la regia completa: big idea, shot by shot, suono, grade, criteri
-  prompt/S1-ink.txt        macro di inchiostro nel caos (0,00–3,00)
-  prompt/S2-orient.txt     il caos si orienta (3,00–6,40)
-  prompt/S3-the-cut.txt    LA LAMA A 45° — il fotogramma chiave (6,40–10,00)
-  prompt/S4-three-lines.txt  tre filamenti si allineano (10,00–13,60)
-  prompt/S5-alive.txt      si spengono, resta il punto verde (13,60–17,00)
-  prompt/0-negative.txt    negative prompt, sempre lo stesso per tutte e cinque
-  storyboard.png           la tavola dei sei movimenti
+  SCRIPT.md                   la regia completa: big idea, shot by shot, suono, grade, criteri
+  prompt/S1-ink.txt           macro di inchiostro nel caos (0,00–3,00)
+  prompt/S2-orient.txt        il caos si orienta (3,00–6,40)
+  prompt/S3-the-cut.txt       LA LAMA A 45° — il fotogramma chiave (6,40–10,00)
+  prompt/S4-three-lines.txt   tre filamenti si allineano (10,00–13,60)
+  prompt/S5-alive.txt         si spengono, resta il punto verde (13,60–16,40)
+  prompt/F1-orizzonte.txt     ATTO II · il punto diventa orizzonte (16,40–20,00)
+  prompt/F2-passaggio.txt     ATTO II · qualcosa di enorme passa sopra (20,00–23,80)
+  prompt/0-negative.txt       negative prompt, sempre lo stesso per tutte e sette
+  storyboard.png              la tavola degli otto movimenti
 
 IMPOSTAZIONI VEO (identiche per tutte le clip)
   aspect ratio ....... 9:16
   durata ............. 8 s
   persone ............ nessuna
   audio .............. spento (il suono si fa in montaggio: nessun diritto di terzi)
-  numero tentativi ... 3 per S3, 2 per le altre
+  numero tentativi ... 3 per S3 e F2, 2 per le altre
 
-ORDINE DI LAVORO
-  1. Guarda storyboard.png: se la progressione organico → geometrico non ti convince, si
-     cambia ADESSO (costa zero). Dopo i render, costa cinque render.
-  2. Genera S3 per primo. È l'unica clip che non si salva in montaggio: se il 45° ondeggia o
-     se la lama passa due volte, il film non esiste. Solo quando S3 va bene, genera le altre.
-  3. Genera S1, S2, S4, S5 nello stesso giorno e con lo stesso negative prompt: la
-     continuità del materiale dipende dal fatto che il "look" sia identico, non dal testo.
-  4. Monta con i tempi qui sotto e i testi già pronti in ../overlay/beat1..4.png.
+IN CHE ORDINE GENERARLE (non è indifferente)
+  1. S3 — la lama a 45°. È l'unica clip che non si salva in montaggio: se il 45° ondeggia o se
+     la lama passa due volte, il film non esiste.
+  2. F2 — il passaggio. È la seconda clip critica: la regola è che l'oggetto NON si vede mai
+     per intero. Il giorno in cui Veo mostra il disco/astronave intero, la clip è da buttare.
+  3. S1, S2, S4, S5 — nello stesso giorno, con lo stesso negative: la continuità del materiale
+     dipende dal fatto che il "look" sia identico.
+  4. F1 — il cielo deve essere VUOTO. Se compaiono stelle, pianeti o una griglia da videogioco,
+     rigenera: è la clip che rischia di più di sembrare un'altra pubblicità.
 
 TEMPI DI MONTAGGIO (entrata/uscita nelle clip generate da 8 s)
-  S1   0,00 → 3,00    dalla clip: 2,0 → 5,0     testo: nessuno
-  S2   3,00 → 6,40    dalla clip: 1,5 → 4,9     testo: beat1 da 3,20 (kicker + titolo)
-  S3   6,40 → 10,00   dalla clip: 2,2 → 5,8     testo: beat2 da 6,90
-  S4   10,00 → 13,60  dalla clip: 1,8 → 5,4     testo: beat3 da 10,40
-  S5   13,60 → 17,00  dalla clip: 1,6 → 5,0     testo: nessuno
-  S6   17,00 → 20,00  coda tipografica          testo: beat4 da 17,20
+  S1   0,00  → 3,00    dalla clip: 2,0 → 5,0     testo: nessuno
+  S2   3,00  → 6,40    dalla clip: 1,5 → 4,9     testo: beat1 da 3,20 (kicker + titolo)
+  S3   6,40  → 10,00   dalla clip: 2,2 → 5,8     testo: beat2 da 6,90
+  S4   10,00 → 13,60   dalla clip: 1,8 → 5,4     testo: beat3 da 10,40
+  S5   13,60 → 16,40   dalla clip: 1,6 → 4,4     testo: nessuno
+  F1   16,40 → 20,00   dalla clip: 1,4 → 5,0     testo: beat5 da 16,90
+  F2   20,00 → 23,80   dalla clip: 1,2 → 5,0     testo: beat6 da 20,50
+  S6   23,80 → 28,00   coda tipografica          testo: beat4-cta da 24,20
 
-  Tagli netti. Nessuna dissolvenza, tranne la coda che entra dal nero dopo un taglio secco.
-  Non usare i primi fotogrammi di una generazione: la macchina spesso non si è ancora mossa.
+  Tagli netti, nessuna dissolvenza. Non usare i primi fotogrammi di una generazione: la macchina
+  spesso non si è ancora mossa.
 
-I DUE MOMENTI CHE DECIDONO SE FUNZIONA
-  · 6,40 — il gate: 0,15 s di silenzio totale al contatto della lama. Se togli il buco, il
-    video diventa una clip tech qualunque.
-  · 3,20 — il primo testo entra 3,2 s dopo l'inizio, non subito. I primi tre secondi sono
-    immagine e suono: è quello che distingue un'adv da un annuncio.
+IL PONTE FRA I DUE ATTI (il passaggio che tiene insieme il film)
+  Ultimi 6 frame di S5: zoom fino al 115% sul punto verde. Poi taglio secco. In F1 il punto
+  verde è nella STESSA posizione del quadro, allargato in orizzonte.
+  Due fotogrammi, non una dissolvenza: se lo vedi come transizione, hai sbagliato.
+
+I TRE MOMENTI CHE DECIDONO SE FUNZIONA
+  · 6,40  — il gate: 0,15 s di silenzio totale al contatto della lama. Senza il buco, è una clip
+    tech qualunque.
+  · 3,20  — il primo testo entra 3,2 s dopo l'inizio. I primi tre secondi sono immagine e suono.
+  · 16,40 — il cambio d'atto si sente nel SUONO (il pad su una quinta vuota) prima che
+    nell'immagine. Se il suono continua identico, il futuro sembra un secondo video appiccicato.
+
+CAMBIARE REGISTRO SENZA TRADIRE IL MARCHIO
+  Lo sci-fi di Aion non è città al neon, astronavi, pianeti. È scala, buio, una linea di luce.
+  Se in una clip compare un oggetto riconoscibile del genere, il film diventa la pubblicità di
+  un altro prodotto. Il negative prompt esclude già la maggior parte di queste derive: se
+  succede lo stesso, è il prompt da irrigidire, non il montaggio da salvare.
 
 SE POI VUOI CHE MONTI IO
-  clip/shotA..E.mp4 e `node media/aion-reel-filtro/assemble.mjs` (va aggiornata la timeline a
-  sei beat: chiedilo e lo faccio, sono dieci minuti).
+  clip/shotA..G.mp4 e chiedimelo: porto assemble.mjs a otto beat e ti mostro il reel finito
+  prima di pubblicarlo.

@@ -84,11 +84,11 @@ const MARGINE = 96;
 const LARG_UTILE = W - MARGINE * 2;      // 888
 const CENTRO_Y = 900;                     // centro ottico del blocco (sopra la UI del reel)
 
-function overlayTesto({ kicker, righe, accento }) {
+function overlayTesto({ kicker, righe, accento, ptMax = 104, centroY = CENTRO_Y }) {
   const kickerPt = 33, kickerLH = 46, accH = 6, gapA = 38, gapK = 36;
-  const pt = adatta(righe, 104, LARG_UTILE, true);
+  const pt = adatta(righe, ptMax, LARG_UTILE, true);
   const totH = (kicker ? accH + gapA + kickerLH + gapK : 0) + misuraSvg(righe, pt);
-  let y = CENTRO_Y - totH / 2;
+  let y = centroY - totH / 2;
 
   let out = '';
   if (kicker) {
@@ -103,7 +103,7 @@ function overlayTesto({ kicker, righe, accento }) {
 }
 
 // ─── Beat 4: coda con marchio, promessa e firma ─────────────────────────────────────────
-function overlayCoda() {
+function overlayCoda(cta = false) {
   const righe = ['L’AI spiegata', 'in tre righe.'];
   const pt = adatta(righe, 112, LARG_UTILE, true);
   const blocco = misuraSvg(righe, pt);
@@ -116,7 +116,11 @@ ${onlineDot(640, 490, 17)}
 ${righeSvg(righe, MARGINE, yTitolo, pt, C.testo, true)}
 <rect x="${MARGINE}" y="${yTitolo + blocco + 56}" width="88" height="5" fill="${C.blu}" rx="2.5"/>
 <text x="${MARGINE}" y="${yTitolo + blocco + 132}" font-family="${FONT}" font-size="38"
-      fill="${C.secondario}" letter-spacing="0.5">Aion · AI News — ogni giorno, con la fonte</text>`;
+      fill="${C.secondario}" letter-spacing="0.5">Aion · AI News — ogni giorno, con la fonte</text>
+${cta ? `<rect x="${MARGINE}" y="${yTitolo + blocco + 176}" width="330" height="66" rx="33"
+        fill="none" stroke="${C.blu}" stroke-opacity="0.55" stroke-width="2"/>
+  <text x="${MARGINE + 165}" y="${yTitolo + blocco + 219}" text-anchor="middle" font-family="${FONT}"
+        font-size="30" font-weight="bold" fill="${C.testo}">Segui la Pagina</text>` : ''}`;
   return svgCorpo(out);
 }
 
@@ -206,10 +210,13 @@ const beat = [
   { nome: 'overlay/beat1.png', kicker: 'AION · AI NEWS', righe: ['Ogni giorno: annunci,', 'demo, benchmark.'], accento: C.blu },
   { nome: 'overlay/beat2.png', kicker: '', righe: ['Quasi niente', 'ti cambia la giornata.'], accento: C.blu },
   { nome: 'overlay/beat3.png', kicker: '', righe: ['Ne restano poche.', 'Le scegliamo noi.'], accento: C.viola },
+  { nome: 'overlay/beat5.png', kicker: '', righe: ['Il futuro non arriva', 'tutto insieme.'], accento: C.blu, ptMax: 74, centroY: 1010 },
+  { nome: 'overlay/beat6.png', kicker: '', righe: ['Ogni salto è cominciato', 'come una notizia.'], accento: C.viola, ptMax: 74, centroY: 1010 },
 ];
 
 for (const b of beat) console.log('scritto', scrivi(b.nome, overlayTesto(b)));
-console.log('scritto', scrivi('overlay/beat4.png', overlayCoda()));
+console.log('scritto', scrivi('overlay/beat4.png', overlayCoda(false)));
+console.log('scritto', scrivi('overlay/beat4-cta.png', overlayCoda(true)));
 console.log('scritto', scrivi('overlay/scrim.png', scrim()));
 console.log('scritto', scrivi('keyframe/key1.png', keyframe1()));
 console.log('scritto', scrivi('keyframe/key2.png', keyframe2()));

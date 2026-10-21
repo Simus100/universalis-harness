@@ -1,7 +1,8 @@
 # AION — «IL FILTRO» · script di regia
 
-Reel verticale 9:16 · **20,0 s** · 24 fps · suono e montaggio a te.
-Cinque generazioni Veo + una coda tipografica nostra.
+Reel verticale 9:16 · **28,0 s** · 24 fps · suono e montaggio a te.
+Sette generazioni Veo + una coda tipografica nostra.
+Due atti: **il filtro** (0,00 – 16,40) e **il futuro** (16,40 – 23,80), poi la firma.
 
 ---
 
@@ -34,7 +35,11 @@ riconoscono al primo fotogramma ("stock AI"). L'inchiostro in acqua in macro ha 
 turbolenza, vortici, tempi lunghi — e in slow motion è la materia più cinematografica che un
 generatore sa fare bene. Costa la stessa generazione, e sembra un film.
 
-## 3. Il film in sei movimenti
+## 3. Il film in due atti
+
+**Atto I — il filtro** (0,00 – 16,40): dal caos alla geometria. È la promessa.
+**Atto II — il futuro** (16,40 – 23,80): dal piccolo al vasto. È il motivo per cui la promessa conta.
+**Firma** (23,80 – 28,00): chi lo dice, e dove trovarlo.
 
 | # | Timecode | Durata | Cosa succede | Testo in overlay |
 |---|---|---|---|---|
@@ -42,8 +47,22 @@ generatore sa fare bene. Costa la stessa generazione, e sembra un film.
 | **S2** | 3,00 – 6,40 | 3,4 | Il caos **si orienta**: le volute diventano striature | `AION · AI NEWS` + **Ogni giorno: annunci, demo, benchmark.** |
 | **S3** | 6,40 – 10,00 | 3,6 | **La lama a 45°**: il campo si divide, blu sopra, viola sotto | **Quasi niente ti cambia la giornata.** |
 | **S4** | 10,00 – 13,60 | 3,6 | Dal fumo fermato si condensano **tre righe** in basso | **Ne restano poche. Le scegliamo noi.** |
-| **S5** | 13,60 – 17,00 | 3,4 | Le righe si spengono una a una; resta un **punto verde** | — |
-| **S6** | 17,00 – 20,00 | 3,0 | Coda: fondo nero, marchio, promessa, firma | **L'AI spiegata in tre righe.** |
+| **S5** | 13,60 – 16,40 | 2,8 | Le righe si spengono una a una; resta un **punto verde** | — |
+| **F1** | 16,40 – 20,00 | 3,6 | **Il punto diventa orizzonte**: una distesa di linee fino alla lama di luce | **Il futuro non arriva tutto insieme.** |
+| **F2** | 20,00 – 23,80 | 3,8 | **Qualcosa di enorme passa sopra**: solo l'ombra e un bordo di luce | **Ogni salto è cominciato come una notizia.** |
+| **S6** | 23,80 – 28,00 | 4,2 | Firma: fondo nero, marchio, promessa, invito alla Pagina | **L'AI spiegata in tre righe.** + *Segui la Pagina* |
+
+### Perché il futuro entra così (e non come «scene sci-fi»)
+
+Due scene attaccate alla fine sarebbero un secondo video. Qui c'è un **ponte**: l'unica cosa ancora
+accesa alla fine dell'Atto I è un punto verde — il «online» del marchio. Quel punto si allarga, e
+diventa la lama d'orizzonte di F1. Non è un taglio: è la stessa luce che cambia di scala. È il tipo
+di passaggio che in montaggio si chiama *match cut per forma*, e funziona perché lo spettatore non
+lo vede: **sente** che il mondo è lo stesso.
+
+E c'è un vincolo di identità: lo sci-fi di Aion non è astronavi né città al neon. La meraviglia la
+fanno **la scala, il buio e una linea di luce**. F2 mostra qualcosa di enorme che passa e non si vede
+mai per intero: è il modo più forte — e più economico — di dire «sta succedendo qualcosa di grande».
 
 Perché i primi tre secondi sono **muti**: un'adv che scrive subito sta spiegando; un'adv che tace
 per tre secondi sta mostrando. Il primo testo arriva quando la materia comincia a mettersi in
@@ -130,7 +149,7 @@ sta sul momento più ordinato.
 **Criterio di scarto.** Se le righe sono più o meno di tre, se si incurvano, se diventano neon da
 insegna: rigenera. Il numero tre è il messaggio (tre righe).
 
-### S5 — ALIVE (13,60 – 17,00) · si montano i secondi 1,6 → 5,0
+### S5 — ALIVE (13,60 – 16,40) · si montano i secondi 1,6 → 4,4
 
 **Cosa vedi.** Le tre righe si spengono **una alla volta**, dall'alto. Resta il nero e, all'estremità
 destra della prima riga, un **punto verde** che pulsa una volta sola e resta. È l'unico elemento vivo
@@ -146,11 +165,56 @@ nota brevissima a 4,5 kHz. Nient'altro.
 **Criterio di scarto.** Se il punto verde diventa grande, se lampeggia più di due volte, se è
 accompagnato da altri elementi: scarta. Deve sembrare uno stato, non un effetto.
 
-### S6 — FIRMA (17,00 – 20,00) · nostra, in post · nessuna generazione
+### F1 — HORIZON (16,40 – 20,00) · si montano i secondi 1,4 → 5,0
+
+**Cosa vedi.** Il punto verde si è aperto: ora è una lama d'orizzonte, dritta, su un cielo nero senza
+una stella. Davanti, una distesa infinita di linee orizzontali di luce corrono verso quella lama e ci
+si perdono dentro. Nient'altro: nessuna città, nessuna struttura, nessun pianeta. Solo luce, polvere
+nell'aria e distanza.
+
+**Camera.** 40 mm, altezza occhi, **dolly laterale destrorso lentissimo**: la camera non va verso
+l'orizzonte, ci scivola davanti. È questo che dà l'idea di estensione.
+
+**Suono.** Rientra il pad, ma **una quinta vuota** (non un accordo): apertura, non consolazione. Il
+rumore bianco dell'Atto I torna lontanissimo, come vento su una pianura. Riverbero 4 s.
+
+**Testo.** *Il futuro non arriva tutto insieme.* Entra a 16,90, in basso, più piccolo degli altri
+tre: questa frase è un pensiero, non un titolo.
+
+**Criterio di scarto.** Se compare **una stella**, un pianeta, una città o una griglia da videogioco:
+rigenera. Il cielo deve essere vuoto: è il vuoto che fa paura e meraviglia. Se le linee sembrano un
+wireframe 3D, rigenera (servono polvere, grana, imperfezioni di lente).
+
+### F2 — PASSAGE (20,00 – 23,80) · si montano i secondi 1,2 → 5,0
+
+**Cosa vedi.** Qualcosa di enorme attraversa il cielo in alto: non si vede cosa sia. Si vede **solo
+il suo bordo**, una massa di nero assoluto che scorre sopra il quadro, e lungo quel bordo una linea
+sottile di luce bianco-azzurra. Sotto, il terreno resta nero; un alone di luce striscia sul suolo
+mentre l'oggetto passa, e la polvere si alza nel fascio. La scala è incomprensibile: il bordo esce dal
+quadro e continua oltre.
+
+**Camera.** 35 mm, campo lunghissimo, angolo basso: un pan lentissimo che segue il bordo. Nessuno
+zoom: lo zoom direbbe «guarda che effetto»; il pan dice «sta passando».
+
+**Suono.** Un sub che sale da 30 a 50 Hz per tre secondi (qualcosa di grande che si avvicina), uno
+**whoosh basso** al passaggio, poi il sub si spegne e resta il vento. Nessuna musica.
+
+**Testo.** *Ogni salto è cominciato come una notizia.* Entra a 20,50. È la frase che lega il futuro
+alla testata: senza di lei, l'Atto II è solo bello.
+
+**Criterio di scarto.** Il giorno in cui Veo mostra **l'oggetto intero**, la clip è da buttare: la
+regola di questa scena è che non si vede mai. Se compare un disco volante, un'astronave riconoscibile
+o un pianeta, scarta.
+
+### S6 — FIRMA (23,80 – 28,00) · nostra, in post · nessuna generazione
 
 **Cosa vedi.** Taglio a nero pieno. Il marchio Aion entra al centro-alto con una dissolvenza di 10
 frame, poi il titolo **«L'AI spiegata in tre righe.»**, la barretta blu, la firma
-`Aion · AI News — ogni giorno, con la fonte`.
+`Aion · AI News — ogni giorno, con la fonte` e — discreto, sotto — `Segui la Pagina`.
+
+**L'invito alla Pagina.** Una riga, senza freccia lampeggiante, senza «scopri di più», senza
+pulsante finto: in un reel il pulsante vero lo mette Facebook. Chi ha guardato 24 secondi ha già
+deciso: l'invito serve solo a dirgli dove andare.
 
 **Suono.** Silenzio. Poi una sola nota bassa, sostenuta, che si spegne insieme all'immagine.
 
@@ -182,8 +246,10 @@ la tipografia dicono: *il film è finito, questo è chi lo ha fatto.*
 | 6,55 | impatto | sub 45 Hz, coda 1,2 s, poi il rumore torna a −18 dB e resta basso |
 | 10,30 / 10,65 / 11,00 | tre note | ottava alta, riverbero 2,5 s, una per filamento |
 | 13,60 → 14,60 | spegnimento | le tre note spente in ordine, dall'alto |
-| 16,20 | punto verde | click + nota 4,5 kHz, 60 ms |
-| 17,00 | silenzio, poi nota bassa | una sola, si spegne con l'immagine |
+| 16,20 | il punto si allarga | un *riser* di rumore filtrato, 0,2 s, che sfuma nel pad di F1 |
+| 16,40 | Atto II: pad su quinta vuota | riverbero 4 s, niente batteria: il film cambia aria, non velocità |
+| 20,00 | il passaggio | sub da 30 a 50 Hz in 3 s, whoosh basso al contatto, poi silenzio e vento |
+| 23,80 | silenzio, poi nota bassa | una sola, si spegne con l'immagine |
 
 Se usi musica invece di un disegno sonoro: **una sola traccia**, senza batteria, che entri a 3,0 e
 taccia fra 6,40 e 6,55. Il buco di 150 ms è il momento in cui il video funziona. Un brano che
@@ -203,13 +269,21 @@ taccia fra 6,40 e 6,55. Il buco di 150 ms è il momento in cui il video funziona
 ## 8. Montaggio: i tempi esatti
 
 ```
-S1  0,00 → 3,00   (durata 3,00)
-S2  3,00 → 6,40   (3,40)
-S3  6,40 → 10,00  (3,60)   ← picco
-S4  10,00 → 13,60 (3,60)
-S5  13,60 → 17,00 (3,40)
-S6  17,00 → 20,00 (3,00)
+S1  0,00  → 3,00   (durata 3,00)
+S2  3,00  → 6,40   (3,40)
+S3  6,40  → 10,00  (3,60)   ← picco dell'Atto I
+S4  10,00 → 13,60  (3,60)
+S5  13,60 → 16,40  (2,80)
+F1  16,40 → 20,00  (3,60)   ← cambio d'atto: respiro lungo
+F2  20,00 → 23,80  (3,80)   ← picco dell'Atto II
+S6  23,80 → 28,00  (4,20)
 ```
+
+- **Il cambio d'atto si sente nel montaggio**: gli ultimi 6 frame di S5 sono uno **zoom fino al 115%
+sul punto verde**, poi taglio. Il punto resta nello stesso punto del quadro in F1 (l'orizzonte): è il
+match cut, e va fatto in due fotogrammi, non con una dissolvenza.
+- **La coda è più lunga** (4,2 s invece di 3,0): contiene una promessa e un invito, che non stanno in
+tre secondi.
 
 - **Tagli netti**, nessuna transizione morbida: in un film di venti secondi le dissolvenze si
   contano e tolgono energia. Unica eccezione: la coda (S6) entra con dissolvenza **dal nero**, dopo
@@ -260,13 +334,17 @@ award winning»: non migliorano Veo, spostano lo stile verso l'illustrazione dig
 2. **La musica che riempie**: senza il buco di silenzio al taglio, l'evento non esiste.
 3. **Il testo che entra con l'evento**: se la lama arriva insieme alla frase, nessuno ricorda né
    l'una né l'altra. Il testo deve precedere, la lama interrompere.
+4. **Lo sci-fi fotorealistico**: una città al neon, un pianeta, un'astronave con i motori accesi — e
+   il film diventa la pubblicità di un altro prodotto. L'Atto II funziona solo se **non si vede niente**:
+   un orizzonte, un'ombra, una linea di luce. La meraviglia viene dalla scala, non dal dettaglio.
 
 ## 12. Varianti
 
-- **30 s** (versione "hero", per il sito o LinkedIn): aggiungi un S0 di 4 s di solo caos prima di
-  S1 e allunga S5 di 2 s; il resto identico. Nessuna scena in più: il film non ha una trama, ha una
-  direzione.
-- **10 s** (versione da 15 secondi di ads a pagamento): tieni **S3 + S4 + S6**. Il film regge
-  tagliato così perché il taglio a 45° è già il messaggio.
+- **20 s** (versione stretta, per il feed): togli F1 e F2 e chiudi su S5 → S6. È la versione «il
+  filtro»: identitaria, non epica. Le due versioni possono convivere e si possono testare.
+- **30 s** (versione "hero", per il sito o LinkedIn): allunga F2 di 2 s (il passaggio di qualcosa di
+  enorme regge benissimo i cinque secondi) e aggiungi 1 s di nero prima della lama.
+- **10 s** (per ads a pagamento): tieni **S3 + S4 + S6**. Il film regge tagliato così perché il taglio
+a 45° è già il messaggio.
 - **Orizzontale 16:9**: si rigenera tutto (la verticalità della lama cambia composizione). Non è un
   crop: il 45° in orizzontale è un'altra inquadratura.
