@@ -174,3 +174,16 @@ media/aion-reel-filtro/overlay/
 media/aion-reel-filtro/keyframe/
 media/aion-reel-filtro/anteprima-storyboard.jpg
 media/*-consegna.zip
+
+# ---- kit di brand Aion: derivati rigenerabili ----
+# PNG/SVG/TTF del kit si rigenerano con media/aion-brand-kit/make-brand-kit.mjs dal sorgente del
+# marchio (scripts/aion-mark.mjs). Versionati solo README e script: i binari no.
+media/aion-brand-kit/marchio/
+media/aion-brand-kit/lockup/
+media/aion-brand-kit/palette/palette.png
+media/aion-brand-kit/palette/palette.svg
+media/aion-brand-kit/guide/
+media/aion-brand-kit/profilo/
+media/aion-brand-kit/copertina/
+media/aion-brand-kit/testi-overlay/
+media/aion-brand-kit/tipografia/*.ttf

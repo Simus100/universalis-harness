@@ -1,0 +1,4 @@
+DejaVu Fonts — licenza Bitstream Vera / DejaVu (libera, uso commerciale consentito).
+Fonte: https://dejavu-fonts.github.io/License.html
+In questo kit: DejaVuSans.ttf e DejaVuSans-Bold.ttf, gli stessi usati per card, overlay e video.
+Regola: un solo carattere; titoli in Bold; mai più di due corpi per immagine.

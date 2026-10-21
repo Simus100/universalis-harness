@@ -1,0 +1,46 @@
+{
+  "brand": "Aion · AI News",
+  "nota": "Un solo accento per categoria, costante nel tempo. Nessun arancione.",
+  "colori": {
+    "fondo-0": {
+      "hex": "#05070c",
+      "uso": "sfondo di ogni immagine"
+    },
+    "fondo-1": {
+      "hex": "#0b1120",
+      "uso": "secondo stop del gradiente"
+    },
+    "testo": {
+      "hex": "#f6f9ff",
+      "uso": "titoli"
+    },
+    "secondario": {
+      "hex": "#96a9c4",
+      "uso": "sottotitoli, firma"
+    },
+    "blu": {
+      "hex": "#5b9dff",
+      "uso": "modelli, piattaforme, orizzonte"
+    },
+    "viola": {
+      "hex": "#8b5cff",
+      "uso": "Meta, ricerca, futuro"
+    },
+    "verde": {
+      "hex": "#34d399",
+      "uso": "«online», stato, ok"
+    },
+    "giallo": {
+      "hex": "#fbbf24",
+      "uso": "numeri, prezzi, avvertenze"
+    }
+  },
+  "tipografia": {
+    "famiglia": "DejaVu Sans",
+    "pesi": [
+      "Regular",
+      "Bold"
+    ],
+    "nota": "titoli in Bold, mai più di due corpi per immagine"
+  }
+}
