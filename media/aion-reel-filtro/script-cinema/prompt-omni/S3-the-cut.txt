@@ -1,0 +1,16 @@
+[# Sources <FIRST_FRAME>@Image1 <LAST_FRAME>@Image2]
+A 4-second single continuous macro shot in dark water, animated from the first frame to the last frame.
+A razor-thin blade of pure white light sweeps across the frame on a perfect 45-degree diagonal, from
+the lower left corner toward the upper right corner, moving once only, at constant speed, in a dead
+straight line, and it ends exactly where the last frame shows it. The blade is flat, perfectly
+straight, with zero thickness and a thin dark gap along its edge. It never bends, never wobbles, never
+rotates, never pulses, never splits. It cuts a cloud of deep indigo ink cleanly in two: the ink above
+the diagonal turns icy blue-white, the ink below turns violet, and the ink never crosses the line.
+Bright halation bleeds around the blade. Camera: locked off, absolutely static, 100mm macro, f/2.8.
+The camera does not move at all in the whole shot. Light: the blade itself is the only light source,
+and everything else is near-black. Look: shot on 35mm film, fine natural grain, deep teal-blue
+shadows, low saturation, high dynamic range. The material is liquid ink in water, never smoke, never
+particles, never an energy beam, never a laser, never an explosion, never a lens flare star. Audio:
+no music, no speech. In the first three seconds a rising filtered whoosh, then at the moment the blade
+passes the centre of the frame one single deep 45 Hz impact with a long decay, then quiet room tone
+and nothing else. One single continuous take, no cuts, no on-screen text.

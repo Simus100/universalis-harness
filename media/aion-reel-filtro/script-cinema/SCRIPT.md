@@ -296,27 +296,38 @@ tre secondi.
 
 ## 9. Come sono scritti i prompt
 
-In `prompt/S1…S5.txt`, uno per shot, in inglese (Veo rende meglio), pronti da incollare. Ogni prompt
-contiene **sei cose**, sempre nello stesso ordine — è così che si ottiene continuità fra clip
-generate separatamente:
+**Motore: Gemini Omni 1.1 Flash** (`gemini-omni-1.1-flash`). I prompt per questo modello stanno in
+`prompt-omni/`, uno per shot, in inglese, pronti da incollare; `prompt-omni/LEGGIMI-OMNI.txt` spiega
+le differenze. I file in `prompt/` sono la versione per Veo 3.1: restano come storia, ma Veo 3.1 in
+Gemini API è deprecato e spento dal 22 ottobre 2026.
 
-1. **materiale** (che cosa c'è nel quadro, e che cosa NON è: inchiostro, non fumo, non particelle)
-2. **azione** (l'unico evento della clip, con il suo tempo)
+Omni non ha negative prompt: le esclusioni sono scritte **dentro** la frase, e dove si può in forma
+positiva («il frame contiene solo acqua nera, inchiostro e una controluce»). Genera anche **audio**:
+ogni prompt ha una riga `Audio:` perché altrimenti inventa musica, che qui sarebbe un errore di regia.
+
+Ogni prompt contiene **sette cose**, sempre nello stesso ordine — è così che si ottiene continuità fra
+clip generate separatamente:
+
+1. **materiale** (che cosa c'è nel quadro, e che cosa non è: inchiostro, non fumo, non particelle)
+2. **azione** (l'unico evento della clip, con il suo tempo — o il timecode `[0-2s] …`)
 3. **camera** (focale, apertura, movimento, ampiezza)
 4. **luce** (sorgente, direzione, durezza)
 5. **resa** (lente, grana, halation, gamma, tavolozza)
-6. **vincoli** (niente testo, niente persone, un solo movimento, nessun taglio interno)
+6. **audio** (cosa si sente, e cosa non si deve sentire)
+7. **vincoli** (in positivo: un solo movimento, nessun taglio interno, niente testo nel quadro)
 
-`prompt/0-negative.txt` è il negative da usare sempre. **Non** aggiungere «4k, 8k, masterpiece,
-award winning»: non migliorano Veo, spostano lo stile verso l'illustrazione digitale.
+In S3 il prompt apre con `[# Sources <FIRST_FRAME>@Image1 <LAST_FRAME>@Image2]`: key1 come primo
+fotogramma e key2 come ultimo. Il 45° arriva dove deve arrivare perché è **vincolato dai due frame**,
+non sperato. È il trucco che rende la clip più difficile anche la più sicura.
 
 | Parametro | Valore | Nota |
 |---|---|---|
-| Aspect | 9:16 | verticale = reel |
-| Durata | 8 s | si montano 2-3 s per shot: il margine è la scelta del punto di taglio |
+| Aspect | `9:16` | verticale = reel (Omni ammette solo 9:16 e 16:9) |
+| Risoluzione | `720p` per provare, `1080p` per le clip che tieni | 1080p e 4k sono upscalate |
+| Durata | 3-10 s a 24 fps | si dichiara nel prompt: 4 s per S3, 5-6 s per le altre |
+| Audio | nativo, da descrivere | non disattivabile: va diretto, non ignorato |
 | Persone | nessuna | regola 3 della testata |
-| Audio | spento | il suono è tuo (nessun diritto di terzi) |
-| Tentativi | 3 per S3, 2 per gli altri | S3 è il fotogramma chiave: vale più tentativi |
+| Tentativi | 2 per S3 e F2, poi si corregge a conversazione | «una modifica per turno» costa meno di un render |
 
 ## 10. Criteri di accettazione (in ordine di importanza)
 

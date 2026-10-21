@@ -1,11 +1,14 @@
 AION «IL FILTRO» — script di regia · checklist di produzione
 =====================================================================
 
-28,0 s · 9:16 · 24 fps · 7 generazioni Veo + 1 coda tipografica in post
+28,0 s · 9:16 · 24 fps · 7 generazioni + 1 coda tipografica in post
+MOTORE: Gemini Omni 1.1 Flash (gemini-omni-1.1-flash) → vedi prompt-omni/LEGGIMI-OMNI.txt
 Atto I «il filtro» 0,00–16,40 · ponte · Atto II «il futuro» 16,40–23,80 · firma 23,80–28,00
 
 FILE
   SCRIPT.md                   la regia completa: big idea, shot by shot, suono, grade, criteri
+  prompt-omni/                ← I PROMPT DA USARE (Gemini Omni 1.1 Flash) + LEGGIMI-OMNI.txt
+  prompt/                     versione precedente per Veo 3.1: deprecato dal 22/10/2026, non usarla
   prompt/S1-ink.txt           macro di inchiostro nel caos (0,00–3,00)
   prompt/S2-orient.txt        il caos si orienta (3,00–6,40)
   prompt/S3-the-cut.txt       LA LAMA A 45° — il fotogramma chiave (6,40–10,00)
@@ -16,12 +19,15 @@ FILE
   prompt/0-negative.txt       negative prompt, sempre lo stesso per tutte e sette
   storyboard.png              la tavola degli otto movimenti
 
-IMPOSTAZIONI VEO (identiche per tutte le clip)
-  aspect ratio ....... 9:16
-  durata ............. 8 s
-  persone ............ nessuna
-  audio .............. spento (il suono si fa in montaggio: nessun diritto di terzi)
-  numero tentativi ... 3 per S3 e F2, 2 per le altre
+IMPOSTAZIONI OMNI (identiche per tutte le clip)
+  model .............. gemini-omni-1.1-flash
+  aspect_ratio ....... "9:16"
+  resolution ......... "720p" per provare, "1080p" per le clip che tieni
+  durata ............. 4 s per S3, 5 s per S5 e F1, 6 s per le altre (min 3, max 10)
+  audio .............. nativo e da descrivere sempre (altrimenti inventa musica)
+  negative prompt .... NON esiste: le esclusioni vanno dentro la frase
+  frame .............. S3 usa <FIRST_FRAME>=keyframe/key1.png e <LAST_FRAME>=keyframe/key2.png
+  numero tentativi ... 2 per S3 e F2, poi si corregge a conversazione (una modifica per turno)
 
 IN CHE ORDINE GENERARLE (non è indifferente)
   1. S3 — la lama a 45°. È l'unica clip che non si salva in montaggio: se il 45° ondeggia o se

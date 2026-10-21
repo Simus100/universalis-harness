@@ -1,0 +1,114 @@
+AION «IL FILTRO» — prompt per Gemini Omni 1.1 Flash
+=====================================================================
+
+Modello: gemini-omni-1.1-flash  (Google). Sostituisce Veo: le anteprime Veo 3.1 in Gemini API
+sono deprecate e spente dal 22 ottobre 2026 — quindi da qui in avanti si genera con Omni.
+
+Questa cartella NON è la traduzione della versione Veo: è una riscrittura, perché il motore
+funziona in modo diverso in cinque punti che contano.
+
+---------------------------------------------------------------------
+LE CINQUE DIFFERENZE CHE CAMBIANO I PROMPT
+---------------------------------------------------------------------
+
+1. NON esiste il negative prompt.
+   La documentazione lo dice esplicitamente: system instructions, temperature, top_p, stop
+   sequences e negative prompt non sono supportati; le negazioni si mettono nella frase
+   ("Do not do X"). Per questo i vecchi file 0-negative.txt qui non servono: le esclusioni sono
+   scritte dentro ogni prompt, e dove possibile in forma positiva ("The frame contains only
+   black water, indigo ink and one backlight") perché un vincolo positivo viene rispettato più
+   spesso di una lista di divieti.
+
+2. L'audio lo genera lui, sempre.
+   "By default the model will try to generate an appropriate audio track". Se non descrivi
+   l'audio, ti ritrovi musica generica — e nel nostro film la musica è un errore di regia.
+   Perciò ogni prompt ha una riga "Audio:" con quello che serve (room tone, sub, whoosh,
+   impatto, silenzio). Il nostro disegno sonoro resta in montaggio, ma così l'audio nativo non
+   contraddice l'immagine se decidi di tenerlo.
+
+3. Si può dare il timecode.
+   Sintassi naturale dentro il prompt:
+       [0-2s] ... [2-3s] ... [3-4s] ...
+   Usata in S5 (spegnimento) e F2 (il passaggio). È il modo per dire "questo succede in questo
+   momento" senza affidarsi al caso. Se il tuo accesso accetta solo un campo prompt, va bene
+   com'è; se accetta un parametro di durata, mettilo coerente con i secondi indicati.
+
+4. I frame si possono ancorare.
+   Tag riconosciuti:
+       <FIRST_FRAME>   l'immagine è il primo fotogramma
+       <LAST_FRAME>    l'immagine è l'ultimo fotogramma (va usata con <FIRST_FRAME>)
+       <IMAGE_REF_N>   immagine di riferimento (stile o soggetto), N parte da 0
+       <VIDEO_REF_N>   riferimento da un video
+   Sintassi consigliata, in testa al prompt:
+       [# Sources <FIRST_FRAME>@Image1 <LAST_FRAME>@Image2]
+   La usiamo in S3: keyframe/key1.png (inchiostro intero) come primo fotogramma e
+   keyframe/key2.png (con la diagonale a 45°) come ultimo. Così il taglio arriva **esattamente**
+   dove deve arrivare, e la lama non può ondeggiare: è vincolata dai due frame.
+
+5. Si corregge conversando, non rigenerando.
+   Con l'Interactions API un secondo turno ("Make the light line thinner, keep everything else
+   the same") modifica la clip tenendo il resto. Vale la pena usarci il tempo che prima si
+   sprecava in rigenerazioni: chiedi **una** modifica per turno, e chiudi sempre con "Keep
+   everything else the same". È il modo più economico di arrivare alla clip giusta.
+
+---------------------------------------------------------------------
+PARAMETRI
+---------------------------------------------------------------------
+
+  model .............. gemini-omni-1.1-flash
+  aspect_ratio ....... "9:16"        (i valori ammessi sono solo 9:16 e 16:9)
+  resolution ......... "720p" per provare · "1080p" per la clip che tieni
+                       (valori: 360p, 720p default, 1080p e 4k sono upscalate)
+  durata ............. clip da 3 a 10 s a 24 fps. Nella documentazione Gemini la durata non è un
+                       campo di response_format (ci sono type, aspect_ratio, resolution): la si
+                       dichiara nell'interfaccia o nel prompt ("A 6-second single continuous
+                       shot"), come fanno i prompt di questa cartella.
+  audio .............. nativo, non disattivabile: va descritto.
+  lingue ............. inglese pienamente supportato; altre lingue non valutate. Prompt in inglese.
+  watermark .......... SynthID su ogni video (invisibile, per la provenienza).
+
+---------------------------------------------------------------------
+COSA GENERARE, IN CHE ORDINE, PER QUANTO
+---------------------------------------------------------------------
+
+  #  file                      durata clip   secondi montati   ruolo
+  1  S3-the-cut.txt               4 s         6,40 → 10,00      fotogramma chiave, first+last frame
+  2  F2-passaggio.txt             6 s        20,00 → 23,80      seconda clip critica
+  3  S1-ink.txt                   6 s         0,00 → 3,00
+  4  S2-orient.txt                6 s         3,00 → 6,40
+  5  S4-three-lines.txt           6 s        10,00 → 13,60
+  6  S5-alive.txt                 5 s        13,60 → 16,40
+  7  F1-orizzonte.txt             5 s        16,40 → 20,00
+
+  S3 per prima: è l'unica clip che non si può salvare in montaggio. Poi F2 (se l'oggetto si
+  vede per intero, la clip è da buttare). Poi le altre, tutte nello stesso giro e con la stessa
+  palette: la continuità viene dal look descritto, non dalla fortuna.
+
+  Genera a 720p e rifai a 1080p solo le clip che tieni: l'upscale di Omni è comodo ma non
+  aggiunge dettaglio.
+
+---------------------------------------------------------------------
+DOVE METTERE I FILE
+---------------------------------------------------------------------
+
+  media/aion-reel-filtro/clip/shotA.mp4   ← S1
+  media/aion-reel-filtro/clip/shotB.mp4   ← S2
+  media/aion-reel-filtro/clip/shotC.mp4   ← S3
+  media/aion-reel-filtro/clip/shotD.mp4   ← S4
+  media/aion-reel-filtro/clip/shotE.mp4   ← S5
+  media/aion-reel-filtro/clip/shotF.mp4   ← F1
+  media/aion-reel-filtro/clip/shotG.mp4   ← F2
+
+  I testi in overlay sono già pronti in ../overlay/ (beat1…beat6, beat4-cta per la coda).
+  Tempi, transizioni, sound design e grade stanno in ../SCRIPT.md.
+
+---------------------------------------------------------------------
+SE UNA CLIP NON CONVINCE: LA SCALA DI INTERVENTO
+---------------------------------------------------------------------
+
+  1. Conversazione (costa un turno): "Make the blade thinner. Keep everything else the same."
+  2. Nuovo tentativo con UNA variabile cambiata (movimento, oppure aggettivo di luce).
+  3. Se sbaglia il materiale (fumo invece di inchiostro, particelle invece di liquido): non è un
+     problema di prompt, è la clip: cambia il verbo ("dispersing", "settling", "sinking") e
+     togli ogni parola che può evocare fumo ("cloud", "plume", "mist").
+  4. Solo alla fine, riscrivi il prompt da capo.
