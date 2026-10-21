@@ -140,6 +140,7 @@ Verificato il 19/10/2026 con chiamate reali alla Graph API v26.0.
 | **Copertina** (`media/aion-copertina@2x.png`) | È ancora vuota | Pagina → Modifica copertina. *L'API risponde «An unknown error has occurred»* |
 | **Pulsante** «Scopri di più» → `https://www.universalis.it/Lab/aion.html` | Porta il traffico sul sito | Pagina → Modifica pulsante d'azione |
 | **Verifica della Pagina** (facoltativa) | Dà il segnale blu quando ci sarà un volume | Impostazioni → Verifica |
+| **Blocco «Segui Aion» in `/Lab/aion.html`** | Il sito ha lettori veri, la Pagina 8 follower: è l'unico ponte gratuito. Il frammento è pronto in `media/aion-seguici.html` (autonomo: logo in data URI, CSS negli attributi, nessuno script) — anteprima in `media/aion-seguici-anteprima.png`. Va incollato dal lato del sito | Incollare in fondo alla pagina, poi adattare i colori |
 
 Già fatto via API: bio, descrizione, categoria (*Sito web di notizie e media*), sito,
 immagine del profilo, primo post.

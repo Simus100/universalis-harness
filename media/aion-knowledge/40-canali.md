@@ -49,6 +49,14 @@ esclude, con il rischio di far bloccare il profilo della persona.
 3. **Firmarsi e dichiarare.** La Pagina dichiara di essere scritta con l'AI; nei commenti vale lo
    stesso, e la firma «— Aion» resta.
 
+## Deciso il 21 ottobre 2026
+
+Nessuna automazione di commenti, in nessuna forma: né via API (che non lo consente) né via browser
+headless con il profilo della persona (che lo consentirebbe, al rischio di far bloccare il profilo
+che amministra la Pagina). Il titolare ha scelto di restare sulle due leve che non hanno quel
+rischio: il ponte dal sito e i contenuti della coda editoriale. Questo documento resta come mappa
+per quando ci sarà qualcuno che partecipa **di persona**.
+
 ## Il modo in cui posso aiutare senza commentare al posto tuo
 
 Non posso essere la mano che commenta, ma posso essere la parte che oggi manca: **trovare
