@@ -95,6 +95,10 @@ Con 0 follower i numeri assoluti non dicono nulla. Si guarda il **tasso**, non i
 
 ## Come cresce (detto senza illusioni)
 
+La mappa dei canali esterni (dove partecipare, dove no, e con quali regole) è in
+[`aion-knowledge/40-canali.md`](aion-knowledge/40-canali.md).
+
+
 La distribuzione organica di una Pagina nuova su Facebook è quasi zero: i post arrivano a chi già
 segue, e chi non segue non li vede. Con 0 follower, nessun formato «funziona» da solo. Le strade,
 con l'ordine in cui hanno senso:
