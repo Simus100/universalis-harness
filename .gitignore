@@ -188,3 +188,10 @@ media/aion-brand-kit/copertina/
 media/aion-brand-kit/testi-overlay/
 media/aion-brand-kit/tipografia/*.ttf
 media/aion-brand-kit/anteprima-kit.png
+
+# ---- post giornaliero Altair Nexus su Facebook ----
+# Lo stato e il registro servono solo alla macchina che pubblica: contengono gli id dei post
+# e gli indirizzi delle storie già uscite, roba operativa che cambia ogni giorno (e che
+# produrrebbe un conflitto a ogni sync). Il codice e le unit systemd sono versionati.
+media/nexus-social/pubblicati.json
+media/nexus-social/log.jsonl

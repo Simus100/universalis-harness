@@ -1,0 +1,17 @@
+[Unit]
+Description=Post giornaliero Altair Nexus sulla Pagina Facebook «Aion»
+Documentation=file:///root/pi-harness/media/nexus-social/LEGGIMI.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/pi-harness
+# pubblica l'edizione del giorno con i link delle notizie (skill social-publish)
+# esce 3 se già pubblicato oggi, 4 se l'edizione non è ancora aggiornata a oggi
+ExecStart=/usr/bin/node /root/pi-harness/media/nexus-social/post-giornaliero.mjs
+User=root
+Nice=10
+TimeoutStartSec=180
+# 3 = già pubblicato oggi, 4 = edizione non ancora aggiornata: non sono guasti
+SuccessExitStatus=3 4

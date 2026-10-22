@@ -1,0 +1,15 @@
+[Unit]
+Description=Post giornaliero Altair Nexus su Facebook (09:30, ritenta fino alle 11:30)
+
+[Timer]
+# 09:30 ora italiana: l'edizione del mattino è assestata (la sintesi Aion esce ~08:30).
+# Le due esecuzioni successive sono retry: lo script non pubblica due volte nello stesso
+# giorno e rinvia se l'edizione non è ancora quella di oggi.
+OnCalendar=*-*-* 09:30:00 Europe/Rome
+OnCalendar=*-*-* 10:30:00 Europe/Rome
+OnCalendar=*-*-* 11:30:00 Europe/Rome
+AccuracySec=1min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
