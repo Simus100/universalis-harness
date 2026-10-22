@@ -195,3 +195,8 @@ media/aion-brand-kit/anteprima-kit.png
 # produrrebbe un conflitto a ogni sync). Il codice e le unit systemd sono versionati.
 media/nexus-social/pubblicati.json
 media/nexus-social/log.jsonl
+
+# Le card della rassegna sono artefatti: si rigenerano in un secondo con
+# media/nexus-social/card-rassegna.mjs (o con --dry-run di post-giornaliero), una al giorno.
+# Versionare i PNG significherebbe centinaia di KB al giorno nel repository.
+media/nexus-social/card/

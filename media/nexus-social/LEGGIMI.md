@@ -1,69 +1,85 @@
-# Post giornaliero di Altair Nexus sulla Pagina Facebook «Aion»
+# Rassegna del giorno — Altair Nexus sulla Pagina Facebook «Aion»
 
-Una volta al giorno porta sul feed della Pagina i **link delle notizie dell'edizione** di
-[nexus.universalis.it](https://nexus.universalis.it/site/), con titolo, categoria, testata,
-una riga di sommario e l'indirizzo canonico della storia. Il sito pubblica una nuova edizione
-ogni ora; la Pagina ne pubblica una al giorno.
+Ogni mattina la Pagina pubblica la **rassegna stampa quotidiana** di
+[nexus.universalis.it](https://nexus.universalis.it/site/): che cos'è Altair Nexus, il segnale
+dominante della giornata, tre storie raccontate con link canonici, la storia che non ti aspetti,
+cosa tenere d'occhio e l'invito a seguire la Pagina. Con una card editoriale come immagine.
 
-## Come funziona
+Il sito pubblica una nuova edizione **ogni ora**; la Pagina ne pubblica **una al giorno**.
 
-1. `post-giornaliero.mjs` legge l'edizione corrente da `https://nexus.universalis.it/llms.txt`
-   (la sorgente dati ufficiale del sito: titoli, link canonici, categoria, fonte, orario,
-   sommario — non serve interpretare l'HTML, e il sito si idrata via JS).
-2. Prende le **3 storie più recenti** e compone il post con un template fisso: nessun testo
-   inventato, si citano solo titoli/fonti/link che stanno nell'edizione.
-3. Manda il testo a `skills/social-publish/publish.mjs` (Pages API ufficiale di Meta).
-4. Scrive nel registro (`log.jsonl`) e nello stato (`pubblicati.json`) che il giorno è coperto.
+## Com'è fatto il post
+
+| Blocco | Da dove viene |
+|---|---|
+| Testata `ALTAIR NEXUS · RASSEGNA DEL GIORNO` + data | data dell'edizione (`Last edition update`) |
+| Occhiello di apertura | 7 formule in rotazione deterministica per giorno (mai lo stesso due volte di fila) |
+| `▸ IL SEGNALE DI OGGI` + tema + due frasi di sintesi | `aion-brief.html`: segnale dominante, tema principale, sintesi di Aion (tagliata prima di «Letti insieme», che elenca i titoli già raccontati sotto) |
+| Che cos'è Altair Nexus | metodo editoriale della pagina `about` + conteggio reale di storie e testate |
+| `01 ▸ Categoria · Fonte`, titolo, una riga, link | `llms.txt`: le 3 storie più recenti |
+| `LA STORIA CHE NON TI ASPETTI` | la prima storia di *Curiosità / Futuro* o *Scienza* fra quelle non già scelte |
+| `▸ DA TENERE D'OCCHIO` | «cosa osservare» dell'Aion Brief |
+| Invito: edizione completa + **segui la Pagina Aion** | fisso |
+| Firma | «Testo composto da Aion, l'IA editoriale di Universalis Produzioni» |
+
+La **card** (`card-rassegna.mjs`) è 1200x630 + `@2x` 2400x1260 nello stesso linguaggio visivo del
+sito: sfondo `#09111b`, serif per il segnale, colore per categoria (cyan tecnologia, violet
+geopolitica, amber mercati, rosa startup, arancio scienza, teal curiosità), data, tre titoli e
+firma del publisher. La si carica come immagine del post: è quella che si vede nel feed.
 
 ## Quando esce
 
-Timer systemd `nexus-post.timer`: **09:30 ora italiana**, con due ritentativi alle 10:30 e
-alle 11:30 se l'edizione del mattino non era ancora pronta o se la rete era giù.
-La sintesi Aion del giorno compare intorno alle 08:30, quindi alle 09:30 il quadro è assestato.
+Timer systemd `nexus-post.timer`: **09:30 ora italiana**, con ritentativi alle 10:30 e 11:30
+se l'edizione del mattino non è ancora pronta o la rete era giù. La sintesi Aion compare intorno
+alle 08:30, quindi alle 09:30 il quadro è assestato.
 
 ```bash
-systemctl list-timers nexus-post.timer      # quando scatta la prossima volta
-systemctl start nexus-post.service          # forzare un giro adesso (non ripubblica se già fatto)
+systemctl list-timers nexus-post.timer          # prossima esecuzione
+systemctl start nexus-post.service              # forzare un giro adesso
 journalctl -u nexus-post.service -n 30 -o cat   # cosa è successo
-systemctl disable --now nexus-post.timer    # fermare tutto
+systemctl disable --now nexus-post.timer        # fermare tutto
 ```
 
-## Guardie (importanti)
+## Guardie
 
 | Situazione | Codice | Cosa fa |
 |---|---|---|
-| Post di oggi già uscito | `3` | non pubblica, esce pulito |
+| Post di oggi già uscito | `3` | non pubblica |
 | L'edizione disponibile non è di oggi | `4` | non pubblica «l'edizione di ieri», riprova al giro dopo |
-| Meta rifiuta il post | `5` | scrive l'errore nel registro, non segna il giorno come coperto |
+| Card non generabile | — | pubblica il solo testo e lo annota nel registro |
+| Meta rifiuta il post | `5` | scrive l'errore nel registro, **non** segna il giorno come coperto |
 | Tutto ok | `0` | pubblica e registra l'id del post |
 
 `--forza` ripubblica anche se oggi è già stato pubblicato (sblocca solo questo caso).
-`--anche-se-vecchia` manda un'edizione non aggiornata a oggi: è l'unico modo per farlo, e va
-usato solo di proposito.
+`--anche-se-vecchia` manda un'edizione non aggiornata a oggi: unico modo, solo di proposito.
 
 ## Uso a mano
 
 ```bash
-node media/nexus-social/post-giornaliero.mjs --dry-run            # mostra il post, non invia
-node media/nexus-social/post-giornaliero.mjs                      # pubblica (se non già fatto)
-node media/nexus-social/post-giornaliero.mjs --storie 2           # post più corto
-node media/nexus-social/post-giornaliero.mjs --sorgente /tmp/x.txt  # edizione da un file, per le prove
-node media/nexus-social/post-giornaliero.mjs --forza --dry-run    # vede com'è il post del giorno dopo
+node media/nexus-social/post-giornaliero.mjs --dry-run       # testo + card, nessun invio
+node media/nexus-social/post-giornaliero.mjs                 # pubblica (se non già fatto)
+node media/nexus-social/post-giornaliero.mjs --storie 2      # rassegna più corta
+node media/nexus-social/post-giornaliero.mjs --senza-card    # solo testo (torna l'anteprima del link)
+node media/nexus-social/post-giornaliero.mjs --sorgente /tmp/x.txt --dry-run   # prova su un'edizione finta
+node media/nexus-social/card-rassegna.mjs --out /tmp/prova --giorno "oggi" \
+     --segnale Tecnologia --tema "Riposizionamento competitivo" --titoli "Uno|Due|Tre"  # solo la card
 ```
 
-Per controllare cosa è già uscito: `pubblicati.json` (un elemento per giorno, con l'id del post)
-e `log.jsonl` (una riga per ogni esecuzione, anche quelle a vuoto).
+Stato e registro: `pubblicati.json` (un elemento per giorno, con id del post e card) e
+`log.jsonl` (una riga per ogni esecuzione, anche quelle a vuoto). Le card del giorno restano in
+`card/`.
 
 ## Regole di condotta che valgono anche qui
 
-- Il post dichiara che il testo è composto da **Aion**, l'IA editoriale di Universalis Produzioni,
-  e che le notizie sono delle testate citate: la selezione e il collegamento sono nostri.
-- Si pubblicano solo link del sito e testate citate nell'edizione: niente contenuti di terzi,
-  niente immagini di persone, niente automazione di like/commenti/messaggi.
-- Un post al giorno, non di più: il ritmo è la cosa che rende sostenibile una Pagina.
+- Il post dichiara che il testo è composto da **Aion** e che le notizie sono delle testate citate.
+- Si pubblicano solo link del sito e testate citate nell'edizione: nessun contenuto di terzi,
+  nessuna immagine di persone, nessuna automazione di like/commenti/messaggi.
+- Un post al giorno, non di più.
+- **L'invito del post porta a seguire la Pagina**, non a una newsletter: sul sito non esiste
+  ancora un modulo di iscrizione, e non si promette ciò che non c'è.
 
-## Stato al primo avvio
+## Storia
 
-Primo post pubblicato il **22 ottobre 2026**:
-<https://www.facebook.com/122097481977518432/posts/122099839023518432>
-(edizione delle 09:02, storie: PHP/BBC, Israele/BBC, Legora/TechCrunch).
+- 22 ottobre 2026 — primo post, formato semplice (solo elenco dei link):
+  <https://www.facebook.com/122097481977518432/posts/122099839023518432>
+- 22 ottobre 2026 — ristrutturato in **rassegna stampa** con card, introduzione del sito, rubrica
+  finale e invito a seguire la Pagina.
