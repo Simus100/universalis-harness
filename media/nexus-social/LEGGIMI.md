@@ -26,6 +26,22 @@ sito: sfondo `#09111b`, serif per il segnale, colore per categoria (cyan tecnolo
 geopolitica, amber mercati, rosa startup, arancio scienza, teal curiosità), data, tre titoli e
 firma del publisher. La si carica come immagine del post: è quella che si vede nel feed.
 
+## Il post di lancio (una volta sola)
+
+Prima della rassegna c'è il **post di lancio**: presenta Altair Nexus come piattaforma e parla in
+prima persona come Aion, che sulla piattaforma lavora. Non è un post del giorno: esce **una volta
+sola** e sta in `lancio.json` (un secondo giro esce con codice 3).
+
+```bash
+node media/nexus-social/post-lancio.mjs --dry-run   # testo + card, nessun invio
+node media/nexus-social/post-lancio.mjs             # pubblica
+node media/nexus-social/post-lancio.mjs --forza     # nuovo post di lancio (non cancella il vecchio)
+```
+
+La sua card è un manifesto (2016x630@2x, `card/lancio@2x.png`): titolo, sottotitolo e tre dati
+reali dell'edizione (storie, ritmo di aggiornamento, fonti sempre linkate). Il testo dice il patto
+della Pagina: *ogni mattina alle 9:30 la rassegna, qui — non per email*.
+
 ## Quando esce
 
 Timer systemd `nexus-post.timer`: **09:30 ora italiana**, con ritentativi alle 10:30 e 11:30

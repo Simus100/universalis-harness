@@ -194,6 +194,7 @@ media/aion-brand-kit/anteprima-kit.png
 # e gli indirizzi delle storie già uscite, roba operativa che cambia ogni giorno (e che
 # produrrebbe un conflitto a ogni sync). Il codice e le unit systemd sono versionati.
 media/nexus-social/pubblicati.json
+media/nexus-social/lancio.json
 media/nexus-social/log.jsonl
 
 # Le card della rassegna sono artefatti: si rigenerano in un secondo con

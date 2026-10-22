@@ -39,6 +39,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { generaCard } from "./card-rassegna.mjs";
+import { testateDistinte } from "./testate.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
@@ -193,7 +194,7 @@ const OCHIELLI = [
 ];
 
 function componiTesto({ edizione, scelte, curiosa, brief, giorno }) {
-  const fonti = new Set(edizione.storie.map((s) => s.fonte).filter(Boolean));
+  const fonti = testateDistinte(edizione.storie);
   const idx = Math.floor(new Date(edizione.aggiornataIl).getTime() / 86400000) % OCHIELLI.length;
   const L = [];
 
