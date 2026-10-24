@@ -193,8 +193,14 @@ class Motore:
         # tutte le serie allineate a DESTRA (il presente è in fondo) e riempite a sinistra con NaN,
         # che il modello tratta come valore mancante: nessun valore inventato.
         impilate = [m if m.size == T else np.concatenate([np.full(T - m.size, np.nan), m]) for m in matrici]
-        ctx = np.stack(impilate, axis=0)[None, :, :]  # (1, V, T)
-        congiunta = len(matrici) > 1
+        # `mode`: "joint" = variate di UN sistema (il modello usa le dipendenze); "separate"
+        # (default) = una previsione indipendente per serie. Il default è "separate" perché
+        # supporre un legame che non c'è peggiora le previsioni, e la scelta spetta al chiamante.
+        congiunta = str(req.get("mode", "separate")).lower() == "joint" and len(matrici) > 1
+        if congiunta:
+            ctx = np.stack(impilate, axis=0)[None, :, :]  # (1, V, T)
+        else:
+            ctx = np.stack(impilate, axis=0)[:, None, :]  # (B, 1, T)
 
         def cov(chiave, T_atteso):
             raw = req.get(chiave)
@@ -208,6 +214,9 @@ class Motore:
             if a.shape[-1] != T_atteso:
                 raise ValueError(f"{chiave}: ultima dimensione {a.shape[-1]}, attesa {T_atteso}")
             return a
+
+        if not congiunta and (req.get("past_covariates") is not None or req.get("known_covariates") is not None):
+            raise ValueError("le covariate valgono solo con mode=\"joint\": in modalità separata ogni serie è indipendente")
 
         fc = self.carica()
         self._last_use = time.time()
@@ -223,14 +232,16 @@ class Motore:
             self.richieste += 1
             self._last_use = time.time()
 
-        q = f.quantiles.detach().cpu().numpy()  # (1, V, H, Q)
+        q = f.quantiles.detach().cpu().numpy()  # (B, V, H, Q)
+        # Vista normalizzata: qs[s] = quantili (H, Q) della serie s, in entrambe le modalità.
+        qs = q[0] if q.shape[0] == 1 else q[:, 0, :, :]
         livelli = list(f.quantile_levels)
 
         def q_at(level):
-            return q[0, :, :, livelli.index(level)]
+            return qs[:, :, livelli.index(level)]  # (S, H), una riga per serie
 
         out_series = []
-        for vi, nome in enumerate(nomi[: q.shape[1]]):
+        for vi, nome in enumerate(nomi[: qs.shape[0]]):
             storico = matrici[vi] if vi < len(matrici) else matrici[0]
             non_nan = storico[~np.isnan(storico)]
             ultimo = float(non_nan[-1]) if non_nan.size else None
@@ -243,7 +254,7 @@ class Motore:
                 "q25": [round(float(x), 6) for x in q_at(0.25)[vi]],
                 "q75": [round(float(x), 6) for x in q_at(0.75)[vi]],
                 "q95": [round(float(x), 6) for x in q_at(0.95)[vi]],
-                "stats": statistiche(q[0, vi], livelli, ultimo),
+                "stats": statistiche(qs[vi], livelli, ultimo),
             }
             out_series.append(serie)
 

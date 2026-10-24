@@ -201,3 +201,11 @@ media/nexus-social/log.jsonl
 # media/nexus-social/card-rassegna.mjs (o con --dry-run di post-giornaliero), una al giorno.
 # Versionare i PNG significherebbe centinaia di KB al giorno nel repository.
 media/nexus-social/card/
+
+# --- Timestral: dati dell'utente e previsioni generate -------------------------
+# I CSV caricati per le previsioni e i file prodotti possono contenere informazioni
+# riservate (incassi, posizioni, dati di clienti): NON si pubblicano. Resta versionato
+# solo il LEGGIMI che spiega il formato.
+media/previsioni/dati/*
+!media/previsioni/dati/LEGGIMI.txt
+media/previsioni/*.csv

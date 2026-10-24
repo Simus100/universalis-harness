@@ -1,0 +1,33 @@
+[Unit]
+Description=Timestral — previsioni su serie temporali (modello Mistral, CPU, condiviso fra le istanze)
+Documentation=file:///root/pi-harness/docs/TIMESTRAL.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Il servizio sta FUORI dalle istanze dell'harness di proposito: la RAM dei pesi si paga una
+# volta per la macchina, non una per istanza. Le istanze lo raggiungono su 127.0.0.1:8018.
+User=root
+Group=root
+WorkingDirectory=/root/pi-harness
+ExecStart=/opt/timestral-venv/bin/python /root/pi-harness/media/timestral-service.py --port 8018 --size 28M --idle 900
+Restart=always
+RestartSec=5
+
+# Un modello in RAM per volta, scaricato dopo 15 minuti di inattività. Tetto esplicito: anche
+# la taglia più grande (1,9 GB di picco) deve restare sotto, e Decision_M non va in swap.
+MemoryMax=3G
+# L'inferenza è CPU-bound e la macchina serve quattro istanze: il servizio cede il passo.
+Nice=10
+IOSchedulingClass=idle
+Environment=OMP_NUM_THREADS=4
+Environment=PYTHONUNBUFFERED=1
+# Nessuna variabile di proxy: il servizio parla solo con la cache locale dei pesi.
+Environment=HF_HUB_OFFLINE=0
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

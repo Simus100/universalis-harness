@@ -3,6 +3,12 @@
 Stato al **2026-10-24**. Questo documento dice cosa è stato misurato, cosa è stato deciso e
 cosa manca. I numeri vengono da misure fatte su questa VPS, non da stime.
 
+**Fatto:** motore e servizio (unità `timestral.service`), tool in chat (`timestral_forecast`,
+`timestral_series`) con interruttore nel menu «features», endpoint `/api/timestral` e
+`/api/timestral/forecast`, 4 serie demo, lettura CSV, skill `timestral`.
+**Manca:** la vista «Previsioni» nella dashboard (grafici, statistiche, backtest), il
+deploy sulle istanze `tester_*` e la pubblicazione (token GitHub da rinnovare).
+
 ## Cos'è
 
 **Timestral** è la famiglia di *time-series foundation model* di Mistral: modelli
@@ -72,7 +78,7 @@ disco da 2 GB e una sandbox, non devono installare torch (886 MB di venv).
 | rotta | cosa fa |
 |---|---|
 | `GET /health` | stato: taglia, se il modello è carico, RAM del processo, richieste, ultimo errore |
-| `POST /forecast` | `{series:[{name,values}], prediction_length, past_covariates?, known_covariates?}` → mediana, quantili 5/25/75/95, statistiche per serie |
+| `POST /forecast` | `{series:[{name,values}], prediction_length, mode:"separate"\|"joint", past_covariates?, known_covariates?}` → mediana, quantili 5/25/75/95, statistiche per serie. `separate` (default) = una previsione per serie; `joint` = variate di un unico sistema, il modello usa le dipendenze (le covariate valgono solo qui) |
 | `POST /model` | `{size:"5M"\|"28M"\|"123M"\|"209M"}` — cambia taglia (scarica e ricarica) |
 | `POST /unload` | scarica subito il modello dalla RAM |
 
@@ -96,18 +102,59 @@ in cache.
 ## Piano (fasi)
 
 1. **Motore** — misura taglie, servizio locale con token e scarico da inattività. *(fatto)*
-2. **Tool in chat** — `timestral_forecast` dietro feature nel menu «features», con descrizione
-   che dichiara costo, natura di stima e quando *non* usarlo. *(in corso)*
-3. **Endpoint dashboard** — `/api/timestral` (stato, previsione, serie disponibili) dentro
-   l'autenticazione esistente; niente porte nuove esposte da Caddy.
+2. **Tool in chat** — `timestral_forecast` e `timestral_series` dietro feature nel menu
+   «features», con descrizione che dichiara costo, natura di stima e quando *non* usarlo. *(fatto)*
+3. **Endpoint dashboard** — `/api/timestral` e `/api/timestral/forecast` dentro
+   l'autenticazione esistente; nessuna porta nuova esposta da Caddy. *(fatto)*
 4. **Vista «Previsioni»** — ventaglio dei quantili, statistiche, tabella, export CSV/SVG.
 5. **Backtest nella vista** — errore storico contro il naive, così la fiducia si vede prima di
    decidere.
 6. **Serie** — 4 demo incluse + CSV caricati dall'utente (la prima versione non chiama API
    esterne: Yahoo risponde 429, Stooq chiede JavaScript).
-7. **Deploy** — unità `timestral.service` + copia del codice nelle quattro istanze, verifica
-   per istanza.
-8. **Skill `timestral` + questo documento + pubblicazione.**
+7. **Deploy** — unità `timestral.service` *(fatto, attiva e abilitata al boot)* + copia del
+   codice nelle quattro istanze, verifica per istanza. *(manca la copia sulle tester)*
+8. **Skill `timestral`** *(fatto)* **+ questo documento** *(fatto)* **+ pubblicazione** *(bloccata:
+   il token in `.github-access` risponde 401 — serve un token nuovo)*.
+
+## In esercizio: comandi e percorsi
+
+| cosa | dove |
+|---|---|
+| servizio | `systemctl {status,restart,stop} timestral` · unità versionata in `scripts/timestral.service` |
+| porte | `127.0.0.1:8018` (solo loopback: nessuna esposizione su Caddy) |
+| token | `/etc/timestral/token` (creato al primo avvio, `0644`: leggibile anche dalle istanze non privilegiate) |
+| pesi | `/root/.cache/huggingface/hub/models--mistralai--Timestral-*` (5M/28M/123M/209M scaricati) |
+| venv | `/opt/timestral-venv` (torch 2.14.1+cpu, numpy, safetensors, `timestral` 1.0.0) |
+| serie demo | `media/timestral-demo.json` (2 reali con fonte, 2 sintetiche dichiarate) |
+| CSV dell'utente | `media/previsioni/dati/` — **escluso da git**, possono contenere dati riservate |
+| previsioni generate | `media/previsioni/*.csv` — anch'esse escluse da git |
+| preferenze per istanza | `media/timestral-prefs.json` (`enabled`, `size`, `prediction_length`) |
+
+Rotte della dashboard (dietro l'autenticazione esistente, nessuna porta nuova):
+
+| rotta | cosa fa |
+|---|---|
+| `GET /api/health` | elenca `timestral-tool` e `timestral-service` fra le feature |
+| `GET /api/timestral` | stato completo: servizio su/giù, taglia, RAM, demo, CSV, tool attivi |
+| `POST /api/timestral` | `{enabled}` (interruttore dei tool) · `{size}` (cambia taglia) · `{action:"unload"}` |
+| `POST /api/timestral/forecast` | previsione: `{demo|csv|series, prediction_length, congiunta}`, con le date della fonte quando ci sono |
+
+### Verifica rapida (dopo un riavvio o un aggiornamento)
+
+```bash
+systemctl is-active timestral && curl -s 127.0.0.1:8018/health | python3 -m json.tool | head
+curl -s -u "$DASH_USER:$DASH_PASSWORD" http://127.0.0.1:8420/api/timestral | python3 -m json.tool | head
+```
+
+**Il riavvio della dashboard è necessario** perché i tool entrino nella lista inviata al
+modello: `bash scripts/restart-dashboard.sh` (interrompe la sessione in corso, come ogni
+riavvio).
+
+### Un errore da non rifare
+
+`pkill -f "media/timestral-service.py"` **uccide la shell che lo esegue**, perché il pattern
+compare nella sua stessa riga di comando: il comando successivo non parte e sembra che il
+servizio «muoia da solo». Usare `pkill -f "[t]imestral-service.py"` o, meglio, `systemctl`.
 
 ## Rischi e limiti dichiarati
 

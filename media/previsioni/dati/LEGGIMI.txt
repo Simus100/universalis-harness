@@ -1,0 +1,15 @@
+Qui si mettono i CSV da prevedere con Timestral (tool timestral_forecast e vista «Previsioni»).
+
+Formato richiesto: una colonna con la data (o un'etichetta temporale) e una colonna numerica.
+  - separatore: virgola, punto e virgola o tab
+  - intestazione: facoltativa; se c'è, si può scegliere la colonna con `column` / `value_column`
+  - numeri all'italiana (1.234,56) riconosciuti; le righe non valide si contano e si dichiarano
+  - almeno ~50 punti per una previsione sensata (sotto, il modello ha visto poco)
+
+Esempio:
+data,valore
+2026-01-01,100.0
+2026-01-02,101.5
+2026-01-03,99.8
+
+Nessun file qui è versionato: i dati dell'utente restano su questa macchina.

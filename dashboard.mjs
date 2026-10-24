@@ -46,6 +46,8 @@ import { leggiWiki as memoriaWiki, linkRotti as memoriaLinkRotti } from "./media
 import { ricostruisci as memoriaRicostruisci, aggiornaDopoSessione as memoriaArchiviaSessione } from "./media/memoria/memoria-build.mjs";
 import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato, indiceDaAggiornare as memoriaIndiceDaAggiornare } from "./media/memoria/memoria-index.mjs";
 import { createDecisionMService } from "./media/decision-m-service.mjs";
+import { createTimestralClient, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
+import { createTimestralExtension } from "./media/timestral-tool.mjs";
 import {
   VOCI as TTS_VOCI,
   elencoCache as ttsElencoCache,
@@ -962,7 +964,24 @@ const SYSTEM_MEDIA_NOTE =
   `tool NON sono nella tua lista, e non è un guasto: la risorsa la accende l'utente. Se una ` +
   `decisione tipizzata servirebbe davvero, proponi l'attivazione con \`ask_user\` (una riga ` +
   `sul costo in RAM) e, se rifiuta, procedi con il tuo giudizio dichiarando che è stato senza ` +
-  `il modello locale.`;
+  `il modello locale.` +
+  `\n\n## Previsioni su serie temporali (feature «Timestral», skill \`timestral\`)\n` +
+  `L'harness ha un modello locale di previsione (Timestral di Mistral, time-series foundation model) ` +
+  `che risponde a «cosa succederà» su una serie numerica ordinata nel tempo: cambi, prezzi, incassi, ` +
+  `consumi, carichi orari. Gira su CPU in un servizio condiviso da tutte le istanze (28M: 471 MB, ` +
+  `previsione in ~0,1 s) e si scarica da solo dopo 15 minuti di inattività: **non serve chiedere ` +
+  `permesso** per usarlo. I tool sono \`timestral_forecast\` (la previsione: mediana e quantili) e ` +
+  `\`timestral_series\` (quali serie esistono, stato del servizio). Sono spenti dall'interruttore ` +
+  `«timestral» nel menu features: se mancano dalla tua lista non è un guasto.\n` +
+  `Regola non negoziabile: quello che esce è una **STIMA probabilistica** di un modello pre-addestrato ` +
+  `(zero-shot), non un fatto e non un consiglio finanziario. Presenta sempre mediana **e** intervallo ` +
+  `(banda 80% e 95%), dichiara che il modello non conosce notizie né eventi annunciati, e se la banda ` +
+  `è larga rispetto a ciò che interessa all'utente la risposta onesta è che non si può dire. Le ` +
+  `probabilità vengono dai quantili e non sono calibrate: buone per ordinare e per soglie prudenti, ` +
+  `non come frequenze esatte.\n` +
+  `Se il servizio non risponde (errore del tool): non è la feature spenta, è il processo ` +
+  `\`timestral.service\` fermo — dillo all'utente con il comando \`systemctl start timestral\` e non ` +
+  `riprovare a vuoto.`;
 
 // Tool browser (estensione inline definita in media/browser-tool.mjs).
 // Invoca SEMPRE agent-browser come utente dedicato: come root la CLI partirebbe
@@ -1032,6 +1051,27 @@ function decisionMChanged() {
   } catch (err) {
     console.error("[Decision_M] aggiornamento di stato non riuscito:", err?.message ?? err);
   }
+}
+
+// ---- Timestral: previsioni su serie temporali ----------------------------------------
+// Il motore non è un processo dell'istanza: è `timestral.service`, una unità systemd che
+// tiene UN modello in RAM per tutta la macchina (28M: 471 MB, scaricato dopo 15 minuti di
+// inattività). Le quattro istanze lo chiamano su 127.0.0.1:8018: la RAM dei pesi si paga una
+// volta, non quattro. Qui restano solo le preferenze dell'istanza (interruttore e taglia) e
+// il gate dei tool; rete e lettura delle serie stanno in media/timestral-client.mjs.
+const timestralClient = createTimestralClient({ mediaDir: MEDIA_DIR, rootDir: ROOT, log: (m) => console.log(m) });
+const TIMESTRAL_AVAILABLE = timestralClient.available;
+const TIMESTRAL_TOOL_NAMES = new Set(["timestral_forecast", "timestral_series"]);
+/* Le taglie con la RAM misurata su questa VPS (TIMESTRAL_TAGLIE, da media/timestral-client.mjs):
+   la UI le mostra con il costo reale invece di inventarlo. */
+const TIMESTRAL_EXT = TIMESTRAL_AVAILABLE
+  ? createTimestralExtension({ client: timestralClient, mediaDir: MEDIA_DIR, log: (m) => console.log(m) })
+  : null;
+if (!TIMESTRAL_AVAILABLE) console.log("[Timestral] feature disattivata all'avvio (DASH_TIMESTRAL=off)");
+
+/** Vero se i tool di Timestral vanno nella lista inviata al modello. */
+function timestralToolEnabled() {
+  return TIMESTRAL_AVAILABLE && !!timestralClient.prefs.enabled;
 }
 
 /** Ultima firma dello stato vista dal ciclo: evita broadcast inutili ogni pochi secondi. */
@@ -1363,7 +1403,7 @@ const resourceLoader = new DefaultResourceLoader({
   agentDir: getAgentDir(),
   additionalExtensionPaths,
   additionalSkillPaths: [SKILLS_DIR],
-  extensionFactories: [MEDIA_GUARD_EXT, BROWSER_EXT, MEMORIA_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(DECISION_M_EXT ? [DECISION_M_EXT] : [])],
+  extensionFactories: [MEDIA_GUARD_EXT, BROWSER_EXT, MEMORIA_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(DECISION_M_EXT ? [DECISION_M_EXT] : []), ...(TIMESTRAL_EXT ? [TIMESTRAL_EXT] : [])],
   systemPromptOverride: (base) => `${base ?? ""}${SYSTEM_MEDIA_NOTE}${progettoPromptNote()}`,
 });
 await resourceLoader.reload();
@@ -1478,12 +1518,15 @@ function applyToolGate() {
   for (const n of SUBAGENT_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
   for (const n of ASK_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
   for (const n of DECISION_M_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
+  for (const n of TIMESTRAL_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
   if (!subagentsEnabled) names = names.filter((n) => !SUBAGENT_TOOL_NAMES.has(n));
   if (!browserEnabled) names = names.filter((n) => !BROWSER_TOOL_NAMES.has(n));
   if (!askToolEnabled()) names = names.filter((n) => !ASK_TOOL_NAMES.has(n));
   // spenta la feature, i tool di Decision_M spariscono dalla lista: il modello non prova
   // nemmeno a chiamarli, e intanto il processo non occupa RAM
   if (!decisionMToolEnabled()) names = names.filter((n) => !DECISION_M_TOOL_NAMES.has(n));
+  // spenta la feature, il modello non vede i tool di Timestral e non li chiama a vuoto
+  if (!timestralToolEnabled()) names = names.filter((n) => !TIMESTRAL_TOOL_NAMES.has(n));
   // percorso ufficiale: abilita per nome dal registry e ricostruisce il system prompt
   if (typeof session.setActiveToolsByName === "function") session.setActiveToolsByName(names);
   else session.agent.state.tools = all.filter((t) => names.includes(t.name));
@@ -2523,6 +2566,10 @@ function getState({ withMessages = false } = {}) {
     // Decision_M: snapshot SINCRONO, senza /health — `getState` gira anche nei broadcast
     // frequenti e non deve fare chiamate di rete. La versione completa sta su /api/decision_m.
     decision_m: DECISION_M_AVAILABLE ? decisionMService.snapshot() : { available: false, enabled: false },
+    // Timestral: snapshot sincrono come sopra (niente rete nei broadcast frequenti)
+    timestral: TIMESTRAL_AVAILABLE
+      ? { ...timestralClient.snapshot(), toolActive: (session?.getActiveToolNames?.() || []).some((t) => TIMESTRAL_TOOL_NAMES.has(t)) }
+      : { available: false, enabled: false },
     startedAt: sessionStartedAt,
     elapsedMs: Date.now() - sessionStartedAt,
     streaming: turnActive,
@@ -4341,6 +4388,8 @@ const server = http.createServer(async (req, res) => {
           "browser-output-staging",
           "decision-m-feature",
           "decision-m-tool-gate",
+          "timestral-tool",
+          "timestral-service",
           "state-safe",
         ],
       });
@@ -4594,6 +4643,87 @@ const server = http.createServer(async (req, res) => {
         const msg = String(e?.message || e);
         const spento = /spento|non pronto|non è pronto|unreachable|ECONNREFUSED/i.test(msg);
         return json(res, spento ? 503 : 400, { error: msg });
+      }
+    }
+
+    // ---------------- Timestral: previsioni su serie temporali ----------------
+    // GET  /api/timestral            stato completo (servizio, taglia, RAM, serie, CSV)
+    // POST /api/timestral            { enabled } · { size } · { action: "unload" }
+    // POST /api/timestral/forecast   { demo|csv|series, prediction_length, congiunta } → previsione
+    if (req.method === "GET" && url.pathname === "/api/timestral") {
+      if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      const stato = await timestralClient.status();
+      return json(res, 200, {
+        ...stato,
+        enabled: timestralClient.prefs.enabled,
+        size: timestralClient.prefs.size,
+        taglie: TIMESTRAL_TAGLIE,
+        demo: timestralClient.demo().map((s2) => ({
+          id: s2.id,
+          nome: s2.nome,
+          punti: s2.punti.length,
+          unita: s2.unita,
+          frequenza: s2.frequenza,
+          sintetica: s2.sintetica,
+          fonte: s2.fonte,
+        })),
+        csv: timestralClient.csvDisponibili(),
+        toolActive: (session?.getActiveToolNames?.() || []).some((t) => TIMESTRAL_TOOL_NAMES.has(t)),
+      });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/timestral") {
+      if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      const body = await readBody(req, 16 * 1024);
+      try {
+        if (typeof body.enabled === "boolean") {
+          timestralClient.setEnabled(body.enabled);
+          applyToolGate();
+          broadcast("state", getState());
+          return json(res, 200, { ok: true, enabled: timestralClient.prefs.enabled, toolActive: timestralToolEnabled() });
+        }
+        if (typeof body.size === "string") {
+          const s2 = await timestralClient.impostaTaglia(body.size);
+          return json(res, 200, { ok: true, ...s2 });
+        }
+        if (body.action === "unload") {
+          const s2 = await timestralClient.scarica();
+          return json(res, 200, { ok: true, ...s2 });
+        }
+        return json(res, 400, { error: "serve { enabled } oppure { size } oppure { action: \"unload\" }" });
+      } catch (e) {
+        return json(res, 400, { error: String(e?.message || e) });
+      }
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/timestral/forecast") {
+      if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      const body = await readBody(req, 2 * 1024 * 1024);
+      try {
+        const fonti = timestralClient.preparaSerie({
+          demo: Array.isArray(body.demo) ? body.demo : body.demo ? [body.demo] : undefined,
+          csv: body.csv,
+          series: body.series,
+          column: body.column,
+          valueColumn: body.value_column,
+        });
+        const h = Math.max(1, Math.min(4096, Number(body.prediction_length) || timestralClient.prefs.prediction_length));
+        const out = await timestralClient.prevedi({
+          series: fonti.map((f) => ({ name: f.nome, values: f.valori })),
+          prediction_length: h,
+          mode: body.congiunta === true && fonti.length > 1 ? "joint" : "separate",
+        });
+        // le date servono al grafico: si passano SOLO se la fonte le ha (nessuna data inventata)
+        return json(res, 200, {
+          ...out,
+          congiunta: body.congiunta === true && fonti.length > 1,
+          date: fonti.map((f) => f.date || null),
+          meta: fonti.map((f) => f.meta || null),
+        });
+      } catch (e) {
+        const msg = String(e?.message || e);
+        const giu = /ECONNREFUSED|fetch failed|aborted|timeout/i.test(msg);
+        return json(res, giu ? 503 : 400, { error: msg });
       }
     }
 

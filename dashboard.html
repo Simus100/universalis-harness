@@ -1788,6 +1788,11 @@ footer {
           <button id="decisionMToggle" class="pill" type="button" title="Decision_M (decisore tipizzato locale): domande sì/no, scelta, punteggio → probabilità, senza generare testo). Acceso occupa ~5,7 GB di RAM e la CPU; spento libera tutto."><span class="led"></span>Decision_M</button>
           <span class="feat-lbl" id="decisionMInfo">—</span>
         </div>
+        <div class="feat-row">
+          <button id="timestralToggle" class="pill" type="button" title="Timestral (previsioni su serie temporali): quando è acceso l'agente ha i tool timestral_forecast e timestral_series. Il modello gira in un servizio condiviso, leggero (471 MB con il 28M) e si scarica da solo dopo 15 minuti di inattività."><span class="led"></span>Timestral</button>
+          <select id="timestralSize" class="select" title="Taglia del modello: più grande è più precisa ma costa più RAM e più tempo di caricamento (misure su questa macchina)"></select>
+          <span class="feat-lbl" id="timestralInfo">—</span>
+        </div>
         <div class="feat-sep"></div>
         <div class="feat-h">risorse — goal, pianificazioni e skill</div>
         <div class="feat-row">
@@ -2323,6 +2328,7 @@ function renderStats(st) {
   renderSubagent(st);
   renderAskToggle(st);
   renderDecisionM(st);
+  renderTimestral(st);
   renderFeatCount();
 }
 
@@ -2405,6 +2411,63 @@ function renderDecisionM(st) {
         : on
           ? "Decision_M acceso: clicca per fermarlo e liberare la RAM"
           : "Decision_M spento: clicca per accendere il decisore locale (~5,7 GB di RAM, qualche secondo a richiesta)";
+}
+
+/**
+ * Riga «Timestral» del menu features: interruttore dei tool di previsione, taglia del modello e
+ * stato REALE del servizio condiviso. I numeri mostrati (RAM, latenza) vengono dalle misure su
+ * questa macchina, non da una stima: se il servizio è fermo si vede, e non si finge che funzioni.
+ */
+function renderTimestral(st) {
+  const r = (st && st.timestral) || {};
+  const b = $("timestralToggle");
+  const info = $("timestralInfo");
+  const sel = $("timestralSize");
+  if (!b) return;
+  const riga = b.closest ? b.closest(".feat-row") : null;
+  if (riga) riga.hidden = r.available === false;
+  if (r.available === false) return;
+  b.dataset.avail = "1";
+  setPill(b, !!r.enabled, "Timestral");
+  if (sel && sel.options.length === 0) {
+    // le taglie arrivano dallo stato (con la RAM misurata), non da un elenco scritto due volte
+    for (const [id, m] of Object.entries(r.taglie || {})) {
+      const o = document.createElement("option");
+      o.value = id;
+      o.textContent = id;
+      o.title = `${m.rss_picco_mb} MB di picco · caricamento ${m.load_s} s · ${m.nota || ""}`;
+      sel.appendChild(o);
+    }
+  }
+  if (sel && r.size) sel.value = r.size;
+  if (info) {
+    if (!r.enabled) info.textContent = "spento · il servizio resta leggero";
+    else if (r.caricato) info.textContent = `${r.taglia || r.size} · ${Math.round(r.ram_processo_mb || 0)} MB · :${r.port}`;
+    else info.textContent = `${r.taglia || r.size} · modello non in RAM`;
+  }
+  b.title = r.enabled
+    ? "Timestral acceso: l'agente può prevedere serie temporali. Clicca per togliere i tool (il servizio resta disponibile per la vista)."
+    : "Timestral spento: i tool di previsione non vengono inviati all'agente.";
+}
+
+/** Interruttore dei tool di Timestral: non spegne il servizio (è condiviso da tutte le istanze). */
+async function toggleTimestral() {
+  const r = (lastState || {}).timestral || {};
+  const on = !r.enabled;
+  const info = $("timestralInfo");
+  if (info) info.textContent = on ? "accendo…" : "spengo…";
+  const j = await postJSON("/api/timestral", { enabled: on });
+  lastState = Object.assign({}, lastState, { timestral: Object.assign({}, r, { enabled: !!j.enabled, toolActive: !!j.toolActive }) });
+  renderTimestral(lastState);
+}
+
+/** Cambio taglia: il servizio scarica il modello attuale e carica quello scelto. */
+async function cambiaTagliaTimestral(size) {
+  const info = $("timestralInfo");
+  if (info) info.textContent = `carico ${size}…`;
+  const j = await postJSON("/api/timestral", { size });
+  if (j.error && info) info.textContent = "taglia non cambiata";
+  void fetch("/api/timestral").then((x) => x.json()).then((s) => renderTimestral({ timestral: Object.assign({}, s, { size: s.size }) })).catch(() => {});
 }
 
 async function toggleAsk() {
@@ -4941,6 +5004,8 @@ $("subagentToggle").onclick = toggleSubagents;
 $("subagentMax").addEventListener("change", (e) => setSubagentMax(e.target.value));
 $("askToggle").addEventListener("click", () => toggleAsk());
 $("decisionMToggle")?.addEventListener("click", () => toggleDecisionM());
+$("timestralToggle")?.addEventListener("click", () => toggleTimestral());
+$("timestralSize")?.addEventListener("change", (e) => cambiaTagliaTimestral(e.target.value));
 $("modelSel").onchange = (e) => postJSON("/api/model", { id: e.target.value });
 $("thinkSel").onchange = (e) => postJSON("/api/thinking", { level: e.target.value });
 
