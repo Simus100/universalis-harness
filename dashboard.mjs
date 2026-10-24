@@ -4728,6 +4728,10 @@ const server = http.createServer(async (req, res) => {
     // fidarsi: MAE del modello contro il naive, e copertura empirica delle bande.
     if (req.method === "POST" && url.pathname === "/api/timestral/backtest") {
       if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      // Spenta su questa istanza (lock dell'amministratore o scelta dell'utente): la previsione
+      // non si esegue, anche se qualcuno chiama l'API direttamente. Un permesso che vive solo
+      // nella UI non è un permesso.
+      if (!timestralClient.prefs.enabled) return json(res, 403, { error: `previsioni disattivate su questa istanza${timestralClient.prefs.locked ? " (decisione dell'amministratore)" : ""}` });
       const body = await readBody(req, 2 * 1024 * 1024);
       try {
         const fonti = timestralClient.preparaSerie({
@@ -4754,6 +4758,7 @@ const server = http.createServer(async (req, res) => {
     // query. Finisce in media/previsioni/dati/, che è ESCLUSO da git (dati riservati).
     if (req.method === "POST" && url.pathname === "/api/timestral/dati") {
       if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      if (!timestralClient.prefs.enabled) return json(res, 403, { error: "previsioni disattivate su questa istanza" });
       const nome = basename(String(url.searchParams.get("nome") || ""));
       if (!nome || !/\.(csv|txt)$/i.test(nome)) return json(res, 400, { error: "serve un file .csv o .txt" });
       try {
@@ -4775,6 +4780,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "POST" && url.pathname === "/api/timestral/forecast") {
       if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      if (!timestralClient.prefs.enabled) return json(res, 403, { error: `previsioni disattivate su questa istanza${timestralClient.prefs.locked ? " (decisione dell'amministratore)" : ""}` });
       const body = await readBody(req, 2 * 1024 * 1024);
       try {
         const fonti = timestralClient.preparaSerie({

@@ -5719,6 +5719,8 @@ async function caricaPrevisioni() {
       $("prevStato").innerHTML = `${g} · le serie sono ${serie.length}; i CSV si caricano con <b>＋ csv</b> (colonna data + colonna valore).`;
     }
     prevCaricata = true;
+    // se la feature è spenta su questa istanza, il messaggio di permesso vince sullo stato tecnico
+    prevBloccata();
     if (!$("prevCorpo").hidden && !prevRisultato) return;
   } catch (e) {
     $("prevStato").innerHTML = `Non riesco a leggere lo stato: ${escHtml(String(e.message || e))}`;
@@ -5816,7 +5818,23 @@ function prevTabella(out) {
     <table><thead><tr><th>passo</th><th>mediana</th><th>q05</th><th>q95</th></tr></thead><tbody>${righe.join("")}</tbody></table>`;
 }
 
+/** Il permesso della vista è lo stesso dei tool: se è spenta, non si calcola niente. */
+function prevBloccata() {
+  const t = (lastState || {}).timestral || {};
+  const area = $("prevStato");
+  if (t.available !== false && t.enabled === false) {
+    if (area) {
+      area.innerHTML = t.locked
+        ? "<b>Previsioni disattivate su questa istanza</b> — la decisione è di chi amministra (DASH_TIMESTRAL_LOCK): il modello resta disponibile per le altre istanze, qui non si eseguono previsioni. Per chiedere l'attivazione, rivolgiti a chi gestisce il server."
+        : "<b>Previsioni disattivate</b> — riaccendile dall'interruttore <code>Timestral</code> nel menu features.";
+    }
+    return true;
+  }
+  return false;
+}
+
 async function prevEsegui() {
+  if (prevBloccata()) return;
   const sel = $("prevSerie");
   const val = sel && sel.value;
   if (!val) { alert("Nessuna serie: carica un CSV con ＋ csv, oppure usa una serie inclusa."); return; }
@@ -5855,6 +5873,7 @@ async function prevEsegui() {
 
 /** Verifica storica: l'unico numero che dice se fidarsi. */
 async function prevVerifica() {
+  if (prevBloccata()) return;
   const sel = $("prevSerie");
   const val = sel && sel.value;
   if (!val) return;
@@ -5926,6 +5945,7 @@ function prevScaricaSvg() {
 /** Caricamento di un CSV: validato dal server (righe scartate comprese) prima di salvarlo. */
 async function prevCaricaFile(file) {
   if (!file) return;
+  if (prevBloccata()) return;
   $("prevStato").textContent = `carico ${file.name}…`;
   try {
     const testo = await file.text();
@@ -5975,7 +5995,7 @@ function showTab(name) {
   const fp = $("featProgetto"), fa = $("featAgenda"), fl = $("featLive");
   const fprev = $("featPrevisioni");
   if (fprev) fprev.classList.toggle("on", name === "previsioni");
-  if (name === "previsioni") { if (!prevCaricata) caricaPrevisioni(); }
+  if (name === "previsioni") { if (!prevCaricata) caricaPrevisioni(); else prevBloccata(); }
   if (fp) fp.classList.toggle("on", name === "progetto");
   if (fa) fa.classList.toggle("on", name === "agenda");
   if (fl) fl.classList.toggle("on", name === "live");
