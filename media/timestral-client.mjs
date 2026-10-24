@@ -98,13 +98,30 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
   const demoFile = join(mediaDir, "timestral-demo.json");
   const datiDir = join(mediaDir, "previsioni", "dati");
   const available = String(process.env.DASH_TIMESTRAL ?? "on").trim().toLowerCase() !== "off";
+  /**
+   * Permessi per ISTANZA. Ogni istanza è un utente diverso e sullo stesso server convivono
+   * un titolare e due sottoclienti: la stessa funzione non può essere uguale per tutti.
+   *   DASH_TIMESTRAL=off        → feature assente (nessun tool, nessuna vista, nessuna rotta)
+   *   DASH_TIMESTRAL_DEFAULT=off → presente ma SPENTA all'inizio: la accende l'utente
+   *   DASH_TIMESTRAL_LOCK=on     → interruttore e taglia decisi da chi amministra: l'utente
+   *                                non li cambia (come DASH_LOCK_MODEL per il modello)
+   *   DASH_TIMESTRAL_MAX_UPLOAD_MB → tetto per i CSV caricati (disco dei sottoclienti: 2 GB)
+   * Il servizio è condiviso, quindi la RAM e la CPU sono di tutti: l'interruttore limita
+   * l'USO (i tool e la vista), il lock limita il POTERE di chi usa l'istanza.
+   */
+  const defaultOn = !/^(off|0|no|false)$/i.test(String(process.env.DASH_TIMESTRAL_DEFAULT ?? "on").trim());
+  const locked = /^(on|1|yes|true)$/i.test(String(process.env.DASH_TIMESTRAL_LOCK ?? "").trim());
+  const maxUploadMb = Number(process.env.DASH_TIMESTRAL_MAX_UPLOAD_MB) > 0 ? Number(process.env.DASH_TIMESTRAL_MAX_UPLOAD_MB) : 8;
 
-  const prefs = { enabled: true, size: "28M", port: DEFAULT_PORT, prediction_length: 30 };
+  const prefs = { enabled: defaultOn, size: "28M", port: DEFAULT_PORT, prediction_length: 30 };
   try {
     const raw = JSON.parse(readFileSync(prefsFile, "utf8"));
     // la feature è ACCESA di default (richiesta: per tutti gli utenti); il file serve a
     // ricordare una scelta diversa, non a imporre un default spento
-    if (typeof raw?.enabled === "boolean") prefs.enabled = raw.enabled;
+    // con il lock attivo la preferenza salvata non conta: comanda l'amministratore, e il
+    // valore resta quello dell'ambiente (un file vecchio non deve riaccendere una feature
+    // che è stata chiusa dall'alto)
+    if (typeof raw?.enabled === "boolean" && !locked) prefs.enabled = raw.enabled;
     if (SIZES[raw?.size]) prefs.size = raw.size;
     if (Number.isFinite(Number(raw?.port))) prefs.port = Number(raw.port);
     if (Number.isFinite(Number(raw?.prediction_length))) prefs.prediction_length = Number(raw.prediction_length);
@@ -174,6 +191,9 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
       size: prefs.size,
       port: prefs.port,
       prediction_length: prefs.prediction_length,
+      // permessi: la UI mostra la mano dell'amministratore invece di un interruttore che mente
+      locked,
+      max_upload_mb: maxUploadMb,
       demo: demoIds(),
     };
   }
@@ -188,6 +208,12 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
 
   function impostaTaglia(size) {
     if (!SIZES[size]) throw new Error(`taglia sconosciuta: ${size}`);
+    if (locked) {
+      // la taglia decide quanta RAM della MACCHINA si occupa: un utente limitato non la cambia
+      const err = new Error("la taglia del modello è decisa da chi amministra (DASH_TIMESTRAL_LOCK=on)");
+      err.status = 403;
+      throw err;
+    }
     return chiama("/model", { method: "POST", body: { size }, timeoutMs: 180_000 }).then((s) => {
       prefs.size = size;
       savePrefs();
@@ -200,6 +226,13 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
   }
 
   function setEnabled(on) {
+    if (locked) {
+      const err = new Error(
+        "l'uso di Timestral su questa istanza è deciso da chi amministra (DASH_TIMESTRAL_LOCK=on): l'interruttore non è modificabile da qui",
+      );
+      err.status = 403;
+      throw err;
+    }
     prefs.enabled = !!on;
     savePrefs();
     return snapshot();
@@ -294,6 +327,12 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
     if (!fonti.length) throw new Error("nessuna serie: indica `demo`, `csv` oppure `series`");
     return fonti;
   }
+
+  // il lock e il tetto sono proprietà del client (li legge anche il tool e la rotta): una sola
+  // fonte di verità, così UI, API e tool non possono dire cose diverse
+  prefs.locked = locked;
+  prefs.max_upload_mb = maxUploadMb;
+  prefs.default_enabled = defaultOn;
 
   return {
     available,

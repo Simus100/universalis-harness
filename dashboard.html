@@ -2512,8 +2512,13 @@ function renderTimestral(st) {
   const riga = b.closest ? b.closest(".feat-row") : null;
   if (riga) riga.hidden = r.available === false;
   if (r.available === false) return;
-  b.dataset.avail = "1";
-  setPill(b, !!r.enabled, "Timestral");
+  // Tre casi distinti, e la UI deve distinguerli:
+  //  - libero: l'utente accende e spegne quando vuole
+  //  - bloccato (DASH_TIMESTRAL_LOCK=on): decide l'amministratore, l'interruttore è di sola lettura
+  //  - assente (DASH_TIMESTRAL=off): la riga non c'è proprio (gestito sopra)
+  const bloccato = !!r.locked;
+  b.dataset.avail = bloccato ? "0" : "1";
+  setPill(b, !!r.enabled, bloccato ? "Timestral 🔒" : "Timestral");
   if (sel && sel.options.length === 0) {
     // le taglie arrivano dallo stato (con la RAM misurata), non da un elenco scritto due volte
     for (const [id, m] of Object.entries(r.taglie || {})) {
@@ -2525,14 +2530,20 @@ function renderTimestral(st) {
     }
   }
   if (sel && r.size) sel.value = r.size;
+  if (sel) sel.disabled = bloccato;
   if (info) {
-    if (!r.enabled) info.textContent = "spento · il servizio resta leggero";
-    else if (r.caricato) info.textContent = `${r.taglia || r.size} · ${Math.round(r.ram_processo_mb || 0)} MB · :${r.port}`;
-    else info.textContent = `${r.taglia || r.size} · modello non in RAM`;
+    const stato = !r.enabled
+      ? "spento"
+      : r.caricato
+        ? `${r.taglia || r.size} · ${Math.round(r.ram_processo_mb || 0)} MB · :${r.port}`
+        : `${r.taglia || r.size} · modello non in RAM`;
+    info.textContent = bloccato ? `${stato} · deciso dall'amministratore` : (!r.enabled ? `${stato} · il servizio resta leggero` : stato);
   }
-  b.title = r.enabled
-    ? "Timestral acceso: l'agente può prevedere serie temporali. Clicca per togliere i tool (il servizio resta disponibile per la vista)."
-    : "Timestral spento: i tool di previsione non vengono inviati all'agente.";
+  b.title = bloccato
+    ? `Timestral: questa istanza non cambia da sé l'uso delle previsioni (DASH_TIMESTRAL_LOCK=on) — ora è ${r.enabled ? "acceso" : "spento"}, taglia ${r.taglia || r.size} decisa dall'amministratore.`
+    : r.enabled
+      ? "Timestral acceso: l'agente può prevedere serie temporali. Clicca per togliere i tool (il servizio resta disponibile per la vista)."
+      : "Timestral spento: i tool di previsione non vengono inviati all'agente.";
 }
 
 /** Interruttore dei tool di Timestral: non spegne il servizio (è condiviso da tutte le istanze). */
@@ -2548,6 +2559,8 @@ async function toggleTimestral() {
 
 /** Cambio taglia: il servizio scarica il modello attuale e carica quello scelto. */
 async function cambiaTagliaTimestral(size) {
+  const r0 = (lastState || {}).timestral || {};
+  if (r0.locked) return; // la taglia occupa RAM della macchina: con il lock non si tocca
   const info = $("timestralInfo");
   if (info) info.textContent = `carico ${size}…`;
   const j = await postJSON("/api/timestral", { size });

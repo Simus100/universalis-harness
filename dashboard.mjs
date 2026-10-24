@@ -4056,16 +4056,20 @@ function readTextBody(req, limit = 8 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
     const parti = [];
     let size = 0;
+    let troppo = null;
     req.on("data", (c) => {
       size += c.length;
+      // Oltre il tetto NON si distrugge la richiesta: `destroy()` chiude il socket prima che la
+      // risposta parta, e chi carica il file vede «Connection reset» invece di «file troppo
+      // grande». Si smette di accumulare, ma si consuma il resto e si risponde con il 413.
       if (size > limit) {
-        reject(new HttpError(413, "corpo troppo grande"));
-        req.destroy();
+        if (!troppo) troppo = new HttpError(413, `file troppo grande: il tetto di questa istanza è ${Math.round(limit / 1024 / 1024)} MB`);
+        parti.length = 0;
         return;
       }
       parti.push(c);
     });
-    req.on("end", () => resolve(Buffer.concat(parti).toString("utf8")));
+    req.on("end", () => (troppo ? reject(troppo) : resolve(Buffer.concat(parti).toString("utf8"))));
     req.on("error", reject);
   });
 }
@@ -4409,6 +4413,7 @@ const server = http.createServer(async (req, res) => {
           "decision-m-tool-gate",
           "timestral-tool",
           "timestral-service",
+          ...(timestralClient.prefs.locked ? ["timestral-lock"] : []),
           "state-safe",
         ],
       });
@@ -4676,6 +4681,8 @@ const server = http.createServer(async (req, res) => {
         ...stato,
         enabled: timestralClient.prefs.enabled,
         size: timestralClient.prefs.size,
+        locked: !!timestralClient.prefs.locked,
+        max_upload_mb: timestralClient.prefs.max_upload_mb,
         taglie: TIMESTRAL_TAGLIE,
         demo: timestralClient.demo().map((s2) => ({
           id: s2.id,
@@ -4696,7 +4703,7 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req, 16 * 1024);
       try {
         if (typeof body.enabled === "boolean") {
-          timestralClient.setEnabled(body.enabled);
+          timestralClient.setEnabled(body.enabled); // con DASH_TIMESTRAL_LOCK=on solleva 403
           applyToolGate();
           broadcast("state", getState());
           return json(res, 200, { ok: true, enabled: timestralClient.prefs.enabled, toolActive: timestralToolEnabled() });
@@ -4711,7 +4718,9 @@ const server = http.createServer(async (req, res) => {
         }
         return json(res, 400, { error: "serve { enabled } oppure { size } oppure { action: \"unload\" }" });
       } catch (e) {
-        return json(res, 400, { error: String(e?.message || e) });
+        // 403 = questione di permessi decisa dall'amministratore; 400 = richiesta sbagliata.
+        // Sono cose diverse: la UI le mostra diversamente, e chi legge i log deve distinguerle.
+        return json(res, e?.status === 403 ? 403 : 400, { error: String(e?.message || e) });
       }
     }
 
@@ -4749,7 +4758,8 @@ const server = http.createServer(async (req, res) => {
       if (!nome || !/\.(csv|txt)$/i.test(nome)) return json(res, 400, { error: "serve un file .csv o .txt" });
       try {
         // readTextBody, non readBody: il CSV è testo e readBody lo trasformerebbe in {}
-        const testoFinale = await readTextBody(req, 8 * 1024 * 1024);
+        const tetto = Math.max(1, Number(timestralClient.prefs.max_upload_mb) || 8) * 1024 * 1024;
+        const testoFinale = await readTextBody(req, tetto);
         if (!testoFinale.trim()) return json(res, 400, { error: "file vuoto" });
         await fs.mkdir(timestralClient.datiDir, { recursive: true });
         // si valida PRIMA di salvare: un file che non si può leggere meglio non averlo
@@ -4757,7 +4767,9 @@ const server = http.createServer(async (req, res) => {
         await fs.writeFile(join(timestralClient.datiDir, nome), testoFinale, "utf8");
         return json(res, 200, { ok: true, nome, punti: prova.punti.length, scartate: prova.scartate, separatore: prova.separatore });
       } catch (e) {
-        return json(res, 400, { error: String(e?.message || e) });
+        // 413 quando il file supera il tetto dell'istanza (i sottoclienti hanno 2 GB di disco):
+        // HttpError porta il codice in `.code`, non in `.status`
+        return json(res, e?.code || 400, { error: String(e?.message || e) });
       }
     }
 
