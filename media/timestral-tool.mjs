@@ -248,7 +248,7 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
               `- ultimo osservato: ${num(s.last_observed)}${meta.unita ? ` ${meta.unita}` : ""}`,
               // l'ampiezza in percentuale ha senso solo su serie positive: su valori che
               // attraversano lo zero diventa un numero enorme e inutile
-              `- fine orizzonte: mediana **${num(st2.median_end)}** · intervallo 80% ${num(s.q05[s.median.length - 1])}–${num(s.q95[s.median.length - 1])}` +
+              `- fine orizzonte: mediana **${num(st2.median_end)}** · intervallo 80% ${num(s.q10[s.median.length - 1])}–${num(s.q90[s.median.length - 1])} · intervallo 95% ${num(s.q05[s.median.length - 1])}–${num(s.q95[s.median.length - 1])}` +
                 (Number.isFinite(Number(st2.band80_width_pct)) && (s.last_observed ?? 0) > 0 ? ` · ampiezza ${st2.band80_width_pct}%` : ""),
               `- variazione attesa alla fine: ${st2.expected_change_end == null ? "—" : num(st2.expected_change_end)} (${pc(st2.expected_change_end_pct)}) · P(rialzo) = ${st2.p_rise_end == null ? "—" : Number(st2.p_rise_end).toFixed(2)}`,
               tabella(s),
