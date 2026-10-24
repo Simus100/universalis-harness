@@ -210,6 +210,18 @@ Fonte strutturata provata qui (senza chiavi): API della BCE,
 `https://data-api.ecb.europa.eu/service/data/ICP/M.U2.N.000000.4.ANR?format=csvdata`
 — inflazione HICP dell'area euro, variazione annua mensile, 120 punti (2016-01 → 2025-12).
 
+### Togliere una serie che non serve più
+
+`elimina serie` (nella barra della vista) cancella **il CSV e i suoi metadati** dalla cartella
+dati. Chiede conferma mostrando nome e fonte, perché non c'è un annulla. Le quattro serie di
+esempio non si eliminano dalla vista: stanno in `media/timestral-demo.json`.
+
+Rotta: `POST /api/timestral/dati/elimina { nome }` → `{ ok, nome, metaRimosso }`. Il nome è
+validato (solo `.csv`/`.txt` dentro `media/previsioni/dati`, niente percorsi: `../` viene
+rifiutato con 400, un file inesistente con 404). La cancellazione **non** richiede che la feature
+sia accesa: è pulizia dei propri dati, e con `DASH_TIMESTRAL_LOCK=on` resta possibile — il lock
+limita l'uso del modello, non la gestione dei file di chi lavora.
+
 ### Controlli del grafico (lettura del trend)
 
 | leva | perché |

@@ -9,7 +9,7 @@
  * Confine del modulo: rete, preferenze su disco, lettura delle serie (demo e CSV). Nessuna
  * formattazione per il modello e nessun tool: quello sta in media/timestral-tool.mjs.
  */
-import { existsSync, mkdirSync as fsMkdir, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync as fsMkdir, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, isAbsolute, join, normalize, relative, resolve } from "node:path";
 
 const DEFAULT_PORT = Number(process.env.TIMESTRAL_PORT) || 8018;
@@ -435,6 +435,35 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
     return { nome: pulito, percorso: `previsioni/dati/${pulito}.csv`, punti: righe.length, scartate, meta };
   }
 
+  /**
+   * Elimina una serie importata o caricata: il CSV e i suoi metadati. Serve perché la cartella
+   * dei dati è anche la memoria di ciò che si è provato: dopo dieci esperimenti l'elenco diventa
+   * illeggibile, e chi ha importato una serie sbagliata deve poterla togliere.
+   * Il nome è validato (solo file dentro media/previsioni/dati, niente percorsi).
+   */
+  function eliminaSerie(nome) {
+    const soloNome = String(nome || "").split(/[\\/]/).pop();
+    if (!/^[A-Za-z0-9._-]+\.(csv|txt)$/i.test(soloNome)) {
+      const err = new Error("nome non valido: serve un file .csv o .txt della cartella dati");
+      err.status = 400;
+      throw err;
+    }
+    const file = dentroRadice(join(mediaDir, "previsioni", "dati"), soloNome);
+    if (!file || !existsSync(file)) {
+      const err = new Error(`serie non trovata: ${soloNome}`);
+      err.status = 404;
+      throw err;
+    }
+    const meta = file.replace(/\.(csv|txt)$/i, ".meta.json");
+    unlinkSync(file);
+    let metaRimosso = false;
+    if (existsSync(meta)) {
+      unlinkSync(meta);
+      metaRimosso = true;
+    }
+    return { nome: soloNome, metaRimosso };
+  }
+
   /** CSV caricati (dall'utente o dall'agente): elenco con metadati di provenienza. */
   function csvDisponibili() {
     try {
@@ -556,6 +585,7 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
     csvDisponibili,
     preparaSerie,
     salvaSerie,
+    eliminaSerie,
     datiDir,
     TOKEN_FILE,
     token: leggiToken,

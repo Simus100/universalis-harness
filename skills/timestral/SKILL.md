@@ -116,6 +116,13 @@ Esempio di fonte strutturata che funziona da qui (nessuna chiave, nessun login):
 Banca centrale europea, `https://data-api.ecb.europa.eu/service/data/<dataset>?format=csvdata`,
 da cui si prendono serie come l'inflazione HICP mensile.
 
+## Togliere una serie che non serve più
+
+Se l'utente dice che una serie importata non gli serve più (o che ha sbagliato i dati), in vista
+Previsioni c'è **elimina serie**: cancella il CSV e i metadati. Non serve chiederglielo di fare a
+mano. Il tool `timestral_importa` non elimina (di proposito: importare e distruggere sono due
+azioni diverse, e la seconda va fatta da chi guarda l'elenco).
+
 ## La vista «Previsioni» (dashboard)
 
 Menu **features → 📈 previsioni**: grafico a ventaglio dei quantili, numeri (mediana, variazione

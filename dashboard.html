@@ -2135,6 +2135,7 @@ footer {
       </span>
       <span style="flex:1"></span>
       <button class="ghost" id="prevCarica" type="button" title="Carica un CSV con una colonna di date e una di valori (oppure trascinalo qui)">carica csv</button>
+      <button class="ghost" id="prevElimina" type="button" title="Elimina dall'elenco la serie scelta (file e metadati): le serie incluse di esempio non si toccano">elimina serie</button>
       <input id="prevFile" type="file" accept=".csv,.txt,text/csv" hidden />
       <button class="ghost" id="prevBacktest" type="button" title="Rifà la previsione sul passato di questa serie e la confronta con «domani come oggi»: dice quanto fidarsi">affidabilità</button>
       <span class="prev-export">
@@ -9066,6 +9067,52 @@ $("prevAvanti")?.addEventListener("click", () => {
   PREV_CTRL.offset = Math.max(0, (PREV_CTRL.offset || 0) - prevFinestraPunti());
   prevRidisegna();
 });
+/**
+ * Elimina la serie scelta. Solo i CSV (importati o caricati a mano): le quattro serie incluse
+ * sono di esempio e si tolgono dal file, non dalla vista. La conferma dice cosa sparisce,
+ * compresa la fonte, perché dopo non c'è un annulla.
+ */
+async function prevEliminaSerie() {
+  const sel = $("prevSerie");
+  const val = sel && sel.value;
+  if (!val || !val.startsWith("csv:")) {
+    alert("Puoi eliminare solo le serie che hai importato o caricato (quelle con «· importata» o «· tuo file»). Le serie di esempio restano.");
+    return;
+  }
+  const nome = val.slice(4);
+  const voce = ((prevStato && prevStato.csv) || []).find((c) => c.nome === nome);
+  const fonte = voce && voce.meta && voce.meta.fonte ? `\n\nFonte: ${voce.meta.fonte}` : "";
+  if (!confirm(`Eliminare «${nome}»?${fonte}\n\nIl file e i suoi metadati vengono cancellati: non si può annullare.`)) return;
+  try {
+    const r = await fetch("/api/timestral/dati/elimina", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome }),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    const eraQuella = prevRisultato && ((prevMetaNome() || "") === nome);
+    await caricaPrevisioni();
+    if (eraQuella || !sel.value) {
+      // niente grafico di una serie che non c'è più
+      prevRisultato = null;
+      prevAnalisi = null;
+      prevErroriOrizzonte = null;
+      $("prevCorpo").hidden = true;
+      $("prevBacktestCard").hidden = true;
+      $("prevStato").innerHTML = `<b>Serie eliminata</b>: ${escHtml(nome)}. Scegli un'altra serie dall'elenco, oppure chiedine una nuova a parole.`;
+    } else {
+      $("prevStato").innerHTML = `<b>Serie eliminata</b>: ${escHtml(nome)}.`;
+      await prevEsegui();
+    }
+  } catch (e) {
+    alert(`Non eliminata: ${String(e.message || e)}`);
+  }
+}
+function prevMetaNome() {
+  return (prevRisultato && prevRisultato.meta && prevRisultato.meta[0] && prevRisultato.meta[0].nome) || null;
+}
+
 $("prevChiediBtn")?.addEventListener("click", () => {
   const campo = $("prevChiedi");
   const t = (campo.value || "").trim();
@@ -9120,6 +9167,7 @@ function prevAttendiSerie(prima) {
     if (giri > 90) clearInterval(t); // 3 minuti: oltre, si smette di aspettare
   }, 2000);
 }
+$("prevElimina")?.addEventListener("click", () => prevEliminaSerie());
 $("prevChiedi")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("prevChiediBtn").click(); } });
 $("prevZoomIn")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1 / 1.35));
 $("prevZoomOut")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1.35));

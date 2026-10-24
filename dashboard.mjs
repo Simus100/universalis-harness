@@ -4776,6 +4776,21 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // Eliminazione di una serie: il file e i suoi metadati. È pulizia dei propri dati, quindi
+    // non richiede che la feature sia accesa (con DASH_TIMESTRAL_LOCK resta possibile: il lock
+    // limita l'uso del modello, non la gestione dei file di chi lavora).
+    if (req.method === "POST" && url.pathname === "/api/timestral/dati/elimina") {
+      if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      const body = await readBody(req, 8 * 1024);
+      try {
+        if (!body?.nome) return json(res, 400, { error: "serve { nome }" });
+        const r = timestralClient.eliminaSerie(body.nome);
+        return json(res, 200, { ok: true, ...r });
+      } catch (e) {
+        return json(res, e?.status || 400, { error: String(e?.message || e) });
+      }
+    }
+
     // Caricamento di un CSV dell'utente per le previsioni: corpo = testo del file, nome in
     // query. Finisce in media/previsioni/dati/, che è ESCLUSO da git (dati riservati).
     if (req.method === "POST" && url.pathname === "/api/timestral/dati") {
