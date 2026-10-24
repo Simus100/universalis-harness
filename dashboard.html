@@ -5857,7 +5857,9 @@ async function prevEsegui() {
     $("prevSvgBox").innerHTML = prevGrafico(out);
     $("prevNumeri").innerHTML = prevNumeri(out);
     $("prevTabella").innerHTML = prevTabella(out);
-    $("prevNotaGrafico").textContent = "Stima probabilistica di un modello pre-addestrato (zero-shot): la mediana non è un fatto, e il modello non conosce notizie o eventi annunciati.";
+    $("prevNotaGrafico").textContent =
+      "Stima probabilistica di un modello pre-addestrato (zero-shot): la mediana non è un fatto, e il modello non conosce notizie o eventi annunciati. " +
+      "Modello: Timestral di Mistral (pesi con licenza Modified MIT, codice Apache 2.0).";
     $("prevCorpo").hidden = false;
     const meta = (out.meta && out.meta[0]) || {};
     $("prevStato").innerHTML =

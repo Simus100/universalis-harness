@@ -8,8 +8,10 @@ cosa manca. I numeri vengono da misure fatte su questa VPS, non da stime.
 `/api/timestral/forecast`, `/api/timestral/backtest`, upload CSV, 4 serie demo, skill
 `timestral`, e la **vista «Previsioni»** (grafico a ventaglio, statistiche, tabella, verifica
 storica, export CSV/SVG).
-**Manca:** il deploy sulle istanze `tester_*` e la pubblicazione (token GitHub da rinnovare,
-risponde 401: è scaduto, non è un problema del codice).
+**Fatto anche:** deploy sulle quattro istanze (patch a tre vie, backup dei file toccati, verifica
+per istanza) e **permessi selettivi** (`DASH_TIMESTRAL`, `_DEFAULT`, `_LOCK`, `_MAX_UPLOAD_MB`).
+**Manca:** niente, salvo il riavvio dell'istanza principale per attivare il codice nei tool
+(`bash scripts/restart-dashboard.sh`).
 
 ## Cos'è
 
@@ -113,10 +115,40 @@ in cache.
    decidere.
 6. **Serie** — 4 demo incluse + CSV caricati dall'utente (la prima versione non chiama API
    esterne: Yahoo risponde 429, Stooq chiede JavaScript). *(fatto)*
-7. **Deploy** — unità `timestral.service` *(fatto, attiva e abilitata al boot)* + copia del
-   codice nelle quattro istanze, verifica per istanza. *(manca la copia sulle tester)*
+7. **Deploy** — unità `timestral.service` *(fatto)* + codice nelle quattro istanze con backup e
+   verifica per istanza *(fatto 2026-10-24)* + permessi selettivi per istanza *(fatto)*.
 8. **Skill `timestral`** *(fatto)* **+ questo documento** *(fatto)* **+ pubblicazione** *(bloccata:
    il token in `.github-access` risponde 401 — serve un token nuovo)*.
+
+## Permessi per istanza (selettivo)
+
+Sullo stesso server convivono quattro istanze con utenti diversi: la stessa funzione non può
+avere gli stessi poteri ovunque. Quattro variabili nel `.env` di **ogni** istanza, lette
+all'avvio (cambiarle = riavviare l'istanza):
+
+| variabile | effetto |
+|---|---|
+| `DASH_TIMESTRAL=off` | feature **assente**: nessun tool, nessuna vista, nessuna rotta (404/400) |
+| `DASH_TIMESTRAL_DEFAULT=off` | presente ma **spenta** all'inizio: la accende l'utente |
+| `DASH_TIMESTRAL_LOCK=on` | interruttore e taglia **decisi dall'amministratore**: `POST /api/timestral` risponde **403** e la preferenza salvata su disco non conta |
+| `DASH_TIMESTRAL_MAX_UPLOAD_MB=n` | tetto per i CSV caricati (**413** oltre): i sottoclienti hanno 2 GB di disco |
+
+Il permesso non vive solo nella UI: con la feature spenta, `/api/timestral/forecast`,
+`/api/timestral/backtest` e l'upload rispondono **403** anche a chi chiama l'API direttamente.
+Un permesso che si aggira con `curl` non è un permesso.
+
+Configurazione attuale (2026-10-24):
+
+| istanza | utente | stato | perché |
+|---|---|---|---|
+| principale | `pi` | libera, **accesa** | titolare: decide lui |
+| tester_01 | `tester_01` | libera, **accesa** | istanza di prove tecniche, nessun limite |
+| tester_07 | `tester_07` | **bloccata e spenta**, CSV ≤ 2 MB | sottocliente: non decide le risorse di tutti |
+| tester_08 | `tester_08` | **bloccata e spenta**, CSV ≤ 2 MB | sottocliente, come tester_07 |
+
+Per concederla a un sottocliente: `DASH_TIMESTRAL_DEFAULT=on` nel suo `.env` (lasciando
+`DASH_TIMESTRAL_LOCK=on` se non deve poter cambiare taglia), poi `systemctl restart pi-testerNN`.
+Per toglierla del tutto: `DASH_TIMESTRAL=off`.
 
 ## In esercizio: comandi e percorsi
 
