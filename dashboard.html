@@ -1303,7 +1303,15 @@ footer {
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: 6px 8px 8px;
 }
-.feat-row { display: flex; align-items: center; gap: 8px; padding: 7px 4px; }
+.feat-row {
+  display: flex; align-items: center; gap: 8px; padding: 7px 4px;
+  /* Il pannello è largo ~400 px (e ~300 su mobile): con quattro voci in fila il quarto bottone
+     usciva dal bordo. Le righe ora vanno a capo e i figli possono restringersi, così il
+     contenuto resta dentro qualunque sia il numero di voci. */
+  flex-wrap: wrap; min-width: 0;
+}
+.feat-row > * { min-width: 0; }
+.feat-row > .pill { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .feat-row + .feat-row { border-top: 1px solid var(--border-soft); }
 .feat-lbl { flex: 1; font-size: var(--fs-md); color: var(--dim); }
 .feat-sep { height: 1px; background: var(--border); margin: 6px 2px; }
@@ -1856,8 +1864,9 @@ footer {
         <div class="feat-row">
           <button id="featProgetto" class="pill" type="button" style="flex:1;justify-content:center" title="Artefatti: i file prodotti dal lavoro, in media/"><span class="led"></span>📦 progetto</button>
           <button id="featAgenda" class="pill" type="button" style="flex:1;justify-content:center" title="Agenda: cosa sta facendo l'harness e cosa aspetta da te"><span class="led"></span>🗓 agenda</button>
+        </div>
+        <div class="feat-row">
           <button id="featLive" class="pill" type="button" style="flex:1;justify-content:center" title="Live view del browser: guarda cosa fa e, se serve, prendi il controllo"><span class="led"></span>🖥 live</button>
-    
           <button id="featPrevisioni" class="pill" type="button" style="flex:1;justify-content:center" title="Previsioni: cosa succederà, secondo Timestral — con la banda di incertezza e la verifica storica"><span class="led"></span>📈 previsioni</button>
         </div>
       </div>
