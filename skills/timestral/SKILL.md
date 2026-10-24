@@ -68,6 +68,25 @@ Si cambia dalla dashboard (menu «servizi» → tendina accanto a Timestral) o c
 - **Connettori online**: non nella prima versione (Yahoo risponde 429, Stooq chiede
   JavaScript). Fase 2.
 
+## Quando l'utente chiede «a parole» (il caso normale in finanza)
+
+«Prevedi l'inflazione italiana dei prossimi 6 mesi» non è una richiesta di spiegazione: è un
+incarico. Non rispondere che servono i dati e non chiedere all'utente di trovarli. Fai tu:
+
+1. **cerca** la serie (ISTAT, BCE, Banca d'Italia, Eurostat hanno API o CSV pubblici che si
+   aprono da qui; per i prezzi di mercato valuta una fonte dichiarata e la sua data);
+2. **importa** con `timestral_importa` (nome breve, unità, frequenza, fonte e URL);
+3. **prevedi** con `timestral_forecast`, scegliendo l'orizzonte nell'unità giusta (6 mesi = 6);
+4. **spiega in parole semplici**: stima centrale, fascia probabile, probabilità di salire e
+   quanto fidarsi (dall'affidabilità). Chiudi dicendo che la serie è ora nella vista
+   «Previsioni» con il suo nome, così la ritrova.
+
+Se la fonte non è accessibile o i numeri non sono verificabili, dillo con chiarezza e proponi
+un'alternativa (un CSV che l'utente ha in casa, una serie già importata). Mai numeri inventati.
+
+Dalla vista «Previsioni» lo stesso incarico si dà con il campo **«oppure chiedi a parole»**:
+quel testo arriva in chat come richiesta, e vale la procedura qui sopra.
+
 ## Importare dati che hai trovato tu (ricerca web, PDF, file)
 
 Quando i numeri li trova l'agente — una serie ISTAT, un prezzo da un sito, una tabella in un

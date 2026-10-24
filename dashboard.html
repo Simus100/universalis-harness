@@ -1757,6 +1757,34 @@ footer {
 .prev-badge { font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .5px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--dim); }
 .prev-badge.ok { border-color: color-mix(in srgb, var(--green) 50%, transparent); color: var(--green); }
 .prev-badge.warn { border-color: color-mix(in srgb, #d9a13b 60%, transparent); color: #d9a13b; }
+/* La barra in due righe, con un ordine che si legge da solo: sopra si sceglie COSA prevedere,
+   sotto si chiede a parole, si importa/esporta e si verifica. Prima erano dodici controlli in
+   fila che andavano a capo dove capitava. */
+.prev-bar { flex-direction: column; align-items: stretch; gap: 8px; padding: 8px 10px; }
+.prev-bar-riga { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.prev-bar-riga > * { min-width: 0; }
+.prev-chiedi { display: inline-flex; align-items: center; gap: 6px; flex: 1 1 380px; min-width: 240px; }
+.prev-chiedi { display: inline-flex; align-items: center; gap: 6px; flex: 1 1 320px; min-width: 220px; }
+.prev-chiedi input {
+  flex: 1; min-width: 0; background: var(--panel-3); color: var(--text); border: 1px solid var(--border-soft);
+  border-radius: 8px; padding: 7px 10px; font-size: var(--fs-sm);
+}
+.prev-chiedi input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Il verdetto: la risposta in italiano corrente, prima di ogni numero. Chi non è del mestiere
+   deve poter capire la previsione in tre righe, senza leggere quantili. */
+.prev-verdetto { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; }
+.prev-verdetto .frase { font-size: var(--fs-md); color: var(--text-soft); line-height: 1.55; }
+.prev-verdetto .frase b { color: var(--text); }
+.prev-verdetto .sem { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .6px; }
+.prev-verdetto .sem .pallino { width: 9px; height: 9px; border-radius: 50%; }
+.prev-verdetto .sem.ok .pallino { background: var(--green); }
+.prev-verdetto .sem.medio .pallino { background: #d9a13b; }
+.prev-verdetto .sem.basso .pallino { background: #e06b6b; }
+.prev-glossario summary { cursor: pointer; color: var(--text-soft); font-size: var(--fs-sm); font-weight: 600; }
+.prev-glossario dl { margin: 10px 0 0; display: grid; grid-template-columns: minmax(140px, 200px) minmax(0, 1fr); gap: 6px 14px; }
+.prev-glossario dt { color: var(--text-soft); font-weight: 600; font-size: var(--fs-sm); }
+.prev-glossario dd { margin: 0; color: var(--dim); font-size: var(--fs-sm); line-height: 1.5; }
+@media (max-width: 620px) { .prev-glossario dl { grid-template-columns: minmax(0, 1fr); } }
 .prev-zoom { display: inline-flex; gap: 3px; }
 .prev-zoominfo { color: var(--faint); font-size: var(--fs-xs); min-width: 92px; font-variant-numeric: tabular-nums; }
 .prev-export { display: inline-flex; gap: 6px; flex-wrap: wrap; }
@@ -2084,30 +2112,38 @@ footer {
 </main>
 
 <main id="previsioniView" hidden>
-  <div class="gtoolbar">
-    <button class="ghost" id="prevBack" type="button" title="Torna alla chat">←<span class="lbl-largo"> chat</span></button>
-    <select id="prevSerie" class="select" aria-label="Serie da prevedere" title="Scegli cosa prevedere: le serie di esempio incluse oppure un tuo CSV"></select>
-    <span class="prev-oriz" title="Per quanti passi in avanti prevedere">
-      <span>orizzonte</span>
-      <input id="prevOrizzonte" type="number" min="1" max="366" step="1" value="30" inputmode="numeric" aria-label="Orizzonte della previsione" />
-      <span class="prev-unita" id="prevUnita">passi</span>
-    </span>
-    <span class="prev-preset" id="prevPreset">
-      <button class="ghost mini" type="button" data-h="7">7</button>
-      <button class="ghost mini" type="button" data-h="30">30</button>
-      <button class="ghost mini" type="button" data-h="90">90</button>
-    </span>
-    <button class="ghost forte" id="prevPrevedi" type="button" title="Calcola la previsione con il modello locale">calcola</button>
-    <span style="flex:1"></span>
-    <button class="ghost" id="prevCarica" type="button" title="Carica un CSV con una colonna di date e una di valori (oppure trascinalo qui)">carica csv</button>
-    <input id="prevFile" type="file" accept=".csv,.txt,text/csv" hidden />
-    <button class="ghost" id="prevBacktest" type="button" title="Rifà la previsione sul passato di questa serie e la confronta con «domani come oggi»: dice quanto fidarsi">affidabilità</button>
-    <span class="prev-export">
-      <button class="ghost" id="prevCsv" type="button" title="CSV con storico e previsione affiancati, date comprese">esporta csv</button>
-      <button class="ghost" id="prevPng" type="button" title="PNG del grafico come lo stai guardando (zoom compreso)">esporta png</button>
-      <button class="ghost" id="prevJson" type="button" title="JSON con dati, previsione, orizzonti e analisi: tutto quello che serve per rielaborare">esporta json</button>
-      <button class="ghost icona" id="prevSvg" type="button" title="SVG vettoriale del grafico">svg</button>
-    </span>
+  <div class="gtoolbar prev-bar">
+    <div class="prev-bar-riga">
+      <button class="ghost" id="prevBack" type="button" title="Torna alla chat">←<span class="lbl-largo"> chat</span></button>
+      <select id="prevSerie" class="select" aria-label="Serie da prevedere" title="Scegli cosa prevedere: le serie di esempio incluse oppure un tuo CSV"></select>
+      <span class="prev-oriz" title="Per quanti passi in avanti prevedere">
+        <span>orizzonte</span>
+        <input id="prevOrizzonte" type="number" min="1" max="366" step="1" value="30" inputmode="numeric" aria-label="Orizzonte della previsione" />
+        <span class="prev-unita" id="prevUnita">passi</span>
+      </span>
+      <span class="prev-preset" id="prevPreset">
+        <button class="ghost mini" type="button" data-h="7">7</button>
+        <button class="ghost mini" type="button" data-h="30">30</button>
+        <button class="ghost mini" type="button" data-h="90">90</button>
+      </span>
+      <button class="ghost forte" id="prevPrevedi" type="button" title="Calcola la previsione con il modello locale">calcola</button>
+    </div>
+    <div class="prev-bar-riga">
+      <span class="prev-chiedi">
+        <input id="prevChiedi" type="text" placeholder="oppure chiedi a parole: «l'inflazione italiana dei prossimi 6 mesi»" aria-label="Chiedi una previsione a parole" />
+        <button class="ghost" id="prevChiediBtn" type="button" title="L'agente cerca i dati sul web, li importa con la fonte e calcola la previsione">chiedi</button>
+      </span>
+      <span style="flex:1"></span>
+      <button class="ghost" id="prevCarica" type="button" title="Carica un CSV con una colonna di date e una di valori (oppure trascinalo qui)">carica csv</button>
+      <input id="prevFile" type="file" accept=".csv,.txt,text/csv" hidden />
+      <button class="ghost" id="prevBacktest" type="button" title="Rifà la previsione sul passato di questa serie e la confronta con «domani come oggi»: dice quanto fidarsi">affidabilità</button>
+      <span class="prev-export">
+        <button class="ghost" id="prevCsv" type="button" title="CSV con storico e previsione affiancati, date comprese">esporta csv</button>
+        <button class="ghost" id="prevPng" type="button" title="PNG del grafico come lo stai guardando (zoom compreso)">esporta png</button>
+        <button class="ghost" id="prevJson" type="button" title="JSON con dati, previsione, orizzonti e analisi: tutto quello che serve per rielaborare">esporta json</button>
+        <button class="ghost icona" id="prevSvg" type="button" title="SVG vettoriale del grafico">svg</button>
+      </span>
+    </div>
   </div>
   <div class="goals-scroll prev-scroll">
     <div class="prev-stato" id="prevStato">
@@ -2117,6 +2153,7 @@ footer {
       annunciati, quindi è una <b>stima</b>, non una certezza.
     </div>
     <div class="prev-griglia" id="prevCorpo" hidden>
+      <section class="prev-card prev-verdetto" id="prevVerdetto"></section>
       <section class="prev-card prev-grafico">
         <div class="prev-card-h"><span id="prevTitolo">—</span><span class="prev-legenda" id="prevLegenda"></span>
           <span style="flex:1"></span>
@@ -2149,6 +2186,19 @@ footer {
       <section class="prev-card prev-orizzonti" id="prevOrizzonti" hidden></section>
       <section class="prev-card prev-tabella" id="prevTabella"></section>
       <section class="prev-card prev-insight" id="prevInsight" hidden></section>
+      <details class="prev-card prev-glossario">
+        <summary>Che cosa vogliono dire questi numeri <span class="prev-legenda">(glossario in parole semplici)</span></summary>
+        <dl>
+          <dt>stima centrale</dt><dd>il valore più probabile secondo il modello: non è un obiettivo, è il centro della previsione.</dd>
+          <dt>fascia probabile (intervallo 80%)</dt><dd>l'intervallo in cui il modello mette l'80% delle sue aspettative. Più è stretta, più il modello è sicuro; se è larghissima, il futuro è aperto.</dd>
+          <dt>fascia 95%</dt><dd>l'intervallo quasi completo: comprende anche gli scenari poco probabili. Serve per capire «quanto in là potrebbe andare».</dd>
+          <dt>probabilità di salire</dt><dd>quanto è probabile che a fine periodo il valore sia più alto di oggi, secondo i quantili del modello. 0,50 = nessuna direzione preferita.</dd>
+          <dt>variazione attesa</dt><dd>di quanto cambierebbe il valore rispetto a oggi, in percentuale.</dd>
+          <dt>«domani come oggi»</dt><dd>la previsione più semplice possibile: il valore di oggi ripetuto. Se il modello non fa meglio di così, la sua stima centrale non aggiunge informazione (ma la fascia sì).</dd>
+          <dt>rumore</dt><dd>quanto il movimento è irregolare rispetto alla tendenza. Alto = difficile prevedere il dettaglio.</dd>
+          <dt>ciclicità</dt><dd>quanto la serie si ripete a intervalli regolari (per esempio ogni 7 giorni, con la settimana lavorativa).</dd>
+        </dl>
+      </details>
     </div>
     <section class="prev-card prev-bt" id="prevBacktestCard" hidden></section>
   </div>
@@ -6411,8 +6461,8 @@ function prevOrizzontiHtml(out) {
     return `<div class="prev-oriz-col">
       <h4>${k} · ${escHtml(lab)}</h4>
       <div class="grande">${prevNum(med)}</div>
-      <div class="riga">intervallo 80%: <b>${prevNum(lo)} – ${prevNum(hi)}</b></div>
-      <div class="riga">intervallo 95%: ${prevNum(lo95)} – ${prevNum(hi95)}</div>
+      <div class="riga">fascia probabile 80%: <b>${prevNum(lo)} – ${prevNum(hi)}</b></div>
+      <div class="riga">fascia 95%: ${prevNum(lo95)} – ${prevNum(hi95)}</div>
       <div class="riga">variazione attesa: <b>${prevPct(varPct)}</b></div>
       <div class="riga">probabilità di salire: <b>${pr == null ? "—" : pr.toFixed(2).replace(".", ",")}</b></div>
       ${err ? `<div class="riga">errore storico: <b>${prevNum(err.mae_modello)}</b> <span>(«domani come oggi» ${prevNum(err.mae_naive)})</span></div>` : ""}
@@ -6420,6 +6470,70 @@ function prevOrizzontiHtml(out) {
   }).join("");
   return `<div class="prev-card-h">Tre orizzonti <span class="prev-legenda">dalla stessa previsione: cosa cambia guardando più lontano</span></div>
     <div class="prev-oriz-tre">${col}</div>`;
+}
+
+/**
+ * Il verdetto in italiano corrente: tre frasi che dicono la stessa cosa dei numeri, per chi
+ * non legge quantili tutti i giorni. Ogni frase nasce da una regola esplicita sui numeri già
+ * calcolati (nessuna valutazione inventata) e il semaforo dice quanto fidarsi, non se salire
+ * o scendere è bene: un aumento non è una buona notizia.
+ */
+function prevVerdettoHtml(out, errBasso) {
+  const s0 = out.series[0];
+  const st = s0.stats || {};
+  const h = s0.median.length;
+  const u = prevUnitaSerie();
+  const uSing = u.replace(/i$/, "o");
+  const meta = (out.meta && out.meta[0]) || {};
+  const nome = escHtml(String(meta.nome || s0.name || "questa serie").replace(/\.(csv|txt)$/i, ""));
+  const unita = meta.unita ? ` ${escHtml(meta.unita)}` : "";
+  const med = st.median_end;
+  const lo = s0.q10[h - 1], hi = s0.q90[h - 1];
+  const lo95 = s0.q05[h - 1], hi95 = s0.q95[h - 1];
+  const varPct = st.expected_change_end_pct;
+  const p = Number(st.p_rise_end);
+  const direzione = !Number.isFinite(varPct) ? "in linea con oggi" : varPct > 0.3 ? "in rialzo" : varPct < -0.3 ? "in calo" : "stabile";
+  // L'ampiezza in percentuale ha senso solo se la fascia non attraversa lo zero: su valori
+  // piccoli o a cavallo dello zero diventa un numero enorme e inutile (es. 223%).
+  const attraversaZero = lo < 0 && hi > 0;
+  const ampiezza = !attraversaZero && Math.abs(med) > 0 ? (Math.abs(hi - lo) / Math.abs(med)) * 100 : null;
+
+  // semaforo: quanto è utilizzabile questa previsione
+  let sem = { classe: "basso", testo: "da prendere con le molle" };
+  if (Number.isFinite(errBasso)) {
+    const skill = Number(errBasso.skill_mae_pct);
+    const cop = Number(errBasso.copertura80_pct);
+    if (skill > 5 && cop >= 60 && cop <= 92) sem = { classe: "ok", testo: "affidabile su questa serie" };
+    else if (skill > -5) sem = { classe: "medio", testo: "poco più di «domani come oggi»: usalo come indicazione" };
+    else sem = { classe: "basso", testo: "meno affidabile di «domani come oggi»: non usarlo come previsione" };
+  } else if (Number.isFinite(p)) {
+    sem = { classe: "medio", testo: "affidabilità non ancora verificata (premi «affidabilità»)" };
+  }
+
+  const frase1 =
+    `Secondo il modello, fra <b>${h} ${escHtml(u)}</b> ${nome} sarà ${direzione}: ` +
+    `<b>stima centrale ${prevNum(med)}${unita}</b>` +
+    (Number.isFinite(varPct) ? ` (${prevPct(varPct)} rispetto a oggi)` : "") + ".";
+  const frase2 =
+    `La <b>fascia probabile all'80%</b> va da <b>${prevNum(lo)}</b> a <b>${prevNum(hi)}</b>` +
+    (Number.isFinite(ampiezza) ? `, larga circa il ${prevNum(ampiezza, 0)}% del valore` : "") +
+    `; quella al 95% da ${prevNum(lo95)} a ${prevNum(hi95)}. ` +
+    (attraversaZero
+      ? "La fascia attraversa lo zero: il modello non esclude affatto che il valore cambi segno, quindi la direzione qui conta poco."
+      : Number.isFinite(ampiezza) && ampiezza > 25
+        ? "È una fascia ampia: il futuro di questa serie è aperto, non una direzione."
+        : "La fascia è contenuta per questa serie.");
+  const frase3 =
+    Number.isFinite(p)
+      ? `Probabilità che a fine periodo sia più alto di oggi: <b>${p.toFixed(2).replace(".", ",")}</b> — ${p >= 0.6 ? "il modello propende per un rialzo" : p <= 0.4 ? "il modello propende per un calo" : "nessuna direzione netta"}.`
+      : "";
+
+  return `<div class="prev-card-h">In parole semplici <span class="prev-legenda">la stessa previsione, senza gergo</span></div>
+    <div class="sem ${sem.classe}"><span class="pallino"></span>${escHtml(sem.testo)}</div>
+    <div class="frase">${frase1}</div>
+    <div class="frase">${frase2}</div>
+    ${frase3 ? `<div class="frase">${frase3}</div>` : ""}
+    <div class="prev-tecnico">Ricorda: è una stima di un modello che non conosce notizie, decisioni di politica economica o eventi annunciati. Non è un consiglio finanziario.</div>`;
 }
 
 function prevNumeri(out) {
@@ -6435,10 +6549,10 @@ function prevNumeri(out) {
   const lettura = !Number.isFinite(p) ? "" : p >= 0.6 ? "il modello propende per un rialzo" : p <= 0.4 ? "il modello propende per un calo" : "nessuna direzione netta";
   return `
     <div class="prev-num"><span class="k">ultimo dato${ultimaData ? ` · ${escHtml(String(ultimaData).slice(0, 10))}` : ""}</span><span class="v">${prevNum(s.last_observed)} <small>${escHtml((out.meta && out.meta[0] && out.meta[0].unita) || "")}</small></span></div>
-    <div class="prev-num ${direzione}"><span class="k">stima fra ${h} ${escHtml(u)}</span><span class="v">${prevNum(st.median_end)}</span></div>
+    <div class="prev-num ${direzione}"><span class="k">stima centrale fra ${h} ${escHtml(u)}</span><span class="v">${prevNum(st.median_end)}</span></div>
     <div class="prev-num ${direzione}"><span class="k">variazione attesa</span><span class="v">${prevPct(varPct)}${freccia}</span></div>
-    <div class="prev-num"><span class="k">intervallo 80%</span><span class="v">${prevNum(s.q10[h - 1])} – ${prevNum(s.q90[h - 1])}</span><small class="nota-riga">l'80% della stima sta qui dentro, secondo il modello</small></div>
-    <div class="prev-num"><span class="k">intervallo 95%</span><span class="v">${prevNum(s.q05[h - 1])} – ${prevNum(s.q95[h - 1])}</span><small class="nota-riga">quasi tutto lo scenario plausibile</small></div>
+    <div class="prev-num"><span class="k">fascia probabile 80%</span><span class="v">${prevNum(s.q10[h - 1])} – ${prevNum(s.q90[h - 1])}</span><small class="nota-riga">dove il modello mette l'80% delle sue aspettative</small></div>
+    <div class="prev-num"><span class="k">fascia 95%</span><span class="v">${prevNum(s.q05[h - 1])} – ${prevNum(s.q95[h - 1])}</span><small class="nota-riga">comprende anche gli scenari poco probabili</small></div>
     <div class="prev-num"><span class="k">probabilità di salire</span><span class="v">${Number.isFinite(p) ? p.toFixed(2).replace(".", ",") : "–"} <small>${escHtml(lettura)}</small></span></div>`;
 }
 
@@ -6503,6 +6617,7 @@ async function prevEsegui() {
     $("prevTrend").innerHTML = prevTrendHtml(out);
     prevAggiornaZoomInfo();
     prevAgganciaPuntatore();
+    $("prevVerdetto").innerHTML = prevVerdettoHtml(out);
     $("prevNumeri").innerHTML = prevNumeri(out);
     $("prevOrizzonti").innerHTML = prevOrizzontiHtml(out);
     $("prevOrizzonti").hidden = false;
@@ -6557,7 +6672,12 @@ async function prevVerifica() {
     const validi = risposte.filter((x) => !x.errore);
     if (!validi.length) throw new Error(risposte[0]?.errore || "verifica non riuscita");
     prevErroriOrizzonte = Object.fromEntries(validi.map((x) => [x.k, x]));
-    if (prevRisultato) { $("prevOrizzonti").innerHTML = prevOrizzontiHtml(prevRisultato); $("prevOrizzonti").hidden = false; }
+    if (prevRisultato) {
+      $("prevOrizzonti").innerHTML = prevOrizzontiHtml(prevRisultato);
+      $("prevOrizzonti").hidden = false;
+      // il semaforo del verdetto usa i numeri dell'affidabilità appena calcolati
+      $("prevVerdetto").innerHTML = prevVerdettoHtml(prevRisultato, prevErroriOrizzonte && prevErroriOrizzonte.lungo);
+    }
     const b = validi.find((x) => x.k === "lungo") || validi[validi.length - 1];
     const skill = Number(b.skill_mae_pct);
     const giudizio =
@@ -8928,6 +9048,23 @@ $("prevAvanti")?.addEventListener("click", () => {
   PREV_CTRL.offset = Math.max(0, (PREV_CTRL.offset || 0) - prevFinestraPunti());
   prevRidisegna();
 });
+$("prevChiediBtn")?.addEventListener("click", () => {
+  const campo = $("prevChiedi");
+  const t = (campo.value || "").trim();
+  if (!t) { campo.focus(); return; }
+  // Il testo diventa un incarico per l'agente: cerca i dati, li importa con la fonte, prevede.
+  // Serve perché i dati che non sono in media/ vanno trovati e verificati, non inventati.
+  showTab("chat");
+  input.value =
+    `Voglio una previsione: ${t}. ` +
+    "Cerca i dati reali sul web (fonte autorevole, con URL e data di estrazione), importali con timestral_importa dichiarando unità e frequenza, " +
+    "poi calcola la previsione e spiegami in parole semplici cosa significa: stima centrale, fascia probabile, quanto fidarsi. Dimmi anche il nome della serie, così la ritrovo nella vista Previsioni.";
+  autosize();
+  input.focus();
+  campo.value = "";
+  void send();
+});
+$("prevChiedi")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("prevChiediBtn").click(); } });
 $("prevZoomIn")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1 / 1.35));
 $("prevZoomOut")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1.35));
 $("prevResetZoom")?.addEventListener("click", () => { prevView = { a: 0, b: null }; prevRidisegna(); });
