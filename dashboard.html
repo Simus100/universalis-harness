@@ -1342,6 +1342,18 @@ footer {
   animation: holo-wash 12s ease-in-out infinite;
   box-shadow: 0 0 0 1px rgba(139,92,255,.32), 0 2px 10px -4px rgba(139,92,255,.45);
 }
+/* «Servizi» è un tasto NORMALE accanto a quello olografico: due effetti luminosi affiancati
+   sarebbero due urla. Stessa forma e stessa altezza, così la barra resta allineata. */
+.serv-btn {
+  color: var(--text-soft);
+  font-weight: 600;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+}
+.serv-btn:hover { background: var(--panel-3); color: var(--text); }
+.serv-btn.on { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); color: var(--text); }
+.serv-btn .led { background: var(--accent); opacity: .55; }
+.serv-btn.on .led { opacity: .95; box-shadow: 0 0 6px rgba(91,157,255,.6); }
 .feat-btn:hover {
   color: #eef4ff;
   box-shadow: 0 0 0 1px rgba(167,139,250,.55), 0 4px 16px -5px rgba(139,92,255,.6);
@@ -1916,8 +1928,8 @@ footer {
       </select>
       <select id="thinkSel" class="select" title="Livello thinking"></select>
       <div class="feat" id="featWrap">
-        <button id="featBtn" class="pill feat-btn" type="button" title="Risorse: subagent, domande, contesto e le viste (goal, cron, skill, progetto, agenda, live, previsioni)" aria-haspopup="true" aria-expanded="false"><span class="led"></span>risorse<span class="feat-count" id="featCount"></span></button>
-        <button id="servBtn" class="pill feat-btn" type="button" title="Servizi locali: lettura ad alta voce, Decision_M, previsioni (Timestral) — si accendono a richiesta" aria-haspopup="true" aria-expanded="false"><span class="led"></span>servizi</button>      <div class="feat-panel" id="featPanel" hidden>
+        <button id="featBtn" class="pill feat-btn" type="button" title="Risorse: subagent, domande, contesto e le viste (goal, cron, skill, progetto, agenda, live, previsioni)" aria-haspopup="true" aria-expanded="false"><span class="led"></span>Risorse<span class="feat-count" id="featCount"></span></button>
+        <button id="servBtn" class="pill serv-btn" type="button" title="Servizi locali: lettura ad alta voce, Decision_M, previsioni (Timestral) — si accendono a richiesta" aria-haspopup="true" aria-expanded="false"><span class="led"></span>Servizi</button>      <div class="feat-panel" id="featPanel" hidden>
         <div class="feat-row">
           <span class="feat-lbl">subagent</span>
           <button id="subagentToggle" class="pill warn" type="button" title="Abilita/disabilita i subagent (aumenta i costi)"><span class="led"></span>subagent</button>
