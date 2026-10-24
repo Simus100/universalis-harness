@@ -1725,6 +1725,25 @@ footer {
 .ghost.mini.on { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .ghost.forte { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); color: var(--text); font-weight: 600; }
 .prev-tecnico { display: block; margin-top: 6px; color: var(--faint); font-size: var(--fs-xs); line-height: 1.45; }
+.prev-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px 2px 8px; }
+.prev-ctrl-lbl { color: var(--dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .5px; }
+.select.mini { padding: 3px 6px; font-size: var(--fs-sm); }
+.prev-check { display: inline-flex; align-items: center; gap: 5px; color: var(--dim); font-size: var(--fs-sm); cursor: pointer; }
+.prev-check input { accent-color: var(--accent); }
+.prev-svgbox { position: relative; }
+/* tooltip del grafico: leggero, non deve coprire il punto che si sta guardando */
+.prev-tip {
+  position: absolute; pointer-events: none; z-index: 3; transform: translate(-50%, -110%);
+  background: color-mix(in srgb, var(--panel-2) 92%, transparent); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 8px; font-size: var(--fs-xs); line-height: 1.45; color: var(--text-soft);
+  white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.45); display: none;
+}
+.prev-tip b { color: var(--text); font-variant-numeric: tabular-nums; }
+.prev-trend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--dim); font-size: var(--fs-sm); padding: 8px 2px 0; }
+.prev-trend b { color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.prev-grafico:fullscreen { background: var(--bg-soft); padding: 18px; display: flex; flex-direction: column; }
+.prev-grafico:fullscreen .prev-svgbox { flex: 1; min-height: 0; }
+.prev-grafico:fullscreen svg { height: 100%; }
 .nota-riga { display: block; margin-top: 2px; color: var(--faint); font-size: var(--fs-2xs); font-weight: 400; line-height: 1.35; }
 /* focus da tastiera visibile: si deve capire dove si è, senza dipendere dal mouse */
 #previsioniView :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius); }
@@ -2057,8 +2076,19 @@ footer {
     </div>
     <div class="prev-griglia" id="prevCorpo" hidden>
       <section class="prev-card prev-grafico">
-        <div class="prev-card-h"><span id="prevTitolo">—</span><span class="prev-legenda" id="prevLegenda"></span></div>
-        <div id="prevSvgBox"></div>
+        <div class="prev-card-h"><span id="prevTitolo">—</span><span class="prev-legenda" id="prevLegenda"></span>
+          <span style="flex:1"></span>
+          <button class="ghost mini" id="prevFull" type="button" title="Guarda il grafico a schermo intero (Esc per uscire)">⤢</button>
+        </div>
+        <div class="prev-ctrl">
+          <span class="prev-ctrl-lbl">storico da vedere</span>
+          <select id="prevFinestra" class="select mini" aria-label="Quanta storia disegnare"></select>
+          <label class="prev-check"><input type="checkbox" id="prevLog" /> scala logaritmica</label>
+          <label class="prev-check"><input type="checkbox" id="prevBande" checked /> intervalli</label>
+          <label class="prev-check"><input type="checkbox" id="prevMedia" /> media mobile</label>
+        </div>
+        <div id="prevSvgBox" class="prev-svgbox"></div>
+        <div class="prev-trend" id="prevTrend"></div>
         <div class="prev-nota" id="prevNotaGrafico"></div>
       </section>
       <aside class="prev-card prev-numeri" id="prevNumeri"></aside>
@@ -5733,24 +5763,47 @@ const prevPct = (v) => (Number.isFinite(Number(v)) ? `${Number(v) > 0 ? "+" : ""
 /** L'unità dell'orizzonte, presa dalla serie scelta: «giorni», «ore» o «passi» se non si sa. */
 function prevUnitaSerie() {
   const v = ($("prevSerie") && $("prevSerie").value) || "";
-  if (!v.startsWith("demo:")) return "passi";
-  const id = v.slice(5);
-  const d = ((prevStato && prevStato.demo) || []).find((x) => x.id === id);
-  const f = d && d.frequenza ? String(d.frequenza).toLowerCase() : "";
+  let f = "";
+  if (v.startsWith("demo:")) {
+    const d = ((prevStato && prevStato.demo) || []).find((x) => x.id === v.slice(5));
+    f = d && d.frequenza ? String(d.frequenza).toLowerCase() : "";
+  } else if (v.startsWith("csv:")) {
+    // la frequenza di un CSV la dichiara chi l'ha importato, nei metadati accanto al file
+    const nome = v.slice(4);
+    const c = ((prevStato && prevStato.csv) || []).find((x) => x.nome === nome);
+    f = c && c.meta && c.meta.frequenza ? String(c.meta.frequenza).toLowerCase() : "";
+  }
   if (f.includes("giorno")) return "giorni";
   if (f.includes("ora")) return "ore";
   if (f.includes("settiman")) return "settimane";
+  if (f.includes("mese") || f.includes("mensil")) return "mesi";
+  if (f.includes("trimestr")) return "trimestri";
+  if (f.includes("ann")) return "anni";
   return "passi";
 }
 
 /** Le tre cose che l'utente deve vedere senza pensarci: unità, preset attivo, scelta ricordata. */
 function prevAggiornaControlli() {
+  const u = prevUnitaSerie();
   const el = $("prevUnita");
-  if (el) el.textContent = prevUnitaSerie();
-  const h = Number($("prevOrizzonte").value) || 30;
-  for (const b of document.querySelectorAll("#prevPreset .mini")) {
-    b.classList.toggle("on", Number(b.dataset.h) === h);
+  if (el) el.textContent = u;
+  const presets = u === "mesi" ? [3, 6, 12, 24] : u === "ore" ? [24, 72, 168] : u === "settimane" ? [4, 12, 26, 52] : [7, 30, 90];
+  const box = $("prevPreset");
+  if (box) {
+    // i pulsanti si rigenerano con l'unità giusta; il gestore è sul contenitore, quindi restano vivi
+    box.innerHTML = presets.map((n) => `<button class="ghost mini" type="button" data-h="${n}">${n}</button>`).join("");
   }
+  const h = Number($("prevOrizzonte").value) || 30;
+  for (const b of document.querySelectorAll("#prevPreset .mini")) b.classList.toggle("on", Number(b.dataset.h) === h);
+}
+
+/** Quando cambia l'unità (serie diversa) l'orizzonte di prima può non avere senso: 
+ *  su una serie mensile «30» significherebbe due anni e mezzo. Si propone il primo preset. */
+function prevOrizzonteAdatto() {
+  const u = prevUnitaSerie();
+  const h = Number($("prevOrizzonte").value) || 30;
+  const sensato = u === "mesi" ? h <= 24 : u === "ore" ? h <= 720 : true;
+  if (!sensato) $("prevOrizzonte").value = u === "mesi" ? 12 : 72;
 }
 
 /** La scelta di serie e orizzonte sopravvive alla chiusura della pagina: è lo stesso lavoro che
@@ -5784,7 +5837,13 @@ async function caricaPrevisioni() {
         const extra = d.sintetica && !/esempio/i.test(d.nome) ? " · esempio" : "";
         return { v: `demo:${d.id}`, t: `${d.nome}${extra}`, d };
       }),
-      ...(st.csv || []).map((c) => ({ v: `csv:${c.nome}`, t: `${c.nome} · tuo file`, d: null })),
+      // un CSV può venire dall'agente (con fonte dichiarata) o essere stato caricato a mano:
+      // la differenza si vede nell'elenco, perché cambia quanto ci si può fidare
+      ...(st.csv || []).map((c) => ({
+        v: `csv:${c.nome}`,
+        t: `${c.meta && c.meta.nome ? c.meta.nome : c.nome}${c.meta ? " · importata" : " · tuo file"}`,
+        d: null,
+      })),
     ];
     const sel = $("prevSerie");
     const prima = sel.value;
@@ -5817,63 +5876,190 @@ async function caricaPrevisioni() {
   }
 }
 
-/** Il grafico: storico (grigio) + ventaglio dei quantili (verde) + mediana. */
+/* ---------- grafico: finestra, scala, intervalli, media mobile, lettura del punto ----------
+   Il ventaglio dice l'incertezza, ma per leggere un TREND servono altre leve: quanto passato
+   guardare, se la scala è lineare o logaritmica (una serie che cresce in percentuale su una
+   scala lineare sembra sempre accelerare), il rumore lisciato da una media mobile, e il valore
+   esatto sotto il puntatore. Ognuna di queste cose cambia la conclusione che si trae dal disegno,
+   quindi ognuna è un controllo esplicito invece di una scelta nascosta. */
+const PREV_CTRL = { finestra: 0, log: false, bande: true, media: false };
+let prevGeo = null; // geometria dell'ultimo disegno: serve al puntatore per dire cosa c'è sotto
+
+function prevFinestraPunti() {
+  const h = prevRisultato ? prevRisultato.series[0].median.length : 30;
+  const punti = (prevRisultato && prevRisultato.storico) ? prevRisultato.storico.length : 0;
+  if (!prevCtrlScelta()) return Math.min(180, Math.max(30, Math.round(h * 2.5)));
+  const f = Number(PREV_CTRL.finestra) || 0;
+  if (f === 0) return Math.min(400, punti || 180);
+  return Math.min(f, punti || f);
+}
+/** Le finestre proposte parlano la lingua della serie: giorni, ore o passi. */
+function prevOpzioniFinestra() {
+  const u = prevUnitaSerie();
+  const scale = u === "ore" ? [24, 72, 168, 720] : u === "settimane" ? [12, 26, 52, 104] : [30, 90, 180, 365];
+  const et = (n) => `${n} ${u === "passi" ? "passi" : u}`;
+  const opts = scale.map((n) => `<option value="${n}">ultimi ${et(n)}</option>`).join("");
+  return `${opts}<option value="0">tutto lo storico</option>`;
+}
+
+function prevCtrlScelta() {
+  return prevRisultato && !$("prevCorpo").hidden;
+}
+
+/** (Ri)disegna solo il grafico: cambiare una leva non deve ricalcolare la previsione. */
+function prevRidisegna() {
+  if (!prevRisultato) return;
+  $("prevSvgBox").innerHTML = prevGrafico(prevRisultato);
+  $("prevTrend").innerHTML = prevTrendHtml(prevRisultato);
+  prevAgganciaPuntatore();
+}
+
+/** Il grafico: storico, opzionalmente lisciato, ventaglio dei quantili, mediana. */
 function prevGrafico(out) {
   const s = out.series[0];
   const h = s.median.length;
-  // Quanti punti di storico disegnare: proporzionato all'orizzonte (il futuro deve occupare
-  // circa un terzo della larghezza, altrimenti il ventaglio diventa una fettina illeggibile).
-  const nStorico = Math.max(60, Math.min(180, Math.round(h * 2.5)));
+  const nStorico = prevFinestraPunti();
   const storico = (out.storico || []).slice(-nStorico);
-  const date = out.date && out.date[0] ? out.date[0].slice(-storico.length) : null;
+  const dateStorico = out.date && out.date[0] ? out.date[0].slice(-nStorico) : null;
   const n = storico.length + h;
   const W = 900, H = 380, ml = 62, mr = 14, mt = 14, mb = 34;
-  const valori = [...storico, ...s.q05, ...s.q95, ...s.median];
+
+  const valori = [...storico, ...s.median];
+  if (PREV_CTRL.bande) valori.push(...s.q05, ...s.q95);
+  const usaLog = PREV_CTRL.log && Math.min(...valori) > 0;
   let min = Math.min(...valori), max = Math.max(...valori);
   if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) { min -= 1; max += 1; }
   const pad = (max - min) * 0.08;
   min -= pad; max += pad;
+  const T = (v) => (usaLog ? Math.log(v) : v);
+  const tmin = T(min), tmax = T(max);
   const x = (i) => ml + (i * (W - ml - mr)) / Math.max(1, n - 1);
-  const y = (v) => mt + (H - mt - mb) * (1 - (v - min) / (max - min));
+  const y = (v) => mt + (H - mt - mb) * (1 - (T(v) - tmin) / (tmax - tmin));
   const pol = (a, b) => {
     const su = [], giu = [];
-    for (let i = 0; i < a.length; i += 1) { su.push(`${x(storico.length + i).toFixed(1)},${y(a[i]).toFixed(1)}`); }
-    for (let i = b.length - 1; i >= 0; i -= 1) { giu.push(`${x(storico.length + i).toFixed(1)},${y(b[i]).toFixed(1)}`); }
+    for (let i = 0; i < a.length; i += 1) su.push(`${x(storico.length + i).toFixed(1)},${y(a[i]).toFixed(1)}`);
+    for (let i = b.length - 1; i >= 0; i -= 1) giu.push(`${x(storico.length + i).toFixed(1)},${y(b[i]).toFixed(1)}`);
     return su.concat(giu).join(" ");
   };
-  const linea = (arr) => arr.map((v, i) => `${i ? "L" : "M"}${x(storico.length + i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+  const linea = (arr, off) => arr.map((v, i) => `${i ? "L" : "M"}${x((off ?? storico.length) + i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
   const storLinea = storico.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
 
-  // tacche dell'asse y: 4 valori "tondi" ricavati dal dominio (nessun numero inventato)
+  // tacche: in scala log si distribuiscono in modo geometrico, così il passo visivo è uniforme
   const tacche = [];
-  const passo = (max - min) / 4;
-  for (let i = 0; i <= 4; i += 1) tacche.push(min + passo * i);
+  for (let i = 0; i <= 4; i += 1) {
+    const t = tmin + ((tmax - tmin) * i) / 4;
+    tacche.push(usaLog ? Math.exp(t) : t);
+  }
   const griglia = tacche.map((v) => `<line x1="${ml}" y1="${y(v).toFixed(1)}" x2="${W - mr}" y2="${y(v).toFixed(1)}" stroke="${PREV_C.griglia}"/>
       <text x="${ml - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">${escHtml(prevNum(v))}</text>`).join("\n      ");
-  const xLab = date
-    ? `<text x="${ml}" y="${H - 10}" font-size="11" fill="${PREV_C.asse}">${escHtml(date[0] || "")}</text>
-      <text x="${x(storico.length - 1).toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${PREV_C.asse}">oggi</text>
-      <text x="${W - mr}" y="${H - 10}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">+${h} passi</text>`
-    : `<text x="${ml}" y="${H - 10}" font-size="11" fill="${PREV_C.asse}">−${storico.length} passi</text>
-      <text x="${x(storico.length - 1).toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${PREV_C.asse}">ultimo osservato</text>
-      <text x="${W - mr}" y="${H - 10}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">+${h}</text>`;
+
+  // media mobile: rende visibile la direzione quando il rumore è alto
+  let media = null;
+  if (PREV_CTRL.media && storico.length >= 6) {
+    const w = Math.max(3, Math.round(storico.length / 12));
+    media = storico.map((_, i) => {
+      const da = Math.max(0, i - w + 1);
+      const pezzo = storico.slice(da, i + 1);
+      return pezzo.reduce((a, b) => a + b, 0) / pezzo.length;
+    });
+  }
+
+  const etichettaInizio = dateStorico ? String(dateStorico[0] || "").slice(0, 10) : `−${storico.length} passi`;
+  const xLab = `<text x="${ml}" y="${H - 10}" font-size="11" fill="${PREV_C.asse}">${escHtml(etichettaInizio)}</text>
+      <text x="${x(storico.length - 1).toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${PREV_C.asse}">${dateStorico ? "ultimo dato" : "oggi"}</text>
+      <text x="${W - mr}" y="${H - 10}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">+${h} ${escHtml(prevUnitaSerie())}</text>`;
   const divisione = `<line x1="${x(storico.length - 1).toFixed(1)}" y1="${mt}" x2="${x(storico.length - 1).toFixed(1)}" y2="${H - mb}" stroke="${PREV_C.griglia}" stroke-dasharray="3 4"/>`;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Serie storica e ventaglio di previsione">
+  const bande = PREV_CTRL.bande
+    ? `<polygon points="${pol(s.q05, s.q95)}" fill="${PREV_C.b95}" stroke="${PREV_C.bordo}" stroke-width="1" stroke-dasharray="4 3"/>
+      <polygon points="${pol(s.q10, s.q90)}" fill="${PREV_C.b80}"/>
+      <polygon points="${pol(s.q25, s.q75)}" fill="${PREV_C.b50}"/>`
+    : "";
+
+  prevGeo = { W, H, ml, mr, mt, mb, n, storicoLen: storico.length, storico, dateStorico, s, usaLog, min, max };
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Serie storica e ventaglio di previsione${usaLog ? " in scala logaritmica" : ""}">
       <rect x="0" y="0" width="${W}" height="${H}" fill="#0b0e14"/>
       ${griglia}
       ${divisione}
-      <polygon points="${pol(s.q05, s.q95)}" fill="${PREV_C.b95}" stroke="${PREV_C.bordo}" stroke-width="1" stroke-dasharray="4 3"/>
-      <polygon points="${pol(s.q10, s.q90)}" fill="${PREV_C.b80}"/>
-      <polygon points="${pol(s.q25, s.q75)}" fill="${PREV_C.b50}"/>
+      ${bande}
       <path d="${storLinea}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.4" stroke-linejoin="round"/>
+      ${media ? `<path d="${linea(media, 0)}" fill="none" stroke="${PREV_C.giallo}" stroke-width="1.8" stroke-linejoin="round" opacity=".85"/>` : ""}
       <path d="${linea(s.median)}" fill="none" stroke="${PREV_C.med}" stroke-width="2.2" stroke-linejoin="round"/>
       <circle cx="${x(storico.length - 1).toFixed(1)}" cy="${y(storico[storico.length - 1]).toFixed(1)}" r="3.5" fill="${PREV_C.testo}"/>
       <circle cx="${x(n - 1).toFixed(1)}" cy="${y(s.median[h - 1]).toFixed(1)}" r="3" fill="${PREV_C.med}"/>
       <text x="${(x(n - 1) - 6).toFixed(1)}" y="${(y(s.median[h - 1]) - 10).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="${PREV_C.med}">${escHtml(prevNum(s.stats && s.stats.median_end))}</text>
+      <line id="prevCross" x1="0" y1="${mt}" x2="0" y2="${H - mb}" stroke="${PREV_C.asse}" stroke-width="1" opacity="0" pointer-events="none"/>
       <line x1="${ml}" y1="${H - mb}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
       ${xLab}
     </svg>`;
+}
+
+/** Cosa si è mosso nella finestra guardata: la frase che si cerca guardando il disegno. */
+function prevTrendHtml(out) {
+  const g = prevGeo;
+  if (!g || !g.storico.length) return "";
+  const st = g.storico.filter((v) => Number.isFinite(v));
+  if (st.length < 2) return "";
+  const primo = st[0], ultimo = st[st.length - 1];
+  const varPct = primo !== 0 ? (100 * (ultimo - primo)) / Math.abs(primo) : null;
+  const u = prevUnitaSerie();
+  const w = Math.max(3, Math.round(st.length / 12));
+  const ultimaMedia = st.slice(-w).reduce((a, b) => a + b, 0) / Math.min(w, st.length);
+  const sopra = ultimo >= ultimaMedia;
+  const d0 = g.dateStorico && g.dateStorico[0] ? String(g.dateStorico[0]).slice(0, 10) : null;
+  const d1 = g.dateStorico && g.dateStorico.length ? String(g.dateStorico[g.dateStorico.length - 1]).slice(0, 10) : null;
+  return `<span>nella finestra: <b>${varPct === null ? "—" : prevPct(varPct)}</b>${d0 && d1 ? ` (${escHtml(d0)} → ${escHtml(d1)})` : ""}</span>` +
+    `<span>ultimo valore <b>${sopra ? "sopra" : "sotto"}</b> la media delle ultime ${w} ${escHtml(u)}</span>` +
+    `<span>${st.length} ${escHtml(u)} disegnati${g.usaLog ? " · scala logaritmica" : ""}</span>`;
+}
+
+/** Il valore esatto sotto il puntatore: senza questo il grafico si legge a occhio. */
+function prevAgganciaPuntatore() {
+  const box = $("prevSvgBox");
+  const svg = box && box.querySelector("svg");
+  if (!svg || !prevGeo) return;
+  let tip = box.querySelector(".prev-tip");
+  if (!tip) {
+    tip = document.createElement("div");
+    tip.className = "prev-tip";
+    box.appendChild(tip);
+  }
+  const cross = svg.querySelector("#prevCross");
+  const muovi = (e) => {
+    const g = prevGeo;
+    const r = svg.getBoundingClientRect();
+    const xv = ((e.clientX - r.left) / r.width) * g.W;
+    const rel = (xv - g.ml) / (g.W - g.ml - g.mr);
+    const i = Math.round(rel * (g.n - 1));
+    if (i < 0 || i > g.n - 1) { tip.style.display = "none"; if (cross) cross.setAttribute("opacity", "0"); return; }
+    const px = g.ml + (i * (g.W - g.ml - g.mr)) / Math.max(1, g.n - 1);
+    if (cross) {
+      cross.setAttribute("x1", px.toFixed(1));
+      cross.setAttribute("x2", px.toFixed(1));
+      cross.setAttribute("opacity", ".55");
+    }
+    const u = prevUnitaSerie();
+    let html;
+    if (i < g.storicoLen) {
+      const d = g.dateStorico && g.dateStorico[i] ? String(g.dateStorico[i]).slice(0, 10) : null;
+      html = `${d ? `${escHtml(d)} · ` : `passo ${i + 1} · `}<b>${prevNum(g.storico[i])}</b><br><span style="color:#8a93a6">dato osservato</span>`;
+    } else {
+      const k = i - g.storicoLen;
+      const s = g.s;
+      html =
+        `fra ${k + 1} ${escHtml(u)} · stima <b>${prevNum(s.median[k])}</b><br>` +
+        `<span style="color:#8a93a6">intervallo 80%: ${prevNum(s.q10[k])} – ${prevNum(s.q90[k])}</span>`;
+    }
+    tip.innerHTML = html;
+    tip.style.display = "block";
+    const boxR = box.getBoundingClientRect();
+    const pxPx = (px / g.W) * r.width;
+    tip.style.left = `${Math.min(Math.max(pxPx, 70), boxR.width - 70)}px`;
+    tip.style.top = `${Math.max(10, ((e.clientY - r.top) / r.height) * boxR.height - 8)}px`;
+  };
+  svg.addEventListener("mousemove", muovi);
+  svg.addEventListener("mouseleave", () => { tip.style.display = "none"; if (cross) cross.setAttribute("opacity", "0"); });
 }
 
 function prevNumeri(out) {
@@ -5946,7 +6132,12 @@ async function prevEsegui() {
     prevRisultato = out;
     $("prevTitolo").textContent = out.series[0].name;
     $("prevLegenda").textContent = "grigio: dati passati · verde: stima · fascia: incertezza (50 / 80 / 95%)";
+    $("prevCorpo").hidden = false;                 // prima di disegnare: la finestra si calcola qui
+    $("prevFinestra").innerHTML = prevOpzioniFinestra();
+    $("prevFinestra").value = String(PREV_CTRL.finestra || 0); // coerente con ciò che si disegna
     $("prevSvgBox").innerHTML = prevGrafico(out);
+    $("prevTrend").innerHTML = prevTrendHtml(out);
+    prevAgganciaPuntatore();
     $("prevNumeri").innerHTML = prevNumeri(out);
     $("prevTabella").innerHTML = prevTabella(out);
     $("prevNotaGrafico").innerHTML =
@@ -8211,11 +8402,35 @@ $("prevSvg").onclick = () => prevScaricaSvg();
 $("prevCarica").onclick = () => $("prevFile").click();
 $("prevFile").onchange = (e) => { const f = e.target.files && e.target.files[0]; prevCaricaFile(f); e.target.value = ""; };
 $("prevSerie").onchange = () => {
+  prevOrizzonteAdatto();
   prevAggiornaControlli();
   prevSalvaScelta();
   if ($("prevSerie").value) prevEsegui();
 };
 $("prevOrizzonte").onchange = () => { prevAggiornaControlli(); prevSalvaScelta(); };
+$("prevFinestra")?.addEventListener("change", (e) => { PREV_CTRL.finestra = Number(e.target.value) || 0; prevRidisegna(); });
+$("prevLog")?.addEventListener("change", (e) => {
+  const box = prevRisultato;
+  if (e.target.checked && box) {
+    const tutti = [...(box.storico || []), ...box.series[0].median, ...box.series[0].q05];
+    if (Math.min(...tutti) <= 0) {
+      // una scala logaritmica con valori ≤ 0 non esiste: lo dico invece di disegnare male
+      e.target.checked = false;
+      alert("Scala logaritmica non disponibile: questa serie contiene valori uguali o inferiori a zero.");
+      return;
+    }
+  }
+  PREV_CTRL.log = e.target.checked;
+  prevRidisegna();
+});
+$("prevBande")?.addEventListener("change", (e) => { PREV_CTRL.bande = e.target.checked; prevRidisegna(); });
+$("prevMedia")?.addEventListener("change", (e) => { PREV_CTRL.media = e.target.checked; prevRidisegna(); });
+$("prevFull")?.addEventListener("click", () => {
+  const card = document.querySelector(".prev-grafico");
+  if (!card) return;
+  if (document.fullscreenElement) document.exitFullscreen?.();
+  else card.requestFullscreen?.();
+});
 $("prevPreset")?.addEventListener("click", (e) => {
   const b = e.target.closest("button[data-h]");
   if (!b) return;

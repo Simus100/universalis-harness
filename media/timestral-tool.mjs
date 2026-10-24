@@ -60,6 +60,33 @@ const FORECAST_PARAMETERS = {
   required: [],
 };
 
+const IMPORT_DESCRIPTION = [
+  "Importa una serie temporale nella cartella delle previsioni (media/previsioni/dati/) con la sua provenienza, così che diventi disponibile a timestral_forecast e alla vista «Previsioni».",
+  "",
+  "Quando usarlo: quando i dati li hai TROVATI TU — una ricerca sul web, una tabella dentro un documento o un PDF, un CSV letto da un file — e vuoi poterli prevedere e rivedere nella dashboard senza ricostruirli ogni volta.",
+  "La FONTE è obbligatoria e va scritta in modo verificabile (ente o sito, nome della serie, frequenza, data di estrazione). Se non sai da dove viene un numero, non importarlo: una serie senza provenienza è indistinguibile da un numero inventato.",
+  "Regole: importa solo valori che hai VISTO (mai interpolati, mai «stimati a memoria»); dichiara se una serie è destagionalizzata, nominale o reale; se i dati sono mensili dillo (`frequenza: \"1 mese\"`), così l'orizzonte si legge nell'unità giusta.",
+  "Dopo l'importazione: `timestral_forecast` con `csv: \"<nome>.csv\"`, oppure l'utente la trova già nell'elenco della vista «Previsioni».",
+].join("\n");
+
+const IMPORT_PARAMETERS = {
+  type: "object",
+  properties: {
+    nome: { type: "string", description: "Nome breve della serie, senza estensione (es. \"inflazione-italia-nic\"). Diventa il nome del file." },
+    punti: {
+      type: "array",
+      description: "I dati, in ordine di tempo: [{ data, valore }] oppure [[data, valore]]. Almeno 8 punti.",
+      items: {},
+    },
+    fonte: { type: "string", description: "Provenienza verificabile: ente/sito, nome della serie, frequenza, data di estrazione. È mostrata all'utente accanto alla serie." },
+    fonte_url: { type: "string", description: "URL della pagina o del file da cui vengono i numeri." },
+    unita: { type: "string", description: "Unità di misura (es. «%», «EUR», «indice 2015=100»)." },
+    frequenza: { type: "string", description: "Distanza fra due punti: «1 giorno», «1 mese», «1 ora»." },
+    nota: { type: "string", description: "Avvertenza utile: serie destagionalizzata, valori provvisori, cambio di metodologia…" },
+  },
+  required: ["nome", "punti", "fonte"],
+};
+
 const SERIES_DESCRIPTION = [
   "Elenca cosa si può prevedere adesso: le serie incluse, i CSV caricati in media/previsioni/dati/ e lo stato del servizio Timestral.",
   "Usalo prima di timestral_forecast quando non sai quali serie esistono, o quando l'utente chiede «cosa posso prevedere?». Costa nulla.",
@@ -182,8 +209,12 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
           mode: congiunta ? "joint" : "separate",
         });
         const ms = Date.now() - t0;
+        // l'unità dell'orizzonte si deduce dalla frequenza dichiarata della serie: «12 passi»
+        // non dice niente, «12 mesi» sì
+        const freq = (fonti[0]?.meta?.frequenza || "").toLowerCase();
+        const unita = /mese/.test(freq) ? "mesi" : /settiman/.test(freq) ? "settimane" : /ora/.test(freq) ? "ore" : /giorn/.test(freq) ? "giorni" : "passi";
         const blocchi = [
-          `**Timestral ${out.taglia}** — ${fonti.length === 1 ? `serie «${fonti[0].nome}»` : `${fonti.length} serie${congiunta ? " (previsione congiunta)" : " (separate)"}`}, ${h} passi (${out.latency_s}s di calcolo, ${(ms / 1000).toFixed(1)}s totali).`,
+          `**Timestral ${out.taglia}** — ${fonti.length === 1 ? `serie «${fonti[0].nome}»` : `${fonti.length} serie${congiunta ? " (previsione congiunta)" : " (separate)"}`}, ${h} ${unita} (${out.latency_s}s di calcolo, ${(ms / 1000).toFixed(1)}s totali).`,
         ];
         const dettagli = [];
         for (const [i, s] of out.series.entries()) {
@@ -193,7 +224,10 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
             [
               `\n**${s.name}**${meta.sintetica === true ? " _(serie sintetica di esempio)_" : ""}`,
               `- ultimo osservato: ${num(s.last_observed)}${meta.unita ? ` ${meta.unita}` : ""}`,
-              `- fine orizzonte: mediana **${num(st2.median_end)}** · banda 80% ${num(s.q05[s.median.length - 1])}–${num(s.q95[s.median.length - 1])} · ampiezza 80% ${st2.band80_width_pct ?? "—"}%`,
+              // l'ampiezza in percentuale ha senso solo su serie positive: su valori che
+              // attraversano lo zero diventa un numero enorme e inutile
+              `- fine orizzonte: mediana **${num(st2.median_end)}** · intervallo 80% ${num(s.q05[s.median.length - 1])}–${num(s.q95[s.median.length - 1])}` +
+                (Number.isFinite(Number(st2.band80_width_pct)) && (s.last_observed ?? 0) > 0 ? ` · ampiezza ${st2.band80_width_pct}%` : ""),
               `- variazione attesa alla fine: ${st2.expected_change_end == null ? "—" : num(st2.expected_change_end)} (${pc(st2.expected_change_end_pct)}) · P(rialzo) = ${st2.p_rise_end == null ? "—" : Number(st2.p_rise_end).toFixed(2)}`,
               tabella(s),
             ].join("\n"),
@@ -240,6 +274,56 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
     },
   };
 
+  const IMPORT = {
+    name: "timestral_importa",
+    label: "Importa una serie trovata sul web o in un documento",
+    description: IMPORT_DESCRIPTION,
+    promptSnippet:
+      "timestral_importa: salva nei dati delle previsioni una serie che hai trovato tu (web, PDF, CSV), con la fonte: " +
+      "da lì diventa prevedibile e visibile nella vista «Previsioni».",
+    promptGuidelines: [
+      "Non inventare mai i valori: importa solo numeri che hai letto in una fonte, e dichiara la fonte in modo che si possa ricontrollare (ente, serie, URL, data di estrazione).",
+      "Se la fonte ha buchi o periodi mancanti, dillo nel campo `nota` invece di riempirli: il modello tratta i buchi come valori mancanti, ma l'utente deve saperlo.",
+      "Dichiarare la frequenza non è un dettaglio: con «1 mese» la previsione si legge in mesi e l'orizzonte va scelto di conseguenza.",
+      "Se i punti sono meno di ~50, avvisa l'utente che la previsione sarà indicativa; se sono meno di 8, non importare e chiedi altri dati.",
+    ],
+    parameters: IMPORT_PARAMETERS,
+    async execute(_id, params) {
+      try {
+        if (!client.prefs.enabled) {
+          return { content: [{ type: "text", text: "Previsioni disattivate su questa istanza: l'importazione è bloccata dallo stesso interruttore." }], details: { off: true }, isError: true };
+        }
+        const r = client.salvaSerie({
+          nome: params?.nome,
+          punti: params?.punti,
+          fonte: params?.fonte,
+          fonteUrl: params?.fonte_url,
+          unita: params?.unita,
+          frequenza: params?.frequenza,
+          nota: params?.nota,
+        });
+        const avviso = r.punti < 50 ? `\n⚠ Solo ${r.punti} punti: con così poco storico la previsione è **indicativa**.` : "";
+        return {
+          content: [
+            {
+              type: "text",
+              text:
+                `Serie importata: **${r.nome}** — ${r.punti} punti` +
+                (r.scartate ? ` (${r.scartate} righe scartate)` : "") +
+                `, file \`${r.percorso}\`, provenienza: ${params.fonte}.\n` +
+                `Ora è prevedibile con \`timestral_forecast\` usando \`csv: "${r.nome}.csv"\`, e la trovi nella vista «Previsioni» con la sua fonte.${avviso}`,
+            },
+          ],
+          details: { serie: r },
+        };
+      } catch (err) {
+        const msg = String(err?.message ?? err);
+        log(`[Timestral] importazione non riuscita: ${msg}`);
+        return { content: [{ type: "text", text: `IMPORTAZIONE NON ESEGUITA — ${msg}` }], details: { error: msg }, isError: true };
+      }
+    },
+  };
+
   const SERIES = {
     name: "timestral_series",
     label: "Serie disponibili per le previsioni",
@@ -282,11 +366,12 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
 
   return {
     name: "timestral-tool",
-    toolNames: [FORECAST.name, SERIES.name],
+    toolNames: [FORECAST.name, SERIES.name, IMPORT.name],
     factory: (pi) => {
       pi.registerTool(FORECAST);
       pi.registerTool(SERIES);
-      log("[Timestral] tool «timestral_forecast» e «timestral_series» registrati");
+      pi.registerTool(IMPORT);
+      log("[Timestral] tool «timestral_forecast», «timestral_series» e «timestral_importa» registrati");
     },
   };
 }

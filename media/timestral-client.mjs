@@ -9,7 +9,7 @@
  * Confine del modulo: rete, preferenze su disco, lettura delle serie (demo e CSV). Nessuna
  * formattazione per il modello e nessun tool: quello sta in media/timestral-tool.mjs.
  */
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync as fsMkdir, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, isAbsolute, join, normalize, relative, resolve } from "node:path";
 
 const DEFAULT_PORT = Number(process.env.TIMESTRAL_PORT) || 8018;
@@ -252,7 +252,55 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
   }
   const demoIds = () => demo().map((s) => s.id);
 
-  /** CSV caricati dall'utente (nella cartella dati): elenco con dimensione. */
+  /**
+   * Salva una serie IMPORTATA (dall'agente, che l'ha cercata sul web o ricostruita da un
+   * documento) in media/previsioni/dati/, con un file di metadati accanto.
+   *
+   * Perché i metadati: una serie senza provenienza è indistinguibile da un numero inventato.
+   * Accanto al CSV si scrive `<nome>.meta.json` con fonte, URL, unità, frequenza, istante di
+   * importazione; la vista lo mostra accanto alla serie, e chi riprende il lavoro mesi dopo sa
+   * da dove viene ogni numero.
+   */
+  function salvaSerie({ nome, punti, fonte, fonteUrl, unita, frequenza, nota }) {
+    const pulito = String(nome || "").trim().replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+    if (!pulito) throw new Error("serve un nome per la serie (lettere, numeri, - e _)");
+    if (!Array.isArray(punti) || punti.length < 8) throw new Error("servono almeno 8 punti per una serie utile");
+    const righe = [];
+    let scartate = 0;
+    for (const p of punti) {
+      const d = Array.isArray(p) ? p[0] : p?.data ?? p?.date;
+      const v = Array.isArray(p) ? p[1] : p?.valore ?? p?.value;
+      // numeri ita o internazionali: "1.234,5" e "1,234.5" devono valere lo stesso
+      const t = String(v ?? "").replace(/\s/g, "");
+      const n = Number(/\.\d{1,2}$/.test(t) && t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t.replace(/,/g, ""));
+      if (d === undefined || d === null || !String(d).trim() || !Number.isFinite(n)) {
+        scartate += 1;
+        continue;
+      }
+      righe.push(`${String(d).trim()},${n}`);
+    }
+    if (righe.length < 8) throw new Error(`solo ${righe.length} punti validi: controlla date e valori (${scartate} righe scartate)`);
+    const dir = join(mediaDir, "previsioni", "dati");
+    fsMkdir(dir, { recursive: true });
+    writeFileSync(join(dir, `${pulito}.csv`), "data,valore\n" + righe.join("\n") + "\n");
+    const meta = {
+      nome: pulito,
+      titolo: fonte ? String(fonte).slice(0, 120) : pulito,
+      fonte: fonte ? String(fonte).slice(0, 300) : null,
+      fonte_url: fonteUrl ? String(fonteUrl).slice(0, 500) : null,
+      unita: unita ? String(unita).slice(0, 40) : null,
+      frequenza: frequenza ? String(frequenza).slice(0, 40) : null,
+      nota: nota ? String(nota).slice(0, 500) : null,
+      punti: righe.length,
+      scartate,
+      importata_il: new Date().toISOString(),
+      da: "agente",
+    };
+    writeFileSync(join(dir, `${pulito}.meta.json`), JSON.stringify(meta, null, 2));
+    return { nome: pulito, percorso: `previsioni/dati/${pulito}.csv`, punti: righe.length, scartate, meta };
+  }
+
+  /** CSV caricati (dall'utente o dall'agente): elenco con metadati di provenienza. */
   function csvDisponibili() {
     try {
       if (!existsSync(datiDir)) return [];
@@ -267,7 +315,13 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
           } catch {
             /* file sparito nel frattempo */
           }
-          return { nome: f, kb, percorso: `previsioni/dati/${f}` };
+          let meta = null;
+          try {
+            meta = JSON.parse(readFileSync(join(datiDir, f.replace(/\.(csv|txt)$/i, ".meta.json")), "utf8"));
+          } catch {
+            meta = null;
+          }
+          return { nome: f, kb, percorso: `previsioni/dati/${f}`, meta };
         })
         .sort((a, b) => a.nome.localeCompare(b.nome));
     } catch {
@@ -303,11 +357,29 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
       const file = candidati.find((c) => existsSync(c));
       if (!file || !existsSync(file)) throw new Error(`CSV non trovato: cerca in media/previsioni/dati/ (${csvDisponibili().map((c) => c.nome).join(", ") || "nessun CSV caricato"})`);
       const { punti, scartate, separatore, colonne } = parseCsv(readFileSync(file, "utf8"), { column, valueColumn });
+      let sidecar = null;
+      try {
+        sidecar = JSON.parse(readFileSync(file.replace(/\.(csv|txt)$/i, ".meta.json"), "utf8"));
+      } catch {
+        sidecar = null;
+      }
       fonti.push({
-        nome: basename(file),
+        // il nome della serie è il nome breve (es. «inflazione-area-euro»): la fonte lunga
+        // vive in meta.fonte e si mostra dove serve, non nel titolo del grafico
+        nome: sidecar && sidecar.nome ? sidecar.nome : basename(file).replace(/\.(csv|txt)$/i, ""),
         valori: punti.map((p) => p[1]),
         date: punti.map((p) => p[0]),
-        meta: { id: basename(file), nome: basename(file), unita: "", frequenza: "", sintetica: false, fonte: `file caricato (${separatore}; colonne: ${colonne.join(" · ")})`, scartate },
+        meta: {
+          id: basename(file),
+          nome: basename(file),
+          unita: (sidecar && sidecar.unita) || "",
+          frequenza: (sidecar && sidecar.frequenza) || "",
+          sintetica: false,
+          fonte: (sidecar && sidecar.fonte) || `file caricato (${separatore}; colonne: ${colonne.join(" · ")})`,
+          fonte_url: (sidecar && sidecar.fonte_url) || null,
+          importata_il: (sidecar && sidecar.importata_il) || null,
+          scartate,
+        },
       });
     }
     if (Array.isArray(series) && series.length) {
@@ -348,6 +420,7 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
     demoIds,
     csvDisponibili,
     preparaSerie,
+    salvaSerie,
     datiDir,
     TOKEN_FILE,
     token: leggiToken,
