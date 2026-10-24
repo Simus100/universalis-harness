@@ -1749,6 +1749,21 @@ footer {
 .prev-badge { font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: .5px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--border); color: var(--dim); }
 .prev-badge.ok { border-color: color-mix(in srgb, var(--green) 50%, transparent); color: var(--green); }
 .prev-badge.warn { border-color: color-mix(in srgb, #d9a13b 60%, transparent); color: #d9a13b; }
+.prev-zoom { display: inline-flex; gap: 3px; }
+.prev-zoominfo { color: var(--faint); font-size: var(--fs-xs); min-width: 92px; font-variant-numeric: tabular-nums; }
+.prev-export { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.prev-svgbox svg { cursor: grab; touch-action: none; }
+.prev-svgbox svg.trascinando { cursor: grabbing; }
+/* crosshair: etichette sui due assi, come su un terminale */
+.prev-axis-y, .prev-axis-x { fill: var(--text); font-size: 11px; font-variant-numeric: tabular-nums; }
+.prev-axis-bg { fill: var(--panel-4); stroke: var(--border); }
+.prev-orizzonti .prev-oriz-tre { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.prev-oriz-col { border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 10px; background: var(--panel-2); }
+.prev-oriz-col h4 { margin: 0 0 6px; font-size: var(--fs-xs); letter-spacing: .6px; text-transform: uppercase; color: var(--dim); font-weight: 600; }
+.prev-oriz-col .grande { font-size: var(--fs-lg); font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.prev-oriz-col .riga { font-size: var(--fs-xs); color: var(--dim); margin-top: 3px; line-height: 1.4; }
+.prev-oriz-col .riga b { color: var(--text-soft); font-variant-numeric: tabular-nums; }
+@media (max-width: 820px) { .prev-orizzonti .prev-oriz-tre { grid-template-columns: minmax(0, 1fr); } }
 .prev-trend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--dim); font-size: var(--fs-sm); padding: 8px 2px 0; }
 .prev-trend b { color: var(--text-soft); font-variant-numeric: tabular-nums; }
 .prev-grafico:fullscreen { background: var(--bg-soft); padding: 18px; display: flex; flex-direction: column; }
@@ -2074,8 +2089,12 @@ footer {
     <button class="ghost" id="prevCarica" type="button" title="Carica un CSV con una colonna di date e una di valori (oppure trascinalo qui)">carica csv</button>
     <input id="prevFile" type="file" accept=".csv,.txt,text/csv" hidden />
     <button class="ghost" id="prevBacktest" type="button" title="Rifà la previsione sul passato di questa serie e la confronta con «domani come oggi»: dice quanto fidarsi">affidabilità</button>
-    <button class="ghost" id="prevCsv" type="button" title="Scarica i numeri previsti (mediana e intervalli) in un file CSV">esporta csv</button>
-    <button class="ghost" id="prevSvg" type="button" title="Scarica il grafico come immagine vettoriale">esporta grafico</button>
+    <span class="prev-export">
+      <button class="ghost" id="prevCsv" type="button" title="CSV con storico e previsione affiancati, date comprese">esporta csv</button>
+      <button class="ghost" id="prevPng" type="button" title="PNG del grafico come lo stai guardando (zoom compreso)">esporta png</button>
+      <button class="ghost" id="prevJson" type="button" title="JSON con dati, previsione, orizzonti e analisi: tutto quello che serve per rielaborare">esporta json</button>
+      <button class="ghost icona" id="prevSvg" type="button" title="SVG vettoriale del grafico">svg</button>
+    </span>
   </div>
   <div class="goals-scroll prev-scroll">
     <div class="prev-stato" id="prevStato">
@@ -2095,6 +2114,12 @@ footer {
           <select id="prevFinestra" class="select mini" aria-label="Quanta storia disegnare"></select>
           <button class="ghost mini" id="prevIndietro" type="button" title="Sposta la finestra indietro nel tempo (Shift+clic: di 10 finestre)">◀</button>
           <button class="ghost mini" id="prevAvanti" type="button" title="Sposta la finestra avanti nel tempo">▶</button>
+          <span class="prev-zoom">
+            <button class="ghost mini" id="prevZoomOut" type="button" title="Allontana (rotella sulla rotella del mouse: zoom sul puntatore)">−</button>
+            <button class="ghost mini" id="prevZoomIn" type="button" title="Avvicina (rotella: zoom sul puntatore)">+</button>
+            <button class="ghost mini" id="prevResetZoom" type="button" title="Torna a vedere tutto (doppio clic sul grafico, o tasto 0)">tutto</button>
+          </span>
+          <span class="prev-zoominfo" id="prevZoomInfo">—</span>
           <label class="prev-check"><input type="checkbox" id="prevLog" /> scala logaritmica</label>
           <label class="prev-check"><input type="checkbox" id="prevBande" checked /> intervalli</label>
           <label class="prev-check"><input type="checkbox" id="prevMedia" /> media mobile</label>
@@ -2108,6 +2133,7 @@ footer {
         <div class="prev-nota" id="prevNotaGrafico"></div>
       </section>
       <aside class="prev-card prev-numeri" id="prevNumeri"></aside>
+      <section class="prev-card prev-orizzonti" id="prevOrizzonti" hidden></section>
       <section class="prev-card prev-tabella" id="prevTabella"></section>
       <section class="prev-card prev-insight" id="prevInsight" hidden></section>
     </div>
@@ -5901,6 +5927,8 @@ async function caricaPrevisioni() {
    quindi ognuna è un controllo esplicito invece di una scelta nascosta. */
 const PREV_CTRL = { finestra: 0, log: false, bande: true, media: false, offset: 0, confronto: false, mediaFin: 0 };
 let prevGeo = null; // geometria dell'ultimo disegno: serve al puntatore per dire cosa c'è sotto
+let prevErroriOrizzonte = null; // errore storico per orizzonte breve/medio/lungo
+let prevAnalisi = null;         // ultima analisi dei dati (serve all'export JSON)
 
 function prevFinestraPunti() {
   const h = prevRisultato ? prevRisultato.series[0].median.length : 30;
@@ -5939,7 +5967,56 @@ function prevRidisegna() {
   if (!prevRisultato) return;
   $("prevSvgBox").innerHTML = prevGrafico(prevRisultato);
   $("prevTrend").innerHTML = prevTrendHtml(prevRisultato);
+  prevAggiornaZoomInfo();
   prevAgganciaPuntatore();
+}
+
+/* Dominio visibile, in indici sull'array «storico + previsione»: è ciò che rende il grafico
+   navigabile come un terminale. `a` e `b` sono frazionari (zoom fluido), non interi. */
+let prevView = { a: 0, b: null };   // b = null → tutto
+let prevDrag = null;
+
+function prevNTotale() {
+  if (!prevRisultato) return 0;
+  return (prevRisultato.storico || []).length + prevRisultato.series[0].median.length;
+}
+
+/** Dominio iniziale = la finestra scelta; poi l'utente è libero di zoomare e spostarsi. */
+function prevImpostaDominio() {
+  const N = prevNTotale();
+  if (!N) { prevView = { a: 0, b: null }; return; }
+  const fin = Number(PREV_CTRL.finestra) || 0;
+  if (!fin) { prevView = { a: 0, b: null }; return; }
+  const off = Math.min(PREV_CTRL.offset || 0, Math.max(0, N - fin));
+  prevView = { a: Math.max(0, N - off - fin), b: N - off - 1 };
+}
+
+/** Zoom attorno a un punto (in indici), con limiti sensati. */
+function prevZoomAt(centro, fattore) {
+  const N = prevNTotale();
+  if (!N) return;
+  const a = prevView.a, b = prevView.b === null ? N - 1 : prevView.b;
+  const span = Math.max(0.0001, b - a);
+  const c = Math.min(b, Math.max(a, centro));
+  let nuovoSpan = Math.min(N - 1, Math.max(6, span * fattore));
+  let na = c - (c - a) * (nuovoSpan / span);
+  let nb = c + (b - c) * (nuovoSpan / span);
+  if (na < 0) { nb -= na; na = 0; }
+  if (nb > N - 1) { na -= nb - (N - 1); nb = N - 1; }
+  prevView = { a: Math.max(0, na), b: Math.min(N - 1, nb) };
+  prevRidisegna();
+}
+
+function prevPan(deltaIndici) {
+  const N = prevNTotale();
+  if (!N) return;
+  const a = prevView.a, b = prevView.b === null ? N - 1 : prevView.b;
+  const span = b - a;
+  let na = a + deltaIndici, nb = b + deltaIndici;
+  if (na < 0) { nb -= na; na = 0; }
+  if (nb > N - 1) { na -= nb - (N - 1); nb = N - 1; }
+  prevView = { a: Math.max(0, na), b: Math.min(N - 1, nb) };
+  prevRidisegna();
 }
 
 /** Il grafico: storico, opzionalmente lisciato, ventaglio dei quantili, mediana. */
@@ -5947,42 +6024,55 @@ function prevGrafico(out) {
   const s0 = out.series[0];
   const h = s0.median.length;
   const tutto = out.storico || [];
-  const nStorico = prevFinestraPunti();
-  const off = Math.min(PREV_CTRL.offset || 0, prevOffsetMax());
-  const fine = Math.max(0, tutto.length - off);
-  const inizio = Math.max(0, fine - nStorico);
-  const storico = tutto.slice(inizio, fine);
+  const L = tutto.length;
+  const N = L + h;
+  const a = Math.max(0, Math.min(prevView.a, N - 1));
+  const b = prevView.b === null ? N - 1 : Math.max(a + 0.001, Math.min(prevView.b, N - 1));
   const dateTutte = out.date && out.date[0] ? out.date[0] : null;
-  const dateStorico = dateTutte ? dateTutte.slice(inizio, fine) : null;
-  // Con la finestra spostata nel passato la previsione non c'entra più nulla: si guarda solo
-  // la storia. Disegnarla attaccata a un punto che non è l'ultimo dato sarebbe una bugia.
-  const conFuturo = off === 0;
-  const s = conFuturo ? s0 : { ...s0, median: [], q05: [], q10: [], q25: [], q75: [], q90: [], q95: [], stats: {} };
-  const hDisegnati = conFuturo ? h : 0;
-  const n = storico.length + hDisegnati;
-  const W = 900, H = 380, ml = 62, mr = 14, mt = 14, mb = 34;
+  const W = 900, H = 380, ml = 62, mr = 66, mt = 14, mb = 34;
 
-  const valori = [...storico, ...(conFuturo ? s.median : [])];
-  if (PREV_CTRL.bande && conFuturo) valori.push(...s.q05, ...s.q95);
-  // confronto: la finestra immediatamente precedente, allineata per posizione (non per data)
-  const prima = PREV_CTRL.confronto ? tutto.slice(Math.max(0, inizio - nStorico), inizio) : [];
-  const usaLog = PREV_CTRL.log && valori.length && Math.min(...valori) > 0;
-  let min = Math.min(...valori), max = Math.max(...valori);
+  const x = (i) => ml + ((i - a) / (b - a)) * (W - ml - mr);
+  const dentro = (i) => i >= a - 1 && i <= b + 1;                 // un punto fuori per lato
+  const valoriVisibili = [];
+  const storicoVis = [];
+  for (let i = Math.max(0, Math.floor(a)); i <= Math.min(N - 1, Math.ceil(b)); i += 1) {
+    if (i < L) { valoriVisibili.push(tutto[i]); storicoVis.push(i); }
+    else { const k = i - L; valoriVisibili.push(s0.median[k], s0.q05[k], s0.q95[k]); }
+  }
+  if (!valoriVisibili.length) valoriVisibili.push(0);
+  const usaLog = PREV_CTRL.log && Math.min(...valoriVisibili.filter((v) => Number.isFinite(v))) > 0;
+  let min = Math.min(...valoriVisibili), max = Math.max(...valoriVisibili);
   if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) { min -= 1; max += 1; }
   const pad = (max - min) * 0.08;
   min -= pad; max += pad;
   const T = (v) => (usaLog ? Math.log(v) : v);
   const tmin = T(min), tmax = T(max);
-  const x = (i) => ml + (i * (W - ml - mr)) / Math.max(1, n - 1);
   const y = (v) => mt + (H - mt - mb) * (1 - (T(v) - tmin) / (tmax - tmin));
-  const pol = (a, b) => {
+
+  // serie storica visibile (linea + eventuali punti)
+  const pathStorico = storicoVis.map((i, k) => `${k ? "L" : "M"}${x(i).toFixed(1)} ${y(tutto[i]).toFixed(1)}`).join(" ");
+  const media = (() => {
+    if (!PREV_CTRL.media || storicoVis.length < 6) return null;
+    const w = Number(PREV_CTRL.mediaFin) > 1 ? Math.min(Number(PREV_CTRL.mediaFin), storicoVis.length) : Math.max(3, Math.round(storicoVis.length / 12));
+    return storicoVis.map((_, k) => {
+      const idx = Math.max(0, k - w + 1);
+      const pezzo = storicoVis.slice(idx, k + 1).map((i) => tutto[i]);
+      return pezzo.reduce((s1, v1) => s1 + v1, 0) / pezzo.length;
+    });
+  })();
+
+  // ventaglio della previsione (solo la parte dentro il dominio)
+  const kMin = Math.max(0, Math.floor(a) - L), kMax = Math.min(h - 1, Math.ceil(b) - L);
+  const pol = (lo, hi) => {
+    if (kMax < kMin) return "";
     const su = [], giu = [];
-    for (let i = 0; i < a.length; i += 1) su.push(`${x(storico.length + i).toFixed(1)},${y(a[i]).toFixed(1)}`);
-    for (let i = b.length - 1; i >= 0; i -= 1) giu.push(`${x(storico.length + i).toFixed(1)},${y(b[i]).toFixed(1)}`);
+    for (let k = kMin; k <= kMax; k += 1) su.push(`${x(L + k).toFixed(1)},${y(hi[k]).toFixed(1)}`);
+    for (let k = kMax; k >= kMin; k -= 1) giu.push(`${x(L + k).toFixed(1)},${y(lo[k]).toFixed(1)}`);
     return su.concat(giu).join(" ");
   };
-  const linea = (arr, off0) => arr.map((v, i) => `${i ? "L" : "M"}${x((off0 ?? storico.length) + i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
-  const storLinea = storico.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+  const pathMediana = kMax >= kMin
+    ? Array.from({ length: kMax - kMin + 1 }, (_, j) => `${j ? "L" : "M"}${x(L + kMin + j).toFixed(1)} ${y(s0.median[kMin + j]).toFixed(1)}`).join(" ")
+    : "";
 
   const tacche = [];
   for (let i = 0; i <= 4; i += 1) {
@@ -5990,63 +6080,64 @@ function prevGrafico(out) {
     tacche.push(usaLog ? Math.exp(t) : t);
   }
   const griglia = tacche.map((v) => `<line x1="${ml}" y1="${y(v).toFixed(1)}" x2="${W - mr}" y2="${y(v).toFixed(1)}" stroke="${PREV_C.griglia}"/>
-      <text x="${ml - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">${escHtml(prevNum(v))}</text>`).join("\n      ");
+      <text x="${W - mr + 6}" y="${(y(v) + 4).toFixed(1)}" font-size="11" fill="${PREV_C.asse}">${escHtml(prevNum(v))}</text>`).join("\n      ");
 
-  let media = null;
-  if (PREV_CTRL.media && storico.length >= 6) {
-    const w = Number(PREV_CTRL.mediaFin) > 1 ? Math.min(Number(PREV_CTRL.mediaFin), storico.length) : Math.max(3, Math.round(storico.length / 12));
-    media = storico.map((_, i) => {
-      const pezzo = storico.slice(Math.max(0, i - w + 1), i + 1);
-      return pezzo.reduce((a2, b2) => a2 + b2, 0) / pezzo.length;
-    });
+  // tacche dell'asse tempo: 4 etichette distribuite nel dominio visibile
+  const taccheX = [];
+  for (let j = 0; j <= 3; j += 1) {
+    const i = Math.round(a + ((b - a) * j) / 3);
+    const et = i < L
+      ? (dateTutte && dateTutte[i] ? String(dateTutte[i]).slice(0, 10) : `−${L - i}`)
+      : `+${i - L + 1}`;
+    taccheX.push(`<text x="${x(i).toFixed(1)}" y="${H - 12}" font-size="11" fill="${PREV_C.asse}" text-anchor="${j === 0 ? "start" : j === 3 ? "end" : "middle"}">${escHtml(et)}</text>`);
   }
 
-  const etichettaInizio = dateStorico && dateStorico[0] ? String(dateStorico[0]).slice(0, 10) : `−${storico.length} passi`;
-  const etichettaFine = dateStorico && dateStorico.length ? String(dateStorico[dateStorico.length - 1]).slice(0, 10) : "ultimo dato";
-  const xLab = `<text x="${ml}" y="${H - 10}" font-size="11" fill="${PREV_C.asse}">${escHtml(etichettaInizio)}</text>
-      <text x="${x(conFuturo ? Math.max(0, storico.length - 1) : Math.floor(storico.length / 2)).toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${PREV_C.asse}">${escHtml(conFuturo ? (dateStorico ? "ultimo dato" : "oggi") : etichettaFine)}</text>
-      ${conFuturo ? `<text x="${W - mr}" y="${H - 10}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">+${h} ${escHtml(prevUnitaSerie())}</text>` : `<text x="${W - mr}" y="${H - 10}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">finestra spostata indietro di ${off} ${escHtml(prevUnitaSerie())}</text>`}`;
-  const divisione = conFuturo
-    ? `<line x1="${x(storico.length - 1).toFixed(1)}" y1="${mt}" x2="${x(storico.length - 1).toFixed(1)}" y2="${H - mb}" stroke="${PREV_C.griglia}" stroke-dasharray="3 4"/>`
+  const divisione = (a <= L - 1 && b >= L - 1)
+    ? `<line x1="${x(L - 1).toFixed(1)}" y1="${mt}" x2="${x(L - 1).toFixed(1)}" y2="${H - mb}" stroke="${PREV_C.griglia}" stroke-dasharray="3 4"/>`
+    : "";
+  const bande = PREV_CTRL.bande && pathMediana
+    ? `<polygon points="${pol(s0.q05, s0.q95)}" fill="${PREV_C.b95}" stroke="${PREV_C.bordo}" stroke-width="1" stroke-dasharray="4 3"/>
+      <polygon points="${pol(s0.q10, s0.q90)}" fill="${PREV_C.b80}"/>
+      <polygon points="${pol(s0.q25, s0.q75)}" fill="${PREV_C.b50}"/>`
+    : "";
+  const puntiStorico = storicoVis.length <= 60
+    ? storicoVis.map((i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(tutto[i]).toFixed(1)}" r="2" fill="${PREV_C.hist}"/>`).join("")
     : "";
 
-  const bande = PREV_CTRL.bande && conFuturo
-    ? `<polygon points="${pol(s.q05, s.q95)}" fill="${PREV_C.b95}" stroke="${PREV_C.bordo}" stroke-width="1" stroke-dasharray="4 3"/>
-      <polygon points="${pol(s.q10, s.q90)}" fill="${PREV_C.b80}"/>
-      <polygon points="${pol(s.q25, s.q75)}" fill="${PREV_C.b50}"/>`
-    : "";
+  // geometria per il puntatore
+  prevGeo = {
+    W, H, ml, mr, mt, mb, N, L, a, b, x, y, T, usaLog, tutto, s: s0, h,
+    dateTutte, storicoVis,
+  };
 
-  // punti visibili solo quando la finestra è corta: su 300 punti sarebbero una riga nera
-  const puntiStorico = storico.length <= 60
-    ? storico.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2" fill="${PREV_C.hist}"/>`).join("")
-    : "";
-
-  prevGeo = { W, H, ml, mr, mt, mb, n, storicoLen: storico.length, storico, dateStorico, s, usaLog, min, max, conFuturo, h, off };
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Serie storica${conFuturo ? " e ventaglio di previsione" : ""}${usaLog ? " in scala logaritmica" : ""}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafico della serie, con zoom e spostamento${usaLog ? ", scala logaritmica" : ""}">
       <rect x="0" y="0" width="${W}" height="${H}" fill="#0b0e14"/>
       ${griglia}
+      ${taccheX.join("")}
       ${divisione}
       ${bande}
-      ${prima.length ? `<path d="${linea(prima, 0)}" fill="none" stroke="${PREV_C.asse}" stroke-width="1.2" stroke-dasharray="5 4" opacity=".55"/>` : ""}
-      <path d="${storLinea}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.4" stroke-linejoin="round"/>
+      ${pathStorico ? `<path d="${pathStorico}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.4" stroke-linejoin="round"/>` : ""}
       ${puntiStorico}
-      ${media ? `<path d="${linea(media, 0)}" fill="none" stroke="${PREV_C.giallo}" stroke-width="1.8" stroke-linejoin="round" opacity=".85"/>` : ""}
-      ${conFuturo ? `<path d="${linea(s.median)}" fill="none" stroke="${PREV_C.med}" stroke-width="2.2" stroke-linejoin="round"/>` : ""}
-      ${storico.length ? `<circle cx="${x(storico.length - 1).toFixed(1)}" cy="${y(storico[storico.length - 1]).toFixed(1)}" r="3.5" fill="${PREV_C.testo}"/>` : ""}
-      ${conFuturo ? `<circle cx="${x(n - 1).toFixed(1)}" cy="${y(s.median[h - 1]).toFixed(1)}" r="3" fill="${PREV_C.med}"/>
-      <text x="${(x(n - 1) - 6).toFixed(1)}" y="${(y(s.median[h - 1]) - 10).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="${PREV_C.med}">${escHtml(prevNum(s.stats && s.stats.median_end))}</text>` : ""}
-      <line id="prevCross" x1="0" y1="${mt}" x2="0" y2="${H - mb}" stroke="${PREV_C.asse}" stroke-width="1" opacity="0" pointer-events="none"/>
+      ${media ? `<path d="${media.map((v, k) => `${k ? "L" : "M"}${x(storicoVis[k]).toFixed(1)} ${y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${PREV_C.giallo}" stroke-width="1.8" stroke-linejoin="round" opacity=".85"/>` : ""}
+      ${pathMediana ? `<path d="${pathMediana}" fill="none" stroke="${PREV_C.med}" stroke-width="2.2" stroke-linejoin="round"/>` : ""}
       <line x1="${ml}" y1="${H - mb}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
-      ${xLab}
+      <line x1="${W - mr}" y1="${mt}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
+      <g id="prevCursor" opacity="0">
+        <line id="prevCrossX" x1="0" y1="${mt}" x2="0" y2="${H - mb}" stroke="${PREV_C.asse}" stroke-dasharray="3 3"/>
+        <line id="prevCrossY" y1="0" x1="${ml}" y1b="0" x2="${W - mr}" y2="0" stroke="${PREV_C.asse}" stroke-dasharray="3 3"/>
+        <rect id="prevTagY" class="prev-axis-bg" rx="4" width="62" height="18" x="${W - mr + 2}" y="0"/>
+        <text id="prevTagYT" class="prev-axis-y" x="${W - mr + 6}" y="13"></text>
+        <rect id="prevTagX" class="prev-axis-bg" rx="4" width="86" height="18" x="0" y="${H - mb + 2}"/>
+        <text id="prevTagXT" class="prev-axis-x" x="4" y="${H - mb + 15}"></text>
+      </g>
     </svg>`;
 }
 
 /** Cosa si è mosso nella finestra guardata: la frase che si cerca guardando il disegno. */
 function prevTrendHtml(out) {
   const g = prevGeo;
-  if (!g || !g.storico.length) return "";
-  const st = g.storico.filter((v) => Number.isFinite(v));
+  if (!g || !g.storicoVis || g.storicoVis.length < 2) return "";
+  const st = g.storicoVis.map((i) => g.tutto[i]).filter((v) => Number.isFinite(v));
   if (st.length < 2) return "";
   const primo = st[0], ultimo = st[st.length - 1];
   const varPct = primo !== 0 ? (100 * (ultimo - primo)) / Math.abs(primo) : null;
@@ -6054,14 +6145,31 @@ function prevTrendHtml(out) {
   const w = Math.max(3, Math.round(st.length / 12));
   const ultimaMedia = st.slice(-w).reduce((a, b) => a + b, 0) / Math.min(w, st.length);
   const sopra = ultimo >= ultimaMedia;
-  const d0 = g.dateStorico && g.dateStorico[0] ? String(g.dateStorico[0]).slice(0, 10) : null;
-  const d1 = g.dateStorico && g.dateStorico.length ? String(g.dateStorico[g.dateStorico.length - 1]).slice(0, 10) : null;
+  const primoI = g.storicoVis[0], ultimoI = g.storicoVis[g.storicoVis.length - 1];
+  const d0 = g.dateTutte && g.dateTutte[primoI] ? String(g.dateTutte[primoI]).slice(0, 10) : null;
+  const d1 = g.dateTutte && g.dateTutte[ultimoI] ? String(g.dateTutte[ultimoI]).slice(0, 10) : null;
   return `<span>nella finestra: <b>${varPct === null ? "—" : prevPct(varPct)}</b>${d0 && d1 ? ` (${escHtml(d0)} → ${escHtml(d1)})` : ""}</span>` +
     `<span>ultimo valore <b>${sopra ? "sopra" : "sotto"}</b> la media delle ultime ${w} ${escHtml(u)}</span>` +
-    `<span>${st.length} ${escHtml(u)} disegnati${g.usaLog ? " · scala logaritmica" : ""}${g.off ? ` · spostata indietro di ${g.off}` : ""}${PREV_CTRL.confronto ? " · confronto attivo" : ""}</span>`;
+    `<span>${st.length} ${escHtml(u)} disegnati${g.usaLog ? " · scala logaritmica" : ""}${PREV_CTRL.confronto ? " · confronto attivo" : ""}</span>`;
 }
 
-/** Il valore esatto sotto il puntatore: senza questo il grafico si legge a occhio. */
+/** Cosa si sta guardando: punti visibili e date agli estremi. */
+function prevAggiornaZoomInfo() {
+  const el = $("prevZoomInfo");
+  if (!el || !prevGeo) return;
+  const g = prevGeo;
+  const da = Math.max(0, Math.floor(g.a)), al = Math.min(g.N - 1, Math.ceil(g.b));
+  const d0 = da < g.L && g.dateTutte && g.dateTutte[da] ? String(g.dateTutte[da]).slice(0, 10) : null;
+  const d1 = al < g.L && g.dateTutte && g.dateTutte[al] ? String(g.dateTutte[al]).slice(0, 10) : (al >= g.L ? "previsione" : null);
+  el.textContent = `${al - da + 1} punti${d0 ? ` · ${d0}` : ""}${d1 ? ` → ${d1}` : ""}`;
+}
+
+/**
+ * Puntatore, zoom e spostamento — il grafico si guarda come su un terminale:
+ *  - muovendo il mouse: mirino con il valore sotto il puntatore e le etichette sui due assi;
+ *  - rotella: zoom centrato sul puntatore; trascinando: ci si sposta nel tempo;
+ *  - doppio clic o tasto 0: si torna a vedere tutto; due dita su mobile: zoom.
+ */
 function prevAgganciaPuntatore() {
   const box = $("prevSvgBox");
   const svg = box && box.querySelector("svg");
@@ -6072,41 +6180,125 @@ function prevAgganciaPuntatore() {
     tip.className = "prev-tip";
     box.appendChild(tip);
   }
-  const cross = svg.querySelector("#prevCross");
-  const muovi = (e) => {
-    const g = prevGeo;
+  const g = () => prevGeo;
+  const indiceDaEvento = (e) => {
+    const gg = g();
     const r = svg.getBoundingClientRect();
-    const xv = ((e.clientX - r.left) / r.width) * g.W;
-    const rel = (xv - g.ml) / (g.W - g.ml - g.mr);
-    const i = Math.round(rel * (g.n - 1));
-    if (i < 0 || i > g.n - 1) { tip.style.display = "none"; if (cross) cross.setAttribute("opacity", "0"); return; }
-    const px = g.ml + (i * (g.W - g.ml - g.mr)) / Math.max(1, g.n - 1);
-    if (cross) {
-      cross.setAttribute("x1", px.toFixed(1));
-      cross.setAttribute("x2", px.toFixed(1));
-      cross.setAttribute("opacity", ".55");
-    }
-    const u = prevUnitaSerie();
-    let html;
-    if (i < g.storicoLen) {
-      const d = g.dateStorico && g.dateStorico[i] ? String(g.dateStorico[i]).slice(0, 10) : null;
-      html = `${d ? `${escHtml(d)} · ` : `passo ${i + 1} · `}<b>${prevNum(g.storico[i])}</b><br><span style="color:#8a93a6">dato osservato</span>`;
-    } else {
-      const k = i - g.storicoLen;
-      const s = g.s;
-      html =
-        `fra ${k + 1} ${escHtml(u)} · stima <b>${prevNum(s.median[k])}</b><br>` +
-        `<span style="color:#8a93a6">intervallo 80%: ${prevNum(s.q10[k])} – ${prevNum(s.q90[k])}</span>`;
-    }
-    tip.innerHTML = html;
-    tip.style.display = "block";
-    const boxR = box.getBoundingClientRect();
-    const pxPx = (px / g.W) * r.width;
-    tip.style.left = `${Math.min(Math.max(pxPx, 70), boxR.width - 70)}px`;
-    tip.style.top = `${Math.max(10, ((e.clientY - r.top) / r.height) * boxR.height - 8)}px`;
+    const xv = ((e.clientX - r.left) / r.width) * gg.W;
+    const rel = (xv - gg.ml) / (gg.W - gg.ml - gg.mr);
+    return gg.a + rel * (gg.b - gg.a);
   };
-  svg.addEventListener("mousemove", muovi);
-  svg.addEventListener("mouseleave", () => { tip.style.display = "none"; if (cross) cross.setAttribute("opacity", "0"); });
+  const disegnaMirino = (iFraz) => {
+    const gg = g();
+    const i = Math.max(0, Math.min(gg.N - 1, Math.round(iFraz)));
+    const group = svg.querySelector("#prevCursor");
+    if (!group) return;
+    const px = gg.x(i);
+    const isStorico = i < gg.L;
+    const valore = isStorico ? gg.tutto[i] : gg.s.median[i - gg.L];
+    const py = gg.y(valore);
+    group.setAttribute("opacity", "1");
+    const cx = svg.querySelector("#prevCrossX"), cy = svg.querySelector("#prevCrossY");
+    if (cx) { cx.setAttribute("x1", px.toFixed(1)); cx.setAttribute("x2", px.toFixed(1)); }
+    if (cy) { cy.setAttribute("y1", py.toFixed(1)); cy.setAttribute("y2", py.toFixed(1)); }
+    const tagY = svg.querySelector("#prevTagY"), tagYT = svg.querySelector("#prevTagYT");
+    if (tagY) tagY.setAttribute("y", Math.max(0, Math.min(gg.H - 20, py - 9)).toFixed(1));
+    if (tagYT) {
+      tagYT.setAttribute("y", Math.max(12, Math.min(gg.H - 8, py + 4)).toFixed(1));
+      tagYT.textContent = prevNum(valore);
+    }
+    const etichetta = isStorico
+      ? (gg.dateTutte && gg.dateTutte[i] ? String(gg.dateTutte[i]).slice(0, 10) : `passo −${gg.L - i}`)
+      : `+${i - gg.L + 1} ${prevUnitaSerie()}`;
+    const tagX = svg.querySelector("#prevTagX"), tagXT = svg.querySelector("#prevTagXT");
+    const lx = Math.max(gg.ml, Math.min(gg.W - gg.mr - 88, px - 43));
+    if (tagX) tagX.setAttribute("x", lx.toFixed(1));
+    if (tagXT) { tagXT.setAttribute("x", (lx + 5).toFixed(1)); tagXT.textContent = etichetta; }
+    return { i, isStorico, valore };
+  };
+
+  svg.addEventListener("mousemove", (e) => {
+    if (prevDrag) return; // durante il trascinamento il mirino non serve
+    const info = disegnaMirino(indiceDaEvento(e));
+    if (!info) { tip.style.display = "none"; return; }
+    const u = prevUnitaSerie();
+    if (info.isStorico) {
+      tip.innerHTML = `${escHtml(String((g().dateTutte && g().dateTutte[info.i]) || "").slice(0, 10))} · <b>${prevNum(info.valore)}</b><br><span style="color:#8a93a6">dato osservato</span>`;
+    } else {
+      const k = info.i - g().L;
+      tip.innerHTML =
+        `fra ${k + 1} ${escHtml(u)} · stima <b>${prevNum(g().s.median[k])}</b><br>` +
+        `<span style="color:#8a93a6">intervallo 80%: ${prevNum(g().s.q10[k])} – ${prevNum(g().s.q90[k])}</span>`;
+    }
+    tip.style.display = "block";
+    const r = svg.getBoundingClientRect();
+    const boxR = box.getBoundingClientRect();
+    const px = ((e.clientX - r.left) / r.width) * boxR.width;
+    tip.style.left = `${Math.min(Math.max(px, 70), boxR.width - 70)}px`;
+    tip.style.top = `${Math.max(10, ((e.clientY - r.top) / r.height) * boxR.height - 10)}px`;
+  });
+  svg.addEventListener("mouseleave", () => {
+    tip.style.display = "none";
+    const group = svg.querySelector("#prevCursor");
+    if (group) group.setAttribute("opacity", "0");
+  });
+
+  // zoom con la rotella, centrato sul puntatore
+  svg.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const centro = indiceDaEvento(e);
+    prevZoomAt(centro, e.deltaY > 0 ? 1.18 : 1 / 1.18);
+  }, { passive: false });
+
+  // trascinamento: sposta la finestra
+  svg.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    prevDrag = { x: e.clientX, a: prevView.a, b: prevView.b === null ? prevNTotale() - 1 : prevView.b };
+    svg.classList.add("trascinando");
+  });
+  window.addEventListener("mousemove", (e) => {
+    if (!prevDrag) return;
+    const r = svg.getBoundingClientRect();
+    const span = prevDrag.b - prevDrag.a;
+    const delta = -((e.clientX - prevDrag.x) / r.width) * span * 0.9;
+    prevPan(delta - (prevView.a - prevDrag.a) * 0); // pan relativo al punto di partenza
+  });
+  window.addEventListener("mouseup", () => {
+    if (prevDrag) {
+      prevDrag = null;
+      svg.classList.remove("trascinando");
+    }
+  });
+
+  svg.addEventListener("dblclick", () => { prevView = { a: 0, b: null }; prevRidisegna(); });
+
+  // touch: un dito sposta, due dita zoomano
+  let t0 = null;
+  svg.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) t0 = { x: e.touches[0].clientX, a: prevView.a, b: prevView.b === null ? prevNTotale() - 1 : prevView.b };
+    else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
+      t0 = { dist: Math.hypot(dx, dy), a: prevView.a, b: prevView.b === null ? prevNTotale() - 1 : prevView.b };
+    }
+  }, { passive: true });
+  svg.addEventListener("touchmove", (e) => {
+    if (!t0) return;
+    if (e.touches.length === 1 && t0.x !== undefined) {
+      e.preventDefault();
+      const r = svg.getBoundingClientRect();
+      const span = t0.b - t0.a;
+      prevView = { a: Math.max(0, t0.a - ((e.touches[0].clientX - t0.x) / r.width) * span), b: Math.min(prevNTotale() - 1, t0.b - ((e.touches[0].clientX - t0.x) / r.width) * span) };
+      prevRidisegna();
+    } else if (e.touches.length === 2 && t0.dist) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
+      const fattore = t0.dist / Math.max(1, Math.hypot(dx, dy));
+      const centro = (t0.a + t0.b) / 2;
+      prevView = { a: t0.a, b: t0.b };
+      prevZoomAt(centro, fattore);
+    }
+  }, { passive: false });
+  svg.addEventListener("touchend", () => { t0 = null; }, { passive: true });
 }
 
 /** «Cosa dicono i dati»: aritmetica sulla serie, tenuta distinta dalla stima del modello. */
@@ -6121,7 +6313,6 @@ function prevInsightHtml(a) {
   const righe = [];
   righe.push(`<div class="prev-ins-riga"><span class="ico">${a.tendenza_per_passo >= 0 ? "↗" : "↘"}</span><span>${r2 >= 0.3 ? `<b>${tipo}</b>` : "<b>Nessuna tendenza lineare affidabile</b>"}: pendenza ${a.tendenza_per_passo >= 0 ? "+" : ""}${n(a.tendenza_per_passo)} per ${escHtml(u.replace(/i$/, "o"))}, R² ${n(r2, 2)} <span class="prev-badge ${r2 >= 0.5 ? "ok" : r2 >= 0.3 ? "" : "warn"}">${r2 >= 0.5 ? "spiega molto" : r2 >= 0.3 ? "spiega poco" : "non spiega quasi nulla"}</span></span></div>`);
   if (Number.isFinite(rum)) {
-    // Se c'è un ciclo forte, la variabilità è stagionale, non rumore: dirlo in modo diverso.
     const stagionale = a.ciclo && Number(a.ciclo.spiegato_pct) >= 40;
     const frase = stagionale
       ? `la variabilità viene soprattutto dalla <b>ciclicità</b> (spiega il ${n(a.ciclo.spiegato_pct)}%), non da rumore casuale: la media mobile la segue, il modello la riproduce se il ciclo è regolare`
@@ -6156,11 +6347,66 @@ async function prevCaricaInsight(corpo) {
     const r = await fetch("/api/timestral/insight", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
     const a = await r.json();
     if (!r.ok) throw new Error(a.error || `HTTP ${r.status}`);
+    prevAnalisi = a;
     card.innerHTML = prevInsightHtml(a);
     card.hidden = false;
   } catch (e) {
     card.hidden = true;
   }
+}
+
+/** I tre orizzonti, nell'unità della serie. Il «lungo» non è mai più corto di ciò che
+ *  l'utente ha chiesto: se ha scelto 180 giorni, il lungo è 180. */
+function prevOrizzonti(u, hRichiesto) {
+  const base =
+    u === "mesi" ? [["breve", 1, "1 mese"], ["medio", 3, "3 mesi"], ["lungo", 12, "12 mesi"]]
+    : u === "ore" ? [["breve", 12, "12 ore"], ["medio", 48, "2 giorni"], ["lungo", 168, "1 settimana"]]
+    : u === "settimane" ? [["breve", 4, "4 settimane"], ["medio", 13, "3 mesi"], ["lungo", 52, "1 anno"]]
+    : u === "anni" ? [["breve", 1, "1 anno"], ["medio", 3, "3 anni"], ["lungo", 10, "10 anni"]]
+    : [["breve", 7, "1 settimana"], ["medio", 30, "1 mese"], ["lungo", 90, "3 mesi"]];
+  const out = base.map(([k, n2, lab]) => ({ k, n: n2, lab }));
+  if ((Number(hRichiesto) || 0) > out[2].n) out[2] = { ...out[2], n: Number(hRichiesto), lab: `${hRichiesto} ${u}` };
+  return out;
+}
+
+/** Cosa cambia guardando più lontano: tre orizzonti dalla STESSA previsione. */
+function prevOrizzontiHtml(out) {
+  const s0 = out.series[0];
+  const ultimo = s0.last_observed;
+  const h = s0.median.length;
+  const u = prevUnitaSerie();
+  const tre = prevOrizzonti(u, Number($("prevOrizzonte").value) || h);
+  const livelli = [0.05, 0.25, 0.5, 0.75, 0.95];
+  const col = tre.map(({ k, n: passo, lab }) => {
+    const i = Math.min(passo, h) - 1;
+    const med = s0.median[i], lo = s0.q10[i], hi = s0.q90[i], lo95 = s0.q05[i], hi95 = s0.q95[i];
+    const varPct = ultimo ? (100 * (med - ultimo)) / Math.abs(ultimo) : null;
+    const vals = [s0.q05[i], s0.q25[i], s0.median[i], s0.q75[i], s0.q95[i]];
+    let pr = null;
+    if (ultimo != null) {
+      if (ultimo <= vals[0]) pr = 0.95;
+      else if (ultimo >= vals[4]) pr = 0.05;
+      else for (let j = 0; j < 4; j += 1) {
+        if (ultimo >= vals[j] && ultimo <= vals[j + 1]) {
+          const t = (ultimo - vals[j]) / (vals[j + 1] - vals[j] || 1);
+          pr = 1 - (livelli[j] + t * (livelli[j + 1] - livelli[j]));
+          break;
+        }
+      }
+    }
+    const err = prevErroriOrizzonte && prevErroriOrizzonte[k];
+    return `<div class="prev-oriz-col">
+      <h4>${k} · ${escHtml(lab)}</h4>
+      <div class="grande">${prevNum(med)}</div>
+      <div class="riga">intervallo 80%: <b>${prevNum(lo)} – ${prevNum(hi)}</b></div>
+      <div class="riga">intervallo 95%: ${prevNum(lo95)} – ${prevNum(hi95)}</div>
+      <div class="riga">variazione attesa: <b>${prevPct(varPct)}</b></div>
+      <div class="riga">probabilità di salire: <b>${pr == null ? "—" : pr.toFixed(2).replace(".", ",")}</b></div>
+      ${err ? `<div class="riga">errore storico: <b>${prevNum(err.mae_modello)}</b> <span>(«domani come oggi» ${prevNum(err.mae_naive)})</span></div>` : ""}
+    </div>`;
+  }).join("");
+  return `<div class="prev-card-h">Tre orizzonti <span class="prev-legenda">dalla stessa previsione: cosa cambia guardando più lontano</span></div>
+    <div class="prev-oriz-tre">${col}</div>`;
 }
 
 function prevNumeri(out) {
@@ -6217,7 +6463,10 @@ async function prevEsegui() {
   const sel = $("prevSerie");
   const val = sel && sel.value;
   if (!val) { alert("Nessuna serie: carica un CSV con ＋ csv, oppure usa una serie inclusa."); return; }
-  const h = Math.max(1, Math.min(366, Number($("prevOrizzonte").value) || 30));
+  const hScelto = Math.max(1, Math.min(366, Number($("prevOrizzonte").value) || 30));
+  // si chiede al modello l'orizzonte PIÙ LUNGO dei tre: breve e medio si leggono dentro la
+  // stessa previsione, così i tre numeri sono coerenti fra loro (una sola inferenza)
+  const h = Math.max(1, Math.min(366, Math.max(hScelto, prevOrizzonti(prevUnitaSerie(), hScelto)[2].n)));
   const corpo = { prediction_length: h };
   if (val.startsWith("demo:")) corpo.demo = [val.slice(5)];
   else corpo.csv = val.slice(4);
@@ -6236,10 +6485,14 @@ async function prevEsegui() {
     $("prevCorpo").hidden = false;                 // prima di disegnare: la finestra si calcola qui
     $("prevFinestra").innerHTML = prevOpzioniFinestra();
     $("prevFinestra").value = String(PREV_CTRL.finestra || 0); // coerente con ciò che si disegna
+    prevImpostaDominio();                          // si parte dalla finestra scelta, poi si naviga
     $("prevSvgBox").innerHTML = prevGrafico(out);
     $("prevTrend").innerHTML = prevTrendHtml(out);
+    prevAggiornaZoomInfo();
     prevAgganciaPuntatore();
     $("prevNumeri").innerHTML = prevNumeri(out);
+    $("prevOrizzonti").innerHTML = prevOrizzontiHtml(out);
+    $("prevOrizzonti").hidden = false;
     $("prevTabella").innerHTML = prevTabella(out);
     // l'analisi dei dati si calcola in parallelo e non blocca il grafico
     void prevCaricaInsight(corpo);
@@ -6272,13 +6525,27 @@ async function prevVerifica() {
   const card = $("prevBacktestCard");
   card.hidden = false;
   card.innerHTML = `<div class="prev-card-h">verifica storica…</div><div class="prev-nota">il modello rifà la previsione sul passato e si confronta con «domani come oggi». Su una serie lunga ci vuole qualche secondo.</div>`;
-  const corpo = { prediction_length: Math.max(1, Math.min(366, Number($("prevOrizzonte").value) || 30)), folds: 5 };
-  if (val.startsWith("demo:")) corpo.demo = [val.slice(5)];
-  else corpo.csv = val.slice(4);
+  const hScelto = Math.max(1, Math.min(366, Number($("prevOrizzonte").value) || 30));
+  const tre = prevOrizzonti(prevUnitaSerie(), hScelto);
+  const fonte = val.startsWith("demo:") ? { demo: [val.slice(5)] } : { csv: val.slice(4) };
   try {
-    const r = await fetch("/api/timestral/backtest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
-    const b = await r.json();
-    if (!r.ok) throw new Error(b.error || `HTTP ${r.status}`);
+    // tre prove, una per orizzonte: l'affidabilità a 7 giorni non dice niente su quella a 90
+    const risposte = await Promise.all(
+      tre.map((o) =>
+        fetch("/api/timestral/backtest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...fonte, prediction_length: o.n, folds: 5 }),
+        })
+          .then((x) => x.json().then((j) => (x.ok ? { ...j, k: o.k, n: o.n } : { k: o.k, errore: j.error })))
+          .catch((e) => ({ k: o.k, errore: String(e.message || e) })),
+      ),
+    );
+    const validi = risposte.filter((x) => !x.errore);
+    if (!validi.length) throw new Error(risposte[0]?.errore || "verifica non riuscita");
+    prevErroriOrizzonte = Object.fromEntries(validi.map((x) => [x.k, x]));
+    if (prevRisultato) { $("prevOrizzonti").innerHTML = prevOrizzontiHtml(prevRisultato); $("prevOrizzonti").hidden = false; }
+    const b = validi.find((x) => x.k === "lungo") || validi[validi.length - 1];
     const skill = Number(b.skill_mae_pct);
     const giudizio =
       !Number.isFinite(skill) ? "" :
@@ -6312,17 +6579,93 @@ async function prevVerifica() {
   }
 }
 
+/**
+ * CSV con storico e previsione AFFIANCATI: chi lo apre in un foglio di calcolo trova il
+ * passato nella prima parte e la previsione nella seconda, con la colonna «tipo» a distinguerli.
+ * Le date ci sono dove la fonte le ha; per il futuro non se ne inventano (colonna vuota + passo).
+ */
 function prevScaricaCsv() {
   if (!prevRisultato) return;
-  const s = prevRisultato.series[0];
-  const righe = ["passo,mediana,q05,q10,q25,q75,q90,q95"];
+  const out = prevRisultato;
+  const s = out.series[0];
+  const storico = out.storico || [];
+  const date = (out.date && out.date[0]) || null;
+  const righe = ["tipo,data,passo,valore,mediana,q05,q10,q25,q75,q90,q95"];
+  storico.forEach((v, i) => {
+    righe.push(["osservato", date && date[i] ? String(date[i]).slice(0, 10) : "", "", v, "", "", "", "", "", "", ""].join(","));
+  });
   for (let i = 0; i < s.median.length; i += 1) {
-    righe.push([i + 1, s.median[i], s.q05[i], s.q10[i], s.q25[i], s.q75[i], s.q90[i], s.q95[i]].join(","));
+    righe.push(["previsione", "", i + 1, "", s.median[i], s.q05[i], s.q10[i], s.q25[i], s.q75[i], s.q90[i], s.q95[i]].join(","));
   }
+  const nome = (out.meta && out.meta[0] && out.meta[0].nome) || s.name || "serie";
   const blob = new Blob([righe.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `previsione-${(s.name || "serie").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}.csv`;
+  a.download = `previsione-${String(nome).toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/** PNG del grafico come lo si sta guardando (zoom compreso): serve per una chat o un report. */
+function prevScaricaPng() {
+  const svg = $("prevSvgBox").querySelector("svg");
+  if (!svg) return;
+  const clone = svg.cloneNode(true);
+  const cur = clone.querySelector("#prevCursor");
+  if (cur) cur.remove(); // il mirino non fa parte dell'immagine
+  const dati = new XMLSerializer().serializeToString(clone);
+  const img = new Image();
+  imagenPng(img, dati);
+}
+function imagenPng(img, dati) {
+  img.onload = () => {
+    const scala = 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width * scala || 1800;
+    canvas.height = img.height * scala || 760;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#0b0e14";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((b) => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
+      a.download = `grafico-previsione-${new Date().toISOString().slice(0, 10)}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }, "image/png");
+  };
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(dati);
+}
+
+/** JSON completo: dati, previsione, tre orizzonti, analisi. Per rielaborare senza rifare i conti. */
+function prevScaricaJson() {
+  if (!prevRisultato) return;
+  const out = prevRisultato;
+  const s = out.series[0];
+  const dentro = (o) => Object.fromEntries(Object.entries(o || {}));
+  const pacchetto = {
+    generato_il: new Date().toISOString(),
+    serie: (out.meta && out.meta[0] && out.meta[0].nome) || s.name,
+    provenienza: dentro(out.meta && out.meta[0]),
+    modello: { nome: "Timestral", taglia: out.taglia, esecuzione: "locale, CPU", licenza_pesi: "Modified MIT" },
+    orizzonte: { passi: s.median.length, unita: prevUnitaSerie() },
+    previsione: {
+      mediana: s.median, q05: s.q05, q10: s.q10, q25: s.q25, q75: s.q75, q90: s.q90, q95: s.q95,
+      quantili: out.quantile_levels, statistiche: s.stats,
+    },
+    storico: { valori: out.storico || [], date: (out.date && out.date[0]) || null },
+    orizzonti: prevOrizzonti(prevUnitaSerie(), s.median.length).map((o) => {
+      const i = Math.min(o.n, s.median.length) - 1;
+      return { nome: o.k, passi: o.n, mediana: s.median[i], q10: s.q10[i], q90: s.q90[i], errore_storico: prevErroriOrizzonte ? prevErroriOrizzonte[o.k] || null : null };
+    }),
+    analisi: prevAnalisi || null,
+    nota: "Stima probabilistica di un modello pre-addestrato (zero-shot): non è un fatto e non conosce notizie o eventi annunciati. Le probabilità derivano dai quantili e non sono calibrate.",
+  };
+  const blob = new Blob([JSON.stringify(pacchetto, null, 2)], { type: "application/json;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `previsione-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
@@ -8502,6 +8845,8 @@ $("prevPrevedi").onclick = () => prevEsegui();
 $("prevBacktest").onclick = () => prevVerifica();
 $("prevCsv").onclick = () => prevScaricaCsv();
 $("prevSvg").onclick = () => prevScaricaSvg();
+$("prevPng").onclick = () => prevScaricaPng();
+$("prevJson").onclick = () => prevScaricaJson();
 $("prevCarica").onclick = () => $("prevFile").click();
 $("prevFile").onchange = (e) => { const f = e.target.files && e.target.files[0]; prevCaricaFile(f); e.target.value = ""; };
 $("prevSerie").onchange = () => {
@@ -8547,6 +8892,18 @@ $("prevIndietro")?.addEventListener("click", (e) => {
 $("prevAvanti")?.addEventListener("click", () => {
   PREV_CTRL.offset = Math.max(0, (PREV_CTRL.offset || 0) - prevFinestraPunti());
   prevRidisegna();
+});
+$("prevZoomIn")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1 / 1.35));
+$("prevZoomOut")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1.35));
+$("prevResetZoom")?.addEventListener("click", () => { prevView = { a: 0, b: null }; prevRidisegna(); });
+document.addEventListener("keydown", (e) => {
+  // scorciatoie solo quando la vista è aperta e non si sta scrivendo in un campo
+  if (document.body.dataset.tab !== "previsioni" || /input|textarea|select/i.test(e.target?.tagName || "")) return;
+  if (e.key === "0") { prevView = { a: 0, b: null }; prevRidisegna(); }
+  if (e.key === "+" || e.key === "=") prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1 / 1.35);
+  if (e.key === "-") prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1.35);
+  if (e.key === "ArrowLeft") prevPan(-(prevFinestraPunti() / 4));
+  if (e.key === "ArrowRight") prevPan(prevFinestraPunti() / 4);
 });
 $("prevFull")?.addEventListener("click", () => {
   const card = document.querySelector(".prev-grafico");
