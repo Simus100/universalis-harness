@@ -956,7 +956,7 @@ const SYSTEM_MEDIA_NOTE =
   `L'harness può accendere un decisore locale Decision_M (motore: Rizzo Flow) che risponde a domande tipizzate ` +
   `(sì/no, scelta, punteggio) con **probabilità**, senza generare un solo token: serve per i ` +
   `giudizi ripetibili — instradare, scegliere fra azioni, dare un punteggio su una rubrica — ` +
-  `non per spiegare o scrivere. Si accende dal menu «features» della dashboard (interruttore ` +
+  `non per spiegare o scrivere. Si accende dal menu «servizi» della dashboard (interruttore ` +
   `\`rizzo\`) e occupa ~5,7 GB di RAM e la CPU per ~12 s a richiesta su uno stato breve: per ` +
   `questo non è sempre accesa.\n` +
   `Quando è accesa hai i tool \`decision_m\` (la decisione) e \`decision_m_service\` (accendi, ` +
@@ -972,7 +972,7 @@ const SYSTEM_MEDIA_NOTE =
   `previsione in ~0,1 s) e si scarica da solo dopo 15 minuti di inattività: **non serve chiedere ` +
   `permesso** per usarlo. I tool sono \`timestral_forecast\` (la previsione: mediana e quantili) e ` +
   `\`timestral_series\` (quali serie esistono, stato del servizio). Sono spenti dall'interruttore ` +
-  `«timestral» nel menu features: se mancano dalla tua lista non è un guasto.\n` +
+  `«timestral» nel menu «servizi»: se mancano dalla tua lista non è un guasto.\n` +
   `Regola non negoziabile: quello che esce è una **STIMA probabilistica** di un modello pre-addestrato ` +
   `(zero-shot), non un fatto e non un consiglio finanziario. Presenta sempre mediana **e** intervallo ` +
   `(banda 80% e 95%), dichiara che il modello non conosce notizie né eventi annunciati, e se la banda ` +

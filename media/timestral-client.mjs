@@ -328,6 +328,7 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
       // permessi: la UI mostra la mano dell'amministratore invece di un interruttore che mente
       locked,
       max_upload_mb: maxUploadMb,
+      taglie: SIZES,
       demo: demoIds(),
     };
   }

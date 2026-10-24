@@ -1,6 +1,6 @@
 ---
 name: timestral
-description: "Previsioni probabilistiche su serie temporali con Timestral (time-series foundation model di Mistral, locale su CPU): dato il passato di una serie (cambi, prezzi, incassi, consumi, carichi orari) ottieni mediana e quantili dei prossimi passi, con l'incertezza dichiarata. Usala quando la risposta dipende da «cosa succederà» e i dati sono numeri ordinati nel tempo; non quando il futuro dipende da un evento noto e datato (il modello non conosce notizie) né per dare consigli finanziari. Motore: servizio locale condiviso (feature «timestral» nel menu features, taglia 28M, 471 MB, si scarica da solo)."
+description: "Previsioni probabilistiche su serie temporali con Timestral (time-series foundation model di Mistral, locale su CPU): dato il passato di una serie (cambi, prezzi, incassi, consumi, carichi orari) ottieni mediana e quantili dei prossimi passi, con l'incertezza dichiarata. Usala quando la risposta dipende da «cosa succederà» e i dati sono numeri ordinati nel tempo; non quando il futuro dipende da un evento noto e datato (il modello non conosce notizie) né per dare consigli finanziari. Motore: servizio locale condiviso (servizio «Timestral» nel menu «servizi», taglia 28M, 471 MB, si scarica da solo)."
 ---
 
 # Previsioni su serie temporali (Timestral)
@@ -13,7 +13,7 @@ e la RAM è condivisa da tutte le istanze dell'harness.
 
 ## Come si usa in questa istanza
 
-Due tool, entrambi accesi dall'interruttore `timestral` nel menu «features»:
+Due tool, entrambi accesi dall'interruttore `timestral` nel menu «servizi»:
 
 | tool | quando |
 |---|---|
@@ -37,7 +37,7 @@ feature spenta, è il processo fermo.
 | 123M | 1199 MB | 15,9 s | 0,28 s | via di mezzo, caricamento lento |
 | 209M | 1901 MB | 27,0 s | 0,28 s | il più preciso, costa 1,9 GB |
 
-Si cambia dalla dashboard (menu features → tendina accanto a Timestral) o con
+Si cambia dalla dashboard (menu «servizi» → tendina accanto a Timestral) o con
 `POST /api/timestral {"size":"209M"}`.
 
 ## Regole di onestà (non negoziabili)

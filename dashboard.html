@@ -1297,9 +1297,14 @@ footer {
 
 /* ---------- menu "features" ---------- */
 .feat { position: relative; flex: 0 0 auto; }
+.feat { display: flex; align-items: center; gap: 6px; }
 .feat-panel {
   position: absolute; right: 0; top: calc(100% + 6px); z-index: 30;
   min-width: 300px; max-width: min(92vw, 400px);
+  /* Il pannello non esce MAI dallo schermo: se il contenuto è più alto dello spazio
+     disponibile, scorre dentro di sé. Era il difetto per cui «previsioni» restava
+     irraggiungibile sui portatili con schermo basso. */
+  max-height: min(78vh, 640px); overflow-y: auto; overscroll-behavior: contain;
   background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
   box-shadow: var(--shadow); padding: 6px 8px 8px;
 }
@@ -1725,6 +1730,9 @@ footer {
 .ghost.mini.on { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .ghost.forte { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); color: var(--text); font-weight: 600; }
 .prev-tecnico { display: block; margin-top: 6px; color: var(--faint); font-size: var(--fs-xs); line-height: 1.45; }
+/* Nei pannelli della barra la descrizione di stato va a capo su una riga sua: stretta fra
+   bottone e tendina diventava una colonnina di tre righe illeggibile. */
+.feat-row > .feat-lbl[style], .feat-row > #decisionMInfo, .feat-row > #timestralInfo { flex: 1 1 100%; }
 .prev-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px 2px 8px; }
 .prev-ctrl-lbl { color: var(--dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .5px; }
 .select.mini { padding: 3px 6px; font-size: var(--fs-sm); }
@@ -1880,7 +1888,8 @@ footer {
       </select>
       <select id="thinkSel" class="select" title="Livello thinking"></select>
       <div class="feat" id="featWrap">
-        <button id="featBtn" class="pill feat-btn" type="button" title="Funzioni dell'agente: subagent, compattazione" aria-haspopup="true" aria-expanded="false"><span class="led"></span>features<span class="feat-count" id="featCount"></span></button>      <div class="feat-panel" id="featPanel" hidden>
+        <button id="featBtn" class="pill feat-btn" type="button" title="Risorse: subagent, domande, contesto e le viste (goal, cron, skill, progetto, agenda, live, previsioni)" aria-haspopup="true" aria-expanded="false"><span class="led"></span>risorse<span class="feat-count" id="featCount"></span></button>
+        <button id="servBtn" class="pill feat-btn" type="button" title="Servizi locali: lettura ad alta voce, Decision_M, previsioni (Timestral) — si accendono a richiesta" aria-haspopup="true" aria-expanded="false"><span class="led"></span>servizi</button>      <div class="feat-panel" id="featPanel" hidden>
         <div class="feat-row">
           <span class="feat-lbl">subagent</span>
           <button id="subagentToggle" class="pill warn" type="button" title="Abilita/disabilita i subagent (aumenta i costi)"><span class="led"></span>subagent</button>
@@ -1893,22 +1902,6 @@ footer {
         <div class="feat-row">
           <span class="feat-lbl">contesto</span>
           <button id="compactBtn" class="pill" type="button" title="Compatta il contesto: i messaggi vecchi vengono sostituiti da un riassunto, i recenti restano. La cronologia completa rimane nel file della chat."><span class="led"></span>compatta</button>
-        </div>
-        <div class="feat-sep"></div>
-        <div class="feat-h">servizi locali — si accendono a richiesta</div>
-        <div class="feat-row">
-          <span class="feat-lbl" title="Lettura ad alta voce: il motore (piper) gira sul server, offline">lettura</span>
-          <select id="ttsVoceSel" class="select" title="Voce per la lettura ad alta voce (piper sul server; le tracce sono in cache, quindi cambiare voce rigenera)"></select>
-          <button id="ttsUltimoBtn" class="pill" type="button" title="Rileggi l'ultimo file letto ad alta voce"><span class="led"></span>▶ ultimo</button>
-        </div>
-        <div class="feat-row">
-          <button id="decisionMToggle" class="pill" type="button" title="Decision_M (decisore tipizzato locale): domande sì/no, scelta, punteggio → probabilità, senza generare testo). Acceso occupa ~5,7 GB di RAM e la CPU; spento libera tutto."><span class="led"></span>Decision_M</button>
-          <span class="feat-lbl" id="decisionMInfo">—</span>
-        </div>
-        <div class="feat-row">
-          <button id="timestralToggle" class="pill" type="button" title="Timestral (previsioni su serie temporali): quando è acceso l'agente ha i tool timestral_forecast e timestral_series. Il modello gira in un servizio condiviso, leggero (471 MB con il 28M) e si scarica da solo dopo 15 minuti di inattività."><span class="led"></span>Timestral</button>
-          <select id="timestralSize" class="select" title="Taglia del modello: più grande è più precisa ma costa più RAM e più tempo di caricamento (misure su questa macchina)"></select>
-          <span class="feat-lbl" id="timestralInfo">—</span>
         </div>
         <div class="feat-sep"></div>
         <div class="feat-h">risorse — goal, pianificazioni e skill</div>
@@ -1924,6 +1917,26 @@ footer {
         <div class="feat-row">
           <button id="featLive" class="pill" type="button" style="flex:1;justify-content:center" title="Live view del browser: guarda cosa fa e, se serve, prendi il controllo"><span class="led"></span>🖥 live</button>
           <button id="featPrevisioni" class="pill" type="button" style="flex:1;justify-content:center" title="Previsioni: cosa succederà, secondo Timestral — con la banda di incertezza e la verifica storica"><span class="led"></span>📈 previsioni</button>
+        </div>
+      </div>
+      <!-- Secondo pannello: i servizi locali, separati dalle risorse dell'agente. Stesso
+           comportamento del primo (un tasto, un pannello), così non si confondono due cose
+           diverse: cosa l'agente può fare, e quali motori sono accesi sulla macchina. -->
+      <div class="feat-panel" id="servPanel" hidden>
+        <div class="feat-h">servizi locali — si accendono a richiesta</div>
+        <div class="feat-row">
+          <span class="feat-lbl" title="Lettura ad alta voce: il motore (piper) gira sul server, offline">lettura</span>
+          <select id="ttsVoceSel" class="select" title="Voce per la lettura ad alta voce (piper sul server; le tracce sono in cache, quindi cambiare voce rigenera)"></select>
+          <button id="ttsUltimoBtn" class="pill" type="button" title="Rileggi l'ultimo file letto ad alta voce"><span class="led"></span>▶ ultimo</button>
+        </div>
+        <div class="feat-row">
+          <button id="decisionMToggle" class="pill" type="button" title="Decision_M (decisore tipizzato locale): domande sì/no, scelta, punteggio → probabilità, senza generare testo). Acceso occupa ~5,7 GB di RAM e la CPU; spento libera tutto."><span class="led"></span>Decision_M</button>
+          <span class="feat-lbl" id="decisionMInfo">—</span>
+        </div>
+        <div class="feat-row">
+          <button id="timestralToggle" class="pill" type="button" title="Timestral (previsioni su serie temporali): quando è acceso l'agente ha i tool timestral_forecast e timestral_series. Il modello gira in un servizio condiviso, leggero (471 MB con il 28M) e si scarica da solo dopo 15 minuti di inattività."><span class="led"></span>Timestral</button>
+          <select id="timestralSize" class="select" title="Taglia del modello: più grande è più precisa ma costa più RAM e più tempo di caricamento (misure su questa macchina)"></select>
+          <span class="feat-lbl" id="timestralInfo">—</span>
         </div>
       </div>
     </div>
@@ -2395,7 +2408,7 @@ let lastContext = null, compacting = false;
 // costo dell'ultimo turno: differenza fra il totale a inizio turno e quello a fine turno
 let turnoBaseCosto = null, ultimoTurnoCosto = 0;
 let subagentsAvailable = false, subagentsEnabled = false;
-// Decision_M: la feature si accende dal menu «features» e NON sta accesa sempre (un modello
+// Decision_M: il servizio si accende dal menu «servizi» e NON sta accesa sempre (un modello
 // da 4B su CPU costa ~5,7 GB di RAM e qualche secondo a richiesta). Questo flag serve solo
 // alla UI: il gate vero dei tool sta sul server (applyToolGate).
 let decisionMReady = false;
@@ -2563,7 +2576,7 @@ function renderAskToggle(st) {
 }
 
 /**
- * Riga «Decision_M» del menu features: acceso o spento, quanto occupa, su che porta e con che
+ * Riga «Decision_M» del menu «servizi»: acceso o spento, quanto occupa, su che porta e con che
  * modello. Il testo resta breve (il pannello è largo ~300 px) e non promette numeri che non
  * vengono dallo stato reale del servizio.
  */
@@ -2605,7 +2618,7 @@ function renderDecisionM(st) {
 }
 
 /**
- * Riga «Timestral» del menu features: interruttore dei tool di previsione, taglia del modello e
+ * Riga «Timestral» del menu «servizi»: interruttore dei tool di previsione, taglia del modello e
  * stato REALE del servizio condiviso. I numeri mostrati (RAM, latenza) vengono dalle misure su
  * questa macchina, non da una stima: se il servizio è fermo si vede, e non si finge che funzioni.
  */
@@ -6451,7 +6464,7 @@ function prevBloccata() {
     if (area) {
       area.innerHTML = t.locked
         ? "<b>Le previsioni sono disattivate su questo account.</b> La scelta è di chi gestisce il server, perché il modello occupa memoria condivisa con gli altri account. Se ti servono, chiedine l'attivazione a chi amministra la macchina."
-        : "<b>Le previsioni sono spente.</b> Si riaccendono dall'interruttore <b>Timestral</b> nel menu «features» qui sopra.";
+        : "<b>Le previsioni sono spente.</b> Si riaccendono dall'interruttore <b>Timestral</b> nel menu «servizi» qui sopra.";
     }
     return true;
   }
@@ -6710,6 +6723,11 @@ $("tabChat").onclick = () => showTab("chat");
 $("tabFiles").onclick = () => showTab("files");
 function showTab(name) {
   document.body.dataset.tab = name;
+  // un pannello aperto non deve restare appeso sopra una vista diversa
+  if (typeof applicaPannello === "function") {
+    applicaPannello($("featPanel"), $("featBtn"), false);
+    applicaPannello($("servPanel"), $("servBtn"), false);
+  }
   $("filesView").hidden = name !== "files";
   $("goalsView").hidden = name !== "goals";
   $("cronView").hidden = name !== "cron";
@@ -8805,9 +8823,20 @@ function resetFeatPanelStyle(panel) {
   s.overflowY = "";
 }
 
-function setFeatPanel(open) {
-  const panel = $("featPanel");
-  const btn = $("featBtn");
+/** Apre/chiude un pannello della barra; aprirne uno chiude l'ALTRO (un tasto, un pannello). */
+function setPannello(nome, open) {
+  const servizi = nome === "servizi";
+  const id = servizi ? "servPanel" : "featPanel";
+  const bid = servizi ? "servBtn" : "featBtn";
+  const altroId = servizi ? "featPanel" : "servPanel";
+  const altroBtn = servizi ? "featBtn" : "servBtn";
+  if (open) applicaPannello($(altroId), $(altroBtn), false);
+  applicaPannello($(id), $(bid), open);
+}
+
+function applicaPannello(pannello, bottone, open) {
+  const panel = pannello;
+  const btn = bottone;
   if (!panel) return;
   if (open && window.matchMedia("(max-width: 760px)").matches && btn && btn.getBoundingClientRect) {
     // su mobile lo apriamo subito SOTTO il tasto, con altezza limitata:
@@ -8825,21 +8854,27 @@ function setFeatPanel(open) {
     resetFeatPanelStyle(panel);
   }
   panel.hidden = !open;
-  if (open) ttsPopolaMenuFeatures();
+  if (open && panel.id === "servPanel") ttsPopolaMenuFeatures();
   if (btn) {
     btn.setAttribute("aria-expanded", open ? "true" : "false");
     btn.classList.toggle("on", open);
   }
 }
 
-$("featBtn").onclick = (e) => { e.stopPropagation(); setFeatPanel($("featPanel").hidden); };
+function setFeatPanel(open) {
+  applicaPannello($("featPanel"), $("featBtn"), open);
+  if (open) applicaPannello($("servPanel"), $("servBtn"), false); // mai due pannelli insieme
+}
+
+$("featBtn").onclick = (e) => { e.stopPropagation(); setPannello("risorse", $("featPanel").hidden); };
+$("servBtn").onclick = (e) => { e.stopPropagation(); setPannello("servizi", $("servPanel").hidden); };
 $("featGoals").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("goals"); };
 $("featCron").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("cron"); };
 $("featSkills").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("skills"); };
 $("featProgetto").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("progetto"); };
 $("featAgenda").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("agenda"); };
 $("featLive").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("live"); };
-$("featPrevisioni").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("previsioni"); };
+$("featPrevisioni").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); applicaPannello($("servPanel"), $("servBtn"), false); showTab("previsioni"); };
 $("prevBack").onclick = () => showTab("chat");
 $("prevPrevedi").onclick = () => prevEsegui();
 $("prevBacktest").onclick = () => prevVerifica();
@@ -9245,11 +9280,17 @@ $("progettoAdd").onclick = () => {
 };
 $("agendaRefresh").onclick = () => loadAgenda();
 addEventListener("click", (e) => {
-  const w = $("featWrap"), p = $("featPanel");
-  if (w && p && !p.hidden && !w.contains(e.target)) setFeatPanel(false);
+  const w = $("featWrap"), p = $("featPanel"), ps = $("servPanel");
+  if (w && ((p && !p.hidden) || (ps && !ps.hidden)) && !w.contains(e.target)) {
+    applicaPannello(p, $("featBtn"), false);
+    applicaPannello(ps, $("servBtn"), false);
+  }
 });
 addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !$("featPanel").hidden) setFeatPanel(false);
+  if (e.key === "Escape" && (!$("featPanel").hidden || !$("servPanel").hidden)) {
+    applicaPannello($("featPanel"), $("featBtn"), false);
+    applicaPannello($("servPanel"), $("servBtn"), false);
+  }
 });
 $("fNewFile").onclick = async () => {
   const name = prompt("Nome nuovo file:"); if (!name) return;

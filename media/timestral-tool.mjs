@@ -195,7 +195,7 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
       try {
         if (!client.prefs.enabled) {
           return {
-            content: [{ type: "text", text: "Previsioni disattivate su questa istanza (interruttore `timestral` nel menu features)." }],
+            content: [{ type: "text", text: "Previsioni disattivate su questa istanza (interruttore `timestral` nel menu «servizi»)." }],
             details: { off: true },
             isError: true,
           };

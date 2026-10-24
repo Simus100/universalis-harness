@@ -4,7 +4,7 @@ Stato al **2026-10-24**. Questo documento dice cosa è stato misurato, cosa è s
 cosa manca. I numeri vengono da misure fatte su questa VPS, non da stime.
 
 **Fatto:** motore e servizio (unità `timestral.service`), tool in chat (`timestral_forecast`,
-`timestral_series`) con interruttore nel menu «features», endpoint `/api/timestral`,
+`timestral_series`) con interruttore nel menu «servizi», endpoint `/api/timestral`,
 `/api/timestral/forecast`, `/api/timestral/backtest`, upload CSV, 4 serie demo, skill
 `timestral`, e la **vista «Previsioni»** (grafico a ventaglio, statistiche, tabella, verifica
 storica, export CSV/SVG).
@@ -226,7 +226,7 @@ Fonte strutturata provata qui (senza chiavi): API della BCE,
 
 ### La vista «Previsioni»
 
-Si apre dal menu **features → 📈 previsioni** (vista a sé, come File o Memoria).
+Si apre dal menu **risorse → 📈 previsioni** (vista a sé, come File o Memoria).
 
 | parte | cosa dice |
 |---|---|
