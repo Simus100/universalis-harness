@@ -5988,7 +5988,11 @@ async function caricaPrevisioni() {
    scala lineare sembra sempre accelerare), il rumore lisciato da una media mobile, e il valore
    esatto sotto il puntatore. Ognuna di queste cose cambia la conclusione che si trae dal disegno,
    quindi ognuna è un controllo esplicito invece di una scelta nascosta. */
-const PREV_CTRL = { finestra: 0, log: false, bande: true, media: false, offset: 0, confronto: false, mediaFin: 0 };
+/* `finestra: -1` = AUTOMATICO: si mostra tanta storia quanta ne serve a dare spazio alla
+   previsione (circa 2,5 volte l'orizzonte). Prima il default era «tutto lo storico» e su una
+   serie lunga il ventaglio diventava una fettina larga due pixel: il futuro c'era ma non si
+   vedeva. */
+const PREV_CTRL = { finestra: -1, log: false, bande: true, media: false, offset: 0, confronto: false, mediaFin: 0 };
 let prevGeo = null; // geometria dell'ultimo disegno: serve al puntatore per dire cosa c'è sotto
 let prevErroriOrizzonte = null; // errore storico per orizzonte breve/medio/lungo
 let prevAnalisi = null;         // ultima analisi dei dati (serve all'export JSON)
@@ -5996,8 +6000,9 @@ let prevAnalisi = null;         // ultima analisi dei dati (serve all'export JSO
 function prevFinestraPunti() {
   const h = prevRisultato ? prevRisultato.series[0].median.length : 30;
   const punti = (prevRisultato && prevRisultato.storico) ? prevRisultato.storico.length : 0;
-  if (!prevCtrlScelta()) return Math.min(180, Math.max(30, Math.round(h * 2.5)));
-  const f = Number(PREV_CTRL.finestra) || 0;
+  const f = Number(PREV_CTRL.finestra);
+  // automatico (o nessun risultato): storia proporzionata all'orizzonte
+  if (!Number.isFinite(f) || f < 0 || !prevCtrlScelta()) return Math.min(180, Math.max(30, Math.round(h * 2.5)));
   if (f === 0) return Math.min(400, punti || 180);
   return Math.min(f, punti || f);
 }
@@ -6018,7 +6023,7 @@ function prevOpzioniFinestra() {
     : [7, 14, 30, 90, 180, 365];
   const et = (n) => `${n} ${u}`;
   const opts = scale.map((n) => `<option value="${n}">ultimi ${et(n)}</option>`).join("");
-  return `${opts}<option value="0">tutto lo storico</option>`;
+  return `<option value="-1">automatico</option>${opts}<option value="0">tutto lo storico</option>`;
 }
 
 function prevCtrlScelta() {
@@ -6048,8 +6053,14 @@ function prevNTotale() {
 function prevImpostaDominio() {
   const N = prevNTotale();
   if (!N) { prevView = { a: 0, b: null }; return; }
-  const fin = Number(PREV_CTRL.finestra) || 0;
-  if (!fin) { prevView = { a: 0, b: null }; return; }
+  const fin = Number(PREV_CTRL.finestra);
+  if (!Number.isFinite(fin) || fin === 0) { prevView = { a: 0, b: null }; return; }
+  if (fin < 0) {
+    // automatico: ultimi passi proporzionati all'orizzonte, così la previsione occupa ~un terzo
+    const auto = prevFinestraPunti();
+    prevView = { a: Math.max(0, N - auto), b: N - 1 };
+    return;
+  }
   const off = Math.min(PREV_CTRL.offset || 0, Math.max(0, N - fin));
   prevView = { a: Math.max(0, N - off - fin), b: N - off - 1 };
 }
@@ -6158,6 +6169,11 @@ function prevGrafico(out) {
   const divisione = (a <= L - 1 && b >= L - 1)
     ? `<line x1="${x(L - 1).toFixed(1)}" y1="${mt}" x2="${x(L - 1).toFixed(1)}" y2="${H - mb}" stroke="${PREV_C.griglia}" stroke-dasharray="3 4"/>`
     : "";
+  // La zona della previsione è marcata: senza, il ventaglio si confonde con lo storico
+  const zonaFuturo = (a <= L - 1 && b >= L - 1)
+    ? `<rect x="${x(L - 1).toFixed(1)}" y="${mt}" width="${Math.max(0, W - mr - x(L - 1)).toFixed(1)}" height="${H - mt - mb}" fill="rgba(52,211,153,.045)"/>
+       <text x="${Math.max(x(L - 1) + 8, ml + 4).toFixed(1)}" y="${mt + 14}" font-size="10" letter-spacing="1" fill="${PREV_C.med}" opacity=".85">PREVISIONE</text>`
+    : "";
   const bande = PREV_CTRL.bande && pathMediana
     ? `<polygon points="${pol(s0.q05, s0.q95)}" fill="${PREV_C.b95}" stroke="${PREV_C.bordo}" stroke-width="1" stroke-dasharray="4 3"/>
       <polygon points="${pol(s0.q10, s0.q90)}" fill="${PREV_C.b80}"/>
@@ -6177,12 +6193,14 @@ function prevGrafico(out) {
       <rect x="0" y="0" width="${W}" height="${H}" fill="#0b0e14"/>
       ${griglia}
       ${taccheX.join("")}
+      ${zonaFuturo}
       ${divisione}
       ${bande}
       ${pathStorico ? `<path d="${pathStorico}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.4" stroke-linejoin="round"/>` : ""}
       ${puntiStorico}
       ${media ? `<path d="${media.map((v, k) => `${k ? "L" : "M"}${x(storicoVis[k]).toFixed(1)} ${y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${PREV_C.giallo}" stroke-width="1.8" stroke-linejoin="round" opacity=".85"/>` : ""}
-      ${pathMediana ? `<path d="${pathMediana}" fill="none" stroke="${PREV_C.med}" stroke-width="2.2" stroke-linejoin="round"/>` : ""}
+      ${pathMediana ? `<path d="${pathMediana}" fill="none" stroke="${PREV_C.med}" stroke-width="6" stroke-linejoin="round" opacity=".16"/>
+      <path d="${pathMediana}" fill="none" stroke="${PREV_C.med}" stroke-width="2.6" stroke-linejoin="round"/>` : ""}
       <line x1="${ml}" y1="${H - mb}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
       <line x1="${W - mr}" y1="${mt}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
       <g id="prevCursor" opacity="0">
@@ -9053,17 +9071,55 @@ $("prevChiediBtn")?.addEventListener("click", () => {
   const t = (campo.value || "").trim();
   if (!t) { campo.focus(); return; }
   // Il testo diventa un incarico per l'agente: cerca i dati, li importa con la fonte, prevede.
-  // Serve perché i dati che non sono in media/ vanno trovati e verificati, non inventati.
-  showTab("chat");
+  // MA la vista NON cambia: si resta qui e quando la serie arriva si disegna da sola. Chi chiede
+  // una previsione vuole vedere il grafico, non il testo del lavoro che serve a produrlo.
+  const prima = new Set(((prevStato && prevStato.csv) || []).map((c) => c.nome));
+  campo.value = "";
+  $("prevStato").innerHTML =
+    `<b>Sto cercando i dati…</b> l'agente cerca la serie sul web, la importa con la fonte e poi la disegno qui. ` +
+    `<span class="prev-tecnico">Puoi seguire il lavoro nella chat; questa schermata si aggiorna da sola appena la serie esiste.</span>`;
   input.value =
     `Voglio una previsione: ${t}. ` +
     "Cerca i dati reali sul web (fonte autorevole, con URL e data di estrazione), importali con timestral_importa dichiarando unità e frequenza, " +
     "poi calcola la previsione e spiegami in parole semplici cosa significa: stima centrale, fascia probabile, quanto fidarsi. Dimmi anche il nome della serie, così la ritrovo nella vista Previsioni.";
   autosize();
-  input.focus();
-  campo.value = "";
   void send();
+  prevAttendiSerie(prima);
 });
+
+/**
+ * Aspetta che l'agente abbia importato una serie nuova e la disegna, restando nella vista.
+ * Controlla l'elenco ogni 2 secondi; si ferma appena compare un CSV che prima non c'era
+ * (allora lo seleziona e calcola) o quando il turno è finito senza importazioni.
+ */
+function prevAttendiSerie(prima) {
+  let giri = 0;
+  const t = setInterval(async () => {
+    giri += 1;
+    await caricaPrevisioni();
+    const nuovi = ((prevStato && prevStato.csv) || []).filter((c) => !prima.has(c.nome));
+    if (nuovi.length) {
+      clearInterval(t);
+      const nuovo = nuovi[nuovi.length - 1];
+      const sel = $("prevSerie");
+      if (![...sel.options].some((o) => o.value === `csv:${nuovo.nome}`)) await caricaPrevisioni();
+      sel.value = `csv:${nuovo.nome}`;
+      PREV_CTRL.finestra = -1;   // spazio alla previsione, non tutto lo storico
+      PREV_CTRL.offset = 0;
+      prevOrizzonteAdatto();
+      prevAggiornaControlli();
+      await prevEsegui();
+      return;
+    }
+    const finito = !(lastState && lastState.streaming);
+    if (finito && giri >= 3) {
+      clearInterval(t);
+      $("prevStato").innerHTML =
+        `L'agente ha finito senza importare una serie nuova. <button class="ghost mini" type="button" onclick="showTab('chat')">guarda la chat</button> — di solito è perché la fonte non era raggiungibile o i dati non erano verificabili.`;
+    }
+    if (giri > 90) clearInterval(t); // 3 minuti: oltre, si smette di aspettare
+  }, 2000);
+}
 $("prevChiedi")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("prevChiediBtn").click(); } });
 $("prevZoomIn")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1 / 1.35));
 $("prevZoomOut")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1.35));
