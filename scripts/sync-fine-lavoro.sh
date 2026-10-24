@@ -66,9 +66,18 @@ fi
 elenco=$(git status --porcelain -uall | sed -E 's/^.{2} //')
 
 if [ -z "$elenco" ]; then
-  echo "niente da pubblicare: nessuna modifica rispetto all'ultimo commit"
-  git status -sb | head -1
-  exit 0
+  # Nessuna modifica da committare NON vuol dire niente da pubblicare: possono esserci commit
+  # fatti in locale e mai arrivati al remoto (è quello che succede quando il push fallisce per
+  # un token scaduto e il lavoro successivo viene committato lo stesso). Prima di dire «niente
+  # da fare» si guarda se la storia locale è avanti rispetto al ramo remoto.
+  avanti=$(git rev-list --count '@{u}..HEAD' 2>/dev/null || echo 0)
+  if [ "${avanti:-0}" -gt 0 ]; then
+    echo "nessuna modifica da committare, ma $avanti commit locale/i non sono ancora sul remoto: pubblico quelli"
+  else
+    echo "niente da pubblicare: nessuna modifica rispetto all'ultimo commit"
+    git status -sb | head -1
+    exit 0
+  fi
 fi
 
 sospetti=$(printf '%s\n' "$elenco" | grep -Ei "$RISERVATI" || true)
