@@ -1683,6 +1683,8 @@ footer {
    Le bande NON sono decorative: la loro ampiezza è il messaggio, quindi il colore più carico
    sta dove l'informazione è più densa (50%) e la tinta svanisce verso i quantili estremi. */
 .prev-scroll { display: flex; flex-direction: column; gap: var(--sp-3); }
+/* la barra dei controlli è sticky: senza margine di scorrimento il contenuto ci finisce sotto */
+#prevCorpo, #prevBacktestCard, .prev-griglia > .prev-card { scroll-margin-top: 84px; }
 .prev-stato { color: var(--dim); font-size: var(--fs-sm); line-height: 1.5; padding: 2px 2px 0; }
 .prev-stato b { color: var(--text-soft); font-weight: 600; }
 .prev-griglia { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--sp-3); align-items: start; }
@@ -1717,6 +1719,16 @@ footer {
 .prev-avviso.attenzione { border-color: #d9a13b; background: color-mix(in srgb, #d9a13b 10%, transparent); }
 .prev-avviso.grave { border-color: #e06b6b; background: color-mix(in srgb, #e06b6b 10%, transparent); }
 .prev-oriz { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: var(--fs-sm); }
+.prev-unita { color: var(--faint); font-size: var(--fs-sm); min-width: 44px; }
+.prev-preset { display: flex; gap: 4px; }
+.ghost.mini { padding: 4px 9px; min-width: 34px; justify-content: center; font-size: var(--fs-sm); }
+.ghost.mini.on { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.ghost.forte { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); color: var(--text); font-weight: 600; }
+.prev-tecnico { display: block; margin-top: 6px; color: var(--faint); font-size: var(--fs-xs); line-height: 1.45; }
+.nota-riga { display: block; margin-top: 2px; color: var(--faint); font-size: var(--fs-2xs); font-weight: 400; line-height: 1.35; }
+/* focus da tastiera visibile: si deve capire dove si è, senza dipendere dal mouse */
+#previsioniView :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius); }
+#previsioniView.trasporto { outline: 2px dashed var(--accent); outline-offset: -8px; }
 .prev-oriz input {
   width: 62px; background: var(--panel-3); color: var(--text); border: 1px solid var(--border-soft);
   border-radius: 8px; padding: 5px 7px; font-variant-numeric: tabular-nums;
@@ -2017,20 +2029,32 @@ footer {
 <main id="previsioniView" hidden>
   <div class="gtoolbar">
     <button class="ghost" id="prevBack" type="button" title="Torna alla chat">←<span class="lbl-largo"> chat</span></button>
-    <select id="prevSerie" class="select" title="Serie da prevedere: quelle incluse o i CSV che hai caricato"></select>
-    <label class="prev-oriz" title="Quanti passi prevedere, nell'unità della serie (giorni, ore…)">orizzonte
-      <input id="prevOrizzonte" type="number" min="1" max="366" step="1" value="30" inputmode="numeric" />
-    </label>
-    <button class="ghost" id="prevPrevedi" type="button" title="Calcola la previsione (Timestral, locale)">prevedi</button>
+    <select id="prevSerie" class="select" aria-label="Serie da prevedere" title="Scegli cosa prevedere: le serie di esempio incluse oppure un tuo CSV"></select>
+    <span class="prev-oriz" title="Per quanti passi in avanti prevedere">
+      <span>orizzonte</span>
+      <input id="prevOrizzonte" type="number" min="1" max="366" step="1" value="30" inputmode="numeric" aria-label="Orizzonte della previsione" />
+      <span class="prev-unita" id="prevUnita">passi</span>
+    </span>
+    <span class="prev-preset" id="prevPreset">
+      <button class="ghost mini" type="button" data-h="7">7</button>
+      <button class="ghost mini" type="button" data-h="30">30</button>
+      <button class="ghost mini" type="button" data-h="90">90</button>
+    </span>
+    <button class="ghost forte" id="prevPrevedi" type="button" title="Calcola la previsione con il modello locale">calcola</button>
     <span style="flex:1"></span>
-    <button class="ghost" id="prevCarica" type="button" title="Carica un CSV: una colonna di date e una di valori">＋ csv</button>
+    <button class="ghost" id="prevCarica" type="button" title="Carica un CSV con una colonna di date e una di valori (oppure trascinalo qui)">carica csv</button>
     <input id="prevFile" type="file" accept=".csv,.txt,text/csv" hidden />
-    <button class="ghost" id="prevBacktest" type="button" title="Verifica storica: quanto avrebbe sbagliato il modello su questa serie, e se la banda dichiarata era onesta">verifica storica</button>
-    <button class="ghost" id="prevCsv" type="button" title="Scarica i passi previsti con i quantili (CSV)">⬇<span class="lbl-largo"> csv</span></button>
-    <button class="ghost" id="prevSvg" type="button" title="Scarica il grafico come immagine vettoriale (SVG)">⬇<span class="lbl-largo"> svg</span></button>
+    <button class="ghost" id="prevBacktest" type="button" title="Rifà la previsione sul passato di questa serie e la confronta con «domani come oggi»: dice quanto fidarsi">affidabilità</button>
+    <button class="ghost" id="prevCsv" type="button" title="Scarica i numeri previsti (mediana e intervalli) in un file CSV">esporta csv</button>
+    <button class="ghost" id="prevSvg" type="button" title="Scarica il grafico come immagine vettoriale">esporta grafico</button>
   </div>
   <div class="goals-scroll prev-scroll">
-    <div class="prev-stato" id="prevStato">carico lo stato del servizio…</div>
+    <div class="prev-stato" id="prevStato">
+      <b>Previsioni su serie temporali</b> — scegli una serie e un orizzonte, poi premi <b>calcola</b>.
+      Il modello locale (Timestral) stima come continuerà la serie e quanto è incerto: la linea è il
+      valore più probabile, la fascia è l'intervallo dichiarato. Non conosce notizie né eventi
+      annunciati, quindi è una <b>stima</b>, non una certezza.
+    </div>
     <div class="prev-griglia" id="prevCorpo" hidden>
       <section class="prev-card prev-grafico">
         <div class="prev-card-h"><span id="prevTitolo">—</span><span class="prev-legenda" id="prevLegenda"></span></div>
@@ -2542,11 +2566,11 @@ function renderTimestral(st) {
   if (sel) sel.disabled = bloccato;
   if (info) {
     const stato = !r.enabled
-      ? "spento"
+      ? "spento: l'agente non prevede"
       : r.caricato
-        ? `${r.taglia || r.size} · ${Math.round(r.ram_processo_mb || 0)} MB · :${r.port}`
-        : `${r.taglia || r.size} · modello non in RAM`;
-    info.textContent = bloccato ? `${stato} · deciso dall'amministratore` : (!r.enabled ? `${stato} · il servizio resta leggero` : stato);
+        ? `${r.taglia || r.size} · in memoria (${Math.round(r.ram_processo_mb || 0)} MB)`
+        : `${r.taglia || r.size} · si carica alla prima previsione`;
+    info.textContent = bloccato ? `${stato} · deciso da chi gestisce il server` : stato;
   }
   b.title = bloccato
     ? `Timestral: questa istanza non cambia da sé l'uso delle previsioni (DASH_TIMESTRAL_LOCK=on) — ora è ${r.enabled ? "acceso" : "spento"}, taglia ${r.taglia || r.size} decisa dall'amministratore.`
@@ -5706,6 +5730,45 @@ function prevNum(v, dec) {
 }
 const prevPct = (v) => (Number.isFinite(Number(v)) ? `${Number(v) > 0 ? "+" : ""}${Number(v).toFixed(2).replace(".", ",")}%` : "–");
 
+/** L'unità dell'orizzonte, presa dalla serie scelta: «giorni», «ore» o «passi» se non si sa. */
+function prevUnitaSerie() {
+  const v = ($("prevSerie") && $("prevSerie").value) || "";
+  if (!v.startsWith("demo:")) return "passi";
+  const id = v.slice(5);
+  const d = ((prevStato && prevStato.demo) || []).find((x) => x.id === id);
+  const f = d && d.frequenza ? String(d.frequenza).toLowerCase() : "";
+  if (f.includes("giorno")) return "giorni";
+  if (f.includes("ora")) return "ore";
+  if (f.includes("settiman")) return "settimane";
+  return "passi";
+}
+
+/** Le tre cose che l'utente deve vedere senza pensarci: unità, preset attivo, scelta ricordata. */
+function prevAggiornaControlli() {
+  const el = $("prevUnita");
+  if (el) el.textContent = prevUnitaSerie();
+  const h = Number($("prevOrizzonte").value) || 30;
+  for (const b of document.querySelectorAll("#prevPreset .mini")) {
+    b.classList.toggle("on", Number(b.dataset.h) === h);
+  }
+}
+
+/** La scelta di serie e orizzonte sopravvive alla chiusura della pagina: è lo stesso lavoro che
+ *  l'utente stava guardando, non una preferenza di sistema. Resta nel browser, mai sul server. */
+const PREV_LS = "harness.prev.scelta";
+function prevSalvaScelta() {
+  try {
+    localStorage.setItem(PREV_LS, JSON.stringify({ serie: $("prevSerie").value, orizzonte: $("prevOrizzonte").value }));
+  } catch { /* modalità privata: si continua senza memoria */ }
+}
+function prevLeggiScelta() {
+  try {
+    return JSON.parse(localStorage.getItem(PREV_LS) || "null");
+  } catch {
+    return null;
+  }
+}
+
 async function caricaPrevisioni() {
   const stato = $("prevStato");
   try {
@@ -5714,18 +5777,36 @@ async function caricaPrevisioni() {
     prevStato = st;
     if (!r.ok) throw new Error(st.error || `HTTP ${r.status}`);
     const serie = [
-      ...(st.demo || []).map((d) => ({ v: `demo:${d.id}`, t: `${d.nome}${d.sintetica ? " (sintetica)" : ""}`, d })),
-      ...(st.csv || []).map((c) => ({ v: `csv:${c.nome}`, t: `${c.nome} — CSV caricato`, d: null })),
+      // etichette corte: quello che distingue le serie è il soggetto e la frequenza, il resto è rumore
+      // il nome della serie dice già soggetto e frequenza («Cambio USD/EUR (giornaliero)»):
+      // si aggiunge solo ciò che il nome non dice, cioè se è un esempio
+      ...(st.demo || []).map((d) => {
+        const extra = d.sintetica && !/esempio/i.test(d.nome) ? " · esempio" : "";
+        return { v: `demo:${d.id}`, t: `${d.nome}${extra}`, d };
+      }),
+      ...(st.csv || []).map((c) => ({ v: `csv:${c.nome}`, t: `${c.nome} · tuo file`, d: null })),
     ];
     const sel = $("prevSerie");
     const prima = sel.value;
     sel.innerHTML = serie.map((o) => `<option value="${escAttr(o.v)}">${escHtml(o.t)}</option>`).join("");
     if (prima && serie.some((o) => o.v === prima)) sel.value = prima;
+    else {
+      const scelta = prevLeggiScelta();
+      if (scelta && scelta.serie && serie.some((o) => o.v === scelta.serie)) sel.value = scelta.serie;
+      if (scelta && scelta.orizzonte) $("prevOrizzonte").value = scelta.orizzonte;
+    }
+    prevAggiornaControlli();
     if (stato) {
-      const g = st.up
-        ? `<b>Timestral ${st.taglia}</b> · ${st.caricato ? `${Math.round(st.ram_processo_mb || 0)} MB in RAM` : "modello non in RAM (si carica alla prima previsione)"} · ${st.richieste || 0} previsioni`
-        : `<b>servizio non in ascolto</b> su 127.0.0.1:${st.port} — si accende con <code>systemctl start timestral</code>`;
-      $("prevStato").innerHTML = `${g} · le serie sono ${serie.length}; i CSV si caricano con <b>＋ csv</b> (colonna data + colonna valore).`;
+      const tecnico = st.up
+        ? `motore: Timestral ${st.taglia}, ${st.caricato ? `in memoria (${Math.round(st.ram_processo_mb || 0)} MB)` : "si carica alla prima previsione"} · ${serie.length} serie disponibili`
+        : `il motore locale non risponde: chiedi a chi gestisce il server di avviarlo (servizio Timestral)`;
+      // La guida resta quella del markup (spiega cosa fare); qui si aggiunge solo la riga tecnica.
+      if (!prevRisultato) {
+        $("prevStato").innerHTML =
+          `<b>Previsioni su serie temporali</b> — scegli una serie e un orizzonte, poi premi <b>calcola</b>. ` +
+          `La linea è il valore più probabile, la fascia è quanto il modello è incerto: è una <b>stima</b>, non una certezza.` +
+          `<span class="prev-tecnico">${escHtml(tecnico)}</span>`;
+      }
     }
     prevCaricata = true;
     // se la feature è spenta su questa istanza, il messaggio di permesso vince sullo stato tecnico
@@ -5799,18 +5880,20 @@ function prevNumeri(out) {
   const s = out.series[0];
   const st = s.stats || {};
   const h = s.median.length;
+  const u = prevUnitaSerie();            // «giorni», «ore» o «passi»
+  const ultimaData = (out.date && out.date[0] && out.date[0].length) ? out.date[0][out.date[0].length - 1] : null;
   const varPct = st.expected_change_end_pct;
   const direzione = Number.isFinite(Number(varPct)) ? (varPct > 0 ? "alto" : varPct < 0 ? "basso" : "") : "";
   const freccia = varPct > 0 ? " ↑" : varPct < 0 ? " ↓" : "";
   const p = Number(st.p_rise_end);
   const lettura = !Number.isFinite(p) ? "" : p >= 0.6 ? "il modello propende per un rialzo" : p <= 0.4 ? "il modello propende per un calo" : "nessuna direzione netta";
   return `
-    <div class="prev-num"><span class="k">ultimo osservato</span><span class="v">${prevNum(s.last_observed)} <small>${escHtml((out.meta && out.meta[0] && out.meta[0].unita) || "")}</small></span></div>
-    <div class="prev-num ${direzione}"><span class="k">fra ${h} passi (mediana)</span><span class="v">${prevNum(st.median_end)}</span></div>
+    <div class="prev-num"><span class="k">ultimo dato${ultimaData ? ` · ${escHtml(String(ultimaData).slice(0, 10))}` : ""}</span><span class="v">${prevNum(s.last_observed)} <small>${escHtml((out.meta && out.meta[0] && out.meta[0].unita) || "")}</small></span></div>
+    <div class="prev-num ${direzione}"><span class="k">stima fra ${h} ${escHtml(u)}</span><span class="v">${prevNum(st.median_end)}</span></div>
     <div class="prev-num ${direzione}"><span class="k">variazione attesa</span><span class="v">${prevPct(varPct)}${freccia}</span></div>
-    <div class="prev-num"><span class="k">banda 80% alla fine</span><span class="v">${prevNum(s.q10[h - 1])} – ${prevNum(s.q90[h - 1])}</span></div>
-    <div class="prev-num"><span class="k">banda 95% alla fine</span><span class="v">${prevNum(s.q05[h - 1])} – ${prevNum(s.q95[h - 1])}</span></div>
-    <div class="prev-num"><span class="k">P(rialzo alla fine)</span><span class="v">${Number.isFinite(p) ? p.toFixed(2).replace(".", ",") : "–"} <small>${escHtml(lettura)}</small></span></div>`;
+    <div class="prev-num"><span class="k">intervallo 80%</span><span class="v">${prevNum(s.q10[h - 1])} – ${prevNum(s.q90[h - 1])}</span><small class="nota-riga">l'80% della stima sta qui dentro, secondo il modello</small></div>
+    <div class="prev-num"><span class="k">intervallo 95%</span><span class="v">${prevNum(s.q05[h - 1])} – ${prevNum(s.q95[h - 1])}</span><small class="nota-riga">quasi tutto lo scenario plausibile</small></div>
+    <div class="prev-num"><span class="k">probabilità di salire</span><span class="v">${Number.isFinite(p) ? p.toFixed(2).replace(".", ",") : "–"} <small>${escHtml(lettura)}</small></span></div>`;
 }
 
 function prevTabella(out) {
@@ -5823,8 +5906,8 @@ function prevTabella(out) {
   }
   // l'ultimo passo va sempre mostrato, ma solo se il ciclo non c'è già arrivato
   if ((h - 1) % ogni !== ogni - 1) righe.push(`<tr><td>${h}</td><td>${prevNum(s.median[h - 1])}</td><td>${prevNum(s.q05[h - 1])}</td><td>${prevNum(s.q95[h - 1])}</td></tr>`);
-  return `<div class="prev-card-h">tutti i passi (ogni ${ogni})</div>
-    <table><thead><tr><th>passo</th><th>mediana</th><th>q05</th><th>q95</th></tr></thead><tbody>${righe.join("")}</tbody></table>`;
+  return `<div class="prev-card-h">tutti i valori previsti <span class="prev-legenda">una riga ogni ${ogni} ${escHtml(prevUnitaSerie())}; «5%» e «95%» sono i bordi dell'intervallo</span></div>
+    <table><thead><tr><th>${escHtml(prevUnitaSerie())}</th><th>stima</th><th>limite 5%</th><th>limite 95%</th></tr></thead><tbody>${righe.join("")}</tbody></table>`;
 }
 
 /** Il permesso della vista è lo stesso dei tool: se è spenta, non si calcola niente. */
@@ -5834,8 +5917,8 @@ function prevBloccata() {
   if (t.available !== false && t.enabled === false) {
     if (area) {
       area.innerHTML = t.locked
-        ? "<b>Previsioni disattivate su questa istanza</b> — la decisione è di chi amministra (DASH_TIMESTRAL_LOCK): il modello resta disponibile per le altre istanze, qui non si eseguono previsioni. Per chiedere l'attivazione, rivolgiti a chi gestisce il server."
-        : "<b>Previsioni disattivate</b> — riaccendile dall'interruttore <code>Timestral</code> nel menu features.";
+        ? "<b>Le previsioni sono disattivate su questo account.</b> La scelta è di chi gestisce il server, perché il modello occupa memoria condivisa con gli altri account. Se ti servono, chiedine l'attivazione a chi amministra la macchina."
+        : "<b>Le previsioni sono spente.</b> Si riaccendono dall'interruttore <b>Timestral</b> nel menu «features» qui sopra.";
     }
     return true;
   }
@@ -5862,19 +5945,23 @@ async function prevEsegui() {
     out.storico = Array.isArray(out.storico) ? out.storico[0] || [] : [];
     prevRisultato = out;
     $("prevTitolo").textContent = out.series[0].name;
-    $("prevLegenda").textContent = `storico · mediana · bande 50/80/95% — ${String(out.latency_s).replace(".", ",")}s di calcolo, Timestral ${out.taglia}`;
+    $("prevLegenda").textContent = "grigio: dati passati · verde: stima · fascia: incertezza (50 / 80 / 95%)";
     $("prevSvgBox").innerHTML = prevGrafico(out);
     $("prevNumeri").innerHTML = prevNumeri(out);
     $("prevTabella").innerHTML = prevTabella(out);
-    $("prevNotaGrafico").textContent =
-      "Stima probabilistica di un modello pre-addestrato (zero-shot): la mediana non è un fatto, e il modello non conosce notizie o eventi annunciati. " +
-      "Modello: Timestral di Mistral (pesi con licenza Modified MIT, codice Apache 2.0).";
+    $("prevNotaGrafico").innerHTML =
+      "La linea verde è la stima più probabile, la fascia dice quanto il modello è incerto." +
+      `<span class="prev-tecnico">Modello Timestral di Mistral, eseguito in locale — pesi con licenza Modified MIT. Non conosce notizie né eventi annunciati.</span>`;
     $("prevCorpo").hidden = false;
     const meta = (out.meta && out.meta[0]) || {};
+    const u2 = prevUnitaSerie();
     $("prevStato").innerHTML =
-      `<b>Timestral ${out.taglia}</b> · ${out.series[0].median.length} passi previsti in ${out.latency_s}s` +
-      (meta.fonte ? ` · fonte: ${escHtml(String(meta.fonte).slice(0, 120))}${meta.sintetica ? " (sintetica)" : ""}` : "") +
-      (meta.scartate ? ` · ${meta.scartate} righe scartate nel CSV` : "");
+      `<b>${escHtml(out.series[0].name)}</b> — stima per i prossimi ${out.series[0].median.length} ${escHtml(u2)}` +
+      (meta.fonte ? ` · dati: ${escHtml(String(meta.fonte).slice(0, 90))}${meta.sintetica ? " (serie di esempio)" : ""}` : "") +
+      (meta.scartate ? ` · ${meta.scartate} righe del file non lette` : "") +
+      `<span class="prev-tecnico">calcolato in ${String(out.latency_s).replace(".", ",")} s · modello Timestral ${out.taglia}</span>`;
+    prevSalvaScelta();
+    // niente scroll: il grafico appare subito sotto la barra dove sta il pulsante premuto
   } catch (e) {
     $("prevStato").textContent = `Previsione non riuscita: ${String(e.message || e)}`;
   } finally {
@@ -5901,26 +5988,31 @@ async function prevVerifica() {
     const skill = Number(b.skill_mae_pct);
     const giudizio =
       !Number.isFinite(skill) ? "" :
-      skill > 5 ? ["", `Il modello batte il naive del ${skill.toFixed(1)}% sull'errore medio: qui aggiunge informazione.`] :
-      skill > -5 ? ["attenzione", `Il modello fa più o meno come il naive (${prevPct(skill)}): qui la mediana NON aggiunge informazione — quello che aggiunge è la banda di incertezza.`] :
-      ["grave", `Il modello fa peggio del naive (${prevPct(skill)}): su questa serie la previsione puntuale non va usata, solo l'incertezza.`];
+      skill > 5
+        ? ["", `La stima sbaglia il ${skill.toFixed(1).replace(".", ",")}% in meno di «domani come oggi»: su questa serie aggiunge informazione.`]
+        : skill > -5
+          ? ["attenzione", `La stima fa più o meno come «domani come oggi» (${prevPct(skill)}): il valore centrale non dice molto di più. Quello che aggiunge è l'intervallo di incertezza.`]
+          : ["grave", `La stima fa peggio di «domani come oggi» (${prevPct(skill)}): su questa serie non usare il valore centrale come previsione, ma solo l'ampiezza dell'incertezza.`];
     const cop = Number(b.copertura80_pct);
     const calib =
       !Number.isFinite(cop) ? ["", ""] :
-      cop < 70 ? ["attenzione", `La banda 80% ha contenuto il valore reale solo il ${cop}% delle volte: l'incertezza è SOTTOSTIMATA, quindi va allargata a mente (o non usata per soglie).`] :
-      cop > 92 ? ["attenzione", `La banda 80% ha contenuto il valore reale il ${cop}% delle volte: l'incertezza è SOVRASTIMATA (banda troppo larga, poco informativa).`] :
-      ["", `La banda 80% ha contenuto il valore reale il ${cop}% delle volte: dichiarata e reale coincidono, la banda è affidabile.`];
+      cop < 70
+        ? ["attenzione", `L'intervallo 80% ha contenuto il valore vero solo il ${String(cop).replace(".", ",")}% delle volte, invece dell'80% dichiarato: è troppo stretto. Non usarlo come soglia di sicurezza senza allargarlo.`]
+        : cop > 92
+          ? ["attenzione", `L'intervallo 80% ha contenuto il valore vero il ${String(cop).replace(".", ",")}% delle volte: è più largo del necessario, quindi dice meno di quanto potrebbe.`]
+          : ["", `L'intervallo 80% ha contenuto il valore vero il ${String(cop).replace(".", ",")}% delle volte: promesso e mantenuto, ci si può ragionare.`];
     card.innerHTML = `
-      <div class="prev-card-h">verifica storica · ${escHtml(b.serie || "")} <span class="prev-legenda">${b.folds} finestre da ${b.passi_per_fold} passi, contesto ${b.contesto}, ${b.latency_s}s</span></div>
+      <div class="prev-card-h">Quanto è affidabile su questa serie <span class="prev-legenda">${b.folds} prove sul passato, ${b.passi_per_fold} ${escHtml(prevUnitaSerie())} ciascuna</span></div>
       <div class="prev-bt-fila">
-        <div class="prev-num"><span class="k">errore medio (MAE)</span><span class="v">${prevNum(b.mae_modello)} <small>naive ${prevNum(b.mae_naive)}</small></span></div>
-        <div class="prev-num ${skill > 0 ? "alto" : skill < 0 ? "basso" : ""}"><span class="k">vantaggio sul naive</span><span class="v">${prevPct(skill)}</span></div>
-        <div class="prev-num"><span class="k">copertura banda 95%</span><span class="v">${prevNum(b.copertura95_pct, 1)}%</span></div>
+        <div class="prev-num"><span class="k">errore medio della stima</span><span class="v">${prevNum(b.mae_modello)} <small>«domani come oggi»: ${prevNum(b.mae_naive)}</small></span></div>
+        <div class="prev-num ${skill > 0 ? "alto" : skill < 0 ? "basso" : ""}"><span class="k">rispetto a «domani come oggi»</span><span class="v">${prevPct(skill)}</span></div>
+        <div class="prev-num"><span class="k">dentro l'intervallo 95%</span><span class="v">${prevNum(b.copertura95_pct, 1)}% <small>dichiarato 95%</small></span></div>
+        <div class="prev-num"><span class="k">dentro l'intervallo 80%</span><span class="v">${prevNum(b.copertura80_pct, 1)}% <small>dichiarato 80%</small></span></div>
       </div>
       ${giudizio[0] || calib[0] ? "" : ""}
       <div class="prev-avviso ${giudizio[0]}">${escHtml(giudizio[1])}</div>
       ${calib[1] ? `<div class="prev-avviso ${calib[0]}">${escHtml(calib[1])}</div>` : ""}
-      <div class="prev-nota">Metodo: rolling-origin sullo storico, orizzonte ${b.passi_per_fold}, ${b.folds} finestre; MAE = errore assoluto medio della mediana, naive = «domani come oggi» (ultimo valore ripetuto). Copertura = quanto spesso il valore reale è caduto dentro la banda dichiarata.</div>`;
+      <div class="prev-tecnico">Metodo: ${b.folds} prove sul passato (${b.passi_per_fold} ${escHtml(prevUnitaSerie())} per prova, ${b.contesto} dati di contesto). L'errore è la distanza media fra stima e valore reale; la copertura è quanto spesso il valore vero è caduto nell'intervallo dichiarato.</div>`;
   } catch (e) {
     card.innerHTML = `<div class="prev-card-h">verifica storica</div><div class="prev-avviso grave">${escHtml(String(e.message || e))}</div>`;
   }
@@ -8118,7 +8210,34 @@ $("prevCsv").onclick = () => prevScaricaCsv();
 $("prevSvg").onclick = () => prevScaricaSvg();
 $("prevCarica").onclick = () => $("prevFile").click();
 $("prevFile").onchange = (e) => { const f = e.target.files && e.target.files[0]; prevCaricaFile(f); e.target.value = ""; };
-$("prevSerie").onchange = () => { if ($("prevSerie").value) prevEsegui(); };
+$("prevSerie").onchange = () => {
+  prevAggiornaControlli();
+  prevSalvaScelta();
+  if ($("prevSerie").value) prevEsegui();
+};
+$("prevOrizzonte").onchange = () => { prevAggiornaControlli(); prevSalvaScelta(); };
+$("prevPreset")?.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-h]");
+  if (!b) return;
+  $("prevOrizzonte").value = b.dataset.h;
+  prevAggiornaControlli();
+  if (!$("prevCorpo").hidden || ($("prevSerie") && $("prevSerie").value)) prevEsegui();
+});
+// Trascinare un CSV sulla vista fa la stessa cosa di «carica csv»: chi ha il file in mano lo
+// trascina, e non deve cercare un pulsante.
+(() => {
+  const vista = $("previsioniView");
+  if (!vista) return;
+  const dentro = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; vista.classList.add("trasporto"); };
+  vista.addEventListener("dragover", dentro);
+  vista.addEventListener("dragleave", () => vista.classList.remove("trasporto"));
+  vista.addEventListener("drop", (e) => {
+    e.preventDefault();
+    vista.classList.remove("trasporto");
+    const f = e.dataTransfer?.files?.[0];
+    if (f) prevCaricaFile(f);
+  });
+})();
 $("liveBack").onclick = () => showTab("chat");
 $("liveWatch").onclick = () => (liveWatching ? stopWatch() : startWatch());
 $("liveControl").onclick = async () => {
