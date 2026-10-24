@@ -6673,14 +6673,6 @@ async function prevEsegui() {
     prevRisultato = out;
     $("prevTitolo").textContent = out.series[0].name;
     $("prevLegenda").textContent = "grigio: dati passati · verde: stima · fascia: incertezza (50 / 80 / 95%)";
-    $("prevCorpo").hidden = false;                 // prima di disegnare: la finestra si calcola qui
-    $("prevFinestra").innerHTML = prevOpzioniFinestra();
-    $("prevFinestra").value = String(PREV_CTRL.finestra || 0); // coerente con ciò che si disegna
-    prevImpostaDominio();                          // si parte dalla finestra scelta, poi si naviga
-    $("prevSvgBox").innerHTML = prevGrafico(out);
-    $("prevTrend").innerHTML = prevTrendHtml(out);
-    prevAggiornaZoomInfo();
-    prevAgganciaPuntatore();
     // Il servizio ha calcolato il lungo (per i tre orizzonti). Grafico, numeri e tabella si
     // fermano all'orizzonte che l'utente ha scelto: prima mostrava 90 giorni anche con 30.
     const pieno = out.series[0];
@@ -6698,6 +6690,15 @@ async function prevEsegui() {
     }
     const meta = (out.meta && out.meta[0]) || {};
     const u2 = prevUnitaSerie();
+
+    $("prevCorpo").hidden = false;                 // prima di disegnare: la finestra si calcola qui
+    $("prevFinestra").innerHTML = prevOpzioniFinestra();
+    $("prevFinestra").value = String(PREV_CTRL.finestra || 0); // coerente con ciò che si disegna
+    prevImpostaDominio();                          // si parte dalla finestra scelta, poi si naviga
+    $("prevSvgBox").innerHTML = prevGrafico(out);
+    $("prevTrend").innerHTML = prevTrendHtml(out);
+    prevAggiornaZoomInfo();
+    prevAgganciaPuntatore();
 
     $("prevVerdetto").innerHTML = prevVerdettoHtml(out);
     $("prevNumeri").innerHTML = prevNumeri(out);
