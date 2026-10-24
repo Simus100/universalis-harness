@@ -4,10 +4,12 @@ Stato al **2026-10-24**. Questo documento dice cosa è stato misurato, cosa è s
 cosa manca. I numeri vengono da misure fatte su questa VPS, non da stime.
 
 **Fatto:** motore e servizio (unità `timestral.service`), tool in chat (`timestral_forecast`,
-`timestral_series`) con interruttore nel menu «features», endpoint `/api/timestral` e
-`/api/timestral/forecast`, 4 serie demo, lettura CSV, skill `timestral`.
-**Manca:** la vista «Previsioni» nella dashboard (grafici, statistiche, backtest), il
-deploy sulle istanze `tester_*` e la pubblicazione (token GitHub da rinnovare).
+`timestral_series`) con interruttore nel menu «features», endpoint `/api/timestral`,
+`/api/timestral/forecast`, `/api/timestral/backtest`, upload CSV, 4 serie demo, skill
+`timestral`, e la **vista «Previsioni»** (grafico a ventaglio, statistiche, tabella, verifica
+storica, export CSV/SVG).
+**Manca:** il deploy sulle istanze `tester_*` e la pubblicazione (token GitHub da rinnovare,
+risponde 401: è scaduto, non è un problema del codice).
 
 ## Cos'è
 
@@ -106,11 +108,11 @@ in cache.
    «features», con descrizione che dichiara costo, natura di stima e quando *non* usarlo. *(fatto)*
 3. **Endpoint dashboard** — `/api/timestral` e `/api/timestral/forecast` dentro
    l'autenticazione esistente; nessuna porta nuova esposta da Caddy. *(fatto)*
-4. **Vista «Previsioni»** — ventaglio dei quantili, statistiche, tabella, export CSV/SVG.
+4. **Vista «Previsioni»** — ventaglio dei quantili, statistiche, tabella, export CSV/SVG. *(fatto)*
 5. **Backtest nella vista** — errore storico contro il naive, così la fiducia si vede prima di
    decidere.
 6. **Serie** — 4 demo incluse + CSV caricati dall'utente (la prima versione non chiama API
-   esterne: Yahoo risponde 429, Stooq chiede JavaScript).
+   esterne: Yahoo risponde 429, Stooq chiede JavaScript). *(fatto)*
 7. **Deploy** — unità `timestral.service` *(fatto, attiva e abilitata al boot)* + copia del
    codice nelle quattro istanze, verifica per istanza. *(manca la copia sulle tester)*
 8. **Skill `timestral`** *(fatto)* **+ questo documento** *(fatto)* **+ pubblicazione** *(bloccata:
@@ -137,7 +139,30 @@ Rotte della dashboard (dietro l'autenticazione esistente, nessuna porta nuova):
 | `GET /api/health` | elenca `timestral-tool` e `timestral-service` fra le feature |
 | `GET /api/timestral` | stato completo: servizio su/giù, taglia, RAM, demo, CSV, tool attivi |
 | `POST /api/timestral` | `{enabled}` (interruttore dei tool) · `{size}` (cambia taglia) · `{action:"unload"}` |
-| `POST /api/timestral/forecast` | previsione: `{demo|csv|series, prediction_length, congiunta}`, con le date della fonte quando ci sono |
+| `POST /api/timestral/forecast` | previsione: `{demo|csv|series, prediction_length, congiunta}`, con le date e lo storico della fonte (per il grafico) |
+| `POST /api/timestral/backtest` | verifica storica: `{demo|csv|series, prediction_length, folds}` → MAE modello/naive, copertura delle bande |
+| `POST /api/timestral/dati?nome=x.csv` | carica un CSV (corpo = testo del file) previa validazione |
+
+### La vista «Previsioni»
+
+Si apre dal menu **features → 📈 previsioni** (vista a sé, come File o Memoria).
+
+| parte | cosa dice |
+|---|---|
+| grafico | storico in grigio, mediana in verde, ventaglio con tre livelli (50 / 80 / 95%), linea verticale sull'ultimo dato osservato. Le date compaiono solo se la fonte le ha; altrimenti l'asse x è «passi» |
+| numeri | ultimo osservato, mediana a fine orizzonte, variazione attesa (con freccia), banda 80% e 95%, P(rialzo) con la lettura in parole |
+| tabella | tutti i passi con mediana, q05, q95 (ogni *n*, più l'ultimo) |
+| verifica storica | rolling-origin su quella serie: MAE del modello contro il naive, vantaggio in %, copertura empirica delle bande, e un **giudizio in chiaro** («il modello fa come il naive: qui aggiunge solo l'incertezza», «banda sottostimata», …) |
+| ＋ csv | carica un CSV (una colonna date + una valori): validato dal server prima di salvarlo, righe scartate dichiarate, e la previsione parte da sola |
+| ⬇ csv / ⬇ svg | esporta i passi con tutti i quantili, o il grafico come vettoriale |
+
+Perché il backtest sta nella vista: un ventaglio disegnato bene sembra una promessa. Il giudizio
+«la mediana non batte il naive» o «la banda dichiarata contiene il valore reale il 67,8% delle
+volte invece dell'80%» è la parte che rende onesto tutto il resto.
+
+Misura di riferimento (USD/EUR, 3 finestre da 30 passi): MAE 0,0114 contro 0,0112 del naive
+(−2,3%), copertura 95% reale 81,1%, copertura 80% reale 67,8% → **le bande sono leggermente
+strette**. Va detto all'utente, non nascosto.
 
 ### Verifica rapida (dopo un riavvio o un aggiornamento)
 

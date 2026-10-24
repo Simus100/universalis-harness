@@ -251,8 +251,10 @@ class Motore:
                 "last_observed": ultimo,
                 "median": [round(float(x), 6) for x in mediana],
                 "q05": [round(float(x), 6) for x in q_at(0.05)[vi]],
+                "q10": [round(float(x), 6) for x in q_at(0.1)[vi]],
                 "q25": [round(float(x), 6) for x in q_at(0.25)[vi]],
                 "q75": [round(float(x), 6) for x in q_at(0.75)[vi]],
+                "q90": [round(float(x), 6) for x in q_at(0.9)[vi]],
                 "q95": [round(float(x), 6) for x in q_at(0.95)[vi]],
                 "stats": statistiche(qs[vi], livelli, ultimo),
             }
@@ -269,6 +271,76 @@ class Motore:
             "nota": "Previsione probabilistica da modello pre-addestrato (zero-shot): è una STIMA con "
                     "un'incertezza dichiarata dai quantili, non un fatto. Le probabilità derivano dai "
                     "quantili marginali del modello.",
+        }
+
+
+    # ---- verifica storica (backtest) ----
+    def backtest(self, req: dict) -> dict:
+        """Rolling-origin sullo storico: quanto avrebbe sbagliato il modello, e quanto è
+        onesta la sua banda. Senza questo, una previsione è solo un disegno.
+
+        Ritorna MAE modello vs MAE del naive («domani come oggi») e la COPERTURA empirica
+        delle bande 80%/95%: se la banda dichiarata contiene il valore reale molto meno
+        dell'80% delle volte, l'incertezza è sottostimata e va detto.
+        """
+        valori = req.get("values")
+        if not isinstance(valori, list) or len(valori) < 40:
+            raise ValueError("servono almeno 40 punti per una verifica storica")
+        y_all = np.asarray([np.nan if v is None else float(v) for v in valori], dtype=np.float64)
+        y_all = y_all[~np.isnan(y_all)]
+        h = int(req.get("prediction_length") or 30)
+        if not (1 <= h <= MAX_HORIZON):
+            raise ValueError(f"prediction_length fuori intervallo (1..{MAX_HORIZON})")
+        folds = max(1, min(10, int(req.get("folds") or 5)))
+        # contesto automatico: metà dello storico disponibile (più finestre di verifica),
+        # con un tetto a 1000 punti; chi chiama può imporlo
+        ctx = int(req.get("context") or min(1000, max(32, (len(y_all) - h) // 2)))
+        if ctx < 16:
+            raise ValueError("storico troppo corto per la verifica storica")
+        step = max(h, ctx // 2)
+
+        righe = []
+        fc = self.carica()
+        t0 = time.time()
+        with self._lock:
+            self._last_use = time.time()
+            for i in range(folds):
+                origine = len(y_all) - h - i * step
+                if origine - ctx < 0:
+                    break
+                y = y_all[origine:origine + h]
+                contesto = y_all[origine - ctx:origine].reshape(1, 1, -1)
+                f = fc.forecast(contesto, prediction_length=h)
+                q = f.quantiles.detach().cpu().numpy()[0, 0]  # (H, Q)
+                livelli = list(f.quantile_levels)
+                med = q[:, livelli.index(0.5)]
+                naive = np.full(h, y_all[origine - 1])
+                righe.append({
+                    "mae_modello": float(np.mean(np.abs(y - med))),
+                    "mae_naive": float(np.mean(np.abs(y - naive))),
+                    "pinball_modello": _pinball(q, y, livelli),
+                    "dentro80": float(np.mean((y >= q[:, livelli.index(0.1)]) & (y <= q[:, livelli.index(0.9)]))),
+                    "dentro95": float(np.mean((y >= q[:, livelli.index(0.05)]) & (y <= q[:, livelli.index(0.95)]))),
+                })
+            self.richieste += 1
+            self._last_use = time.time()
+        if not righe:
+            raise ValueError("storico troppo corto per la verifica storica: servono più punti, o un contesto più piccolo")
+        mae_m = float(np.mean([r["mae_modello"] for r in righe]))
+        mae_n = float(np.mean([r["mae_naive"] for r in righe]))
+        return {
+            "ok": True,
+            "taglia": self.size,
+            "folds": len(righe),
+            "passi_per_fold": h,
+            "contesto": ctx,
+            "mae_modello": round(mae_m, 6),
+            "mae_naive": round(mae_n, 6),
+            "skill_mae_pct": round(100 * (1 - mae_m / mae_n), 2) if mae_n else None,
+            "pinball_modello": round(float(np.mean([r["pinball_modello"] for r in righe])), 6),
+            "copertura80_pct": round(100 * float(np.mean([r["dentro80"] for r in righe])), 1),
+            "copertura95_pct": round(100 * float(np.mean([r["dentro95"] for r in righe])), 1),
+            "latency_s": round(time.time() - t0, 2),
         }
 
 
@@ -296,6 +368,13 @@ def statistiche(qv: np.ndarray, livelli: list[float], ultimo: float | None) -> d
         out["expected_change_end"] = round(med - ultimo, 6)
         out["expected_change_end_pct"] = round(100 * (med - ultimo) / abs(ultimo), 3)
     return out
+
+
+def _pinball(q: np.ndarray, y: np.ndarray, livelli: list[float]) -> float:
+    """Pinball loss medio su tutti i quantili (la loss di training; proxy del CRPS)."""
+    diff = y[:, None] - q
+    lv = np.asarray(livelli, dtype=np.float64)[None, :]
+    return float(np.mean(np.maximum(lv * diff, (lv - 1) * diff)))
 
 
 MOTORE = Motore(os.environ.get("TIMESTRAL_SIZE", "28M"),
@@ -343,6 +422,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(200, MOTORE.stato())
             if self.path.startswith("/forecast"):
                 return self._json(200, MOTORE.prevedi(req))
+            if self.path.startswith("/backtest"):
+                return self._json(200, MOTORE.backtest(req))
             self._json(404, {"ok": False, "error": "rotta sconosciuta"})
         except ValueError as e:
             MOTORE.ultimo_errore = str(e)

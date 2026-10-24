@@ -178,6 +178,10 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
     };
   }
 
+  function backtest(req, opts = {}) {
+    return chiama("/backtest", { method: "POST", body: req, timeoutMs: opts.timeoutMs ?? 300_000 });
+  }
+
   function prevedi(req, opts = {}) {
     return chiama("/forecast", { method: "POST", body: req, timeoutMs: opts.timeoutMs ?? 120_000 });
   }
@@ -220,7 +224,8 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
     try {
       if (!existsSync(datiDir)) return [];
       return readdirSync(datiDir)
-        .filter((f) => /\.(csv|txt)$/i.test(f))
+        // `.csv`/`.txt` sì, ma non il LEGGIMI che spiega il formato: non è una serie
+        .filter((f) => /\.(csv|txt)$/i.test(f) && !/^leggimi/i.test(f))
         .map((f) => {
           const p = join(datiDir, f);
           let kb = null;
@@ -296,6 +301,7 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
     snapshot,
     status,
     prevedi,
+    backtest,
     impostaTaglia,
     scarica,
     setEnabled,

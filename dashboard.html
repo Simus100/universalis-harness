@@ -698,6 +698,11 @@ body[data-tab="live"] #chatView,
 body[data-tab="memoria"] #stats,
 body[data-tab="memoria"] #chatFooter,
 body[data-tab="memoria"] #chatView { display: none !important; }
+/* Previsioni: vista a sé, con la stessa regola della memoria — altrimenti la chat resta
+   visibile sopra il cruscotto e il grafico finisce schiacciato in fondo alla pagina. */
+body[data-tab="previsioni"] #stats,
+body[data-tab="previsioni"] #chatFooter,
+body[data-tab="previsioni"] #chatView { display: none !important; }
 
 /* live view del browser */
 /* Griglia: la prima riga è il browser e ha un minimo garantito, così il log crescente
@@ -1665,6 +1670,54 @@ footer {
 /* Etichetta lunga dove c'è spazio, corta dove non c'è: l'icona resta sempre, così il pulsante
  * non diventa mai un quadrato senza significato. Vale per la barra della memoria. */
 .lbl-stretto { display: none; }
+/* ---------- vista «Previsioni» (Timestral) ---------- */
+/* Il grafico è il centro: storico in grigio, previsione in verde, incertezza come ventaglio.
+   Le bande NON sono decorative: la loro ampiezza è il messaggio, quindi il colore più carico
+   sta dove l'informazione è più densa (50%) e la tinta svanisce verso i quantili estremi. */
+.prev-scroll { display: flex; flex-direction: column; gap: var(--sp-3); }
+.prev-stato { color: var(--dim); font-size: var(--fs-sm); line-height: 1.5; padding: 2px 2px 0; }
+.prev-stato b { color: var(--text-soft); font-weight: 600; }
+.prev-griglia { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--sp-3); align-items: start; }
+.prev-card {
+  background: var(--panel); border: 1px solid var(--border-soft); border-radius: var(--radius-lg);
+  padding: var(--sp-3); min-width: 0;
+}
+.prev-card-h {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  font-size: var(--fs-sm); color: var(--text-soft); font-weight: 600; margin-bottom: 6px;
+}
+.prev-legenda { color: var(--dim); font-weight: 400; font-size: var(--fs-xs); letter-spacing: .2px; }
+.prev-grafico svg { display: block; width: 100%; height: auto; }
+.prev-nota { color: var(--dim); font-size: var(--fs-xs); line-height: 1.5; margin-top: 6px; }
+.prev-numeri { display: flex; flex-direction: column; gap: 10px; }
+.prev-num { display: flex; flex-direction: column; gap: 1px; }
+.prev-num .k { color: var(--dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .6px; }
+.prev-num .v { color: var(--text); font-size: var(--fs-lg); font-variant-numeric: tabular-nums; font-weight: 600; }
+.prev-num .v small { font-size: var(--fs-xs); color: var(--dim); font-weight: 400; margin-left: 4px; }
+.prev-num.alto .v { color: var(--accent); }
+.prev-num.basso .v { color: var(--orange); }
+.prev-tabella table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.prev-tabella th, .prev-tabella td { text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--border-soft); }
+.prev-tabella th:first-child, .prev-tabella td:first-child { text-align: left; color: var(--dim); }
+.prev-tabella th { color: var(--dim); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .5px; }
+.prev-bt { display: flex; flex-direction: column; gap: 8px; }
+.prev-bt-fila { display: flex; gap: 18px; flex-wrap: wrap; }
+.prev-avviso {
+  border-left: 3px solid var(--green); background: color-mix(in srgb, var(--green) 8%, transparent);
+  padding: 8px 10px; border-radius: 8px; font-size: var(--fs-sm); color: var(--text-soft); line-height: 1.5;
+}
+.prev-avviso.attenzione { border-color: #d9a13b; background: color-mix(in srgb, #d9a13b 10%, transparent); }
+.prev-avviso.grave { border-color: #e06b6b; background: color-mix(in srgb, #e06b6b 10%, transparent); }
+.prev-oriz { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: var(--fs-sm); }
+.prev-oriz input {
+  width: 62px; background: var(--panel-3); color: var(--text); border: 1px solid var(--border-soft);
+  border-radius: 8px; padding: 5px 7px; font-variant-numeric: tabular-nums;
+}
+@media (max-width: 900px) {
+  .prev-griglia { grid-template-columns: minmax(0, 1fr); }
+  #previsioniView .gtoolbar { flex-wrap: wrap; gap: 6px; }
+}
+
 #memoriaView .gtoolbar { gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
 @media (max-width: 760px) {
   .lbl-largo { display: none; }
@@ -1804,6 +1857,8 @@ footer {
           <button id="featProgetto" class="pill" type="button" style="flex:1;justify-content:center" title="Artefatti: i file prodotti dal lavoro, in media/"><span class="led"></span>📦 progetto</button>
           <button id="featAgenda" class="pill" type="button" style="flex:1;justify-content:center" title="Agenda: cosa sta facendo l'harness e cosa aspetta da te"><span class="led"></span>🗓 agenda</button>
           <button id="featLive" class="pill" type="button" style="flex:1;justify-content:center" title="Live view del browser: guarda cosa fa e, se serve, prendi il controllo"><span class="led"></span>🖥 live</button>
+    
+          <button id="featPrevisioni" class="pill" type="button" style="flex:1;justify-content:center" title="Previsioni: cosa succederà, secondo Timestral — con la banda di incertezza e la verifica storica"><span class="led"></span>📈 previsioni</button>
         </div>
       </div>
     </div>
@@ -1947,6 +2002,36 @@ footer {
         <button class="ghost" id="liveStopBtn" type="button" hidden title="Interrompi la risposta">⏹</button>
       </div>
     </div>
+  </div>
+</main>
+
+<main id="previsioniView" hidden>
+  <div class="gtoolbar">
+    <button class="ghost" id="prevBack" type="button" title="Torna alla chat">←<span class="lbl-largo"> chat</span></button>
+    <select id="prevSerie" class="select" title="Serie da prevedere: quelle incluse o i CSV che hai caricato"></select>
+    <label class="prev-oriz" title="Quanti passi prevedere, nell'unità della serie (giorni, ore…)">orizzonte
+      <input id="prevOrizzonte" type="number" min="1" max="366" step="1" value="30" inputmode="numeric" />
+    </label>
+    <button class="ghost" id="prevPrevedi" type="button" title="Calcola la previsione (Timestral, locale)">prevedi</button>
+    <span style="flex:1"></span>
+    <button class="ghost" id="prevCarica" type="button" title="Carica un CSV: una colonna di date e una di valori">＋ csv</button>
+    <input id="prevFile" type="file" accept=".csv,.txt,text/csv" hidden />
+    <button class="ghost" id="prevBacktest" type="button" title="Verifica storica: quanto avrebbe sbagliato il modello su questa serie, e se la banda dichiarata era onesta">verifica storica</button>
+    <button class="ghost" id="prevCsv" type="button" title="Scarica i passi previsti con i quantili (CSV)">⬇<span class="lbl-largo"> csv</span></button>
+    <button class="ghost" id="prevSvg" type="button" title="Scarica il grafico come immagine vettoriale (SVG)">⬇<span class="lbl-largo"> svg</span></button>
+  </div>
+  <div class="goals-scroll prev-scroll">
+    <div class="prev-stato" id="prevStato">carico lo stato del servizio…</div>
+    <div class="prev-griglia" id="prevCorpo" hidden>
+      <section class="prev-card prev-grafico">
+        <div class="prev-card-h"><span id="prevTitolo">—</span><span class="prev-legenda" id="prevLegenda"></span></div>
+        <div id="prevSvgBox"></div>
+        <div class="prev-nota" id="prevNotaGrafico"></div>
+      </section>
+      <aside class="prev-card prev-numeri" id="prevNumeri"></aside>
+      <section class="prev-card prev-tabella" id="prevTabella"></section>
+    </div>
+    <section class="prev-card prev-bt" id="prevBacktestCard" hidden></section>
   </div>
 </main>
 
@@ -5574,6 +5659,280 @@ applyStatsHidden();
   if (document.body.dataset.tab === "files") refreshDir();
 })();
 
+/* ---------- vista «Previsioni» (Timestral) -------------------------------------------
+   Il grafico NON è decorazione: la banda di incertezza è il messaggio. Per questo ogni livello
+   ha un colore diverso per densità (95% tenue, 80% medio, 50% pieno) e la mediana è l'unica
+   linea piena. Sopra il grafico c'è sempre la frase che dice che è una stima, perché un
+   ventaglio disegnato bene sembra una promessa.
+   Nessun dato viene inventato: se la fonte non ha date, l'asse x è il numero del passo. */
+const PREV_C = { hist: "#a3adc0", med: "#34d399", b95: "rgba(52,211,153,.09)", b80: "rgba(52,211,153,.16)", b50: "rgba(52,211,153,.26)", bordo: "rgba(52,211,153,.45)", griglia: "#1c222b", asse: "#8a93a6", testo: "#eef2f9", soft: "#c6cfdd", giallo: "#fbbf24", rosso: "#fb7185" };
+let prevStato = null;      // ultimo GET /api/timestral
+let prevRisultato = null;  // ultima previsione mostrata (per gli export)
+let prevCaricata = false;
+
+/** Numeri leggibili: 0,88511 non deve diventare 0,9 né 1. */
+function prevNum(v, dec) {
+  if (v === null || v === undefined || !Number.isFinite(Number(v))) return "–";
+  const n = Number(v);
+  if (dec !== undefined) return n.toLocaleString("it-IT", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  const a = Math.abs(n);
+  if (a === 0) return "0";
+  if (a < 0.01) return n.toPrecision(3).replace(".", ",");
+  if (a < 1) return n.toFixed(4).replace(".", ",");
+  if (a < 1000) return n.toFixed(2).replace(".", ",");
+  return n.toLocaleString("it-IT", { maximumFractionDigits: 0 });
+}
+const prevPct = (v) => (Number.isFinite(Number(v)) ? `${Number(v) > 0 ? "+" : ""}${Number(v).toFixed(2).replace(".", ",")}%` : "–");
+
+async function caricaPrevisioni() {
+  const stato = $("prevStato");
+  try {
+    const r = await fetch("/api/timestral");
+    const st = await r.json();
+    prevStato = st;
+    if (!r.ok) throw new Error(st.error || `HTTP ${r.status}`);
+    const serie = [
+      ...(st.demo || []).map((d) => ({ v: `demo:${d.id}`, t: `${d.nome}${d.sintetica ? " (sintetica)" : ""}`, d })),
+      ...(st.csv || []).map((c) => ({ v: `csv:${c.nome}`, t: `${c.nome} — CSV caricato`, d: null })),
+    ];
+    const sel = $("prevSerie");
+    const prima = sel.value;
+    sel.innerHTML = serie.map((o) => `<option value="${escAttr(o.v)}">${escHtml(o.t)}</option>`).join("");
+    if (prima && serie.some((o) => o.v === prima)) sel.value = prima;
+    if (stato) {
+      const g = st.up
+        ? `<b>Timestral ${st.taglia}</b> · ${st.caricato ? `${Math.round(st.ram_processo_mb || 0)} MB in RAM` : "modello non in RAM (si carica alla prima previsione)"} · ${st.richieste || 0} previsioni`
+        : `<b>servizio non in ascolto</b> su 127.0.0.1:${st.port} — si accende con <code>systemctl start timestral</code>`;
+      $("prevStato").innerHTML = `${g} · le serie sono ${serie.length}; i CSV si caricano con <b>＋ csv</b> (colonna data + colonna valore).`;
+    }
+    prevCaricata = true;
+    if (!$("prevCorpo").hidden && !prevRisultato) return;
+  } catch (e) {
+    $("prevStato").innerHTML = `Non riesco a leggere lo stato: ${escHtml(String(e.message || e))}`;
+  }
+}
+
+/** Il grafico: storico (grigio) + ventaglio dei quantili (verde) + mediana. */
+function prevGrafico(out) {
+  const s = out.series[0];
+  const h = s.median.length;
+  // Quanti punti di storico disegnare: proporzionato all'orizzonte (il futuro deve occupare
+  // circa un terzo della larghezza, altrimenti il ventaglio diventa una fettina illeggibile).
+  const nStorico = Math.max(60, Math.min(180, Math.round(h * 2.5)));
+  const storico = (out.storico || []).slice(-nStorico);
+  const date = out.date && out.date[0] ? out.date[0].slice(-storico.length) : null;
+  const n = storico.length + h;
+  const W = 900, H = 380, ml = 62, mr = 14, mt = 14, mb = 34;
+  const valori = [...storico, ...s.q05, ...s.q95, ...s.median];
+  let min = Math.min(...valori), max = Math.max(...valori);
+  if (!Number.isFinite(min) || !Number.isFinite(max) || min === max) { min -= 1; max += 1; }
+  const pad = (max - min) * 0.08;
+  min -= pad; max += pad;
+  const x = (i) => ml + (i * (W - ml - mr)) / Math.max(1, n - 1);
+  const y = (v) => mt + (H - mt - mb) * (1 - (v - min) / (max - min));
+  const pol = (a, b) => {
+    const su = [], giu = [];
+    for (let i = 0; i < a.length; i += 1) { su.push(`${x(storico.length + i).toFixed(1)},${y(a[i]).toFixed(1)}`); }
+    for (let i = b.length - 1; i >= 0; i -= 1) { giu.push(`${x(storico.length + i).toFixed(1)},${y(b[i]).toFixed(1)}`); }
+    return su.concat(giu).join(" ");
+  };
+  const linea = (arr) => arr.map((v, i) => `${i ? "L" : "M"}${x(storico.length + i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+  const storLinea = storico.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+
+  // tacche dell'asse y: 4 valori "tondi" ricavati dal dominio (nessun numero inventato)
+  const tacche = [];
+  const passo = (max - min) / 4;
+  for (let i = 0; i <= 4; i += 1) tacche.push(min + passo * i);
+  const griglia = tacche.map((v) => `<line x1="${ml}" y1="${y(v).toFixed(1)}" x2="${W - mr}" y2="${y(v).toFixed(1)}" stroke="${PREV_C.griglia}"/>
+      <text x="${ml - 8}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">${escHtml(prevNum(v))}</text>`).join("\n      ");
+  const xLab = date
+    ? `<text x="${ml}" y="${H - 10}" font-size="11" fill="${PREV_C.asse}">${escHtml(date[0] || "")}</text>
+      <text x="${x(storico.length - 1).toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${PREV_C.asse}">oggi</text>
+      <text x="${W - mr}" y="${H - 10}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">+${h} passi</text>`
+    : `<text x="${ml}" y="${H - 10}" font-size="11" fill="${PREV_C.asse}">−${storico.length} passi</text>
+      <text x="${x(storico.length - 1).toFixed(1)}" y="${H - 10}" text-anchor="middle" font-size="11" fill="${PREV_C.asse}">ultimo osservato</text>
+      <text x="${W - mr}" y="${H - 10}" text-anchor="end" font-size="11" fill="${PREV_C.asse}">+${h}</text>`;
+  const divisione = `<line x1="${x(storico.length - 1).toFixed(1)}" y1="${mt}" x2="${x(storico.length - 1).toFixed(1)}" y2="${H - mb}" stroke="${PREV_C.griglia}" stroke-dasharray="3 4"/>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Serie storica e ventaglio di previsione">
+      <rect x="0" y="0" width="${W}" height="${H}" fill="#0b0e14"/>
+      ${griglia}
+      ${divisione}
+      <polygon points="${pol(s.q05, s.q95)}" fill="${PREV_C.b95}" stroke="${PREV_C.bordo}" stroke-width="1" stroke-dasharray="4 3"/>
+      <polygon points="${pol(s.q10, s.q90)}" fill="${PREV_C.b80}"/>
+      <polygon points="${pol(s.q25, s.q75)}" fill="${PREV_C.b50}"/>
+      <path d="${storLinea}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="${linea(s.median)}" fill="none" stroke="${PREV_C.med}" stroke-width="2.2" stroke-linejoin="round"/>
+      <circle cx="${x(storico.length - 1).toFixed(1)}" cy="${y(storico[storico.length - 1]).toFixed(1)}" r="3.5" fill="${PREV_C.testo}"/>
+      <circle cx="${x(n - 1).toFixed(1)}" cy="${y(s.median[h - 1]).toFixed(1)}" r="3" fill="${PREV_C.med}"/>
+      <text x="${(x(n - 1) - 6).toFixed(1)}" y="${(y(s.median[h - 1]) - 10).toFixed(1)}" text-anchor="end" font-size="12" font-weight="600" fill="${PREV_C.med}">${escHtml(prevNum(s.stats && s.stats.median_end))}</text>
+      <line x1="${ml}" y1="${H - mb}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
+      ${xLab}
+    </svg>`;
+}
+
+function prevNumeri(out) {
+  const s = out.series[0];
+  const st = s.stats || {};
+  const h = s.median.length;
+  const varPct = st.expected_change_end_pct;
+  const direzione = Number.isFinite(Number(varPct)) ? (varPct > 0 ? "alto" : varPct < 0 ? "basso" : "") : "";
+  const freccia = varPct > 0 ? " ↑" : varPct < 0 ? " ↓" : "";
+  const p = Number(st.p_rise_end);
+  const lettura = !Number.isFinite(p) ? "" : p >= 0.6 ? "il modello propende per un rialzo" : p <= 0.4 ? "il modello propende per un calo" : "nessuna direzione netta";
+  return `
+    <div class="prev-num"><span class="k">ultimo osservato</span><span class="v">${prevNum(s.last_observed)} <small>${escHtml((out.meta && out.meta[0] && out.meta[0].unita) || "")}</small></span></div>
+    <div class="prev-num ${direzione}"><span class="k">fra ${h} passi (mediana)</span><span class="v">${prevNum(st.median_end)}</span></div>
+    <div class="prev-num ${direzione}"><span class="k">variazione attesa</span><span class="v">${prevPct(varPct)}${freccia}</span></div>
+    <div class="prev-num"><span class="k">banda 80% alla fine</span><span class="v">${prevNum(s.q10[h - 1])} – ${prevNum(s.q90[h - 1])}</span></div>
+    <div class="prev-num"><span class="k">banda 95% alla fine</span><span class="v">${prevNum(s.q05[h - 1])} – ${prevNum(s.q95[h - 1])}</span></div>
+    <div class="prev-num"><span class="k">P(rialzo alla fine)</span><span class="v">${Number.isFinite(p) ? p.toFixed(2).replace(".", ",") : "–"} <small>${escHtml(lettura)}</small></span></div>`;
+}
+
+function prevTabella(out) {
+  const s = out.series[0];
+  const h = s.median.length;
+  const ogni = Math.max(1, Math.ceil(h / 12));
+  const righe = [];
+  for (let i = ogni - 1; i < h; i += ogni) {
+    righe.push(`<tr><td>${i + 1}</td><td>${prevNum(s.median[i])}</td><td>${prevNum(s.q05[i])}</td><td>${prevNum(s.q95[i])}</td></tr>`);
+  }
+  // l'ultimo passo va sempre mostrato, ma solo se il ciclo non c'è già arrivato
+  if ((h - 1) % ogni !== ogni - 1) righe.push(`<tr><td>${h}</td><td>${prevNum(s.median[h - 1])}</td><td>${prevNum(s.q05[h - 1])}</td><td>${prevNum(s.q95[h - 1])}</td></tr>`);
+  return `<div class="prev-card-h">tutti i passi (ogni ${ogni})</div>
+    <table><thead><tr><th>passo</th><th>mediana</th><th>q05</th><th>q95</th></tr></thead><tbody>${righe.join("")}</tbody></table>`;
+}
+
+async function prevEsegui() {
+  const sel = $("prevSerie");
+  const val = sel && sel.value;
+  if (!val) { alert("Nessuna serie: carica un CSV con ＋ csv, oppure usa una serie inclusa."); return; }
+  const h = Math.max(1, Math.min(366, Number($("prevOrizzonte").value) || 30));
+  const corpo = { prediction_length: h };
+  if (val.startsWith("demo:")) corpo.demo = [val.slice(5)];
+  else corpo.csv = val.slice(4);
+  $("prevStato").textContent = "calcolo la previsione…";
+  $("prevPrevedi").disabled = true;
+  try {
+    const r = await fetch("/api/timestral/forecast", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+    const out = await r.json();
+    if (!r.ok) throw new Error(out.error || `HTTP ${r.status}`);
+    // lo storico arriva CON la previsione (ultimi 300 punti): il grafico disegna passato e
+    // futuro nella stessa scala, senza una seconda chiamata che potrebbe vedere altri dati
+    out.storico = Array.isArray(out.storico) ? out.storico[0] || [] : [];
+    prevRisultato = out;
+    $("prevTitolo").textContent = out.series[0].name;
+    $("prevLegenda").textContent = `storico · mediana · bande 50/80/95% — ${String(out.latency_s).replace(".", ",")}s di calcolo, Timestral ${out.taglia}`;
+    $("prevSvgBox").innerHTML = prevGrafico(out);
+    $("prevNumeri").innerHTML = prevNumeri(out);
+    $("prevTabella").innerHTML = prevTabella(out);
+    $("prevNotaGrafico").textContent = "Stima probabilistica di un modello pre-addestrato (zero-shot): la mediana non è un fatto, e il modello non conosce notizie o eventi annunciati.";
+    $("prevCorpo").hidden = false;
+    const meta = (out.meta && out.meta[0]) || {};
+    $("prevStato").innerHTML =
+      `<b>Timestral ${out.taglia}</b> · ${out.series[0].median.length} passi previsti in ${out.latency_s}s` +
+      (meta.fonte ? ` · fonte: ${escHtml(String(meta.fonte).slice(0, 120))}${meta.sintetica ? " (sintetica)" : ""}` : "") +
+      (meta.scartate ? ` · ${meta.scartate} righe scartate nel CSV` : "");
+  } catch (e) {
+    $("prevStato").textContent = `Previsione non riuscita: ${String(e.message || e)}`;
+  } finally {
+    $("prevPrevedi").disabled = false;
+  }
+}
+
+/** Verifica storica: l'unico numero che dice se fidarsi. */
+async function prevVerifica() {
+  const sel = $("prevSerie");
+  const val = sel && sel.value;
+  if (!val) return;
+  const card = $("prevBacktestCard");
+  card.hidden = false;
+  card.innerHTML = `<div class="prev-card-h">verifica storica…</div><div class="prev-nota">il modello rifà la previsione sul passato e si confronta con «domani come oggi». Su una serie lunga ci vuole qualche secondo.</div>`;
+  const corpo = { prediction_length: Math.max(1, Math.min(366, Number($("prevOrizzonte").value) || 30)), folds: 5 };
+  if (val.startsWith("demo:")) corpo.demo = [val.slice(5)];
+  else corpo.csv = val.slice(4);
+  try {
+    const r = await fetch("/api/timestral/backtest", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(corpo) });
+    const b = await r.json();
+    if (!r.ok) throw new Error(b.error || `HTTP ${r.status}`);
+    const skill = Number(b.skill_mae_pct);
+    const giudizio =
+      !Number.isFinite(skill) ? "" :
+      skill > 5 ? ["", `Il modello batte il naive del ${skill.toFixed(1)}% sull'errore medio: qui aggiunge informazione.`] :
+      skill > -5 ? ["attenzione", `Il modello fa più o meno come il naive (${prevPct(skill)}): qui la mediana NON aggiunge informazione — quello che aggiunge è la banda di incertezza.`] :
+      ["grave", `Il modello fa peggio del naive (${prevPct(skill)}): su questa serie la previsione puntuale non va usata, solo l'incertezza.`];
+    const cop = Number(b.copertura80_pct);
+    const calib =
+      !Number.isFinite(cop) ? ["", ""] :
+      cop < 70 ? ["attenzione", `La banda 80% ha contenuto il valore reale solo il ${cop}% delle volte: l'incertezza è SOTTOSTIMATA, quindi va allargata a mente (o non usata per soglie).`] :
+      cop > 92 ? ["attenzione", `La banda 80% ha contenuto il valore reale il ${cop}% delle volte: l'incertezza è SOVRASTIMATA (banda troppo larga, poco informativa).`] :
+      ["", `La banda 80% ha contenuto il valore reale il ${cop}% delle volte: dichiarata e reale coincidono, la banda è affidabile.`];
+    card.innerHTML = `
+      <div class="prev-card-h">verifica storica · ${escHtml(b.serie || "")} <span class="prev-legenda">${b.folds} finestre da ${b.passi_per_fold} passi, contesto ${b.contesto}, ${b.latency_s}s</span></div>
+      <div class="prev-bt-fila">
+        <div class="prev-num"><span class="k">errore medio (MAE)</span><span class="v">${prevNum(b.mae_modello)} <small>naive ${prevNum(b.mae_naive)}</small></span></div>
+        <div class="prev-num ${skill > 0 ? "alto" : skill < 0 ? "basso" : ""}"><span class="k">vantaggio sul naive</span><span class="v">${prevPct(skill)}</span></div>
+        <div class="prev-num"><span class="k">copertura banda 95%</span><span class="v">${prevNum(b.copertura95_pct, 1)}%</span></div>
+      </div>
+      ${giudizio[0] || calib[0] ? "" : ""}
+      <div class="prev-avviso ${giudizio[0]}">${escHtml(giudizio[1])}</div>
+      ${calib[1] ? `<div class="prev-avviso ${calib[0]}">${escHtml(calib[1])}</div>` : ""}
+      <div class="prev-nota">Metodo: rolling-origin sullo storico, orizzonte ${b.passi_per_fold}, ${b.folds} finestre; MAE = errore assoluto medio della mediana, naive = «domani come oggi» (ultimo valore ripetuto). Copertura = quanto spesso il valore reale è caduto dentro la banda dichiarata.</div>`;
+  } catch (e) {
+    card.innerHTML = `<div class="prev-card-h">verifica storica</div><div class="prev-avviso grave">${escHtml(String(e.message || e))}</div>`;
+  }
+}
+
+function prevScaricaCsv() {
+  if (!prevRisultato) return;
+  const s = prevRisultato.series[0];
+  const righe = ["passo,mediana,q05,q10,q25,q75,q90,q95"];
+  for (let i = 0; i < s.median.length; i += 1) {
+    righe.push([i + 1, s.median[i], s.q05[i], s.q10[i], s.q25[i], s.q75[i], s.q90[i], s.q95[i]].join(","));
+  }
+  const blob = new Blob([righe.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `previsione-${(s.name || "serie").toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 40)}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+function prevScaricaSvg() {
+  const svg = $("prevSvgBox").querySelector("svg");
+  if (!svg) return;
+  const doc = `<?xml version="1.0" encoding="UTF-8"?>\n${svg.outerHTML}`;
+  const blob = new Blob([doc], { type: "image/svg+xml;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "previsione.svg";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/** Caricamento di un CSV: validato dal server (righe scartate comprese) prima di salvarlo. */
+async function prevCaricaFile(file) {
+  if (!file) return;
+  $("prevStato").textContent = `carico ${file.name}…`;
+  try {
+    const testo = await file.text();
+    const r = await fetch(`/api/timestral/dati?nome=${encodeURIComponent(file.name)}`, {
+      method: "POST",
+      headers: { "Content-Type": "text/csv" },
+      body: testo,
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    await caricaPrevisioni();
+    const sel = $("prevSerie");
+    const opt = [...sel.options].find((o) => o.value === `csv:${j.nome}`);
+    if (opt) { sel.value = opt.value; await prevEsegui(); }
+    $("prevStato").innerHTML = `<b>${escHtml(j.nome)}</b> caricato: ${j.punti} punti (separatore ${escHtml(j.separatore)}${j.scartate ? `, ${j.scartate} righe scartate` : ""}).`;
+  } catch (e) {
+    $("prevStato").textContent = `Caricamento non riuscito: ${String(e.message || e)}`;
+  }
+}
+
 $("tabChat").onclick = () => showTab("chat");
 $("tabFiles").onclick = () => showTab("files");
 function showTab(name) {
@@ -5586,6 +5945,7 @@ function showTab(name) {
   $("agendaView").hidden = name !== "agenda";
   $("liveView").hidden = name !== "live";
   $("memoriaView").hidden = name !== "memoria";
+  $("previsioniView").hidden = name !== "previsioni";
   // la live view consuma banda: il flusso si ferma quando si lascia la vista
   if (name !== "live" && liveWatching) stopWatch();
   // il riquadro a schermo intero è un overlay: uscendo dalla vista deve sparire
@@ -5600,6 +5960,9 @@ function showTab(name) {
   if (fc) fc.classList.toggle("on", name === "cron");
   if (fs) fs.classList.toggle("on", name === "skills");
   const fp = $("featProgetto"), fa = $("featAgenda"), fl = $("featLive");
+  const fprev = $("featPrevisioni");
+  if (fprev) fprev.classList.toggle("on", name === "previsioni");
+  if (name === "previsioni") { if (!prevCaricata) caricaPrevisioni(); }
   if (fp) fp.classList.toggle("on", name === "progetto");
   if (fa) fa.classList.toggle("on", name === "agenda");
   if (fl) fl.classList.toggle("on", name === "live");
@@ -7703,6 +8066,15 @@ $("featSkills").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); sho
 $("featProgetto").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("progetto"); };
 $("featAgenda").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("agenda"); };
 $("featLive").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("live"); };
+$("featPrevisioni").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("previsioni"); };
+$("prevBack").onclick = () => showTab("chat");
+$("prevPrevedi").onclick = () => prevEsegui();
+$("prevBacktest").onclick = () => prevVerifica();
+$("prevCsv").onclick = () => prevScaricaCsv();
+$("prevSvg").onclick = () => prevScaricaSvg();
+$("prevCarica").onclick = () => $("prevFile").click();
+$("prevFile").onchange = (e) => { const f = e.target.files && e.target.files[0]; prevCaricaFile(f); e.target.value = ""; };
+$("prevSerie").onchange = () => { if ($("prevSerie").value) prevEsegui(); };
 $("liveBack").onclick = () => showTab("chat");
 $("liveWatch").onclick = () => (liveWatching ? stopWatch() : startWatch());
 $("liveControl").onclick = async () => {

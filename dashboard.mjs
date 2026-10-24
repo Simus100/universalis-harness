@@ -46,7 +46,7 @@ import { leggiWiki as memoriaWiki, linkRotti as memoriaLinkRotti } from "./media
 import { ricostruisci as memoriaRicostruisci, aggiornaDopoSessione as memoriaArchiviaSessione } from "./media/memoria/memoria-build.mjs";
 import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato, indiceDaAggiornare as memoriaIndiceDaAggiornare } from "./media/memoria/memoria-index.mjs";
 import { createDecisionMService } from "./media/decision-m-service.mjs";
-import { createTimestralClient, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
+import { createTimestralClient, parseCsv as parseTimestralCsv, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
 import { createTimestralExtension } from "./media/timestral-tool.mjs";
 import {
   VOCI as TTS_VOCI,
@@ -4051,6 +4051,25 @@ function readBody(req, limit = 2 * 1024 * 1024) {
   });
 }
 
+/** Corpo come TESTO (per i file caricati): `readBody` fa JSON.parse, e un CSV non è JSON. */
+function readTextBody(req, limit = 8 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    const parti = [];
+    let size = 0;
+    req.on("data", (c) => {
+      size += c.length;
+      if (size > limit) {
+        reject(new HttpError(413, "corpo troppo grande"));
+        req.destroy();
+        return;
+      }
+      parti.push(c);
+    });
+    req.on("end", () => resolve(Buffer.concat(parti).toString("utf8")));
+    req.on("error", reject);
+  });
+}
+
 function json(res, code, obj) {
   // Se la risposta è GIÀ partita non si possono riscrivere gli header: `writeHead` solleverebbe
   // ERR_HTTP_HEADERS_SENT. Succede quando un errore nasce DOPO l'apertura di una risposta
@@ -4696,6 +4715,52 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // Verifica storica: rolling-origin sul passato della serie. È il numero che dice se
+    // fidarsi: MAE del modello contro il naive, e copertura empirica delle bande.
+    if (req.method === "POST" && url.pathname === "/api/timestral/backtest") {
+      if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      const body = await readBody(req, 2 * 1024 * 1024);
+      try {
+        const fonti = timestralClient.preparaSerie({
+          demo: Array.isArray(body.demo) ? body.demo : body.demo ? [body.demo] : undefined,
+          csv: body.csv,
+          series: body.series,
+          column: body.column,
+          valueColumn: body.value_column,
+        });
+        const out = await timestralClient.backtest({
+          values: fonti[0].valori,
+          prediction_length: Math.max(1, Math.min(4096, Number(body.prediction_length) || 30)),
+          folds: Number(body.folds) || 5,
+        });
+        return json(res, 200, { ...out, serie: fonti[0].nome, punti: fonti[0].valori.length });
+      } catch (e) {
+        const msg = String(e?.message || e);
+        const giu = /ECONNREFUSED|fetch failed|aborted|timeout/i.test(msg);
+        return json(res, giu ? 503 : 400, { error: msg });
+      }
+    }
+
+    // Caricamento di un CSV dell'utente per le previsioni: corpo = testo del file, nome in
+    // query. Finisce in media/previsioni/dati/, che è ESCLUSO da git (dati riservati).
+    if (req.method === "POST" && url.pathname === "/api/timestral/dati") {
+      if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      const nome = basename(String(url.searchParams.get("nome") || ""));
+      if (!nome || !/\.(csv|txt)$/i.test(nome)) return json(res, 400, { error: "serve un file .csv o .txt" });
+      try {
+        // readTextBody, non readBody: il CSV è testo e readBody lo trasformerebbe in {}
+        const testoFinale = await readTextBody(req, 8 * 1024 * 1024);
+        if (!testoFinale.trim()) return json(res, 400, { error: "file vuoto" });
+        await fs.mkdir(timestralClient.datiDir, { recursive: true });
+        // si valida PRIMA di salvare: un file che non si può leggere meglio non averlo
+        const prova = parseTimestralCsv(testoFinale);
+        await fs.writeFile(join(timestralClient.datiDir, nome), testoFinale, "utf8");
+        return json(res, 200, { ok: true, nome, punti: prova.punti.length, scartate: prova.scartate, separatore: prova.separatore });
+      } catch (e) {
+        return json(res, 400, { error: String(e?.message || e) });
+      }
+    }
+
     if (req.method === "POST" && url.pathname === "/api/timestral/forecast") {
       if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
       const body = await readBody(req, 2 * 1024 * 1024);
@@ -4719,6 +4784,9 @@ const server = http.createServer(async (req, res) => {
           congiunta: body.congiunta === true && fonti.length > 1,
           date: fonti.map((f) => f.date || null),
           meta: fonti.map((f) => f.meta || null),
+          // Lo storico viaggia con la previsione: il grafico deve disegnare il passato e il
+          // futuro nella STESSA scala, e una seconda chiamata potrebbe trovare altri dati.
+          storico: fonti.map((f) => f.valori.slice(-300)),
         });
       } catch (e) {
         const msg = String(e?.message || e);

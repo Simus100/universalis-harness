@@ -68,6 +68,15 @@ Si cambia dalla dashboard (menu features → tendina accanto a Timestral) o con
 - **Connettori online**: non nella prima versione (Yahoo risponde 429, Stooq chiede
   JavaScript). Fase 2.
 
+## La vista «Previsioni» (dashboard)
+
+Menu **features → 📈 previsioni**: grafico a ventaglio dei quantili, numeri (mediana, variazione
+attesa, banda 80/95%, P di rialzo), tabella dei passi, **verifica storica** e caricamento CSV.
+La verifica storica è il pezzo da guardare prima di fidarsi: dice se la mediana batte il naive
+e se la banda dichiarata contiene davvero il valore reale. Su USD/EUR qui: mediana −2,3% contro
+il naive e copertura 80% reale 67,8% → bande leggermente strette. Se l'utente chiede «quanto è
+affidabile», questo è il numero da citare.
+
 ## Cosa produce
 
 - Risposta in chat: mediana, banda 80%, variazione attesa, `P(rialzo)`, tabella dei passi
