@@ -199,6 +199,132 @@ export function analizza({ values, dates = null, unita = "passi" }) {
   const minI = y.indexOf(Math.min(...y));
   const piatti = N > 1 ? variazioni.filter((x) => x === 0).length : 0;
 
+  // ---- decomposizione: trend + DUE stagionalità + residuo (stile STL) ------------------
+  // Serve a rispondere a «quali cicli ci sono» con numeri separati: quanto è trend, quanto è
+  // stagionale (e su quali periodi), quanto è residuo. Una serie può avere due ritmi insieme
+  // (settimanale e annuale su dati giornalieri; giornaliero e settimanale su dati orari).
+  const zMedia = (a) => (a.length ? a.reduce((x2, y2) => x2 + y2, 0) / a.length : 0);
+  const varianza = (a) => { const m = zMedia(a); return a.reduce((x2, y2) => x2 + (y2 - m) ** 2, 0) / Math.max(1, a.length); };
+  const perFase = (residui, p) => {
+    const somme = new Array(p).fill(0), conti = new Array(p).fill(0);
+    for (let i = 0; i < residui.length; i += 1) { somme[i % p] += residui[i]; conti[i % p] += 1; }
+    const medie = somme.map((v2, k) => (conti[k] ? v2 / conti[k] : 0));
+    const m = zMedia(medie);
+    return { valori: medie.map((v2) => v2 - m), medie };   // centrata: non sposta il livello
+  };
+  // spettro su un segnale (DFT), per trovare i periodi candidati
+  const spettro = (segnale, escludi = []) => {
+    const out = [];
+    const maxP = Math.max(2, Math.floor(segnale.length / 3));
+    for (let p = 2; p <= maxP; p += 1) {
+      if (escludi.some((e) => p === e || (e > 1 && (p % e === 0 || e % p === 0)))) continue;
+      let re = 0, im = 0;
+      for (let i = 0; i < segnale.length; i += 1) {
+        const ang = (2 * Math.PI * i) / p;
+        re += segnale[i] * Math.cos(ang);
+        im += segnale[i] * Math.sin(ang);
+      }
+      out.push({ periodo: p, ampiezza: (2 * Math.sqrt(re * re + im * im)) / segnale.length });
+    }
+    out.sort((a2, b2) => b2.ampiezza - a2.ampiezza);
+    return out;
+  };
+
+  const specY = spettro(y);
+  // Un segnale con due picchi al giorno produce un massimo a 12 ore, ma il periodo VERO è 24:
+  // se il doppio del periodo ha ampiezza paragonabile, si prende quello.
+  let p1 = specY[0] ? specY[0].periodo : null;
+  if (p1) {
+    const amp1 = specY[0].ampiezza;
+    const multipli = specY.filter((x) => x.periodo > p1 && x.periodo <= p1 * 4);
+    if (multipli.length) {
+      const migliore = multipli.reduce((a2, b2) => (b2.ampiezza > a2.ampiezza ? b2 : a2));
+      if (migliore.ampiezza >= amp1 * 0.5) p1 = migliore.periodo;
+    }
+  }
+  const larghezzaTrend = Math.max(3, Math.min(Math.floor(N / 3), (p1 || 7) * 2 + 1));
+  const meta = Math.floor(larghezzaTrend / 2);
+  const trendArr = y.map((_, i) => zMedia(y.slice(Math.max(0, i - meta), Math.min(N, i + meta + 1))));
+  const detrendC = y.map((v, i) => v - trendArr[i]);
+  const st1 = p1 ? perFase(detrendC, p1) : null;
+  const residuo1 = st1 ? detrendC.map((v, i) => v - st1.valori[i % p1]) : detrendC;
+  const spec2 = spettro(residuo1, p1 ? [p1] : []);
+  const p2 = spec2[0] && spec2[0].ampiezza > (specY[0] ? specY[0].ampiezza * 0.12 : 0) ? spec2[0].periodo : null;
+  let st2 = p2 ? perFase(residuo1, p2) : null;
+  let p2eff = p2;
+  if (st2) {
+    const quota = (varianza(residuo1) - varianza(residuo1.map((v, i) => v - st2.valori[i % p2]))) / (varianza(y) || 1);
+    if (quota < 0.05) { st2 = null; p2eff = null; }   // meno del 5%: non è un ciclo, è rumore
+  }
+  const residuo = st2 ? residuo1.map((v, i) => v - st2.valori[i % p2]) : residuo1;
+  const varY = varianza(y) || 1;
+  const r6 = (v) => Number(v.toFixed(6));
+  const decomp = {
+    trend: trendArr.map(r6),
+    stagionale: y.map((_, i) => r6((st1 ? st1.valori[i % p1] : 0) + (st2 ? st2.valori[i % p2] : 0))),
+    stagionale_1: st1 ? st1.valori.map(r6) : null,
+    stagionale_2: st2 ? st2.valori.map(r6) : null,
+    periodo_1: p1,
+    periodo_2: p2eff,
+    residuo: residuo.map(r6),
+    forze: {
+      trend_pct: Number((100 * (1 - varianza(detrendC) / varY)).toFixed(1)),
+      stagionale_1_pct: st1 ? Number((100 * (varianza(detrendC) - varianza(residuo1)) / varY).toFixed(1)) : 0,
+      stagionale_2_pct: st2 ? Number((100 * (varianza(residuo1) - varianza(residuo)) / varY).toFixed(1)) : 0,
+      residuo_pct: Number((100 * varianza(residuo) / varY).toFixed(1)),
+    },
+    nota: "trend = media mobile centrata; stagionalità = media per fase di ciascun periodo, centrata; residuo = ciò che resta. Le forze sono quote della varianza totale.",
+  };
+
+  // ---- matrix profile: i pattern che si RIPETONO (non solo l'ultimo) -------------------
+  // Per ogni finestra, la distanza dalla finestra più simile: i minimi sono i motif (forme che
+  // tornano), i massimi sono i «discord», cioè i pezzi che non somigliano a nient'altro.
+  const wM = Math.max(4, Math.min(14, Math.floor(N / 8)));
+  const M = N - wM + 1;
+  const zs = [];
+  const zn = (a) => { const m = zMedia(a); const sd = Math.sqrt(varianza(a)) || 1; return a.map((v) => (v - m) / sd); };
+  for (let i = 0; i < M; i += 1) zs.push(zn(y.slice(i, i + wM)));
+  const profilo = new Array(M).fill(Infinity);
+  const vicino = new Array(M).fill(-1);
+  for (let i = 0; i < M; i += 1) {
+    for (let j = 0; j < M; j += 1) {
+      if (Math.abs(i - j) < Math.max(2, Math.floor(wM / 2))) continue;
+      let d2 = 0;
+      for (let k = 0; k < wM; k += 1) d2 += (zs[i][k] - zs[j][k]) ** 2;
+      const d = Math.sqrt(d2 / wM);
+      if (d < profilo[i]) { profilo[i] = d; vicino[i] = j; }
+    }
+  }
+  const coppie = [];
+  const usati = new Set();
+  for (let giro = 0; giro < 3; giro += 1) {
+    let miglioreI = -1, miglioreD = Infinity;
+    for (let i = 0; i < M; i += 1) {
+      if (usati.has(i) || !Number.isFinite(profilo[i])) continue;
+      if (profilo[i] < miglioreD) { miglioreD = profilo[i]; miglioreI = i; }
+    }
+    if (miglioreI < 0) break;
+    const j = vicino[miglioreI];
+    usati.add(miglioreI);
+    usati.add(j);
+    for (let k = Math.max(0, miglioreI - wM); k <= Math.min(M - 1, miglioreI + wM); k += 1) usati.add(k);
+    for (let k = Math.max(0, j - wM); k <= Math.min(M - 1, j + wM); k += 1) usati.add(k);
+    coppie.push({
+      a: d[miglioreI + wM - 1],
+      b: d[j + wM - 1],
+      distanza: Number(miglioreD.toFixed(3)),
+      // cosa è successo dopo ciascuna delle due occorrenze
+      dopo_a: y[miglioreI + wM] !== undefined && y[miglioreI + wM - 1] ? Number((100 * (y[miglioreI + wM] - y[miglioreI + wM - 1]) / Math.abs(y[miglioreI + wM - 1])).toFixed(2)) : null,
+      dopo_b: y[j + wM] !== undefined && y[j + wM - 1] ? Number((100 * (y[j + wM] - y[j + wM - 1]) / Math.abs(y[j + wM - 1])).toFixed(2)) : null,
+    });
+  }
+  let discord = null;
+  if (M > 4) {
+    let massimoI = 0;
+    for (let i = 1; i < M; i += 1) if (profilo[i] > profilo[massimoI]) massimoI = i;
+    discord = { data: d[massimoI + wM - 1], distanza: Number(profilo[massimoI].toFixed(3)) };
+  }
+
   // ---- ciclicità e pattern ------------------------------------------------------------
   // Il modello NON fa questo: qui si misura la struttura della serie (cicli, periodi,
   // configurazioni già viste e cosa è successo dopo). È aritmetica, e serve a decidere se una
@@ -290,7 +416,12 @@ export function analizza({ values, dates = null, unita = "passi" }) {
       passi_dopo: hPat,
       simili: migliori.map((x2) => ({ data: x2.data, distanza: Number(x2.distanza.toFixed(2)), variazione_pct: Number(x2.variazione_pct.toFixed(2)) })),
       variazione_media_dopo_simili_pct: dopoSimili,
+      // matrix profile: forme che si ripetono e pezzo più «strano» della serie
+      finestra_motif: wM,
+      motif: coppie,
+      discord,
     },
+    decomp,
     metodo: "variazioni e volatilità sulle variazioni percentuali passo-passo; tendenza = regressione lineare ai minimi quadrati con R²; rumore = dev.st dei residui / dev.st dei valori; ciclicità = autocorrelazione ai lag tipici dell'unità (soglia |r| ≥ 0,3); anomalie = |residuo| > 3 dev.st dei residui.",
   };
 }

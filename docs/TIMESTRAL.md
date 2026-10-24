@@ -306,6 +306,29 @@ strumentale del disegno: scarto 0 fra valori e coordinate), ma il valore aggiunt
 **l'incertezza quando è calibrata**, non il punto centrale. Su una serie finanziaria, la riga
 «stima centrale» va letta come «il centro della distribuzione», non come «la previsione».
 
+## Ciclicità e pattern (analisi, non modello)
+
+Tre strumenti, tutti aritmetici e verificabili, nella card «Cosa dicono i dati»:
+
+1. **Decomposizione in tre strisce** (stile STL): trend = media mobile centrata; stagionale =
+   media per fase di **due** periodi (il dominante e un secondo, tenuto solo se spiega ≥ 5% della
+   varianza); residuo = ciò che resta. Accanto a ogni riga la quota di variabilità spiegata, così
+   si vede a colpo d'occhio se la serie è «trend + ciclo» o un groviglio.
+2. **Periodo dominante e autocorrelazioni** sopra la soglia 1,96/√n. Attenzione alle armoniche:
+   un segnale con due picchi al giorno dà un massimo a 12 ore, ma il periodo vero può essere 24 —
+   per questo si controllano i multipli.
+3. **Matrix profile**: per ogni finestra si calcola la distanza dalla finestra più simile. I minimi
+   sono i **motif** (forme che tornano: «2025-03-08 ≈ 2026-01-10, distanza 0,08»), i massimi sono i
+   **discord** (il pezzo che non somiglia a nient'altro). È il modo corretto di dire «ci sono
+   pattern ricorrenti?», invece di guardare l'occhio. Costo: O(M²·w), misurato 20-80 ms su 400-670
+   punti.
+
+Misura sugli esempi inclusi: cassa giornaliera → trend 20,2%, stagionale (7 giorni) 76,4%,
+residuo 3,4%; carico elettrico → trend 12,1%, stagionale 72,8%, residuo 15,1%; Bitcoin → trend
+68,6%, stagionale 15,3% (periodi 106 e 86: rumore che passa la soglia, e la forza lo dice).
+
+Il modello **non** fa questo: prevede. Queste tre cose dicono **se vale la pena prevedere**.
+
 ## Interpretare la richiesta (unità → orizzonte)
 
 | come lo dice l'utente | orizzonte giusto | note |
