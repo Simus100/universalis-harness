@@ -6449,6 +6449,38 @@ async function prevCaricaInsight(corpo) {
   }
 }
 
+/** Statistiche al passo `last` (1-based) lette dai quantili della serie completa.
+ *  Servono perché al servizio si chiede l'orizzonte più lungo dei tre (per il confronto
+ *  breve/medio/lungo), ma il grafico e i numeri devono fermarsi dove l'utente ha scelto. */
+function prevStatsLocali(s0, last) {
+  const i = Math.max(0, Math.min(s0.median.length, last) - 1);
+  const ultimo = s0.last_observed;
+  const liv = [0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95];
+  const qs = [s0.q05[i], s0.q10[i], s0.q25[i], s0.median[i], s0.q75[i], s0.q90[i], s0.q95[i]];
+  const med = s0.median[i];
+  let p = null;
+  if (ultimo != null) {
+    if (ultimo <= qs[0]) p = 0.95;
+    else if (ultimo >= qs[6]) p = 0.05;
+    else for (let j = 0; j < 6; j += 1) {
+      if (ultimo >= qs[j] && ultimo <= qs[j + 1]) {
+        const t = (ultimo - qs[j]) / (qs[j + 1] - qs[j] || 1);
+        p = 1 - (liv[j] + t * (liv[j + 1] - liv[j]));
+        break;
+      }
+    }
+  }
+  return {
+    median_end: med,
+    q05_end: s0.q05[i],
+    q95_end: s0.q95[i],
+    band80_width_pct: med !== 0 ? Number((100 * (s0.q90[i] - s0.q10[i])) / Math.abs(med)) : null,
+    p_rise_end: p == null ? null : Number(p.toFixed(3)),
+    expected_change_end: ultimo == null ? null : med - ultimo,
+    expected_change_end_pct: ultimo ? Number((100 * (med - ultimo)) / Math.abs(ultimo)) : null,
+  };
+}
+
 /** I tre orizzonti, nell'unità della serie. Il «lungo» non è mai più corto di ciò che
  *  l'utente ha chiesto: se ha scelto 180 giorni, il lungo è 180. */
 function prevOrizzonti(u, hRichiesto) {
@@ -6465,7 +6497,8 @@ function prevOrizzonti(u, hRichiesto) {
 
 /** Cosa cambia guardando più lontano: tre orizzonti dalla STESSA previsione. */
 function prevOrizzontiHtml(out) {
-  const s0 = out.series[0];
+  // serve la previsione COMPLETA: il «lungo» sta oltre l'orizzonte disegnato
+  const s0 = (out.full && out.full.series && out.full.series[0]) || out.series[0];
   const ultimo = s0.last_observed;
   const h = s0.median.length;
   const u = prevUnitaSerie();
@@ -6648,6 +6681,24 @@ async function prevEsegui() {
     $("prevTrend").innerHTML = prevTrendHtml(out);
     prevAggiornaZoomInfo();
     prevAgganciaPuntatore();
+    // Il servizio ha calcolato il lungo (per i tre orizzonti). Grafico, numeri e tabella si
+    // fermano all'orizzonte che l'utente ha scelto: prima mostrava 90 giorni anche con 30.
+    const pieno = out.series[0];
+    if (pieno.median.length > hScelto) {
+      const taglia = (a) => a.slice(0, hScelto);
+      out.full = { series: [pieno], taglia: out.taglia };   // completo, per «tre orizzonti»
+      out.series = [{
+        ...pieno,
+        median: taglia(pieno.median), q05: taglia(pieno.q05), q10: taglia(pieno.q10),
+        q25: taglia(pieno.q25), q75: taglia(pieno.q75), q90: taglia(pieno.q90), q95: taglia(pieno.q95),
+        stats: prevStatsLocali(pieno, hScelto),
+      }];
+    } else {
+      out.full = out;
+    }
+    const meta = (out.meta && out.meta[0]) || {};
+    const u2 = prevUnitaSerie();
+
     $("prevVerdetto").innerHTML = prevVerdettoHtml(out);
     $("prevNumeri").innerHTML = prevNumeri(out);
     $("prevOrizzonti").innerHTML = prevOrizzontiHtml(out);
@@ -6659,8 +6710,6 @@ async function prevEsegui() {
       "La linea verde è la stima più probabile, la fascia dice quanto il modello è incerto." +
       `<span class="prev-tecnico">Modello Timestral di Mistral, eseguito in locale — pesi con licenza Modified MIT. Non conosce notizie né eventi annunciati.</span>`;
     $("prevCorpo").hidden = false;
-    const meta = (out.meta && out.meta[0]) || {};
-    const u2 = prevUnitaSerie();
     $("prevStato").innerHTML =
       `<b>${escHtml(out.series[0].name)}</b> — stima per i prossimi ${out.series[0].median.length} ${escHtml(u2)}` +
       (meta.fonte ? ` · dati: ${escHtml(String(meta.fonte).slice(0, 90))}${meta.sintetica ? " (serie di esempio)" : ""}` : "") +
@@ -9132,7 +9181,13 @@ $("prevChiediBtn")?.addEventListener("click", () => {
   // Il testo diventa un incarico per l'agente: cerca i dati, li importa con la fonte, prevede.
   // MA la vista NON cambia: si resta qui e quando la serie arriva si disegna da sola. Chi chiede
   // una previsione vuole vedere il grafico, non il testo del lavoro che serve a produrlo.
-  const prima = new Set(((prevStato && prevStato.csv) || []).map((c) => c.nome));
+  // Impronta COMPLETA delle serie già presenti: nome + dimensione + data di importazione.
+  // Prima si confrontavano solo i nomi, e questo rompeva il caso più comune: chiedere una
+  // previsione su una serie che è già stata importata (es. il Nasdaq). Non compariva nessun
+  // «nuovo» CSV, il sorvegliante si arrendeva e mandava l'utente in chat.
+  const prima = Object.fromEntries(
+    ((prevStato && prevStato.csv) || []).map((c) => [c.nome, `${c.kb}|${(c.meta && c.meta.importata_il) || ""}`]),
+  );
   campo.value = "";
   $("prevStato").innerHTML =
     `<b>Sto cercando i dati…</b> l'agente cerca la serie sul web, la importa con la fonte e poi la disegno qui. ` +
@@ -9143,7 +9198,7 @@ $("prevChiediBtn")?.addEventListener("click", () => {
     "poi calcola la previsione e spiegami in parole semplici cosa significa: stima centrale, fascia probabile, quanto fidarsi. Dimmi anche il nome della serie, così la ritrovo nella vista Previsioni.";
   autosize();
   void send();
-  prevAttendiSerie(prima);
+  prevAttendiSerie(prima, t);
 });
 
 /**
@@ -9151,30 +9206,60 @@ $("prevChiediBtn")?.addEventListener("click", () => {
  * Controlla l'elenco ogni 2 secondi; si ferma appena compare un CSV che prima non c'era
  * (allora lo seleziona e calcola) o quando il turno è finito senza importazioni.
  */
-function prevAttendiSerie(prima) {
+function prevAttendiSerie(prima, richiesta) {
   let giri = 0;
+  // parole della richiesta utili a riconoscere una serie già presente (nasdaq, inflazione…)
+  const inutili = new Set(["della", "delle", "degli", "prossimi", "prossime", "settimana", "mese", "mesi", "prezzo", "prezzi", "previsione", "previsioni", "dati", "reali", "fonte", "autorevole", "calcola", "spiega", "voglio", "vorrei", "nasdaq?"]);
+  const chiavi = String(richiesta || "")
+    .toLowerCase()
+    .split(/[^a-z0-9àèéìòù]+/)
+    .filter((w) => w.length >= 4 && !inutili.has(w));
+  const etichetta = (c) => `csv:${c.nome}`;
+
+  const scegli = async (c) => {
+    const sel = $("prevSerie");
+    if (![...sel.options].some((o) => o.value === etichetta(c))) await caricaPrevisioni();
+    sel.value = etichetta(c);
+    PREV_CTRL.finestra = -1;   // spazio alla previsione, non tutto lo storico
+    PREV_CTRL.offset = 0;
+    prevOrizzonteAdatto();
+    prevAggiornaControlli();
+    await prevEsegui();
+  };
+
   const t = setInterval(async () => {
     giri += 1;
     await caricaPrevisioni();
-    const nuovi = ((prevStato && prevStato.csv) || []).filter((c) => !prima.has(c.nome));
-    if (nuovi.length) {
+    const elenco = (prevStato && prevStato.csv) || [];
+    const firma = (c) => `${c.kb}|${(c.meta && c.meta.importata_il) || ""}`;
+    // nuova (non c'era) oppure modificata (c'è ma è cambiata: l'agente può averla riscritta)
+    const cambiate = elenco.filter((c) => prima[c.nome] === undefined || prima[c.nome] !== firma(c));
+    if (cambiate.length) {
       clearInterval(t);
-      const nuovo = nuovi[nuovi.length - 1];
-      const sel = $("prevSerie");
-      if (![...sel.options].some((o) => o.value === `csv:${nuovo.nome}`)) await caricaPrevisioni();
-      sel.value = `csv:${nuovo.nome}`;
-      PREV_CTRL.finestra = -1;   // spazio alla previsione, non tutto lo storico
-      PREV_CTRL.offset = 0;
-      prevOrizzonteAdatto();
-      prevAggiornaControlli();
-      await prevEsegui();
+      const c = cambiate[cambiate.length - 1];
+      await scegli(c);
+      const fonte = c.meta && c.meta.fonte ? ` · fonte: ${escHtml(String(c.meta.fonte).slice(0, 90))}` : "";
+      $("prevStato").insertAdjacentHTML("beforeend", `<span class="prev-tecnico">serie usata: ${escHtml(c.nome)}${fonte}</span>`);
       return;
     }
     const finito = !(lastState && lastState.streaming);
-    if (finito && giri >= 3) {
+    if (finito && giri >= 2) {
+      // Niente di nuovo: forse la serie esisteva già e l'agente ha solo confermato. La cerco
+      // per parole («nasdaq» → nasdaq-composite) invece di rimandare l'utente in chat.
+      const trovata = elenco.find((c) => {
+        const nome = `${c.nome} ${(c.meta && c.meta.nome) || ""} ${(c.meta && c.meta.titolo) || ""}`.toLowerCase();
+        return chiavi.some((k) => nome.includes(k));
+      });
+      if (trovata) {
+        clearInterval(t);
+        await scegli(trovata);
+        $("prevStato").insertAdjacentHTML("beforeend", `<span class="prev-tecnico">serie già presente, usata questa: ${escHtml(trovata.nome)}</span>`);
+        return;
+      }
       clearInterval(t);
       $("prevStato").innerHTML =
-        `L'agente ha finito senza importare una serie nuova. <button class="ghost mini" type="button" onclick="showTab('chat')">guarda la chat</button> — di solito è perché la fonte non era raggiungibile o i dati non erano verificabili.`;
+        `L'agente ha finito senza importare una serie utilizzabile. Nessuna serie esistente corrisponde a «${escHtml(String(richiesta || "").slice(0, 60))}». ` +
+        `<button class="ghost mini" type="button" onclick="showTab('chat')">guarda cosa ha risposto</button>`;
     }
     if (giri > 90) clearInterval(t); // 3 minuti: oltre, si smette di aspettare
   }, 2000);

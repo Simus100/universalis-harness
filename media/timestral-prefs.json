@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "size": "123M",
+  "port": 8018,
+  "prediction_length": 30,
+  "locked": false,
+  "max_upload_mb": 8,
+  "default_enabled": true
+}
