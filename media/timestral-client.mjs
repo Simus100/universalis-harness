@@ -199,6 +199,63 @@ export function analizza({ values, dates = null, unita = "passi" }) {
   const minI = y.indexOf(Math.min(...y));
   const piatti = N > 1 ? variazioni.filter((x) => x === 0).length : 0;
 
+  // ---- ciclicità e pattern ------------------------------------------------------------
+  // Il modello NON fa questo: qui si misura la struttura della serie (cicli, periodi,
+  // configurazioni già viste e cosa è successo dopo). È aritmetica, e serve a decidere se una
+  // previsione ha senso guardarla.
+  const detrend = y.map((v, i) => v - mm[i]);           // tolgo il movimento lento
+  const varDetrend = (() => { const m = media(detrend); return media(detrend.map((v) => (v - m) ** 2)); })();
+
+  // spettro: ampiezza per periodo (DFT sui residui), periodi da 2 a N/3
+  const maxPeriodo = Math.max(2, Math.floor(N / 3));
+  let periodoDominante = null;
+  for (let p = 2; p <= maxPeriodo; p += 1) {
+    let re = 0, im = 0;
+    for (let i = 0; i < N; i += 1) {
+      const ang = (2 * Math.PI * i) / p;
+      re += detrend[i] * Math.cos(ang);
+      im += detrend[i] * Math.sin(ang);
+    }
+    const ampiezza = (2 * Math.sqrt(re * re + im * im)) / N;
+    if (!periodoDominante || ampiezza > periodoDominante.ampiezza) periodoDominante = { periodo: p, ampiezza };
+  }
+  // quota di variabilità che quel periodo spiega davvero (media per fase).
+  // Un picco spettrale senza questa verifica è solo rumore ben disegnato.
+  let forzaStagionale = null;
+  if (periodoDominante && varDetrend > 0) {
+    const p = periodoDominante.periodo;
+    const somme = new Array(p).fill(0), conti = new Array(p).fill(0);
+    for (let i = 0; i < N; i += 1) { somme[i % p] += detrend[i]; conti[i % p] += 1; }
+    const medie = somme.map((v2, k) => (conti[k] ? v2 / conti[k] : 0));
+    let ssRes = 0;
+    for (let i = 0; i < N; i += 1) ssRes += (detrend[i] - medie[i % p]) ** 2;
+    forzaStagionale = Number((100 * (1 - ssRes / (varDetrend * N))).toFixed(1));
+  }
+  // autocorrelazione significativa: |r| > 1,96/√n (intervallo classico al 95%)
+  const sogliaAcf = 1.96 / Math.sqrt(N);
+  const acfSignificative = cicli.filter((c) => Math.abs(c.r) > sogliaAcf).map((c) => ({ lag: c.lag, r: Number(c.r.toFixed(2)) }));
+
+  // pattern: l'ultima configurazione (w punti) contro tutte quelle precedenti
+  const wPat = Math.max(4, Math.min(14, Math.floor(N / 8)));
+  const hPat = Math.max(1, Math.min(10, Math.floor(N / 20)));
+  const z = (a) => {
+    const m = media(a), sd = std(a) || 1;
+    return a.map((v) => (v - m) / sd);
+  };
+  const ultima = z(y.slice(N - wPat));
+  const simili = [];
+  for (let i = 0; i + wPat + hPat <= N - wPat; i += 1) {
+    const fin = z(y.slice(i, i + wPat));
+    let d2 = 0;
+    for (let k = 0; k < wPat; k += 1) d2 += (fin[k] - ultima[k]) ** 2;
+    const dopo = y[i + wPat + hPat - 1];
+    const prima = y[i + wPat - 1];
+    simili.push({ distanza: Math.sqrt(d2), indice: i + wPat - 1, data: d[i + wPat - 1], variazione_pct: prima !== 0 ? (100 * (dopo - prima)) / Math.abs(prima) : null });
+  }
+  simili.sort((x2, z2) => x2.distanza - z2.distanza);
+  const migliori = simili.slice(0, 3).filter((x2) => Number.isFinite(x2.variazione_pct));
+  const dopoSimili = migliori.length ? Number(media(migliori.map((x2) => x2.variazione_pct)).toFixed(2)) : null;
+
   return {
     punti: N,
     dal: d[0],
@@ -223,6 +280,17 @@ export function analizza({ values, dates = null, unita = "passi" }) {
     ciclo: cicloForte ? { ogni: cicloForte.lag, autocorrelazione: Number(cicloForte.r.toFixed(2)), spiegato_pct: cicloSpiegato } : null,
     anomalie: anomalie.slice(-5),
     valori_fermi_pct: variazioni.length ? Number(((100 * piatti) / variazioni.length).toFixed(1)) : null,
+    pattern: {
+      periodo_dominante: periodoDominante ? periodoDominante.periodo : null,
+      ampiezza_spettrale: periodoDominante ? Number(periodoDominante.ampiezza.toFixed(4)) : null,
+      forza_stagionale_pct: forzaStagionale,
+      acf_significative: acfSignificative,
+      soglia_acf: Number(sogliaAcf.toFixed(3)),
+      finestra: wPat,
+      passi_dopo: hPat,
+      simili: migliori.map((x2) => ({ data: x2.data, distanza: Number(x2.distanza.toFixed(2)), variazione_pct: Number(x2.variazione_pct.toFixed(2)) })),
+      variazione_media_dopo_simili_pct: dopoSimili,
+    },
     metodo: "variazioni e volatilità sulle variazioni percentuali passo-passo; tendenza = regressione lineare ai minimi quadrati con R²; rumore = dev.st dei residui / dev.st dei valori; ciclicità = autocorrelazione ai lag tipici dell'unità (soglia |r| ≥ 0,3); anomalie = |residuo| > 3 dev.st dei residui.",
   };
 }

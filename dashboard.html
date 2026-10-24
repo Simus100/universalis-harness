@@ -1760,6 +1760,11 @@ footer {
 }
 .prev-tip b { color: var(--text); font-variant-numeric: tabular-nums; }
 .prev-insight { grid-column: 1 / -1; }
+.prev-conf { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; margin-bottom: 10px; }
+.prev-conf th, .prev-conf td { text-align: right; padding: 5px 6px; border-bottom: 1px solid var(--border-soft); }
+.prev-conf th { color: var(--dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .5px; }
+.prev-conf th:first-child, .prev-conf td:first-child { text-align: left; }
+.prev-conf tr.vincente td { color: var(--text); background: color-mix(in srgb, var(--green) 7%, transparent); }
 .prev-ins-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 12px; margin-bottom: 12px; }
 .prev-ins-grid .prev-num .v { font-size: var(--fs-md); }
 .prev-ins-letture { display: flex; flex-direction: column; gap: 6px; }
@@ -2149,7 +2154,7 @@ footer {
       <button class="ghost" id="prevCarica" type="button" title="Carica un CSV con una colonna di date e una di valori (oppure trascinalo qui)">carica csv</button>
       <button class="ghost" id="prevElimina" type="button" title="Elimina dall'elenco la serie scelta (file e metadati): le serie incluse di esempio non si toccano">elimina serie</button>
       <input id="prevFile" type="file" accept=".csv,.txt,text/csv" hidden />
-      <button class="ghost" id="prevBacktest" type="button" title="Rifà la previsione sul passato di questa serie e la confronta con «domani come oggi»: dice quanto fidarsi">affidabilità</button>
+      <button class="ghost" id="prevBacktest" type="button" title="Rifà la previsione sul passato e la confronta con i metodi più semplici: «domani come oggi», media mobile, deriva. Dice se il modello aggiunge qualcosa">confronto</button>
       <span class="prev-export">
         <button class="ghost" id="prevCsv" type="button" title="CSV con storico e previsione affiancati, date comprese">esporta csv</button>
         <button class="ghost" id="prevPng" type="button" title="PNG del grafico come lo stai guardando (zoom compreso)">esporta png</button>
@@ -6417,6 +6422,15 @@ function prevInsightHtml(a) {
   }
   righe.push(`<div class="prev-ins-riga"><span class="ico">${a.ciclo ? "🔁" : "•"}</span><span>${a.ciclo ? `<b>Ciclicità</b>: si ripete ogni <b>${a.ciclo.ogni} ${escHtml(u)}</b> (autocorrelazione ${n(a.ciclo.autocorrelazione, 2)}${a.ciclo.autocorrelazione < 0 ? ", in controfase" : ""})` : "Nessuna ciclicità riconoscibile ai periodi controllati"}</span></div>`);
   if (a.anomalie && a.anomalie.length) righe.push(`<div class="prev-ins-riga"><span class="ico">⚠</span><span><b>Valori anomali</b> (oltre 3 deviazioni standard): ${a.anomalie.slice(-3).map((x) => `${escHtml(x.data || x.posizione)} → ${n(x.valore)}`).join(" · ")}. Un valore anomalo pesa su tutto il grafico: verificalo prima di fidarti del trend.</span></div>`);
+  const pat = a.pattern || {};
+  if (pat.periodo_dominante) {
+    const forte = Number(pat.forza_stagionale_pct) >= 50;
+    righe.push(`<div class="prev-ins-riga"><span class="ico">📐</span><span><b>Ciclo dominante</b>: si ripete ogni <b>${pat.periodo_dominante} ${escHtml(u)}</b> e spiega il <b>${n(pat.forza_stagionale_pct, 1)}%</b> della variabilità — ${forte ? "regolarità forte: il modello può riprodurla" : "regolarità debole: il periodo è solo indicativo"}. Autocorrelazioni sopra la soglia (${n(pat.soglia_acf, 2)}): ${(pat.acf_significative || []).map((x) => `${x.lag} ${escHtml(u)} (r ${n(x.r, 2)})`).join(" · ") || "nessuna"}.</span></div>`);
+    if (pat.simili && pat.simili.length) {
+      const ver = pat.variazione_media_dopo_simili_pct;
+      righe.push(`<div class="prev-ins-riga"><span class="ico">🧩</span><span><b>Configurazioni simili</b> (pattern): le ultime ${pat.finestra} ${escHtml(u)} somigliano a quelle di ${pat.simili.map((x) => escHtml(x.data || "")).join(", ")}. Nei ${pat.passi_dopo} passi successivi, in quei casi, la variazione fu in media <b>${prevPct(ver)}</b>. ${Number(pat.forza_stagionale_pct) >= 50 ? "Con una stagionalità così forte questa cifra riflette soprattutto <i>in che fase del ciclo</i> si trovava il punto, non una direzione." : ""} ${pat.simili.length < 3 ? "Pochi casi: è un indizio, non una statistica." : "Tre casi trovati: indizio, non una legge."}</span></div>`);
+    }
+  }
   const qualita = [];
   if (a.mancanti) qualita.push(`${a.mancanti} punti mancanti`);
   if (a.valori_fermi_pct > 20) qualita.push(`${n(a.valori_fermi_pct)}% dei passi senza variazione (serie piatta a tratti)`);
@@ -6779,12 +6793,22 @@ async function prevVerifica() {
           ? ["attenzione", `L'intervallo 80% ha contenuto il valore vero il ${String(cop).replace(".", ",")}% delle volte: è più largo del necessario, quindi dice meno di quanto potrebbe.`]
           : ["", `L'intervallo 80% ha contenuto il valore vero il ${String(cop).replace(".", ",")}% delle volte: promesso e mantenuto, ci si può ragionare.`];
     card.innerHTML = `
-      <div class="prev-card-h">Quanto è affidabile su questa serie <span class="prev-legenda">${b.folds} prove sul passato, ${b.passi_per_fold} ${escHtml(prevUnitaSerie())} ciascuna</span></div>
+      <div class="prev-card-h">Confronto con i metodi semplici <span class="prev-legenda">${b.folds} prove sul passato, ${b.passi_per_fold} ${escHtml(prevUnitaSerie())} ciascuna · errore medio (MAE), più basso è meglio</span></div>
+      <table class="prev-conf">
+        <thead><tr><th>metodo</th><th>errore medio</th><th>RMSE</th><th>rispetto al migliore</th></tr></thead>
+        <tbody>
+          ${[["Timestral (questo modello)", b.mae_modello, b.rmse_modello], ["«domani come oggi» (naive)", b.mae_naive, b.rmse_naive], ["media mobile 7", b.mae_media_mobile, null], ["deriva (ultimo + pendenza)", b.mae_deriva, null]]
+            .map(([nome, mae, rmse]) => {
+              const migliore = mae === Math.min(b.mae_modello, b.mae_naive, b.mae_media_mobile, b.mae_deriva);
+              const peggio = Math.max(b.mae_modello, b.mae_naive, b.mae_media_mobile, b.mae_deriva);
+              return `<tr${migliore ? ' class="vincente"' : ""}><td>${escHtml(nome)}${migliore ? ' <span class="prev-badge ok">migliore</span>' : ""}</td><td>${prevNum(mae)}</td><td>${rmse == null ? "—" : prevNum(rmse)}</td><td>${prevPct(100 * (mae / peggio - 1))}</td></tr>`;
+            }).join("")}
+        </tbody>
+      </table>
       <div class="prev-bt-fila">
-        <div class="prev-num"><span class="k">errore medio della stima</span><span class="v">${prevNum(b.mae_modello)} <small>«domani come oggi»: ${prevNum(b.mae_naive)}</small></span></div>
-        <div class="prev-num ${skill > 0 ? "alto" : skill < 0 ? "basso" : ""}"><span class="k">rispetto a «domani come oggi»</span><span class="v">${prevPct(skill)}</span></div>
-        <div class="prev-num"><span class="k">dentro l'intervallo 95%</span><span class="v">${prevNum(b.copertura95_pct, 1)}% <small>dichiarato 95%</small></span></div>
+        <div class="prev-num"><span class="k">MASE (1 = come il naive)</span><span class="v">${prevNum(b.mase, 2)}</span></div>
         <div class="prev-num"><span class="k">dentro l'intervallo 80%</span><span class="v">${prevNum(b.copertura80_pct, 1)}% <small>dichiarato 80%</small></span></div>
+        <div class="prev-num"><span class="k">dentro l'intervallo 95%</span><span class="v">${prevNum(b.copertura95_pct, 1)}% <small>dichiarato 95%</small></span></div>
       </div>
       ${giudizio[0] || calib[0] ? "" : ""}
       <div class="prev-avviso ${giudizio[0]}">${escHtml(giudizio[1])}</div>

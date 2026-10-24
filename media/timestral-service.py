@@ -315,9 +315,20 @@ class Motore:
                 livelli = list(f.quantile_levels)
                 med = q[:, livelli.index(0.5)]
                 naive = np.full(h, y_all[origine - 1])
+                # baseline: quello che serve a capire se il modello aggiunge qualcosa
+                mm = np.full(h, float(np.mean(y_all[origine - min(7, ctx):origine])))
+                k_der = min(14, ctx)
+                pend = (y_all[origine - 1] - y_all[origine - k_der]) / max(1, k_der - 1)
+                deriva = y_all[origine - 1] + pend * np.arange(1, h + 1)
+                den = float(np.mean(np.abs(np.diff(y_all[origine - ctx:origine])))) or 1.0
                 righe.append({
                     "mae_modello": float(np.mean(np.abs(y - med))),
                     "mae_naive": float(np.mean(np.abs(y - naive))),
+                    "mae_media_mobile": float(np.mean(np.abs(y - mm))),
+                    "mae_deriva": float(np.mean(np.abs(y - deriva))),
+                    "rmse_modello": float(np.sqrt(np.mean((y - med) ** 2))),
+                    "rmse_naive": float(np.sqrt(np.mean((y - naive) ** 2))),
+                    "mase": float(np.mean(np.abs(y - med)) / den),
                     "pinball_modello": _pinball(q, y, livelli),
                     "dentro80": float(np.mean((y >= q[:, livelli.index(0.1)]) & (y <= q[:, livelli.index(0.9)]))),
                     "dentro95": float(np.mean((y >= q[:, livelli.index(0.05)]) & (y <= q[:, livelli.index(0.95)]))),
@@ -328,6 +339,11 @@ class Motore:
             raise ValueError("storico troppo corto per la verifica storica: servono più punti, o un contesto più piccolo")
         mae_m = float(np.mean([r["mae_modello"] for r in righe]))
         mae_n = float(np.mean([r["mae_naive"] for r in righe]))
+        mae_mm = float(np.mean([r["mae_media_mobile"] for r in righe]))
+        mae_dr = float(np.mean([r["mae_deriva"] for r in righe]))
+        rmse_m = float(np.mean([r["rmse_modello"] for r in righe]))
+        rmse_n = float(np.mean([r["rmse_naive"] for r in righe]))
+        mase = float(np.mean([r["mase"] for r in righe]))
         return {
             "ok": True,
             "taglia": self.size,
@@ -336,6 +352,15 @@ class Motore:
             "contesto": ctx,
             "mae_modello": round(mae_m, 6),
             "mae_naive": round(mae_n, 6),
+            "mae_media_mobile": round(mae_mm, 6),
+            "mae_deriva": round(mae_dr, 6),
+            "rmse_modello": round(rmse_m, 6),
+            "rmse_naive": round(rmse_n, 6),
+            "mase": round(mase, 3),
+            "migliore": min(
+                [("modello", mae_m), ("naive", mae_n), ("media mobile", mae_mm), ("deriva", mae_dr)],
+                key=lambda x: x[1],
+            )[0],
             "skill_mae_pct": round(100 * (1 - mae_m / mae_n), 2) if mae_n else None,
             "pinball_modello": round(float(np.mean([r["pinball_modello"] for r in righe])), 6),
             "copertura80_pct": round(100 * float(np.mean([r["dentro80"] for r in righe])), 1),
