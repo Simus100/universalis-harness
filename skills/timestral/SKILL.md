@@ -116,6 +116,27 @@ Esempio di fonte strutturata che funziona da qui (nessuna chiave, nessun login):
 Banca centrale europea, `https://data-api.ecb.europa.eu/service/data/<dataset>?format=csvdata`,
 da cui si prendono serie come l'inflazione HICP mensile.
 
+## Fidarsi: cosa dicono i numeri veri (misurati qui)
+
+Backtest di confronto (`media/timestral-backtest.py`, rolling origin, contesto solo passato):
+
+| serie | orizzonte | MAE modello | naive | deriva | copertura 80% |
+|---|---|---|---|---|---|
+| Nasdaq | 1 giorno | 306,8 | **303,4** | 317,8 | 62,5% |
+| Nasdaq | 5 giorni | 347,9 (209M: **343,0**) | 346,1 | 343,8 | 86,7% |
+| Inflazione area euro | 3 mesi | 0,34 | 0,24 | 0,27 | 100% |
+| Inflazione area euro | 12 mesi | 2,05 | 1,98 | **1,90** | 58,3% |
+
+Quindi, quando presenti una previsione: **non dire che il modello «prevede meglio»**. Su queste
+serie non batte i baseline semplici; su orizzonti brevi è calibrato (banda 80% che contiene il vero
+l'86,7% delle volte), su orizzonti lunghi no (58%). Il valore aggiunto è l'intervallo, e va detto.
+
+## Interpretare la richiesta
+
+«Settimana prossima» = 5 sedute; «prossimi 4 mesi» = 4 passi su serie mensile (≈120 su una
+giornaliera); «domani» = 1. Scegli la serie per sinonimi e nome, e se non esiste dillo: meglio
+nessuna serie che quella sbagliata.
+
 ## Togliere una serie che non serve più
 
 Se l'utente dice che una serie importata non gli serve più (o che ha sbagliato i dati), in vista

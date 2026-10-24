@@ -274,6 +274,54 @@ riavvio).
 compare nella sua stessa riga di comando: il comando successivo non parte e sembra che il
 servizio «muoia da solo». Usare `pkill -f "[t]imestral-service.py"` o, meglio, `systemctl`.
 
+## Verifica: il modello batte i baseline? (misura, non opinione)
+
+Banco di prova: `media/timestral-backtest.py` — rolling origin, contesto solo passato, confronto con
+naive (ultimo valore), media mobile a 7 punti e deriva (ultimo + pendenza media).
+
+| serie | orizzonte | finestre | MAE modello | naive | media mobile | deriva | MASE | cop. 80% | cop. 95% |
+|---|---|---|---|---|---|---|---|---|---|
+| Nasdaq Composite | 1 giorno | 8 | 306,8 | **303,4** | 530,4 | 317,8 | 1,35 | 62,5% | 62,5% |
+| Nasdaq Composite | 5 giorni | 6 | 347,9 | 346,1 | 471,8 | **343,8** | 1,55 | 86,7% | 90,0% |
+| Nasdaq Composite (**209M**) | 5 giorni | 6 | **343,0** | 346,1 | 471,8 | 343,8 | 1,53 | 86,7% | 90,0% |
+| Inflazione area euro | 3 mesi | 6 | 0,34 | 0,24 | **0,19** | 0,27 | 0,81 | 100% | 100% |
+| Inflazione area euro | 12 mesi | 4 | 2,05 | 1,98 | 2,69 | **1,90** | 6,49 | 58,3% | 75,0% |
+
+Cosa dicono, senza addolcire:
+
+- **Il modello non batte i baseline semplici** su queste serie. Su Nasdaq a 1 giorno il naive vince
+  (303,4 contro 306,8), MASE 1,35 (> 1 = peggio del naive in-sample). A 5 giorni la **209M** fa
+  343,0 contro 346,1 del naive (meglio di 3 punti su 26.000: dentro il rumore, con 6 finestre), ma
+  la **deriva** fa 343,8 — cioè la stessa cosa con una riga di aritmetica.
+- Sull'inflazione il naive e la media mobile battono il modello: è una serie liscia e amministrata,
+  il caso in cui un modello pre-addestrato ha meno da aggiungere.
+- **Le bande**: ben calibrate a 5 giorni (86,7% reale su 80% dichiarato), **troppo strette** a 12
+  mesi (58,3%) e a 1 giorno (62,5%). Dove la banda è stretta, va allargata a mente.
+- Il **MASE non è un confronto con il naive out-of-sample**: divide per l'errore medio in-sample.
+  Per questo sull'inflazione a 3 mesi vale 0,81 mentre il naive resta migliore: si legga insieme
+  alle colonne MAE, non da solo.
+
+Conclusione onesta: la **pipeline è corretta e riproducibile** (quantili ordinati, verifica
+strumentale del disegno: scarto 0 fra valori e coordinate), ma il valore aggiunto del modello è
+**l'incertezza quando è calibrata**, non il punto centrale. Su una serie finanziaria, la riga
+«stima centrale» va letta come «il centro della distribuzione», non come «la previsione».
+
+## Interpretare la richiesta (unità → orizzonte)
+
+| come lo dice l'utente | orizzonte giusto | note |
+|---|---|---|
+| «domani» / «la prossima seduta» | 1 | su serie giornaliere |
+| «settimana prossima» | 5 | sedute di borsa: se c'è un festivo sono 4 |
+| «prossimi 4 mesi» | 4 | solo su serie mensili; su una giornaliera sono ~120 punti |
+| «prossimo trimestre» | 3 (mensile) / 90 (giornaliero) | dichiarare la convenzione |
+| «fine anno» | mesi che mancano a dicembre | calcolare, non indovinare |
+
+La serie si riconosce per **sinonimi** (`PREV_SINONIMI` nella vista: cambio/valuta → cambio USD-EUR,
+bitcoin/cripto, cassa/incassi/vendite, carico/energia) e poi per nome, con un punteggio pesato sulla
+radice delle parole: «inflazione italiana» trova `inflazione-italia-ipca`, «inflazione area euro»
+trova l'altra, «prezzo del petrolio» **non trova niente** e lo dice (meglio nessuna serie che quella
+sbagliata).
+
 ## Rischi e limiti dichiarati
 
 - **Non è una sfera di cristallo.** Il modello non conosce notizie, decisioni di banca

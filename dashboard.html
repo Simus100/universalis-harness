@@ -6200,6 +6200,8 @@ function prevGrafico(out) {
   prevGeo = {
     W, H, ml, mr, mt, mb, N, L, a, b, x, y, T, usaLog, tutto, s: s0, h,
     dateTutte, storicoVis,
+    // dominio di valore del disegno: serve a invertire la scala (verifiche, e chi legge il geo)
+    min, max, tmin, tmax,
   };
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafico della serie, con zoom e spostamento${usaLog ? ", scala logaritmica" : ""}">
@@ -9207,6 +9209,51 @@ $("prevChiediBtn")?.addEventListener("click", () => {
  * Controlla l'elenco ogni 2 secondi; si ferma appena compare un CSV che prima non c'era
  * (allora lo seleziona e calcola) o quando il turno è finito senza importazioni.
  */
+/** Parole che nei dati veri indicano una serie precisa: più affidabile di un match generico
+ *  (che portava «cambio dollaro euro» su «inflazione-area-euro», perché conteneva «euro»). */
+const PREV_SINONIMI = [
+  { serie: "cambio-usd-eur", parole: ["cambio", "dollaro", "dollari", "usd", "eur", "valuta", "forex"] },
+  { serie: "btc-usd", parole: ["bitcoin", "btc", "cripto", "criptovaluta", "criptovalute"] },
+  { serie: "cassa-giornaliera", parole: ["cassa", "incassi", "incasso", "vendite", "fatturato", "flussi"] },
+  { serie: "carico-energia", parole: ["carico", "carichi", "energia", "elettrico", "consumi"] },
+];
+
+/** Trova la serie che corrisponde alla richiesta: sinonimi prima, poi il nome.
+ *  Cerca sia fra le serie incluse sia fra i CSV (prima guardava solo i CSV). */
+function prevTrovaSerie(richiesta, elencoCsv) {
+  const t = String(richiesta || "").toLowerCase();
+  const chiavi = t.split(/[^a-z0-9àèéìòù]+/).filter((w) => w.length >= 4 && !["della", "delle", "degli", "prossimi", "prossime", "settimana", "previsione", "previsioni", "calcola", "spiega", "voglio", "vorrei", "prezzo", "prezzi"].includes(w));
+  // 1) sinonimi: la prima serie il cui gruppo contiene una parola della richiesta
+  const demo = ((prevStato && prevStato.demo) || []);
+  const paroleRicerca = new Set(t.split(/[^a-z0-9àèéìòù]+/).filter(Boolean));
+  for (const regola of PREV_SINONIMI) {
+    // confronto per parola intera: «euro» non è «eur», e non deve far scattare il cambio
+    if (!regola.parole.some((p) => paroleRicerca.has(p))) continue;
+    if (demo.some((d) => d.id === regola.serie)) return { tipo: "demo", id: regola.serie, nome: regola.serie };
+    const csv = (elencoCsv || []).find((c) => c.nome.toLowerCase().startsWith(regola.serie.split("-")[0]));
+    if (csv) return { tipo: "csv", nome: csv.nome };
+  }
+  // 2) per nome, con punteggio: vince chi ha più parole in comune; a pari merito, niente
+  const candidati = [
+    ...demo.map((d) => ({ chiave: `demo:${d.id}`, testo: `${d.id} ${d.nome || ""}`.toLowerCase() })),
+    ...(elencoCsv || []).map((c) => ({ chiave: `csv:${c.nome}`, testo: `${c.nome} ${(c.meta && (c.meta.nome || "")) || ""} ${(c.meta && (c.meta.titolo || "")) || ""}`.toLowerCase() })),
+  ];
+  // Punteggio = somma della lunghezza delle parole trovate: una parola specifica («italiana»)
+  // deve pesare più di una generica («prezzo»), e due serie con la stessa parola comune
+  // («inflazione») non devono finire in parità se una ha anche la parola specifica.
+  let migliore = null, puntiMax = 0, pari = false;
+  for (const c of candidati) {
+    const punti = chiavi
+      .filter((k) => c.testo.includes(k) || (k.length > 6 && c.testo.includes(k.slice(0, 6))))
+      .reduce((somma, k) => somma + k.length, 0);
+    if (punti === 0) continue;
+    if (punti > puntiMax) { migliore = c; puntiMax = punti; pari = false; }
+    else if (punti === puntiMax) pari = true;
+  }
+  if (!migliore || pari) return null;   // ambiguità: meglio chiedere che sbagliare serie
+  return migliore.chiave.startsWith("demo:") ? { tipo: "demo", id: migliore.chiave.slice(5), nome: migliore.chiave.slice(5) } : { tipo: "csv", nome: migliore.chiave.slice(4) };
+}
+
 function prevAttendiSerie(prima, richiesta) {
   let giri = 0;
   // parole della richiesta utili a riconoscere una serie già presente (nasdaq, inflazione…)
@@ -9219,8 +9266,9 @@ function prevAttendiSerie(prima, richiesta) {
 
   const scegli = async (c) => {
     const sel = $("prevSerie");
-    if (![...sel.options].some((o) => o.value === etichetta(c))) await caricaPrevisioni();
-    sel.value = etichetta(c);
+    const valore = c.tipo === "demo" ? `demo:${c.id}` : etichetta(c);
+    if (![...sel.options].some((o) => o.value === valore)) await caricaPrevisioni();
+    sel.value = valore;
     PREV_CTRL.finestra = -1;   // spazio alla previsione, non tutto lo storico
     PREV_CTRL.offset = 0;
     prevOrizzonteAdatto();
@@ -9246,15 +9294,13 @@ function prevAttendiSerie(prima, richiesta) {
     const finito = !(lastState && lastState.streaming);
     if (finito && giri >= 2) {
       // Niente di nuovo: forse la serie esisteva già e l'agente ha solo confermato. La cerco
-      // per parole («nasdaq» → nasdaq-composite) invece di rimandare l'utente in chat.
-      const trovata = elenco.find((c) => {
-        const nome = `${c.nome} ${(c.meta && c.meta.nome) || ""} ${(c.meta && c.meta.titolo) || ""}`.toLowerCase();
-        return chiavi.some((k) => nome.includes(k));
-      });
+      // per sinonimi e per nome, fra serie incluse e CSV, invece di rimandare l'utente in chat.
+      const trovata = prevTrovaSerie(richiesta, elenco);
       if (trovata) {
         clearInterval(t);
         await scegli(trovata);
-        $("prevStato").insertAdjacentHTML("beforeend", `<span class="prev-tecnico">serie già presente, usata questa: ${escHtml(trovata.nome)}</span>`);
+        const nomeT = trovata.tipo === "demo" ? trovata.id : trovata.nome;
+        $("prevStato").insertAdjacentHTML("beforeend", `<span class="prev-tecnico">serie già presente, usata questa: ${escHtml(nomeT)}</span>`);
         return;
       }
       clearInterval(t);
