@@ -175,6 +175,27 @@ Rotte della dashboard (dietro l'autenticazione esistente, nessuna porta nuova):
 | `POST /api/timestral/backtest` | verifica storica: `{demo|csv|series, prediction_length, folds}` → MAE modello/naive, copertura delle bande |
 | `POST /api/timestral/dati?nome=x.csv` | carica un CSV (corpo = testo del file) previa validazione |
 
+### Analisi descrittiva dei dati (`POST /api/timestral/insight`)
+
+Quello che si può dire **dei dati** senza chiedere niente al modello. È aritmetica, non
+inferenza, e ogni numero ha il suo metodo dichiarato in calce alla card:
+
+| cifra | metodo |
+|---|---|
+| variazione 1 / 7 / 30 passi, e sull'intera serie | (ultimo − valore di N passi fa) / \|quello\| · 100 |
+| tendenza (pendenza, R²) | regressione lineare ai minimi quadrati; R² dice quanta parte del movimento spiega una retta |
+| volatilità | deviazione standard delle variazioni percentuali passo-passo |
+| rumore | dev.st dei residui rispetto a una media mobile ÷ dev.st dei valori |
+| ciclicità | autocorrelazione ai lag tipici dell'unità (mese→12, ora→24, giorno→7); si segnala sopra \|r\| ≥ 0,3 |
+| **quota spiegata dal ciclo** | media per fase del ciclo, poi 1 − var(residui)/var(totale) |
+| anomalie | residuo oltre 3 deviazioni standard, con data |
+| qualità | punti, dal/al, mancanti, percentuale di passi senza variazione |
+
+La distinzione **ciclicità vs rumore** è la parte che si sbaglia più facilmente: una cassa con
+il weekend basso ha una volatilità del 50% per passo e un «rumore» alto, ma l'87,5% della
+variabilità è spiegata dal ciclo settimanale. Chiamarlo rumore sarebbe falso; la card lo dice
+per esteso («la variabilità viene soprattutto dalla ciclicità»).
+
 ### Importazione dei dati trovati dall'agente
 
 `timestral_importa` salva una serie in `media/previsioni/dati/<nome>.csv` **e** un
@@ -193,10 +214,12 @@ Fonte strutturata provata qui (senza chiavi): API della BCE,
 
 | leva | perché |
 |---|---|
-| finestra (30/90/180/365, tutto) | un trend su 30 punti e uno su 365 sono due affermazioni diverse |
+| finestra (7/14/30/90/180/365 o tutto, nell'unità della serie) | un trend su 7 punti e uno su 365 sono due affermazioni diverse |
+| ◀ ▶ | sposta la finestra nel passato (Shift+clic = 10 finestre): con la finestra spostata la previsione non si disegna, perché non è più attaccata all'ultimo dato |
+| confronto col periodo prima | sovrappone la finestra precedente allineata per posizione: mostra se il movimento attuale somiglia a quello di prima |
 | scala logaritmica | su serie che crescono in percentuale la scala lineare fa sembrare accelerazione ciò che è crescita costante; disattivata se la serie ha valori ≤ 0 |
 | intervalli on/off | toglie il ventaglio quando interessa solo la linea |
-| media mobile | lisciato il rumore, la direzione si vede (finestra = 1/12 dei punti disegnati) |
+| media mobile | lisciato il rumore, la direzione si vede; la finestra è automatica (1/12 dei punti) oppure 7/20/50 a scelta |
 | puntatore | data e valore osservato, oppure stima e intervallo 80% nel futuro |
 | schermo intero | per guardare una serie lunga senza il resto dell'interfaccia |
 | riga «cosa si è mosso» | variazione % nella finestra, sopra/sotto la media, quanti punti disegnati |

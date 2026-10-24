@@ -46,7 +46,7 @@ import { leggiWiki as memoriaWiki, linkRotti as memoriaLinkRotti } from "./media
 import { ricostruisci as memoriaRicostruisci, aggiornaDopoSessione as memoriaArchiviaSessione } from "./media/memoria/memoria-build.mjs";
 import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato, indiceDaAggiornare as memoriaIndiceDaAggiornare } from "./media/memoria/memoria-index.mjs";
 import { createDecisionMService } from "./media/decision-m-service.mjs";
-import { createTimestralClient, parseCsv as parseTimestralCsv, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
+import { analizza as analizzaTimestral, createTimestralClient, parseCsv as parseTimestralCsv, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
 import { createTimestralExtension } from "./media/timestral-tool.mjs";
 import {
   VOCI as TTS_VOCI,
@@ -4721,6 +4721,28 @@ const server = http.createServer(async (req, res) => {
         // 403 = questione di permessi decisa dall'amministratore; 400 = richiesta sbagliata.
         // Sono cose diverse: la UI le mostra diversamente, e chi legge i log deve distinguerle.
         return json(res, e?.status === 403 ? 403 : 400, { error: String(e?.message || e) });
+      }
+    }
+
+    // Analisi descrittiva: cosa si può dire DEI DATI senza chiedere niente al modello.
+    // Sta qui (e non nel servizio Python) perché non serve la rete neurale: è aritmetica su
+    // numeri già letti, e così la stessa funzione alimenta la vista e il tool in chat.
+    if (req.method === "POST" && url.pathname === "/api/timestral/insight") {
+      if (!TIMESTRAL_AVAILABLE) return json(res, 400, { error: "feature Timestral disattivata (DASH_TIMESTRAL=off)" });
+      const body = await readBody(req, 512 * 1024);
+      try {
+        const fonti = timestralClient.preparaSerie({
+          demo: Array.isArray(body.demo) ? body.demo : body.demo ? [body.demo] : undefined,
+          csv: body.csv,
+          series: body.series,
+          column: body.column,
+          valueColumn: body.value_column,
+        });
+        const f = fonti[0];
+        const unita = /mese/.test(f.meta?.frequenza || "") ? "mesi" : /ora/.test(f.meta?.frequenza || "") ? "ore" : /settiman/.test(f.meta?.frequenza || "") ? "settimane" : /giorn/.test(f.meta?.frequenza || "") ? "giorni" : "passi";
+        return json(res, 200, { ok: true, serie: f.nome, ...analizzaTimestral({ values: f.valori, dates: f.date || null, unita }) });
+      } catch (e) {
+        return json(res, 400, { error: String(e?.message || e) });
       }
     }
 

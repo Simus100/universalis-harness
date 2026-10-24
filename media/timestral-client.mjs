@@ -93,6 +93,140 @@ export function parseCsv(text, { column = null, valueColumn = null } = {}) {
   return { punti, scartate, separatore: sep === "\t" ? "tab" : sep, colonne: prima };
 }
 
+/**
+ * Analisi descrittiva di una serie: quello che si può DIRE dei dati senza chiedere niente al
+ * modello. Ogni numero ha un metodo esplicito e nessuno è inventato:
+ *
+ *  - variazione su 1/7/30 passi: (ultimo − valore di N passi fa) / |quello| · 100
+ *  - tendenza: regressione lineare ai minimi quadrati sui valori (pendenza per passo) con R²,
+ *    cioè quanta parte del movimento spiega una retta
+ *  - volatilità: deviazione standard delle variazioni percentuali passo-passo
+ *  - rumore: deviazione standard dei residui rispetto a una media mobile → rapporto col totale:
+ *    basso = tendenza leggibile, alto = serie dominata dal rumore
+ *  - ciclicità: autocorrelazione ai lag candidati (7/12/24/30, scelti dall'unità); si segnala
+ *    solo se |r| ≥ 0,3, altrimenti «non emerge»
+ *  - anomalie: |valore − media mobile| > 3 deviazioni standard dei residui, con la data
+ *  - qualità: punti, dal/al, valori mancanti, valori identici ripetuti (serie piatta)
+ */
+export function analizza({ values, dates = null, unita = "passi" }) {
+  const v = (values || []).map((x) => (x === null || x === "" ? NaN : Number(x)));
+  const n = v.length;
+  if (n < 8) throw new Error("servono almeno 8 punti per un'analisi");
+  const idx = [];
+  for (let i = 0; i < n; i += 1) if (Number.isFinite(v[i])) idx.push(i);
+  const mancanti = n - idx.length;
+  if (idx.length < 8) throw new Error("meno di 8 valori validi: non c'è abbastanza per analizzare");
+  const y = idx.map((i) => v[i]);
+  const d = idx.map((i) => (dates && dates[i] !== undefined ? String(dates[i]).slice(0, 10) : null));
+  const N = y.length;
+  const ultimo = y[N - 1];
+  const media = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+  const mediana = (a) => {
+    const b = [...a].sort((x, z) => x - z);
+    const m = b.length >> 1;
+    return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2;
+  };
+  const std = (a) => {
+    if (a.length < 2) return 0;
+    const m = media(a);
+    return Math.sqrt(a.reduce((s, x) => s + (x - m) ** 2, 0) / (a.length - 1));
+  };
+  const pct = (a, b) => (a === 0 || !Number.isFinite(a) ? null : (100 * (b - a)) / Math.abs(a));
+
+  const variazione = (passi) => (N > passi ? pct(y[N - 1 - passi], ultimo) : null);
+
+  // tendenza lineare
+  const xs = y.map((_, i) => i);
+  const mx = media(xs), my = media(y);
+  let num = 0, den = 0;
+  for (let i = 0; i < N; i += 1) { num += (xs[i] - mx) * (y[i] - my); den += (xs[i] - mx) ** 2; }
+  const pendenza = den ? num / den : 0;
+  let ssRes = 0, ssTot = 0;
+  for (let i = 0; i < N; i += 1) { const fit = my + pendenza * (xs[i] - mx); ssRes += (y[i] - fit) ** 2; ssTot += (y[i] - my) ** 2; }
+  const r2 = ssTot ? 1 - ssRes / ssTot : 0;
+
+  // variazioni passo-passo e volatilità
+  const variazioni = [];
+  for (let i = 1; i < N; i += 1) { const p = pct(y[i - 1], y[i]); if (p !== null && Number.isFinite(p)) variazioni.push(p); }
+  const volatilita = variazioni.length > 1 ? std(variazioni) : null;
+  const escursione = variazioni.length ? media(variazioni.map(Math.abs)) : null;
+
+  // rumore rispetto a una media mobile
+  const w = Math.max(3, Math.round(N / 12));
+  const mm = y.map((_, i) => media(y.slice(Math.max(0, i - w + 1), i + 1)));
+  const residui = y.map((val, i) => val - mm[i]);
+  const sdResidui = std(residui);
+  const sdTot = std(y);
+  const rumore = sdTot ? sdResidui / sdTot : null;
+
+  // ciclicità: autocorrelazione sui lag tipici dell'unità
+  const lagCand = /mese|mensil/.test(unita) ? [12, 6, 24] : /ora/.test(unita) ? [24, 168, 12] : /settiman/.test(unita) ? [52, 4, 12] : [7, 30, 12];
+  const acf = (lag) => {
+    if (N <= lag + 2) return null;
+    const m = media(y);
+    let num2 = 0, den2 = 0;
+    for (let i = 0; i < N; i += 1) den2 += (y[i] - m) ** 2;
+    for (let i = lag; i < N; i += 1) num2 += (y[i] - m) * (y[i - lag] - m);
+    return den2 ? num2 / den2 : null;
+  };
+  const cicli = lagCand.map((lag) => ({ lag, r: acf(lag) })).filter((c) => c.r !== null);
+  const cicloForte = cicli.filter((c) => Math.abs(c.r) >= 0.3).sort((x, z) => Math.abs(z.r) - Math.abs(x.r))[0] || null;
+
+  // Quanta parte della variabilità è SPIEGATA dal ciclo: senza questo, una serie con weekend
+  // forti (cassa, carichi) verrebbe descritta come «rumorosa», che è falso — è stagionale.
+  let cicloSpiegato = null;
+  if (cicloForte && cicloForte.lag >= 2 && N > cicloForte.lag * 2) {
+    const per = cicloForte.lag;
+    const medie = new Array(per).fill(0), conteggi = new Array(per).fill(0);
+    for (let i = 0; i < N; i += 1) { medie[i % per] += y[i]; conteggi[i % per] += 1; }
+    for (let k = 0; k < per; k += 1) medie[k] = conteggi[k] ? medie[k] / conteggi[k] : 0;
+    let ssResid = 0;
+    for (let i = 0; i < N; i += 1) ssResid += (y[i] - medie[i % per]) ** 2;
+    const varTot = ssTot;
+    if (varTot > 0) cicloSpiegato = Number((100 * (1 - ssResid / varTot)).toFixed(1));
+  }
+
+  // anomalie: scostamenti oltre 3 deviazioni standard dei residui
+  const soglia = sdResidui > 0 ? 3 * sdResidui : Infinity;
+  const anomalie = [];
+  for (let i = 0; i < N; i += 1) {
+    if (Math.abs(residui[i]) > soglia) {
+      anomalie.push({ data: d[i], valore: Number(y[i].toFixed(6)), scostamento: Number(residui[i].toFixed(6)), posizione: i === N - 1 ? "ultimo" : `${N - i} fa` });
+    }
+  }
+
+  const maxI = y.indexOf(Math.max(...y));
+  const minI = y.indexOf(Math.min(...y));
+  const piatti = N > 1 ? variazioni.filter((x) => x === 0).length : 0;
+
+  return {
+    punti: N,
+    dal: d[0],
+    al: d[N - 1],
+    mancanti,
+    unita,
+    ultimo: Number(ultimo.toFixed(6)),
+    variazione_1: variazione(1),
+    variazione_7: variazione(7),
+    variazione_30: variazione(30),
+    variazione_finestra: pct(y[0], ultimo),
+    minimo: { valore: Number(Math.min(...y).toFixed(6)), data: d[minI] },
+    massimo: { valore: Number(Math.max(...y).toFixed(6)), data: d[maxI] },
+    media: Number(media(y).toFixed(6)),
+    mediana: Number(mediana(y).toFixed(6)),
+    deviazione_std: Number(sdTot.toFixed(6)),
+    volatilita_pct: volatilita === null ? null : Number(volatilita.toFixed(3)),
+    escursione_media_pct: escursione === null ? null : Number(escursione.toFixed(3)),
+    tendenza_per_passo: Number(pendenza.toFixed(6)),
+    tendenza_r2: Number(r2.toFixed(3)),
+    rumore: rumore === null ? null : Number(rumore.toFixed(2)),
+    ciclo: cicloForte ? { ogni: cicloForte.lag, autocorrelazione: Number(cicloForte.r.toFixed(2)), spiegato_pct: cicloSpiegato } : null,
+    anomalie: anomalie.slice(-5),
+    valori_fermi_pct: variazioni.length ? Number(((100 * piatti) / variazioni.length).toFixed(1)) : null,
+    metodo: "variazioni e volatilità sulle variazioni percentuali passo-passo; tendenza = regressione lineare ai minimi quadrati con R²; rumore = dev.st dei residui / dev.st dei valori; ciclicità = autocorrelazione ai lag tipici dell'unità (soglia |r| ≥ 0,3); anomalie = |residuo| > 3 dev.st dei residui.",
+  };
+}
+
 export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) => console.log(m) }) {
   const prefsFile = process.env.DASH_TIMESTRAL_PREFS_FILE || join(mediaDir, "timestral-prefs.json");
   const demoFile = join(mediaDir, "timestral-demo.json");

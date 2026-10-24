@@ -14,6 +14,7 @@
  * media/timestral-client.mjs.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
+import { analizza } from "./timestral-client.mjs";
 import { join } from "node:path";
 
 const RAM = "471 MB con il modello da 28M caricato, 35 MB a vuoto";
@@ -152,6 +153,27 @@ function salvaCsv({ mediaDir, nome, out }) {
   return file.startsWith(mediaDir) ? file.slice(mediaDir.length).replace(/^\/+/, "") : file;
 }
 
+/** Le due o tre cose che l'analisi dice meglio di una frase generica. */
+function righeInsight(a) {
+  if (!a) return "";
+  const pct = (v) => (Number.isFinite(Number(v)) ? `${Number(v) > 0 ? "+" : ""}${Number(v).toFixed(2).replace(".", ",")}%` : "—");
+  const r = [];
+  const t = Number(a.tendenza_r2);
+  const tipo = t >= 0.7 ? "netta" : t >= 0.3 ? "moderata" : "assente o quasi";
+  r.push(`- tendenza lineare: ${tipo} (R² ${t.toFixed(2).replace(".", ",")}, ${a.tendenza_per_passo > 0 ? "+" : ""}${a.tendenza_per_passo} per ${a.unita.replace(/i$/, "o")})`);
+  if (Number.isFinite(Number(a.rumore))) {
+    const q = a.rumore < 0.4 ? "movimento leggibile" : a.rumore < 0.7 ? "abbastanza rumorosa" : "dominata dal rumore: la linea del modello dirà poco";
+    r.push(`- rumore: ${String(a.rumore).replace(".", ",")} dei movimenti (${q})`);
+  }
+  if (Number.isFinite(Number(a.volatilita_pct))) r.push(`- variazione tipica per passo: ${String(a.volatilita_pct).replace(".", ",")}%`);
+  if (a.ciclo) r.push(`- ciclicità: si ripete ogni ${a.ciclo.ogni} ${a.unita} (autocorrelazione ${String(a.ciclo.autocorrelazione).replace(".", ",")}${a.ciclo.autocorrelazione < 0 ? ", in controfase" : ""})`);
+  else r.push(`- ciclicità: non emerge ai lag controllati`);
+  if (a.anomalie && a.anomalie.length) r.push(`- valori anomali: ${a.anomalie.slice(-2).map((x) => `${x.data || x.posizione} (${x.valore})`).join(", ")}`);
+  if (a.mancanti) r.push(`- dati mancanti: ${a.mancanti} punti`);
+  r.push(`- periodo: ${a.dal || "?"} → ${a.al || "?"}, ${a.punti} punti (variazione ${pct(a.variazione_finestra)})`);
+  return r.join("\n");
+}
+
 export function createTimestralExtension({ client, mediaDir, log = (m) => console.log(m) }) {
   const FORECAST = {
     name: "timestral_forecast",
@@ -242,6 +264,16 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
             log(`[Timestral] CSV non scritto: ${err?.message ?? err}`);
           }
         }
+        // Cosa dicono i DATI (aritmetica sul passato), distinto da cosa dice il modello:
+        // serve a non attribuire al modello una tendenza che si vede già nella serie.
+        let bloccoInsight = "";
+        try {
+          const unitaIns = /mese/.test(fonti[0]?.meta?.frequenza || "") ? "mesi" : /ora/.test(fonti[0]?.meta?.frequenza || "") ? "ore" : /giorn/.test(fonti[0]?.meta?.frequenza || "") ? "giorni" : "passi";
+          const an = analizza({ values: fonti[0].valori, dates: fonti[0].date || null, unita: unitaIns });
+          bloccoInsight = `\n**Cosa dicono i dati** (calcolato sulla serie, non dal modello)\n${righeInsight(an)}`;
+        } catch (err) {
+          log(`[Timestral] analisi non riuscita: ${err?.message ?? err}`);
+        }
         const corte = fonti.filter((f) => f.valori.length < 50);
         if (corte.length) {
           blocchi.push(
@@ -252,6 +284,7 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
         blocchi.push(
           [
             percorso ? `\nFile con tutti i passi e i quantili: \`${percorso}\` (nella cartella media).` : "",
+            bloccoInsight,
             "Questa è una **stima probabilistica** di un modello pre-addestrato (zero-shot): mediana e quantili, non un fatto. " +
               "Il modello non conosce notizie né eventi annunciati; le probabilità vengono dai quantili e non sono calibrate.",
           ]

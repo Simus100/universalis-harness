@@ -108,6 +108,11 @@ on/off, **media mobile** per togliere il rumore, **il valore esatto sotto il pun
 valore osservato, oppure stima e intervallo nel futuro), **schermo intero**. Sotto il grafico una
 riga dice cosa si è mosso nella finestra: variazione %, se l'ultimo valore è sopra o sotto la media.
 
+Accanto alla previsione c'è **«Cosa dicono i dati»**: variazione su 1/7/30 passi, tendenza con
+R², volatilità, rumore, ciclicità (con la quota di variabilità che spiega), anomalie con la data,
+qualità della serie. Sono numeri calcolati sulla serie, non opinioni del modello: se citi una
+tendenza, cita il suo R²; se una serie ha un ciclo forte, dillo invece di chiamarla «rumorosa».
+
 La verifica storica è il pezzo da guardare prima di fidarsi: dice se la mediana batte il naive
 e se la banda dichiarata contiene davvero il valore reale. Su USD/EUR qui: mediana −2,3% contro
 il naive e copertura 80% reale 67,8% → bande leggermente strette. Se l'utente chiede «quanto è
