@@ -68,10 +68,46 @@ Si cambia dalla dashboard (menu features → tendina accanto a Timestral) o con
 - **Connettori online**: non nella prima versione (Yahoo risponde 429, Stooq chiede
   JavaScript). Fase 2.
 
+## Importare dati che hai trovato tu (ricerca web, PDF, file)
+
+Quando i numeri li trova l'agente — una serie ISTAT, un prezzo da un sito, una tabella in un
+PDF — si importano con **`timestral_importa`**, che li salva in `media/previsioni/dati/` e
+scrive accanto un file di metadati con la provenienza. Da lì la serie è prevedibile
+(`timestral_forecast {csv: "…csv"}`) e compare nella vista «Previsioni» con la sua fonte.
+
+Sedici righe di procedura, sempre uguali:
+
+1. **cerca** la serie con lo strumento giusto (`web_search`, `fetch_content`) e apri la pagina
+   o l'API che la contiene;
+2. **estrai** le coppie (data, valore) così come sono scritte;
+3. **chiama `timestral_importa`** con `nome` breve, `punti`, `fonte` verificabile, `fonte_url`,
+   `unita`, `frequenza`;
+4. **prevedi** con `timestral_forecast`, e nel testo cita la fonte e la data di estrazione.
+
+Regole che non si negoziano:
+
+- **mai valori inventati o interpolati**: se una fonte ha buchi, si dichiarano nel campo `nota`;
+- **la fonte è obbligatoria**: una serie senza provenienza è indistinguibile da numeri inventati;
+- **la frequenza va dichiarata** («1 mese», «1 giorno»): con quella l'orizzonte si legge in mesi
+  o in giorni, e i preset della vista si adattano;
+- **sotto 50 punti** la previsione è indicativa: va detto all'utente;
+- se la fonte non è affidabile o i numeri non tornano, **non importare**: dillo.
+
+Esempio di fonte strutturata che funziona da qui (nessuna chiave, nessun login): l'API della
+Banca centrale europea, `https://data-api.ecb.europa.eu/service/data/<dataset>?format=csvdata`,
+da cui si prendono serie come l'inflazione HICP mensile.
+
 ## La vista «Previsioni» (dashboard)
 
 Menu **features → 📈 previsioni**: grafico a ventaglio dei quantili, numeri (mediana, variazione
 attesa, banda 80/95%, P di rialzo), tabella dei passi, **verifica storica** e caricamento CSV.
+Il grafico ha le leve che servono a leggere un trend invece di indovinarlo: **quanta storia**
+disegnare (30/90/180/365 o tutto, nell'unità della serie), **scala logaritmica** (indispensabile
+su serie che crescono in percentuale: su scala lineare sembrano sempre accelerare), **intervalli**
+on/off, **media mobile** per togliere il rumore, **il valore esatto sotto il puntatore** (data,
+valore osservato, oppure stima e intervallo nel futuro), **schermo intero**. Sotto il grafico una
+riga dice cosa si è mosso nella finestra: variazione %, se l'ultimo valore è sopra o sotto la media.
+
 La verifica storica è il pezzo da guardare prima di fidarsi: dice se la mediana batte il naive
 e se la banda dichiarata contiene davvero il valore reale. Su USD/EUR qui: mediana −2,3% contro
 il naive e copertura 80% reale 67,8% → bande leggermente strette. Se l'utente chiede «quanto è

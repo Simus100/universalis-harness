@@ -175,6 +175,32 @@ Rotte della dashboard (dietro l'autenticazione esistente, nessuna porta nuova):
 | `POST /api/timestral/backtest` | verifica storica: `{demo|csv|series, prediction_length, folds}` → MAE modello/naive, copertura delle bande |
 | `POST /api/timestral/dati?nome=x.csv` | carica un CSV (corpo = testo del file) previa validazione |
 
+### Importazione dei dati trovati dall'agente
+
+`timestral_importa` salva una serie in `media/previsioni/dati/<nome>.csv` **e** un
+`<nome>.meta.json` con fonte, URL, unità, frequenza, nota, istante di importazione. La vista
+mostra la provenienza accanto alla serie («· importata»), e il forecast la riporta.
+
+Perché i metadati: una serie senza provenienza è indistinguibile da numeri inventati, e chi
+riprende il lavoro mesi dopo deve poter ricontrollare. La frequenza dichiarata decide anche
+l'unità dell'orizzonte (mesi/giorni/ore) e quindi i preset dell'interfaccia.
+
+Fonte strutturata provata qui (senza chiavi): API della BCE,
+`https://data-api.ecb.europa.eu/service/data/ICP/M.U2.N.000000.4.ANR?format=csvdata`
+— inflazione HICP dell'area euro, variazione annua mensile, 120 punti (2016-01 → 2025-12).
+
+### Controlli del grafico (lettura del trend)
+
+| leva | perché |
+|---|---|
+| finestra (30/90/180/365, tutto) | un trend su 30 punti e uno su 365 sono due affermazioni diverse |
+| scala logaritmica | su serie che crescono in percentuale la scala lineare fa sembrare accelerazione ciò che è crescita costante; disattivata se la serie ha valori ≤ 0 |
+| intervalli on/off | toglie il ventaglio quando interessa solo la linea |
+| media mobile | lisciato il rumore, la direzione si vede (finestra = 1/12 dei punti disegnati) |
+| puntatore | data e valore osservato, oppure stima e intervallo 80% nel futuro |
+| schermo intero | per guardare una serie lunga senza il resto dell'interfaccia |
+| riga «cosa si è mosso» | variazione % nella finestra, sopra/sotto la media, quanti punti disegnati |
+
 ### La vista «Previsioni»
 
 Si apre dal menu **features → 📈 previsioni** (vista a sé, come File o Memoria).
