@@ -5867,7 +5867,10 @@ applyStatsHidden();
    linea piena. Sopra il grafico c'è sempre la frase che dice che è una stima, perché un
    ventaglio disegnato bene sembra una promessa.
    Nessun dato viene inventato: se la fonte non ha date, l'asse x è il numero del passo. */
-const PREV_C = { hist: "#a3adc0", med: "#34d399", b95: "rgba(52,211,153,.09)", b80: "rgba(52,211,153,.16)", b50: "rgba(52,211,153,.26)", bordo: "rgba(52,211,153,.45)", griglia: "#1c222b", asse: "#8a93a6", testo: "#eef2f9", soft: "#c6cfdd", giallo: "#fbbf24", rosso: "#fb7185" };
+/* Tre fasce, tre livelli: il riempimento cresce verso il centro (dove il modello crede di più)
+   e ogni fascia ha il PROPRIO bordo, perché su fondo scuro tre verdi con opacità simile
+   diventano una macchia sola e l'incertezza non si legge più. */
+const PREV_C = { hist: "#a3adc0", med: "#34d399", medChiaro: "#6ee7b7", b95: "rgba(52,211,153,.07)", b80: "rgba(52,211,153,.15)", b50: "rgba(52,211,153,.30)", bordo: "rgba(52,211,153,.35)", bordo80: "rgba(52,211,153,.55)", bordo50: "rgba(110,231,183,.65)", griglia: "#1c222b", asse: "#8a93a6", testo: "#eef2f9", soft: "#c6cfdd", giallo: "#fbbf24", rosso: "#fb7185" };
 let prevStato = null;      // ultimo GET /api/timestral
 let prevRisultato = null;  // ultima previsione mostrata (per gli export)
 let prevCaricata = false;
@@ -6157,15 +6160,27 @@ function prevGrafico(out) {
 
   // ventaglio della previsione (solo la parte dentro il dominio)
   const kMin = Math.max(0, Math.floor(a) - L), kMax = Math.min(h - 1, Math.ceil(b) - L);
+  /* Il ventaglio si AGGANCIA all'ultimo valore osservato. Senza questo punto la fascia
+     cominciava un passo dopo la fine dello storico (buco largo un passo, visto sulla serie
+     dell'oro con orizzonte 22): sembrava nascere dal nulla e non si capiva da quale prezzo
+     partiva l'incertezza. Qui il prezzo di partenza è quello vero, e la fascia si apre a
+     imbuto da lì. */
+  const cerniera = L > 0 && kMax >= kMin && a <= L - 1 ? { px: x(L - 1), py: y(tutto[L - 1]) } : null;
   const pol = (lo, hi) => {
     if (kMax < kMin) return "";
     const su = [], giu = [];
+    if (cerniera) su.push(`${cerniera.px.toFixed(1)},${cerniera.py.toFixed(1)}`);
     for (let k = kMin; k <= kMax; k += 1) su.push(`${x(L + k).toFixed(1)},${y(hi[k]).toFixed(1)}`);
     for (let k = kMax; k >= kMin; k -= 1) giu.push(`${x(L + k).toFixed(1)},${y(lo[k]).toFixed(1)}`);
+    if (cerniera) giu.push(`${cerniera.px.toFixed(1)},${cerniera.py.toFixed(1)}`);
     return su.concat(giu).join(" ");
   };
-  const pathMediana = kMax >= kMin
-    ? Array.from({ length: kMax - kMin + 1 }, (_, j) => `${j ? "L" : "M"}${x(L + kMin + j).toFixed(1)} ${y(s0.median[kMin + j]).toFixed(1)}`).join(" ")
+  const puntiMediana = kMax >= kMin
+    ? (cerniera ? [[cerniera.px, cerniera.py]] : []).concat(
+        Array.from({ length: kMax - kMin + 1 }, (_, j) => [x(L + kMin + j), y(s0.median[kMin + j])]))
+    : [];
+  const pathMediana = puntiMediana.length > 1
+    ? puntiMediana.map(([px, py], j) => `${j ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ")
     : "";
 
   const tacche = [];
@@ -6196,8 +6211,8 @@ function prevGrafico(out) {
     : "";
   const bande = PREV_CTRL.bande && pathMediana
     ? `<polygon points="${pol(s0.q05, s0.q95)}" fill="${PREV_C.b95}" stroke="${PREV_C.bordo}" stroke-width="1" stroke-dasharray="4 3"/>
-      <polygon points="${pol(s0.q10, s0.q90)}" fill="${PREV_C.b80}"/>
-      <polygon points="${pol(s0.q25, s0.q75)}" fill="${PREV_C.b50}"/>`
+      <polygon points="${pol(s0.q10, s0.q90)}" fill="${PREV_C.b80}" stroke="${PREV_C.bordo80}" stroke-width="1"/>
+      <polygon points="${pol(s0.q25, s0.q75)}" fill="${PREV_C.b50}" stroke="${PREV_C.bordo50}" stroke-width="1"/>`
     : "";
   const puntiStorico = storicoVis.length <= 60
     ? storicoVis.map((i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(tutto[i]).toFixed(1)}" r="2" fill="${PREV_C.hist}"/>`).join("")
@@ -6222,12 +6237,12 @@ function prevGrafico(out) {
       ${puntiStorico}
       ${media ? `<path d="${media.map((v, k) => `${k ? "L" : "M"}${x(storicoVis[k]).toFixed(1)} ${y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${PREV_C.giallo}" stroke-width="1.8" stroke-linejoin="round" opacity=".85"/>` : ""}
       ${pathMediana ? `<path d="${pathMediana}" fill="none" stroke="${PREV_C.med}" stroke-width="6" stroke-linejoin="round" opacity=".16"/>
-      <path d="${pathMediana}" fill="none" stroke="${PREV_C.med}" stroke-width="2.6" stroke-linejoin="round"/>` : ""}
+      <path d="${pathMediana}" fill="none" stroke="${PREV_C.medChiaro}" stroke-width="2.6" stroke-linejoin="round"/>` : ""}
       <line x1="${ml}" y1="${H - mb}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
       <line x1="${W - mr}" y1="${mt}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
       <g id="prevCursor" opacity="0">
         <line id="prevCrossX" x1="0" y1="${mt}" x2="0" y2="${H - mb}" stroke="${PREV_C.asse}" stroke-dasharray="3 3"/>
-        <line id="prevCrossY" y1="0" x1="${ml}" y1b="0" x2="${W - mr}" y2="0" stroke="${PREV_C.asse}" stroke-dasharray="3 3"/>
+        <line id="prevCrossY" x1="${ml}" y1="0" x2="${W - mr}" y2="0" stroke="${PREV_C.asse}" stroke-dasharray="3 3"/>
         <rect id="prevTagY" class="prev-axis-bg" rx="4" width="62" height="18" x="${W - mr + 2}" y="0"/>
         <text id="prevTagYT" class="prev-axis-y" x="${W - mr + 6}" y="13"></text>
         <rect id="prevTagX" class="prev-axis-bg" rx="4" width="86" height="18" x="0" y="${H - mb + 2}"/>
@@ -6733,7 +6748,7 @@ async function prevEsegui() {
     out.storico = Array.isArray(out.storico) ? out.storico[0] || [] : [];
     prevRisultato = out;
     $("prevTitolo").textContent = out.series[0].name;
-    $("prevLegenda").textContent = "grigio: dati passati · verde: stima · fascia: incertezza (50 / 80 / 95%)";
+    $("prevLegenda").textContent = "grigio: dati passati · verde: stima · fasce 50 / 80 / 95% (più chiara = più probabile)";
     // Il servizio ha calcolato il lungo (per i tre orizzonti). Grafico, numeri e tabella si
     // fermano all'orizzonte che l'utente ha scelto: prima mostrava 90 giorni anche con 30.
     const pieno = out.series[0];

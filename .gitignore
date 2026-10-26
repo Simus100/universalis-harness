@@ -209,3 +209,6 @@ media/nexus-social/card/
 media/previsioni/dati/*
 !media/previsioni/dati/LEGGIMI.txt
 media/previsioni/*.csv
+# Screenshot di verifica del grafico (prima/dopo una correzione): si rigenerano in un
+# secondo dal codice di dashboard.html, e i dati che mostrano sono già nei CSV qui sopra.
+media/previsioni/verifiche/
