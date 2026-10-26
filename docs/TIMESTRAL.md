@@ -222,6 +222,26 @@ rifiutato con 400, un file inesistente con 404). La cancellazione **non** richie
 sia accesa: è pulizia dei propri dati, e con `DASH_TIMESTRAL_LOCK=on` resta possibile — il lock
 limita l'uso del modello, non la gestione dei file di chi lavora.
 
+### Granularità: con che passo si prevede (scelta **prima** del calcolo)
+
+Ogni serie ha il suo passo (15 minuti, un giorno, un mese). La barra in alto permette di
+**raggruppare i dati prima del calcolo** — «un punto per settimana» invece di 672 quarti d'ora —
+scegliendo la granularità: `15 minuti · 30 minuti · 1 ora · 4 ore · 1 giorno · 1 settimana ·
+1 mese · 3 mesi · 1 anno`.
+
+| regola | perché |
+|---|---|
+| si va **solo verso il grosso** | dai dati giornalieri non si ricava un dettaglio orario. Le granularità più fini del passo nativo sono disabilitate nella tendina («i dati sono più radi») e la richiesta viene **rifiutata** dal motore con un messaggio esplicito se arriva lo stesso dall'API |
+| cosa rappresenta il punto | **media** del periodo (default: stessa unità di misura, livello non falsato dalla fase), **ultimo valore** (la chiusura, come una barra di mercato), **somma** (per i flussi: incassi, consumi, pezzi venduti) |
+| periodi di calendario | settimane da lunedì, mesi e trimestri veri (un mese non è 30 giorni). Le date **senza fuso** sono lette come UTC: altrimenti un punto a mezzanotte slitta nel giorno prima |
+| data del punto | è l'**ultima** osservazione del periodo (il punto racconta il periodo fino a lì) |
+| unità dell'orizzonte | segue la granularità: scegliendo «1 settimana», «30» significa 30 settimane, i preset diventano 4/12/26/52 e l'etichetta accanto al numero cambia **prima** del calcolo |
+| vale per tutto | previsione, verifica storica e analisi dei dati girano sulla **stessa** serie aggregata. Lo stato dichiara cosa è stato fatto: `serie raggruppata a 1 settimana (media del periodo): 53 punti da 365` |
+| pochi punti | con meno di 40 punti il verdetto avvisa che la stima è debole; sotto i 30 lo scenario ricampionato sparisce **spiegando perché** (e suggerisce una granularità più fine) |
+
+Il raggruppamento avviene nel client (`granulare`, `GRANULARITA` in `media/timestral-client.mjs`),
+quindi vale anche per il tool in chat e per l'export: non è una decorazione della vista.
+
 ### Controlli del grafico (lettura del trend)
 
 | leva | perché |

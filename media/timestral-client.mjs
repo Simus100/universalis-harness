@@ -112,6 +112,144 @@ export function parseCsv(text, { column = null, valueColumn = null } = {}) {
 }
 
 /**
+ * ---------- GRANULARITÀ: da una serie a passi più grossi ----------
+ *
+ * Una serie a 15 minuti non risponde alla domanda «e la prossima settimana?»: significherebbe
+ * chiedere al modello 672 quarti d'ora. Aggregando i dati a un punto per ora/giorno/settimana
+ * la stessa serie risponde. Si va SOLO verso il grosso: da dati mensili non si ricava un
+ * dettaglio giornaliero, e fingere il contrario sarebbe inventare dati — quindi la richiesta
+ * di un passo più fine di quello nativo è un ERRORE, non un'approssimazione.
+ *
+ * `agg` decide cosa rappresenta il punto del periodo: `media` (default: stessa unità di misura,
+ * livello non falsato dalla fase), `ultimo` (la chiusura del periodo, come una barra di mercato)
+ * o `somma` (per i FLUSSI: incassi, consumi, pezzi venduti — dove la somma È la grandezza).
+ *
+ * Il passo nativo si legge dalla frequenza dichiarata («15 minuti», «1 giorno», «1 mese»); se
+ * manca, si misura l'intervallo mediano fra le date. Senza né frequenza né date non si aggrega:
+ * meglio un errore chiaro che un raggruppamento a caso.
+ */
+export const GRANULARITA = [
+  { chiave: "15m", etichetta: "15 minuti", unita: "minuti", ms: 9e5, natura: "fisso" },
+  { chiave: "30m", etichetta: "30 minuti", unita: "minuti", ms: 18e5, natura: "fisso" },
+  { chiave: "1h", etichetta: "1 ora", unita: "ore", ms: 36e5, natura: "fisso" },
+  { chiave: "4h", etichetta: "4 ore", unita: "ore", ms: 144e5, natura: "fisso" },
+  { chiave: "1g", etichetta: "1 giorno", unita: "giorni", ms: 864e5, natura: "fisso" },
+  { chiave: "1w", etichetta: "1 settimana", unita: "settimane", ms: 6048e5, natura: "settimana" },
+  { chiave: "1M", etichetta: "1 mese", unita: "mesi", ms: 26298e5, natura: "mese", ogni: 1 },
+  { chiave: "3M", etichetta: "3 mesi", unita: "mesi", ms: 78894e5, natura: "mese", ogni: 3 },
+  { chiave: "1Y", etichetta: "1 anno", unita: "anni", ms: 315576e5, natura: "mese", ogni: 12 },
+];
+const GIORNO_MS = 864e5;
+
+/** Istante in millisecondi da una data ISO. Le date SENZA fuso sono lette come UTC, non come
+ *  ora locale della macchina: altrimenti `Date.parse("2024-01-01T00:00")` dipende dal fuso e
+ *  un punto a mezzanotte finisce nel giorno prima — un raggruppamento che cambia da server a
+ *  server. Il fuso dichiarato (Z o ±hh:mm), quando c'è, si rispetta. */
+export function istante(v) {
+  const t = String(v ?? "").trim();
+  if (!t) return NaN;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return Date.parse(`${t}T00:00:00Z`);
+  if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(t)) return Date.parse(`${t.replace(" ", "T")}Z`);
+  return Date.parse(t);
+}
+
+/** Quanto dura, in ms, un passo dichiarato dalla frequenza («15 minuti», «mensile», …). */
+export function passoNativoMs(frequenza, date = null) {
+  const f = String(frequenza || "").toLowerCase();
+  const num = Number(String((/(\d+(?:[.,]\d+)?)/.exec(f) || [])[1] || "1").replace(",", ".")) || 1;
+  const base =
+    /minut/.test(f) ? 60e3
+    : /ora/.test(f) ? 36e5
+    : /giorn/.test(f) ? GIORNO_MS
+    : /settiman/.test(f) ? 7 * GIORNO_MS
+    : /trimestr/.test(f) ? 3 * 26298e5
+    : /mese|mensil/.test(f) ? 26298e5
+    : /ann/.test(f) ? 315576e5
+    : null;
+  if (base) return base * num;
+  // nessuna frequenza dichiarata: si misura dai dati (mediana degli intervalli, non la media:
+  // un buco di ferie non deve spostare il passo)
+  if (Array.isArray(date) && date.length > 2) {
+    const t = date.map((d) => istante(d)).filter(Number.isFinite).sort((a, b) => a - b);
+    const diff = [];
+    for (let i = 1; i < t.length; i += 1) if (t[i] > t[i - 1]) diff.push(t[i] - t[i - 1]);
+    if (diff.length) { diff.sort((a, b) => a - b); return diff[Math.floor(diff.length / 2)]; }
+  }
+  return null;
+}
+
+/** Chiave del periodo a cui appartiene un istante: ora/giorno = blocchi fissi, settimana =
+ *  lunedì, mese/trimestre/anno = calendario vero (un mese non è 30 giorni). Tutto in UTC. */
+function chiavePeriodo(ms, g) {
+  if (g.natura === "settimana") {
+    const d = new Date(ms);
+    const daLunedi = (d.getUTCDay() + 6) % 7;
+    return String(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - daLunedi * GIORNO_MS);
+  }
+  if (g.natura === "mese") {
+    const d = new Date(ms);
+    return String(Math.floor((d.getUTCFullYear() * 12 + d.getUTCMonth()) / (g.ogni || 1)));
+  }
+  return String(Math.floor(ms / g.ms));
+}
+
+/**
+ * Aggrega una serie a un passo più grosso.
+ * Ritorna { valori, date, puntiPrima, puntiDopo, passo, etichetta, unita, agg, nativaMs }.
+ * Le date del punto sono quelle dell'ULTIMA osservazione del periodo: il punto racconta il
+ * periodo fino a lì, e il grafico non deve mostrare una data che anticipa i dati.
+ */
+export function granulare({ valori, date = null, ogni, agg = "media" }) {
+  const g = GRANULARITA.find((x) => x.chiave === ogni);
+  if (!g) throw new Error(`granularità «${ogni}» sconosciuta (disponibili: ${GRANULARITA.map((x) => x.chiave).join(", ")})`);
+  const modo = ["media", "ultimo", "somma"].includes(agg) ? agg : "media";
+  if (!Array.isArray(valori) || valori.length < 2) throw new Error("serie troppo corta per aggregare");
+  const dateOk = Array.isArray(date) && date.length === valori.length && date.every((d) => Number.isFinite(istante(d)));
+  if (!dateOk) throw new Error(`per aggregare a «${g.etichetta}» servono le date di ogni punto (questa serie non le ha)`);
+  const nativaMs = passoNativoMs(null, date);
+  // solo verso il grosso: 15 minuti → 1 giorno sì, 1 giorno → 1 ora è inventare
+  if (nativaMs && g.ms < nativaMs * 0.9) {
+    const nat = nativaMs < 36e5 ? `${Math.round(nativaMs / 60e3)} minuti` : nativaMs < GIORNO_MS ? `${Math.round(nativaMs / 36e5)} ore` : `${Math.round(nativaMs / GIORNO_MS)} giorni`;
+    throw new Error(`i dati hanno un passo di ${nat}: non si possono ricampionare a «${g.etichetta}» senza inventare punti che non esistono`);
+  }
+
+  const gruppi = new Map();
+  for (let i = 0; i < valori.length; i += 1) {
+    const v = valori[i] === null || valori[i] === "" ? NaN : Number(valori[i]);
+    if (!Number.isFinite(v)) continue;
+    const ms = istante(date[i]);
+    if (!Number.isFinite(ms)) continue;
+    const k = chiavePeriodo(ms, g);
+    const gruppo = gruppi.get(k);
+    if (gruppo) {
+      gruppo.somma += v;
+      gruppo.n += 1;
+      gruppo.ultimo = v;
+      gruppo.data = date[i];
+    } else {
+      gruppi.set(k, { primo: v, somma: v, n: 1, ultimo: v, data: date[i] });
+    }
+  }
+  const outV = [], outD = [];
+  for (const gr of gruppi.values()) {
+    outV.push(modo === "somma" ? gr.somma : modo === "ultimo" ? gr.ultimo : gr.somma / gr.n);
+    outD.push(gr.data);
+  }
+  if (outV.length < 3) throw new Error(`con questa granularità la serie resta con ${outV.length} punti: troppo pochi per una previsione`);
+  return {
+    valori: outV,
+    date: outD,
+    puntiPrima: valori.length,
+    puntiDopo: outV.length,
+    passo: g.chiave,
+    etichetta: g.etichetta,
+    unita: g.unita,
+    agg: modo,
+    nativaMs,
+  };
+}
+
+/**
  * Analisi descrittiva di una serie: quello che si può DIRE dei dati senza chiedere niente al
  * modello. Ogni numero ha un metodo esplicito e nessuno è inventato:
  *
@@ -759,7 +897,7 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
    *  - `series`: valori già in mano al chiamante
    * Ritorna { nomi, valori[], meta } — oppure solleva con un messaggio utile.
    */
-  function preparaSerie({ demo: ids, csv, series, column, valueColumn }) {
+  function preparaSerie({ demo: ids, csv, series, column, valueColumn, granularita, agg }) {
     const fonti = [];
     if (Array.isArray(ids) && ids.length) {
       for (const id of ids) {
@@ -820,6 +958,25 @@ export function createTimestralClient({ mediaDir, rootDir = mediaDir, log = (m) 
       }
     }
     if (!fonti.length) throw new Error("nessuna serie: indica `demo`, `csv` oppure `series`");
+    // Ricampionamento richiesto dalla vista («un punto per settimana», «un punto al giorno»).
+    // Avviene QUI, prima del modello, così previsione, verifica storica e analisi dei dati
+    // parlano tutte della stessa serie aggregata — e il meta dice da dove viene.
+    if (granularita) {
+      for (const f of fonti) {
+        const r = granulare({ valori: f.valori, date: f.date || null, ogni: granularita, agg });
+        f.valori = r.valori;
+        f.date = r.date;
+        f.granularita = r;
+        const come = r.agg === "somma" ? "somma del periodo" : r.agg === "ultimo" ? "ultimo valore del periodo" : "media del periodo";
+        f.meta = {
+          ...(f.meta || {}),
+          frequenza: r.etichetta,
+          frequenza_nativa: (f.meta && f.meta.frequenza) || null,
+          granularita: { passo: r.passo, etichetta: r.etichetta, agg: r.agg, da: r.puntiPrima, a: r.puntiDopo },
+          nota_aggregazione: `serie aggregata a ${r.etichetta} (${come}) da ${r.puntiPrima} osservazioni`,
+        };
+      }
+    }
     return fonti;
   }
 

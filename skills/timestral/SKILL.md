@@ -164,6 +164,22 @@ di ciò che si sta guardando: con lo zoom profondo è la bussola (e il modo per 
 senza ripartire da capo). La scala verticale si ricalcola sui valori visibili, quindi la linea
 non esce mai dal riquadro per quanto si zoomi.
 
+### Granularità (prima del calcolo)
+
+Sopra il grafico si sceglie con che passo prevedere: `15 minuti · 30 minuti · 1 ora · 4 ore ·
+1 giorno · 1 settimana · 1 mese · 3 mesi · 1 anno`. È un raggruppamento dei dati PRIMA del modello,
+quindi cambia di cosa si parla: una serie a 15 minuti aggregata a un giorno risponde a «domani»,
+non a «fra un quarto d'ora». Regole che l'agente deve rispettare quando lo propone all'utente:
+
+- si va **solo verso il grosso** (dai giornalieri non si ricava un orario): le opzioni impossibili
+  sono disabilitate e il motore rifiuta la richiesta con un messaggio chiaro;
+- il punto di un periodo è la **media** (default), l'**ultimo valore** o la **somma** (per i flussi:
+  incassi, consumi, pezzi) — e l'aggregazione va **dichiarata** insieme al risultato;
+- orizzonte e preset seguono la granularità («30» = 30 settimane, se hai scelto le settimane);
+- con meno di ~40 punti la stima è debole e va detto; la vista lo scrive nel verdetto.
+- In chat, se i dati sono grezzi a 15 minuti e la domanda è settimanale, chiedi prima la serie
+  intera e aggrega tu (o proponi la granularità nella vista): non chiedere al modello 2.880 passi.
+
 Accanto alla previsione c'è **«Cosa dicono i dati»**: variazione su 1/7/30 passi, tendenza con
 R², volatilità, rumore, ciclicità (con la quota di variabilità che spiega), anomalie con la data,
 qualità della serie. Sono numeri calcolati sulla serie, non opinioni del modello: se citi una

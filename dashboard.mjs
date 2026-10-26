@@ -46,7 +46,7 @@ import { leggiWiki as memoriaWiki, linkRotti as memoriaLinkRotti } from "./media
 import { ricostruisci as memoriaRicostruisci, aggiornaDopoSessione as memoriaArchiviaSessione } from "./media/memoria/memoria-build.mjs";
 import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato, indiceDaAggiornare as memoriaIndiceDaAggiornare } from "./media/memoria/memoria-index.mjs";
 import { createDecisionMService } from "./media/decision-m-service.mjs";
-import { analizza as analizzaTimestral, createTimestralClient, parseCsv as parseTimestralCsv, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
+import { analizza as analizzaTimestral, createTimestralClient, GRANULARITA as TIMESTRAL_GRANULARITA, parseCsv as parseTimestralCsv, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
 import { createTimestralExtension } from "./media/timestral-tool.mjs";
 import {
   VOCI as TTS_VOCI,
@@ -4694,6 +4694,8 @@ const server = http.createServer(async (req, res) => {
           fonte: s2.fonte,
         })),
         csv: timestralClient.csvDisponibili(),
+        // le granularità possibili vivono nel client condiviso: la vista non le riscrive a mano
+        granularita: TIMESTRAL_GRANULARITA,
         toolActive: (session?.getActiveToolNames?.() || []).some((t) => TIMESTRAL_TOOL_NAMES.has(t)),
       });
     }
@@ -4737,9 +4739,12 @@ const server = http.createServer(async (req, res) => {
           series: body.series,
           column: body.column,
           valueColumn: body.value_column,
+          granularita: body.granularita || body.granularity || null,
+          agg: body.agg || body.aggregazione || "media",
         });
         const f = fonti[0];
-        const unita = /mese/.test(f.meta?.frequenza || "") ? "mesi" : /ora/.test(f.meta?.frequenza || "") ? "ore" : /settiman/.test(f.meta?.frequenza || "") ? "settimane" : /giorn/.test(f.meta?.frequenza || "") ? "giorni" : "passi";
+        const fr = String(f.meta?.frequenza || "").toLowerCase();
+        const unita = /minut/.test(fr) ? "minuti" : /ora/.test(fr) ? "ore" : /settiman/.test(fr) ? "settimane" : /mese|mensil|trimestr/.test(fr) ? "mesi" : /ann/.test(fr) ? "anni" : /giorn/.test(fr) ? "giorni" : "passi";
         return json(res, 200, { ok: true, serie: f.nome, ...analizzaTimestral({ values: f.valori, dates: f.date || null, unita }) });
       } catch (e) {
         return json(res, 400, { error: String(e?.message || e) });
@@ -4762,6 +4767,8 @@ const server = http.createServer(async (req, res) => {
           series: body.series,
           column: body.column,
           valueColumn: body.value_column,
+          granularita: body.granularita || body.granularity || null,
+          agg: body.agg || body.aggregazione || "media",
         });
         const out = await timestralClient.backtest({
           values: fonti[0].valori,
@@ -4826,6 +4833,8 @@ const server = http.createServer(async (req, res) => {
           series: body.series,
           column: body.column,
           valueColumn: body.value_column,
+          granularita: body.granularita || body.granularity || null,
+          agg: body.agg || body.aggregazione || "media",
         });
         const h = Math.max(1, Math.min(4096, Number(body.prediction_length) || timestralClient.prefs.prediction_length));
         const out = await timestralClient.prevedi({

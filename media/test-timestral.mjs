@@ -15,7 +15,7 @@
  * Esce con codice 1 se un controllo fallisce.
  */
 import { readFileSync } from "node:fs";
-import { parseCsv, analizza } from "./timestral-client.mjs";
+import { parseCsv, analizza, granulare, istante, passoNativoMs } from "./timestral-client.mjs";
 
 const ROOT = "/root/pi-harness";
 const BASE = `http://127.0.0.1:${process.env.TIMESTRAL_PORT || 8018}`;
@@ -127,6 +127,49 @@ section("1b. client — analisi descrittiva");
   try { analizza({ values: [1, 2, 3] }); } catch (x) { erroreCorto = x.message; }
   check("meno di 8 punti → errore esplicito", !!erroreCorto, erroreCorto || "");
 }
+
+/* ───────────────────────── 1c. GRANULARITÀ: raggruppare prima del modello ───────────────────────── */
+section("1c. client — granularità (ricampionamento)");
+{
+  // 240 ore in crescita lineare: media, ultimo e somma di un giorno si calcolano a mano
+  const date = [], valori = [];
+  const t0 = Date.UTC(2024, 0, 1);
+  for (let i = 0; i < 240; i += 1) { date.push(new Date(t0 + i * 3600e3).toISOString().slice(0, 19)); valori.push(100 + i * 0.1); }
+  const g = granulare({ valori, date, ogni: "1g" });
+  check("240 ore → 10 punti giornalieri", g.puntiDopo === 10, String(g.puntiDopo));
+  check("il punto di un giorno è la media del giorno", Math.abs(g.valori[0] - 101.15) < 1e-9, String(g.valori[0]));
+  check("la data del punto è l'ULTIMA del periodo (non la prima)", /T23:00/.test(g.date[0]), g.date[0]);
+  check("l'aggregazione dichiara cosa ha fatto", g.passo === "1g" && g.unita === "giorni" && g.puntiPrima === 240, JSON.stringify(g));
+
+  const u = granulare({ valori, date, ogni: "1g", agg: "ultimo" });
+  check("aggregazione «ultimo valore»: la chiusura del periodo", Math.abs(u.valori[0] - (100 + 23 * 0.1)) < 1e-9, String(u.valori[0]));
+  const sm = granulare({ valori, date, ogni: "1g", agg: "somma" });
+  check("aggregazione «somma»: il totale del periodo", Math.abs(sm.valori[0] - (24 * 100 + 0.1 * ((0 + 23) * 24 / 2))) < 1e-6, String(sm.valori[0]));
+
+  // dai giornalieri a settimane/mesi: periodi di CALENDARIO, non multipli fissi
+  const dg = [], vg = [];
+  for (let i = 0; i < 400; i += 1) { dg.push(new Date(Date.UTC(2023, 0, 1) + i * 864e5).toISOString().slice(0, 10)); vg.push(100 + i); }
+  const w = granulare({ valori: vg, date: dg, ogni: "1w" });
+  check("400 giorni → 58 settimane di calendario", w.puntiDopo === 58, String(w.puntiDopo));
+  const m = granulare({ valori: vg, date: dg, ogni: "1M" });
+  check("400 giorni → 14 mesi di calendario", m.puntiDopo === 14, String(m.puntiDopo));
+
+  // solo verso il grosso, e senza inventare date
+  let troppoFine = null;
+  try { granulare({ valori: vg, date: dg, ogni: "1h" }); } catch (e) { troppoFine = e.message; }
+  check("rifiuta una granularità più fine dei dati", !!troppoFine && /non si possono ricampionare/.test(troppoFine), troppoFine || "");
+  let senzaDate = null;
+  try { granulare({ valori: vg, date: vg.map(() => ""), ogni: "1w" }); } catch (e) { senzaDate = e.message; }
+  check("senza date rifiuta invece di raggruppare a caso", !!senzaDate && /servono le date/.test(senzaDate), senzaDate || "");
+
+  // una data senza fuso è UTC, non l'ora locale del server: il giorno non deve slittare
+  check("data senza fuso letta come UTC", new Date(istante("2024-01-01T00:00")).toISOString() === "2024-01-01T00:00:00.000Z",
+    new Date(istante("2024-01-01T00:00")).toISOString());
+  check("il passo nativo si legge anche dalla frequenza dichiarata",
+    passoNativoMs("15 minuti") === 9e5 && Math.round(passoNativoMs("1 mese") / 864e5) === 30,
+    `${passoNativoMs("15 minuti")} · ${passoNativoMs("1 mese")}`);
+}
+
 
 /* ───────────────────────── 2. SERVIZIO: contratto ───────────────────────── */
 section("2. servizio — contratto delle rotte");
@@ -327,6 +370,14 @@ section("4. coerenza interfaccia ↔ API ↔ documentazione");
   const installa = (html.match(/\nprevInstallaNavigazione\(\);/g) || []).length;
   check("i gestori di puntatore/zoom si installano una volta sola", installa === 1, `chiamate: ${installa}`);
   check("la vista dichiara i gesti di navigazione", /rotella o pizzico: zoom/.test(html), "nessuna riga di aiuto sui gesti");
+
+  // 4i. granularità: si sceglie PRIMA del calcolo, viaggia nella richiesta e vale per tutte le rotte
+  check("la vista ha i selettori di granularità e di aggregazione", /id="prevGran"/.test(html) && /id="prevAgg"/.test(html), "prevGran / prevAgg assenti");
+  check("la granularità viaggia con la richiesta di previsione", /corpo\.granularita = PREV_CTRL\.granularita/.test(html) && /granularita: body\.granularita/.test(mjs), "non passa da UI a rotta");
+  check("anche la verifica storica usa la stessa granularità", /fonte\.granularita = PREV_CTRL\.granularita/.test(html), "il backtest girerebbe su una serie diversa da quella prevista");
+  check("le granularità disponibili vengono dal client condiviso", /granularita: TIMESTRAL_GRANULARITA/.test(mjs), "la vista se le riscrive a mano");
+  check("l'unità dell'orizzonte segue la granularità scelta", /function prevUnitaSerie\(\)[\s\S]{0,220}prevGranScelta\(\)/.test(html), "l'etichetta resterebbe quella dei dati");
+  check("la doc dichiara i tre modi di aggregare", /media/.test(doc) && /ultimo valore/.test(doc) && /somma/.test(doc) && /GRANULARITÀ|granularità/.test(doc), "la doc non spiega l'aggregazione");
 }
 
 /* ─────── 5. INTEGRAZIONE: la catena dashboard → servizio, come la usa la vista ─────── */

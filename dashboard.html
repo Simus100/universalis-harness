@@ -1776,14 +1776,17 @@ footer {
 }
 .prev-avviso.attenzione { border-color: #d9a13b; background: color-mix(in srgb, #d9a13b 10%, transparent); }
 .prev-avviso.grave { border-color: #e06b6b; background: color-mix(in srgb, #e06b6b 10%, transparent); }
-.prev-oriz { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: var(--fs-sm); }
+.prev-oriz { display: flex; align-items: center; gap: 6px; color: var(--dim); font-size: var(--fs-sm); flex-wrap: wrap; max-width: 100%; min-width: 0; }
+/* con granularità + aggregazione nella stessa riga le due tendine non stanno su un telefono:
+   vanno a capo invece di allargare la barra oltre lo schermo */
+.prev-oriz > select, .prev-oriz > input { min-width: 0; max-width: 100%; }
 .prev-unita { color: var(--faint); font-size: var(--fs-sm); min-width: 44px; }
 .prev-preset { display: flex; gap: 4px; }
 .ghost.mini { padding: 4px 9px; min-width: 34px; justify-content: center; font-size: var(--fs-sm); }
 .ghost.mini.on { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .ghost.forte { border-color: color-mix(in srgb, var(--accent) 60%, var(--border)); color: var(--text); font-weight: 600; }
 .prev-tecnico { display: block; margin-top: 6px; color: var(--faint); font-size: var(--fs-xs); line-height: 1.45; }
-/* Nei pannelli della barra la descrizione di stato va a capo su una riga sua: stretta fra
+.prev-ricalcola { display: block; margin-top: 5px; color: #d9a13b; font-size: var(--fs-xs); line-height: 1.45; }/* Nei pannelli della barra la descrizione di stato va a capo su una riga sua: stretta fra
    bottone e tendina diventava una colonnina di tre righe illeggibile. */
 .feat-row > .feat-lbl[style], .feat-row > #decisionMInfo, .feat-row > #timestralInfo { flex: 1 1 100%; }
 .prev-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px 2px 8px; }
@@ -1794,6 +1797,7 @@ footer {
 .prev-svgbox { position: relative; }
 /* secondo grafico: lo scenario costruito dai dati, accanto alla previsione del modello */
 .prev-scenario { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.prev-scenario.vuoto .prev-zoom, .prev-scenario.vuoto .prev-zoominfo, .prev-scenario.vuoto #prevMiniSc { display: none; }
 .prev-scenario svg { display: block; width: 100%; height: auto; }
 /* tooltip del grafico: leggero, non deve coprire il punto che si sta guardando */
 .prev-tip {
@@ -2194,6 +2198,15 @@ footer {
     <div class="prev-bar-riga">
       <button class="ghost" id="prevBack" type="button" title="Torna alla chat">←<span class="lbl-largo"> chat</span></button>
       <select id="prevSerie" class="select" aria-label="Serie da prevedere" title="Scegli cosa prevedere: le serie di esempio incluse oppure un tuo CSV"></select>
+      <span class="prev-oriz" title="Con che passo temporale prevedere: prima del calcolo i dati vengono raggruppati a questo intervallo. Si va solo verso il grosso (dai minuti alle ore, ai giorni, alle settimane, ai mesi): dai dati mensili non si ricava un dettaglio giornaliero">
+        <span>granularità</span>
+        <select id="prevGran" class="select mini" aria-label="Passo temporale della previsione"></select>
+        <select id="prevAgg" class="select mini" aria-label="Come riassumere ogni periodo" title="Cosa rappresenta il punto di un periodo: la media (stessa unità di misura), l'ultimo valore (la chiusura del periodo) o la somma (per i flussi: incassi, consumi, pezzi)" hidden>
+          <option value="media">media del periodo</option>
+          <option value="ultimo">ultimo valore</option>
+          <option value="somma">somma del periodo</option>
+        </select>
+      </span>
       <span class="prev-oriz" title="Per quanti passi in avanti prevedere">
         <span>orizzonte</span>
         <input id="prevOrizzonte" type="number" min="1" max="366" step="1" value="30" inputmode="numeric" aria-label="Orizzonte della previsione" />
@@ -6158,8 +6171,12 @@ function prevQuando(v) {
   const s = String(v || "");
   if (!s) return "";
   const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s);
-  if (m) return `${m[3]}/${m[2]} ${m[4]}:${m[5]}`;
-  return s.slice(0, 10);
+  if (!m) return s.slice(0, 10);
+  // se si prevede a passi di un giorno o più grossi (perché la serie è stata raggruppata),
+  // l'ora del punto non aggiunge niente: resta la data, nello stesso formato ISO dell'asse
+  const u = prevUnitaSerie();
+  if (["giorni", "settimane", "mesi", "trimestri", "anni"].includes(u)) return `${m[1]}-${m[2]}-${m[3]}`;
+  return `${m[3]}/${m[2]} ${m[4]}:${m[5]}`;
 }
 
 /** Vero se la serie ha un passo più fine del giorno (barre intraday). */
@@ -6169,8 +6186,26 @@ function prevIntraday() {
   return g.dateTutte.some((d) => /\d{2}:\d{2}/.test(String(d || "")));
 }
 
-/** L'unità dell'orizzonte, presa dalla serie scelta: «giorni», «ore» o «passi» se non si sa. */
+/** L'unità dell'orizzonte: quella della GRANULARITÀ scelta (il passo con cui si prevede),
+ *  altrimenti quella dei dati. Se l'utente aggregata a settimane, «30» significa 30 settimane:
+ *  l'etichetta accanto al numero deve dirlo PRIMA del calcolo, non dopo. */
 function prevUnitaSerie() {
+  const gr = prevGranScelta();
+  if (gr) return gr.unita;
+  const f = prevFrequenzaSerie();
+  if (f.includes("minut")) return "minuti";
+  if (f.includes("giorno")) return "giorni";
+  if (f.includes("ora")) return "ore";
+  if (f.includes("settiman")) return "settimane";
+  if (f.includes("mese") || f.includes("mensil")) return "mesi";
+  if (f.includes("trimestr")) return "trimestri";
+  if (f.includes("ann")) return "anni";
+  return "passi";
+}
+
+/** La frequenza dichiarata dalla serie scelta: serve alla granularità per sapere qual è il suo
+ *  passo nativo (non si può ricampionare più fine di così). */
+function prevFrequenzaSerie() {
   const v = ($("prevSerie") && $("prevSerie").value) || "";
   let f = "";
   if (v.startsWith("demo:")) {
@@ -6182,14 +6217,65 @@ function prevUnitaSerie() {
     const c = ((prevStato && prevStato.csv) || []).find((x) => x.nome === nome);
     f = c && c.meta && c.meta.frequenza ? String(c.meta.frequenza).toLowerCase() : "";
   }
-  if (f.includes("minut")) return "minuti";
-  if (f.includes("giorno")) return "giorni";
-  if (f.includes("ora")) return "ore";
-  if (f.includes("settiman")) return "settimane";
-  if (f.includes("mese") || f.includes("mensil")) return "mesi";
-  if (f.includes("trimestr")) return "trimestri";
-  if (f.includes("ann")) return "anni";
-  return "passi";
+  return f;
+}
+
+/* ---------- granularità: con che passo si prevede ----------
+   Le scelte possibili vivono nel client condiviso (`GRANULARITA` in media/timestral-client.mjs) e
+   arrivano dal server: la vista non le riscrive a mano, così non possono divergere dal motore di
+   aggregazione. Qui si propongono solo quelle sensate per la serie scelta (mai più fini del suo
+   passo) e si dice subito in che unità si sta parlando. */
+function prevGranList() {
+  return (prevStato && Array.isArray(prevStato.granularita) ? prevStato.granularita : []);
+}
+
+/** La granularità scelta, se non è «come i dati». */
+function prevGranScelta() {
+  if (!PREV_CTRL.granularita) return null;
+  return prevGranList().find((g) => g.chiave === PREV_CTRL.granularita) || null;
+}
+
+/** Riempie la tendina con «come i dati» + le granularità possibili; disabilita quelle che
+ *  chiederebbero un dettaglio che i dati non hanno. */
+function prevPopolaGranularita() {
+  const sel = $("prevGran");
+  if (!sel) return;
+  const lista = prevGranList();
+  const nativa = prevFrequenzaSerie();
+  const nativaMs = prevPassoNativoMs(nativa);
+  const opts = [`<option value="">come i dati${nativa ? ` (${escHtml(nativa.replace(/^1 /, ""))})` : ""}</option>`];
+  for (const g of lista) {
+    const troppoFina = nativaMs && g.ms < nativaMs * 0.9;
+    opts.push(`<option value="${escAttr(g.chiave)}"${troppoFina ? " disabled" : ""}>${escHtml(g.etichetta)}${troppoFina ? " — i dati sono più radi" : ""}</option>`);
+  }
+  sel.innerHTML = opts.join("");
+  const valida = prevGranScelta() !== null;
+  sel.value = valida ? PREV_CTRL.granularita : "";
+  if (!valida) PREV_CTRL.granularita = "";
+  const agg = $("prevAgg");
+  if (agg) {
+    agg.hidden = !sel.value;            // aggregare o no: la scelta ha senso solo se si aggrega
+    agg.value = PREV_CTRL.agg || "media";
+  }
+}
+
+/** Stima del passo di una frequenza dichiarata (ms). Serve SOLO a disabilitare le opzioni
+ *  impossibili nella tendina; la validazione vera la fa il motore di aggregazione, che se non
+ *  trova la frequenza la misura sulle date e — se non può — rifiuta con un messaggio. */
+function prevPassoNativoMs(frequenza) {
+  const f = String(frequenza || "").toLowerCase();
+  if (!f) return null;
+  const n = Number(String((/(\d+(?:[.,]\d+)?)/.exec(f) || [])[1] || "1").replace(",", ".")) || 1;
+  const base =
+    /minut/.test(f) ? 60e3
+    : /ora/.test(f) ? 36e5
+    : /giorn/.test(f) ? 864e5
+    : /settiman/.test(f) ? 6048e5
+    : /trimestr/.test(f) ? 7889400000
+    : /mese|mensil/.test(f) ? 2629800000
+    : /ann/.test(f) ? 31557600000
+    : null;
+  return base ? base * n : null;
 }
 
 /** Le tre cose che l'utente deve vedere senza pensarci: unità, preset attivo, scelta ricordata. */
@@ -6197,7 +6283,14 @@ function prevAggiornaControlli() {
   const u = prevUnitaSerie();
   const el = $("prevUnita");
   if (el) el.textContent = u;
-  const presets = u === "mesi" ? [3, 6, 12, 24] : u === "ore" ? [24, 72, 168] : u === "minuti" ? [8, 32, 96] : u === "settimane" ? [4, 12, 26, 52] : [7, 30, 90];
+  const presets =
+    u === "anni" ? [1, 2, 3, 5, 10]
+    : u === "mesi" ? [3, 6, 12, 24]
+    : u === "trimestri" ? [1, 2, 4, 8]
+    : u === "settimane" ? [4, 12, 26, 52]
+    : u === "ore" ? [24, 72, 168]
+    : u === "minuti" ? [8, 32, 96]
+    : [7, 30, 90];
   const box = $("prevPreset");
   if (box) {
     // i pulsanti si rigenerano con l'unità giusta; il gestore è sul contenitore, quindi restano vivi
@@ -6212,8 +6305,18 @@ function prevAggiornaControlli() {
 function prevOrizzonteAdatto() {
   const u = prevUnitaSerie();
   const h = Number($("prevOrizzonte").value) || 30;
-  const sensato = u === "mesi" ? h <= 24 : u === "ore" ? h <= 720 : u === "minuti" ? h <= 480 : true;
-  if (!sensato) $("prevOrizzonte").value = u === "mesi" ? 12 : u === "minuti" ? 32 : 72;
+  const sensato =
+    u === "anni" ? h <= 10
+    : u === "mesi" ? h <= 24
+    : u === "trimestri" ? h <= 8
+    : u === "settimane" ? h <= 104
+    : u === "ore" ? h <= 720
+    : u === "minuti" ? h <= 480
+    : h <= 366;
+  if (!sensato) {
+    $("prevOrizzonte").value =
+      u === "anni" ? 3 : u === "mesi" ? 12 : u === "trimestri" ? 4 : u === "settimane" ? 12 : u === "minuti" ? 32 : 72;
+  }
 }
 
 /** La scelta di serie e orizzonte sopravvive alla chiusura della pagina: è lo stesso lavoro che
@@ -6221,7 +6324,12 @@ function prevOrizzonteAdatto() {
 const PREV_LS = "harness.prev.scelta";
 function prevSalvaScelta() {
   try {
-    localStorage.setItem(PREV_LS, JSON.stringify({ serie: $("prevSerie").value, orizzonte: $("prevOrizzonte").value }));
+    localStorage.setItem(PREV_LS, JSON.stringify({
+      serie: $("prevSerie").value,
+      orizzonte: $("prevOrizzonte").value,
+      granularita: PREV_CTRL.granularita || "",
+      agg: PREV_CTRL.agg || "media",
+    }));
   } catch { /* modalità privata: si continua senza memoria */ }
 }
 function prevLeggiScelta() {
@@ -6230,6 +6338,18 @@ function prevLeggiScelta() {
   } catch {
     return null;
   }
+}
+
+/** Granularità e aggregazione cambiano su cosa si fa la previsione: il grafico già disegnato resta
+ *  quello di prima finché non si preme calcola. Meglio dirlo che applicarlo a metà. */
+function prevAvvisaDaRicalcolare(campo) {
+  const box = $("prevStato");
+  if (!box || !prevRisultato) return;
+  box.querySelector(".prev-ricalcola")?.remove();
+  box.insertAdjacentHTML(
+    "beforeend",
+    `<span class="prev-ricalcola">cambiato: ${escHtml(campo)} — il grafico qui sotto è ancora quello di prima. Premi <b>calcola</b> per rifarlo.</span>`,
+  );
 }
 
 async function caricaPrevisioni() {
@@ -6263,7 +6383,10 @@ async function caricaPrevisioni() {
       const scelta = prevLeggiScelta();
       if (scelta && scelta.serie && serie.some((o) => o.v === scelta.serie)) sel.value = scelta.serie;
       if (scelta && scelta.orizzonte) $("prevOrizzonte").value = scelta.orizzonte;
+      if (scelta && typeof scelta.granularita === "string") PREV_CTRL.granularita = scelta.granularita;
+      if (scelta && scelta.agg) PREV_CTRL.agg = scelta.agg;
     }
+    prevPopolaGranularita();   // le granularità sensate dipendono dalla serie scelta
     prevAggiornaControlli();
     if (stato) {
       const tecnico = st.up
@@ -6296,7 +6419,7 @@ async function caricaPrevisioni() {
    previsione (circa 2,5 volte l'orizzonte). Prima il default era «tutto lo storico» e su una
    serie lunga il ventaglio diventava una fettina larga due pixel: il futuro c'era ma non si
    vedeva. */
-const PREV_CTRL = { finestra: -1, log: false, bande: true, media: false, offset: 0, confronto: false, mediaFin: 0 };
+const PREV_CTRL = { finestra: -1, log: false, bande: true, media: false, offset: 0, confronto: false, mediaFin: 0, granularita: "", agg: "media" };
 let prevGeo = null; // geometria dell'ultimo disegno: serve al puntatore per dire cosa c'è sotto
 let prevErroriOrizzonte = null; // errore storico per orizzonte breve/medio/lungo
 let prevAnalisi = null;         // ultima analisi dei dati (serve all'export JSON)
@@ -6373,13 +6496,26 @@ function prevAggiornaScenario(out) {
   if (!box) return;
   const sc = prevScenario(out);
   prevScCache = sc;                    // riusato a ogni zoom senza ricalcolare i 400 percorsi
-  box.hidden = !sc;
   if (!sc) {
     prevGeoSc = null;
     prevViewSc = { a: 0, b: null };
     prevAggiornaStriscia("scenario");
+    // Con l'aggregazione lo scenario diventa spesso impossibile (bastano poche decine di punti
+    // mensili): dirlo, invece di far sparire il pannello senza spiegazione.
+    const punti = prevRisultato ? (prevRisultato.storico || []).length : 0;
+    box.hidden = !prevRisultato;
+    box.classList.toggle("vuoto", !!prevRisultato);
+    $("prevSvgScenario").innerHTML = "";
+    if (prevRisultato && $("prevScenarioNota")) {
+      $("prevScenarioNota").innerHTML =
+        `Scenario ricampionato non calcolabile: servono almeno 30 punti di storia e ${punti} non bastano. ` +
+        `La stima del modello qui sopra resta valida — è solo il confronto «se il comportamento recente continuasse» ` +
+        `che con così pochi punti non si può costruire. Per averlo, scegli una granularità più fine o una serie più lunga.`;
+    }
     return;
   }
+  box.classList.remove("vuoto");
+  box.hidden = false;
   $("prevSvgScenario").innerHTML = prevScenarioSvg(out, sc);
   $("prevScenarioNota").innerHTML = prevScenarioNota(out, sc);
   prevAggiornaStriscia("scenario");
@@ -7507,6 +7643,7 @@ function prevVerdettoHtml(out, errBasso) {
 
   return `<div class="prev-card-h">In parole semplici <span class="prev-legenda">la stessa previsione, senza gergo</span></div>
     <div class="sem ${sem.classe}"><span class="pallino"></span>${escHtml(sem.testo)}</div>
+    ${(out.storico || []).length < 40 ? `<div class="prev-avviso attenzione">Con <b>${(out.storico || []).length} punti</b> a questa granularità la stima è <b>debole</b>: il modello ha poco passato da cui imparare. Allarga la serie o scegli una granularità più fine.</div>` : ""}
     ${haVerifica ? "" : `<div class="frase"><button type="button" class="ghost mini" data-affidabilita title="Rifà la previsione sul passato e la confronta con «domani come oggi», la media mobile e la deriva: dice se di questa previsione ci si può fidare">calcola l'affidabilità</button> <span class="prev-legenda">verifica storica: se il modello sbaglia più di «domani come oggi», il valore centrale non va usato</span></div>`}
     <div class="frase">${frase1}</div>
     <div class="frase">${frase2}</div>
@@ -7575,6 +7712,12 @@ async function prevEsegui() {
   const corpo = { prediction_length: h };
   if (val.startsWith("demo:")) corpo.demo = [val.slice(5)];
   else corpo.csv = val.slice(4);
+  // ricampionamento PRIMA del modello: è quello che decide di cosa si parla («un punto per
+  // settimana»), quindi viaggia con la richiesta e il server lo applica alla serie intera
+  if (PREV_CTRL.granularita) {
+    corpo.granularita = PREV_CTRL.granularita;
+    corpo.agg = PREV_CTRL.agg || "media";
+  }
   $("prevStato").textContent = "calcolo la previsione…";
   $("prevPrevedi").disabled = true;
   try {
@@ -7632,6 +7775,9 @@ async function prevEsegui() {
     $("prevCorpo").hidden = false;
     $("prevStato").innerHTML =
       `<b>${escHtml(out.series[0].name)}</b> — stima per i prossimi ${out.series[0].median.length} ${escHtml(u2)}` +
+      (meta.granularita
+        ? ` · serie raggruppata a <b>${escHtml(meta.granularita.etichetta)}</b> (${escHtml(meta.granularita.agg === "somma" ? "somma" : meta.granularita.agg === "ultimo" ? "ultimo valore" : "media")} del periodo): ${meta.granularita.a} punti da ${meta.granularita.da}`
+        : "") +
       (meta.fonte ? ` · dati: ${escHtml(String(meta.fonte).slice(0, 90))}${meta.sintetica ? " (serie di esempio)" : ""}` : "") +
       (meta.scartate ? ` · ${meta.scartate} righe del file non lette` : "") +
       `<span class="prev-tecnico">calcolato in ${String(out.latency_s).replace(".", ",")} s · modello Timestral ${out.taglia}</span>`;
@@ -7656,6 +7802,10 @@ async function prevVerifica() {
   const hScelto = Math.max(1, Math.min(366, Number($("prevOrizzonte").value) || 30));
   const tre = prevOrizzonti(prevUnitaSerie(), hScelto);
   const fonte = val.startsWith("demo:") ? { demo: [val.slice(5)] } : { csv: val.slice(4) };
+  if (PREV_CTRL.granularita) {
+    fonte.granularita = PREV_CTRL.granularita;
+    fonte.agg = PREV_CTRL.agg || "media";
+  }
   try {
     // tre prove, una per orizzonte: l'affidabilità a 7 giorni non dice niente su quella a 90
     const risposte = await Promise.all(
@@ -10023,12 +10173,31 @@ $("prevCarica").onclick = () => $("prevFile").click();
 $("prevFile").onchange = (e) => { const f = e.target.files && e.target.files[0]; prevCaricaFile(f); e.target.value = ""; };
 $("prevSerie").onchange = () => {
   PREV_CTRL.offset = 0; // serie nuova, finestra in fondo: nessuno spostamento ereditato
+  // una granularità scelta per la serie di prima potrebbe non esistere per questa (o essere più
+  // fine dei suoi dati): si riparte da «come i dati» e si ripropongono le scelte possibili
+  PREV_CTRL.granularita = "";
+  prevPopolaGranularita();
   prevOrizzonteAdatto();
   prevAggiornaControlli();
   prevSalvaScelta();
   if ($("prevSerie").value) prevEsegui();
 };
 $("prevOrizzonte").onchange = () => { prevAggiornaControlli(); prevSalvaScelta(); };
+/* Granularità e aggregazione stanno PRIMA del calcolo: cambiano su cosa si fa la previsione, quindi
+   non si applicano a sorpresa al grafico già disegnato — si dice che serve ricalcolare. */
+$("prevGran")?.addEventListener("change", (e) => {
+  PREV_CTRL.granularita = e.target.value || "";
+  prevPopolaGranularita();
+  prevOrizzonteAdatto();
+  prevAggiornaControlli();
+  prevSalvaScelta();
+  prevAvvisaDaRicalcolare(`granularità: ${e.target.value ? (prevGranScelta()?.etichetta || e.target.value) : "come i dati"}`);
+});
+$("prevAgg")?.addEventListener("change", (e) => {
+  PREV_CTRL.agg = e.target.value || "media";
+  prevSalvaScelta();
+  prevAvvisaDaRicalcolare(`aggregazione: ${e.target.selectedOptions?.[0]?.textContent || e.target.value}`);
+});
 $("prevFinestra")?.addEventListener("change", (e) => {
   PREV_CTRL.finestra = Number(e.target.value) || 0;
   PREV_CTRL.offset = 0;
