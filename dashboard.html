@@ -1755,6 +1755,8 @@ footer {
 .prev-legenda { color: var(--dim); font-weight: 400; font-size: var(--fs-xs); letter-spacing: .2px; }
 .prev-grafico svg { display: block; width: 100%; height: auto; }
 .prev-nota { color: var(--dim); font-size: var(--fs-xs); line-height: 1.5; margin-top: 6px; }
+.prev-gesti { display: block; margin-top: 6px; color: var(--faint); font-size: var(--fs-xs); line-height: 1.5; }
+.prev-gesti b { color: var(--text-soft); }
 .prev-numeri { display: flex; flex-direction: column; gap: 10px; }
 .prev-num { display: flex; flex-direction: column; gap: 1px; }
 .prev-num .k { color: var(--dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .6px; }
@@ -1848,6 +1850,19 @@ footer {
 @media (max-width: 620px) { .prev-glossario dl { grid-template-columns: minmax(0, 1fr); } }
 .prev-zoom { display: inline-flex; gap: 3px; }
 .prev-zoominfo { color: var(--faint); font-size: var(--fs-xs); min-width: 92px; font-variant-numeric: tabular-nums; }
+/* Lo zoom è arrivato al limite: si dice, invece di lasciare un pulsante che sembra rotto. */
+.prev-zoominfo.limite { color: #d9a13b; }
+/* La striscia (minimappa) sotto ogni grafico: è la bussola. Mostra TUTTO il disegno e, sopra,
+   il riquadro di ciò che si sta guardando. Con un clic o un trascinamento ci si sposta; senza,
+   dopo tre colpi di rotella su una serie da 900 punti non si sa più dove si è finiti. */
+.prev-map { margin-top: 4px; cursor: pointer; touch-action: none; border-radius: 6px; }
+.prev-map[hidden] { display: none; }
+.prev-map svg { display: block; width: 100%; height: 44px; }
+.prev-map .mm-tela { fill: var(--panel-2); stroke: var(--border-soft); }
+.prev-map .mm-serie { fill: none; stroke: var(--dim); stroke-width: 1; }
+.prev-map .mm-corte { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; }
+.prev-map .mm-win { fill: color-mix(in srgb, var(--accent) 16%, transparent); stroke: var(--accent); stroke-width: 1.2; }
+.prev-map:hover .mm-win { fill: color-mix(in srgb, var(--accent) 26%, transparent); }
 .prev-export { display: inline-flex; gap: 6px; flex-wrap: wrap; }
 .prev-svgbox svg { cursor: grab; touch-action: none; }
 .prev-svgbox svg.trascinando { cursor: grabbing; }
@@ -1864,8 +1879,10 @@ footer {
 .prev-trend { display: flex; gap: 14px; flex-wrap: wrap; color: var(--dim); font-size: var(--fs-sm); padding: 8px 2px 0; }
 .prev-trend b { color: var(--text-soft); font-variant-numeric: tabular-nums; }
 .prev-grafico:fullscreen { background: var(--bg-soft); padding: 18px; display: flex; flex-direction: column; }
-.prev-grafico:fullscreen .prev-svgbox { flex: 1; min-height: 0; }
-.prev-grafico:fullscreen svg { height: 100%; }
+.prev-grafico:fullscreen #prevSvgBox { flex: 1; min-height: 0; }
+.prev-grafico:fullscreen #prevSvgBox svg { height: 100%; }
+/* le strisce restano strisce anche a schermo intero: sono la bussola, non il disegno principale */
+.prev-grafico:fullscreen .prev-map svg { height: 44px; }
 .nota-riga { display: block; margin-top: 2px; color: var(--faint); font-size: var(--fs-2xs); font-weight: 400; line-height: 1.35; }
 /* focus da tastiera visibile: si deve capire dove si è, senza dipendere dal mouse */
 #previsioniView :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius); }
@@ -2227,9 +2244,10 @@ footer {
           <button class="ghost mini" id="prevIndietro" type="button" title="Sposta la finestra indietro nel tempo (Shift+clic: di 10 finestre)">◀</button>
           <button class="ghost mini" id="prevAvanti" type="button" title="Sposta la finestra avanti nel tempo">▶</button>
           <span class="prev-zoom">
-            <button class="ghost mini" id="prevZoomOut" type="button" title="Allontana (rotella sulla rotella del mouse: zoom sul puntatore)">−</button>
-            <button class="ghost mini" id="prevZoomIn" type="button" title="Avvicina (rotella: zoom sul puntatore)">+</button>
-            <button class="ghost mini" id="prevResetZoom" type="button" title="Torna a vedere tutto (doppio clic sul grafico, o tasto 0)">tutto</button>
+            <button class="ghost mini" id="prevZoomOut" type="button" title="Allontana (rotella sul grafico: zoom sul puntatore, Shift per passi larghi)">−</button>
+            <button class="ghost mini" id="prevZoomIn" type="button" title="Avvicina (rotella sul grafico: zoom sul puntatore, Shift per passi larghi)">+</button>
+            <button class="ghost mini" id="prevResetZoom" type="button" title="Reset: torna alla vista di partenza, la finestra di storico scelta con la previsione (doppio clic sul grafico, o tasto 0)">reset</button>
+            <button class="ghost mini" id="prevTuttoZoom" type="button" title="Vedi tutto: tutto lo storico e tutta la previsione (tasto 9)">tutto</button>
           </span>
           <span class="prev-zoominfo" id="prevZoomInfo">—</span>
           <label class="prev-check"><input type="checkbox" id="prevLog" /> scala logaritmica</label>
@@ -2241,12 +2259,22 @@ footer {
           <label class="prev-check" title="Sovrappone la finestra precedente, allineata per posizione: serve a vedere se il movimento attuale somiglia a quello di prima"><input type="checkbox" id="prevConfronto" /> confronta col periodo prima</label>
         </div>
         <div id="prevSvgBox" class="prev-svgbox"></div>
+        <div class="prev-map" id="prevMini" title="Dove sei: trascina il riquadro per spostarti, clic per saltare in un punto"></div>
+        <div class="prev-trend" id="prevTrend"></div>
         <div class="prev-scenario" id="prevScenarioBox">
-          <div class="prev-card-h">Andamento realistico <span class="prev-legenda" id="prevScenarioLeg">se il comportamento recente continuasse — ricampionato dai dati, non dal modello</span></div>
+          <div class="prev-card-h">Andamento realistico <span class="prev-legenda" id="prevScenarioLeg">se il comportamento recente continuasse — ricampionato dai dati, non dal modello</span>
+            <span style="flex:1"></span>
+            <span class="prev-zoom">
+              <button class="ghost mini" id="prevScZoomOut" type="button" title="Allontana (rotella sul grafico, zoom sul puntatore)">−</button>
+              <button class="ghost mini" id="prevScZoomIn" type="button" title="Avvicina (rotella sul grafico, zoom sul puntatore)">+</button>
+              <button class="ghost mini" id="prevScReset" type="button" title="Reset: torna a vedere tutto lo scenario (doppio clic sul grafico, o tasto 0)">reset</button>
+            </span>
+            <span class="prev-zoominfo" id="prevScZoomInfo">—</span>
+          </div>
           <div id="prevSvgScenario" class="prev-svgbox"></div>
+          <div class="prev-map" id="prevMiniSc" title="Dove sei nello scenario: trascina il riquadro per spostarti"></div>
           <div class="prev-nota" id="prevScenarioNota"></div>
         </div>
-        <div class="prev-trend" id="prevTrend"></div>
         <div class="prev-nota" id="prevNotaGrafico"></div>
       </section>
       <aside class="prev-card prev-numeri" id="prevNumeri"></aside>
@@ -6309,14 +6337,31 @@ function prevCtrlScelta() {
   return prevRisultato && !$("prevCorpo").hidden;
 }
 
-/** (Ri)disegna solo il grafico: cambiare una leva non deve ricalcolare la previsione. */
+/** (Ri)disegna solo il grafico: cambiare una leva non deve ricalcolare la previsione.
+ *  I gestori di puntatore/zoom NON si riagganciano qui: sono installati una volta sola sui
+ *  contenitori (vedi prevInstallaNavigazione). Prima ogni ridisegno ne aggiungeva un altro,
+ *  anche su window: dopo un po' di rotella la pagina rallentava e lo zoom diventava a scatti. */
 function prevRidisegna() {
   if (!prevRisultato) return;
   $("prevSvgBox").innerHTML = prevGrafico(prevRisultato);
   $("prevTrend").innerHTML = prevTrendHtml(prevRisultato);
   prevAggiornaScenario(prevRisultato);
+  prevAggiornaStriscia("modello");
   prevAggiornaZoomInfo();
-  prevAgganciaPuntatore();
+}
+
+/** Cambiare finestra (o ◀ ▶) è un comando esplicito: il dominio riparte dalla finestra scelta. */
+function prevApplicaFinestra() {
+  prevView = prevDominioDefault();
+  prevRidisegna();
+}
+
+/** Solo il secondo grafico: si ridisegna da solo quando lo si zooma o lo si sposta. */
+function prevRidisegnaScenario() {
+  if (!prevRisultato || !prevScCache) return;
+  $("prevSvgScenario").innerHTML = prevScenarioSvg(prevRisultato, prevScCache);
+  prevAggiornaStriscia("scenario");
+  prevAggiornaZoomInfo();
 }
 
 /**
@@ -6327,67 +6372,234 @@ function prevAggiornaScenario(out) {
   const box = $("prevScenarioBox");
   if (!box) return;
   const sc = prevScenario(out);
+  prevScCache = sc;                    // riusato a ogni zoom senza ricalcolare i 400 percorsi
   box.hidden = !sc;
-  if (!sc) return;
+  if (!sc) {
+    prevGeoSc = null;
+    prevViewSc = { a: 0, b: null };
+    prevAggiornaStriscia("scenario");
+    return;
+  }
   $("prevSvgScenario").innerHTML = prevScenarioSvg(out, sc);
   $("prevScenarioNota").innerHTML = prevScenarioNota(out, sc);
+  prevAggiornaStriscia("scenario");
   // la legenda dichiara i parametri veri dello scenario: quante osservazioni, quale media
   const leg = $("prevScenarioLeg");
   if (leg) leg.textContent = `se il comportamento degli ultimi ${sc.K} passi continuasse · fasce 50 / 80 / 95% · linea gialla: media degli ultimi ${sc.W}`;
 }
 
-/* Dominio visibile, in indici sull'array «storico + previsione»: è ciò che rende il grafico
-   navigabile come un terminale. `a` e `b` sono frazionari (zoom fluido), non interi. */
-let prevView = { a: 0, b: null };   // b = null → tutto
-let prevDrag = null;
+/* ---------------------------- NAVIGAZIONE DEI DUE GRAFICI ----------------------------
+   I due grafici (la previsione del modello e lo scenario costruito dai dati) si guardano con
+   gli stessi gesti, perché sono lo stesso gesto mentale:
+     rotella ......... zoom ancorato al puntatore (Shift = passi larghi, Ctrl = passi fini)
+     trascinamento ... ci si sposta nel tempo
+     doppio clic ..... reset (si torna alla vista di partenza)
+     frecce, + − 0 9 . spostamento, zoom, reset, «tutto»
+     due dita ........ zoom su mobile
+   Sotto ogni grafico c'è una STRISCIA con tutto il disegno e il riquadro di ciò che si sta
+   guardando: è la bussola. Con lo zoom profondo su una serie lunga è facilissimo perdere la
+   linea (e la domanda «dove sono?»), quindi la posizione si vede sempre e si torna con un clic.
+   La scala verticale si ricalcola sui valori VISIBILI: per quanto si zoomi, la linea resta
+   dentro il riquadro. Il dominio è in indici frazionari, così lo zoom è fluido.
+   `b = null` significa «tutto». */
+const PREV_NAV_MIN_PUNTI = 4;        // sotto quattro punti un grafico non dice più niente
+let prevView = { a: 0, b: null };    // grafico del modello: indici 0..N-1 (storico + previsione)
+let prevViewSc = { a: 0, b: null };  // scenario: indici 0..M-1 (storia mostrata + futuro)
+let prevGeoSc = null;                // geometria dell'ultimo disegno dello scenario
+let prevScCache = null;              // scenario calcolato (400 percorsi): non si rifà a ogni zoom
+let prevDrag = null;                 // { ch, tipo: "grafico"|"striscia", x, a, b }
+let prevNavAttivo = "modello";       // a quale grafico parlano pulsanti e tastiera
+const prevRaf = Object.create(null); // disegni accodati (uno per grafico, con requestAnimationFrame)
 
 function prevNTotale() {
   if (!prevRisultato) return 0;
   return (prevRisultato.storico || []).length + prevRisultato.series[0].median.length;
 }
+function prevNTotaleSc() {
+  return prevScCache ? prevScCache.V + prevScCache.h : 0;
+}
 
 /** Dominio iniziale = la finestra scelta; poi l'utente è libero di zoomare e spostarsi. */
-function prevImpostaDominio() {
+function prevDominioDefault() {
   const N = prevNTotale();
-  if (!N) { prevView = { a: 0, b: null }; return; }
+  if (!N) return { a: 0, b: null };
   const fin = Number(PREV_CTRL.finestra);
-  if (!Number.isFinite(fin) || fin === 0) { prevView = { a: 0, b: null }; return; }
+  if (!Number.isFinite(fin) || fin === 0) return { a: 0, b: null };
   if (fin < 0) {
     // automatico: ultimi passi proporzionati all'orizzonte, così la previsione occupa ~un terzo
     const auto = prevFinestraPunti();
-    prevView = { a: Math.max(0, N - auto), b: N - 1 };
-    return;
+    return { a: Math.max(0, N - auto), b: N - 1 };
   }
   const off = Math.min(PREV_CTRL.offset || 0, Math.max(0, N - fin));
-  prevView = { a: Math.max(0, N - off - fin), b: N - off - 1 };
+  return { a: Math.max(0, N - off - fin), b: N - off - 1 };
+}
+function prevImpostaDominio() {
+  prevView = prevDominioDefault();
+  prevViewSc = { a: 0, b: null };    // lo scenario parte sempre da «tutto»: è il metro
+  prevDrag = null;
 }
 
-/** Zoom attorno a un punto (in indici), con limiti sensati. */
-function prevZoomAt(centro, fattore) {
-  const N = prevNTotale();
+/* Il registro dei due grafici: ciascuno sa dire quanti punti ha, dove sta guardando, come si
+   ridisegna, dove scrive lo stato e dove sta la sua striscia. Le funzioni di navigazione qui
+   sotto sono scritte UNA volta e funzionano per entrambi. */
+const PREV_GRAFICI = {
+  modello: {
+    tot: prevNTotale,
+    view: () => prevView,
+    set: (v) => { prevView = v; },
+    default: prevDominioDefault,
+    geo: () => prevGeo,
+    ridisegna: prevRidisegna,
+    info: () => $("prevZoomInfo"),
+    striscia: () => $("prevMini"),
+    box: () => $("prevSvgBox"),
+  },
+  scenario: {
+    tot: prevNTotaleSc,
+    view: () => prevViewSc,
+    set: (v) => { prevViewSc = v; },
+    default: () => ({ a: 0, b: null }),
+    geo: () => prevGeoSc,
+    ridisegna: prevRidisegnaScenario,
+    info: () => $("prevScZoomInfo"),
+    striscia: () => $("prevMiniSc"),
+    box: () => $("prevSvgScenario"),
+  },
+};
+
+/** Lo stato del dominio di un grafico, con i limiti già calcolati. */
+function navSpan(ch) {
+  const G = PREV_GRAFICI[ch];
+  const N = G.tot();
+  const spanMax = Math.max(1, N - 1);
+  const v = G.view();
+  const a = Math.min(Math.max(0, v.a), spanMax);
+  const b = v.b === null ? spanMax : Math.min(spanMax, Math.max(a + 0.001, v.b));
+  return { a, b, N, spanMax, spanMin: Math.min(PREV_NAV_MIN_PUNTI, spanMax) };
+}
+
+/** Scrive il dominio, con i vincoli: non si esce dai dati, non si scende sotto i 4 punti,
+ *  non si supera il tutto (e «tutto» torna a essere `b = null`, così reset e clic coincidono). */
+function navApplica(ch, na, nb) {
+  const { N, spanMax, spanMin } = navSpan(ch);
   if (!N) return;
-  const a = prevView.a, b = prevView.b === null ? N - 1 : prevView.b;
+  let span = Math.min(spanMax, Math.max(spanMin, nb - na));
+  if (Math.abs(nb - na - span) > 1e-9) { const c = (na + nb) / 2; na = c - span / 2; nb = c + span / 2; }
+  if (na < 0) { nb -= na; na = 0; }
+  if (nb > spanMax) { na -= nb - spanMax; nb = spanMax; }
+  na = Math.max(0, na); nb = Math.min(spanMax, nb);
+  PREV_GRAFICI[ch].set(na <= 0.001 && nb >= spanMax - 0.001 ? { a: 0, b: null } : { a: na, b: nb });
+}
+
+/** Il disegno è accodato: la rotella può sparare dieci eventi mentre il browser ne mostra uno. */
+function navDisegna(ch) {
+  if (prevRaf[ch]) return;
+  prevRaf[ch] = requestAnimationFrame(() => {
+    prevRaf[ch] = null;
+    PREV_GRAFICI[ch].ridisegna();
+  });
+}
+
+/** Zoom attorno a un punto (in indici) del grafico `ch`. */
+function navZoomAt(ch, centro, fattore) {
+  const { a, b, spanMax, spanMin } = navSpan(ch);
+  if (!spanMax) return;
   const span = Math.max(0.0001, b - a);
   const c = Math.min(b, Math.max(a, centro));
-  let nuovoSpan = Math.min(N - 1, Math.max(6, span * fattore));
-  let na = c - (c - a) * (nuovoSpan / span);
-  let nb = c + (b - c) * (nuovoSpan / span);
-  if (na < 0) { nb -= na; na = 0; }
-  if (nb > N - 1) { na -= nb - (N - 1); nb = N - 1; }
-  prevView = { a: Math.max(0, na), b: Math.min(N - 1, nb) };
-  prevRidisegna();
+  const nuovo = Math.min(spanMax, Math.max(spanMin, span * fattore));
+  navApplica(ch, c - (c - a) * (nuovo / span), c + (b - c) * (nuovo / span));
+  navDisegna(ch);
 }
 
-function prevPan(deltaIndici) {
-  const N = prevNTotale();
-  if (!N) return;
-  const a = prevView.a, b = prevView.b === null ? N - 1 : prevView.b;
-  const span = b - a;
-  let na = a + deltaIndici, nb = b + deltaIndici;
-  if (na < 0) { nb -= na; na = 0; }
-  if (nb > N - 1) { na -= nb - (N - 1); nb = N - 1; }
-  prevView = { a: Math.max(0, na), b: Math.min(N - 1, nb) };
-  prevRidisegna();
+function navPan(ch, deltaIndici) {
+  const { a, b } = navSpan(ch);
+  navApplica(ch, a + deltaIndici, b + deltaIndici);
+  navDisegna(ch);
+}
+
+/** Porta il centro della vista su un punto (clic sulla striscia). */
+function navCentra(ch, centro) {
+  const { a, b } = navSpan(ch);
+  const meta = (b - a) / 2;
+  navApplica(ch, centro - meta, centro + meta);
+  navDisegna(ch);
+}
+
+function navReset(ch) { PREV_GRAFICI[ch].set(PREV_GRAFICI[ch].default()); navDisegna(ch); }
+function navTutto(ch) { PREV_GRAFICI[ch].set({ a: 0, b: null }); navDisegna(ch); }
+function navZoomPasso(ch, dentro) {
+  const { a, b } = navSpan(ch);
+  navZoomAt(ch, (a + b) / 2, dentro ? 1 / 1.35 : 1.35);
+}
+
+/** «Dove sono»: punti visibili, date agli estremi, e se lo zoom è arrivato al limite. */
+function navInfo(ch) {
+  const el = PREV_GRAFICI[ch].info();
+  const g = PREV_GRAFICI[ch].geo();
+  if (!el) return;
+  if (!g) { el.textContent = "—"; return; }
+  const da = Math.max(0, Math.floor(g.a)), al = Math.min(g.N - 1, Math.ceil(g.b));
+  const d0 = g.dataDi ? g.dataDi(da) : null;
+  const d1 = g.dataDi ? g.dataDi(al) : null;
+  const limite = g.b - g.a <= PREV_NAV_MIN_PUNTI + 0.001;   // zoom al massimo consentito
+  el.textContent = `${Math.round(al - da + 1)} punti${d0 ? ` · ${d0}` : ""}${d1 ? ` → ${d1}` : ""}${limite ? " · dettaglio massimo" : ""}`;
+  el.classList.toggle("limite", limite);
+}
+
+/**
+ * La striscia sotto il grafico: tutto il disegno in miniatura e, sopra, il riquadro visibile.
+ * Clic o trascinamento = ci si sposta. Serve a non perdere la rotta: con il solo zoom, dopo
+ * tre colpi di rotella su una serie da 900 punti non si sa più dove si è finiti.
+ */
+function prevMiniSvg(ch) {
+  const g = PREV_GRAFICI[ch].geo();
+  if (!g || !Array.isArray(g.serieMini) || g.serieMini.length < 2) return "";
+  const W = 900, H = 44, pad = 5;
+  const N = g.N;
+  const xm = (i) => pad + (i / Math.max(1, N - 1)) * (W - 2 * pad);
+  const vals = g.serieMini.filter((v) => Number.isFinite(v));
+  if (!vals.length) return "";
+  let min = Math.min(...vals), max = Math.max(...vals);
+  if (!(max > min)) { min -= 1; max += 1; }
+  const pd = (max - min) * 0.12; min -= pd; max += pd;
+  const ym = (v) => pad + (H - 2 * pad) * (1 - (v - min) / (max - min));
+  let d = "", penna = false;
+  g.serieMini.forEach((v, i) => {
+    if (!Number.isFinite(v)) { penna = false; return; }
+    d += `${penna ? "L" : "M"}${xm(i).toFixed(1)} ${ym(v).toFixed(1)}`;
+    penna = true;
+  });
+  const { a, b } = navSpan(ch);
+  const x1 = xm(a), x2 = xm(b);
+  const corte = g.L > 0 ? `<line class="mm-corte" x1="${xm(g.L - 1).toFixed(1)}" y1="0" x2="${xm(g.L - 1).toFixed(1)}" y2="${H}"/>` : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Dove sei nel grafico: trascina per spostarti">
+      <rect class="mm-tela" x="0" y="0" width="${W}" height="${H}" rx="6"/>
+      ${corte}
+      <path class="mm-serie" d="${d}"/>
+      <rect class="mm-win" x="${x1.toFixed(1)}" y="1" width="${Math.max(3, x2 - x1).toFixed(1)}" height="${H - 2}" rx="3"/>
+    </svg>`;
+}
+
+function prevAggiornaStriscia(ch) {
+  const el = PREV_GRAFICI[ch].striscia();
+  if (!el) return;
+  const svg = prevMiniSvg(ch);
+  el.innerHTML = svg;
+  el.hidden = !svg;
+  el.title = svg ? "Dove sei: trascina il riquadro per spostarti, clic per saltare in un punto" : "";
+}
+
+/** Il mirino del puntatore: le stesse etichette nei due grafici, con classi (non id) così
+ *  la funzione di puntatore è una sola e vale per entrambi. */
+function prevCursoreMarkup(g) {
+  return `<g class="nav-cursor" opacity="0">
+        <line class="nav-cross-x" x1="0" y1="${g.mt}" x2="0" y2="${g.H - g.mb}" stroke="${PREV_C.asse}" stroke-dasharray="3 3"/>
+        <line class="nav-cross-y" x1="${g.ml}" y1="0" x2="${g.W - g.mr}" y2="0" stroke="${PREV_C.asse}" stroke-dasharray="3 3"/>
+        <rect class="nav-tag-y prev-axis-bg" rx="4" width="62" height="18" x="${g.W - g.mr + 2}" y="0"/>
+        <text class="nav-tag-y-t prev-axis-y" x="${g.W - g.mr + 6}" y="13"></text>
+        <rect class="nav-tag-x prev-axis-bg" rx="4" width="96" height="18" x="0" y="${g.H - g.mb + 2}"/>
+        <text class="nav-tag-x-t prev-axis-x" x="4" y="${g.H - g.mb + 15}"></text>
+      </g>`;
 }
 
 /** Il grafico: storico, opzionalmente lisciato, ventaglio dei quantili, mediana. */
@@ -6397,8 +6609,9 @@ function prevGrafico(out) {
   const tutto = out.storico || [];
   const L = tutto.length;
   const N = L + h;
-  const a = Math.max(0, Math.min(prevView.a, N - 1));
-  const b = prevView.b === null ? N - 1 : Math.max(a + 0.001, Math.min(prevView.b, N - 1));
+  const dom = navSpan("modello");
+  const a = dom.a;
+  const b = Math.max(a + 0.001, dom.b);
   const dateTutte = out.date && out.date[0] ? out.date[0] : null;
   const W = 900, H = 380, ml = 62, mr = 66, mt = 14, mb = 34;
 
@@ -6430,6 +6643,26 @@ function prevGrafico(out) {
       const pezzo = storicoVis.slice(idx, k + 1).map((i) => tutto[i]);
       return pezzo.reduce((s1, v1) => s1 + v1, 0) / pezzo.length;
     });
+  })();
+
+  /* Confronto col periodo precedente: la finestra di storico SUBITO PRIMA di quella guardata,
+     allineata per posizione e riportata sulla stessa scala verticale — si confronta la FORMA del
+     movimento, non il livello (prezzi diversi schiaccerebbero il disegno). La casella c'era già
+     ma non disegnava niente: la frase «confronto attivo» adesso è vera. */
+  const pathConfronto = (() => {
+    if (!PREV_CTRL.confronto || !L) return "";
+    const da = Math.max(0, Math.floor(a)), al = Math.min(L - 1, Math.ceil(b));
+    const n = al - da + 1;
+    const p0 = da - n;
+    if (n < 3 || p0 < 0) return "";
+    const pezzo = tutto.slice(p0, da);
+    if (pezzo.length < 3 || !pezzo.every((v) => Number.isFinite(v) && (!usaLog || v > 0))) return "";
+    const pmin = Math.min(...pezzo), pmax = Math.max(...pezzo);
+    if (!(pmax > pmin)) return "";
+    const riscala = usaLog
+      ? (v) => Math.exp(tmin + ((Math.log(v) - Math.log(pmin)) / (Math.log(pmax) - Math.log(pmin))) * (tmax - tmin))
+      : (v) => min + ((v - pmin) / (pmax - pmin)) * (max - min);
+    return pezzo.map((v, k) => `${k ? "L" : "M"}${x(da + k).toFixed(1)} ${y(riscala(v)).toFixed(1)}`).join(" ");
   })();
 
   // ventaglio della previsione (solo la parte dentro il dominio)
@@ -6513,10 +6746,23 @@ function prevGrafico(out) {
     ? storicoVis.map((i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(tutto[i]).toFixed(1)}" r="2" fill="${PREV_C.hist}"/>`).join("")
     : "";
 
-  // geometria per il puntatore
+  // geometria per il puntatore e per la navigazione (la stessa forma per entrambi i grafici)
   prevGeo = {
+    chiave: "modello",
     W, H, ml, mr, mt, mb, N, L, a, b, x, y, T, usaLog, tutto, s: s0, h,
     dateTutte, storicoVis,
+    // la serie completa del disegno in una riga: serve alla striscia (minimappa)
+    serieMini: tutto.concat(s0.median),
+    // etichetta dell'asse del tempo e valore sotto il puntatore
+    dataDi: (i) => (i < L
+      ? (dateTutte && dateTutte[i] ? prevQuando(dateTutte[i]) : `passo −${L - i}`)
+      : `+${i - L + 1} ${prevUnitaSerie()}`),
+    dato: (i) => {
+      const ii = Math.max(0, Math.min(N - 1, i));
+      if (ii < L) return { valore: tutto[ii], sotto: "dato osservato" };
+      const k = ii - L;
+      return { valore: s0.median[k], sotto: `intervallo 80%: ${prevNum(s0.q10[k])} – ${prevNum(s0.q90[k])}` };
+    },
     // dominio di valore del disegno: serve a invertire la scala (verifiche, e chi legge il geo)
     min, max, tmin, tmax,
   };
@@ -6531,6 +6777,7 @@ function prevGrafico(out) {
       <g clip-path="url(#prevClip)">
       ${bande}
       ${pathStorico ? `<path d="${pathStorico}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.4" stroke-linejoin="round"/>` : ""}
+      ${pathConfronto ? `<path d="${pathConfronto}" fill="none" stroke="${PREV_C.deriva}" stroke-width="1.3" stroke-dasharray="2 3" stroke-linejoin="round" opacity=".75"/>` : ""}
       ${puntiStorico}
       ${media ? `<path d="${media.map((v, k) => `${k ? "L" : "M"}${x(storicoVis[k]).toFixed(1)} ${y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${PREV_C.giallo}" stroke-width="1.8" stroke-linejoin="round" opacity=".85"/>` : ""}
       ${pathDeriva ? `<path d="${pathDeriva}" fill="none" stroke="${PREV_C.deriva}" stroke-width="1.6" stroke-dasharray="5 4" stroke-linejoin="round" opacity=".9"/>` : ""}
@@ -6540,14 +6787,7 @@ function prevGrafico(out) {
       </g>
       <line x1="${ml}" y1="${H - mb}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
       <line x1="${W - mr}" y1="${mt}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
-      <g id="prevCursor" opacity="0">
-        <line id="prevCrossX" x1="0" y1="${mt}" x2="0" y2="${H - mb}" stroke="${PREV_C.asse}" stroke-dasharray="3 3"/>
-        <line id="prevCrossY" x1="${ml}" y1="0" x2="${W - mr}" y2="0" stroke="${PREV_C.asse}" stroke-dasharray="3 3"/>
-        <rect id="prevTagY" class="prev-axis-bg" rx="4" width="62" height="18" x="${W - mr + 2}" y="0"/>
-        <text id="prevTagYT" class="prev-axis-y" x="${W - mr + 6}" y="13"></text>
-        <rect id="prevTagX" class="prev-axis-bg" rx="4" width="86" height="18" x="0" y="${H - mb + 2}"/>
-        <text id="prevTagXT" class="prev-axis-x" x="4" y="${H - mb + 15}"></text>
-      </g>
+      ${prevCursoreMarkup(prevGeo)}
     </svg>`;
 }
 
@@ -6612,67 +6852,145 @@ function prevScenario(out) {
   // la «media precedente»: media mobile degli ultimi W valori, il livello da cui si sta partendo
   const W = Math.min(20, L);
   const mm = tutto.slice(L - W).reduce((x, y) => x + y, 0) / W;
+  // quanta storia mostrare per contesto: il doppio dell'orizzonte (almeno 30 punti). È anche
+  // il dominio su cui si fa lo zoom: il secondo grafico non può mostrare più di così.
+  const V = Math.min(L, Math.max(30, Math.round(h * 2)));
   return {
-    h, L, tutto, ultimo, K: rend.length, media, sigma, W, mm,
+    h, L, tutto, ultimo, K: rend.length, media, sigma, W, mm, V, i0: L - V,
     q05: serie(0.05), q10: serie(0.1), q25: serie(0.25), q50: serie(0.5),
     q75: serie(0.75), q90: serie(0.9), q95: serie(0.95),
     mediaPerc: Array.from({ length: h }, (_, k) => percorsi.reduce((x, p) => x + p[k], 0) / M),
   };
 }
 
-/** Il disegno dello scenario: storico recente, ventaglio empirico, mediana e livello medio. */
+/** Il disegno dello scenario: storico recente, ventaglio empirico, mediana e livello medio.
+ *  È NAVIGABILE come il primo grafico: il dominio è in indici locali sul disegno
+ *  (0..V-1 = storia mostrata, V..V+h-1 = futuro), la scala verticale si ricalcola su ciò che
+ *  si vede — quindi la linea non esce mai dal riquadro — e la striscia qui sotto dice sempre
+ *  dove si è. Tutto ciò che sta fuori dal dominio viene tagliato dal clip, non ricalcolato. */
 function prevScenarioSvg(out, precalcolato = null) {
   const sc = precalcolato || prevScenario(out);
   if (!sc) return "";
-  const { h, L, tutto, ultimo, mm, W } = sc;
-  const V = Math.min(L, Math.max(30, Math.round(h * 2)));   // quanta storia mostrare per contesto
-  const i0 = L - V;
+  const { h, tutto, ultimo, mm, W, V, i0 } = sc;
+  const M = V + h;                                      // punti disegnabili: storia + futuro
+  const dom = navSpan("scenario");
+  const a = dom.a;
+  const b = Math.max(a + 0.001, dom.b);
+  const date = (out.date && out.date[0]) || null;
   const Wd = 900, Hd = 210, ml = 62, mr = 66, mt = 12, mb = 26;
-  const x = (i) => ml + ((i - i0) / Math.max(1, V + h - 1)) * (Wd - ml - mr);
-  const valori = [
-    ...tutto.slice(i0),
-    sc.q05[h - 1], sc.q95[h - 1], mm,
-  ].filter((v) => Number.isFinite(v));
-  let min = Math.min(...valori), max = Math.max(...valori);
-  if (min === max) { min -= 1; max += 1; }
+  const x = (i) => ml + ((i - a) / (b - a)) * (Wd - ml - mr);
+
+  // dominio dei valori: SOLO quello che si vede (storia visibile + fasce del futuro visibile)
+  const valori = [];
+  for (let i = Math.max(0, Math.floor(a)); i <= Math.min(M - 1, Math.ceil(b)); i += 1) {
+    if (i < V) valori.push(tutto[i0 + i]);
+    else { const k = i - V; valori.push(sc.q05[k], sc.q50[k], sc.q95[k]); }
+  }
+  const finiti = valori.filter((v) => Number.isFinite(v));
+  let min = finiti.length ? Math.min(...finiti) : 0;
+  let max = finiti.length ? Math.max(...finiti) : 1;
+  if (!(max > min)) { min -= 1; max += 1; }
   const pad = (max - min) * 0.08;
   min -= pad; max += pad;
   const y = (v) => mt + (Hd - mt - mb) * (1 - (v - min) / (max - min));
 
+  const kMin = Math.max(0, Math.ceil(a - V));
+  const kMax = Math.min(h - 1, Math.floor(b - V));
+  const cern = (V > 0 && kMax >= kMin && a <= V - 1) ? { px: x(V - 1), py: y(ultimo) } : null;
   const pol = (lo, hi) => {
+    if (kMax < kMin) return "";
     const su = [], giu = [];
-    for (let k = 0; k < h; k += 1) su.push(`${x(L + k).toFixed(1)},${y(hi[k]).toFixed(1)}`);
-    for (let k = h - 1; k >= 0; k -= 1) giu.push(`${x(L + k).toFixed(1)},${y(lo[k]).toFixed(1)}`);
+    if (cern) su.push(`${cern.px.toFixed(1)},${cern.py.toFixed(1)}`);
+    for (let k = kMin; k <= kMax; k += 1) su.push(`${x(V + k).toFixed(1)},${y(hi[k]).toFixed(1)}`);
+    for (let k = kMax; k >= kMin; k -= 1) giu.push(`${x(V + k).toFixed(1)},${y(lo[k]).toFixed(1)}`);
+    if (cern) giu.push(`${cern.px.toFixed(1)},${cern.py.toFixed(1)}`);
     return su.concat(giu).join(" ");
   };
-  const cerniera = `${x(L - 1).toFixed(1)},${y(ultimo).toFixed(1)}`;
-  const conCerniera = (pts) => `${cerniera} ${pts}`;
-  const pathMed = Array.from({ length: h }, (_, k) => `${k ? "L" : "M"}${x(L + k).toFixed(1)} ${y(sc.q50[k]).toFixed(1)}`).join(" ");
-  const pathStorico = tutto.slice(i0).map((v, j) => `${j ? "L" : "M"}${x(i0 + j).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
-  const pathMedia = Array.from({ length: h }, (_, k) => `${k ? "L" : "M"}${x(L + k).toFixed(1)} ${y(sc.mediaPerc[k]).toFixed(1)}`).join(" ");
+  const traccia = (punti) => (punti.length > 1
+    ? punti.map(([px, py], j) => `${j ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ")
+    : "");
+  const medPunti = (cern ? [[cern.px, cern.py]] : []).concat(
+    Array.from({ length: Math.max(0, kMax - kMin + 1) }, (_, j) => [x(V + kMin + j), y(sc.q50[kMin + j])]));
+  const pathMed = traccia(medPunti);
+  const pathSem = traccia((cern ? [[cern.px, cern.py]] : []).concat(
+    Array.from({ length: Math.max(0, kMax - kMin + 1) }, (_, j) => [x(V + kMin + j), y(sc.mediaPerc[kMin + j])])));
+  const stoVis = [];
+  for (let i = Math.max(0, Math.floor(a)); i <= Math.min(V - 1, Math.ceil(b)); i += 1) stoVis.push(i);
+  const pathStorico = traccia(stoVis.map((i) => [x(i), y(tutto[i0 + i])]));
+
   const griglia = [0, 0.5, 1].map((f) => {
     const v = min + (max - min) * f;
     return `<line x1="${ml}" y1="${y(v).toFixed(1)}" x2="${Wd - mr}" y2="${y(v).toFixed(1)}" stroke="${PREV_C.griglia}"/>
       <text x="${Wd - mr + 6}" y="${(y(v) + 4).toFixed(1)}" font-size="11" fill="${PREV_C.asse}">${escHtml(prevNum(v))}</text>`;
   }).join("\n      ");
-  const fut = sc.q50[h - 1], lo80 = sc.q10[h - 1], hi80 = sc.q90[h - 1];
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wd} ${Hd}" role="img" aria-label="Scenario costruito dai dati: andamento realistico del prezzo">
+
+  // etichette del tempo nel dominio visibile: date per la storia, «+k» per il futuro
+  const etichetta = (i) => {
+    if (i < V) {
+      const d = date && date[i0 + i];
+      return d ? prevQuando(d) : `−${V - i}`;
+    }
+    return `+${i - V + 1}`;
+  };
+  const taccheX = [0, 1, 2, 3].map((j) => {
+    const i = Math.round(a + ((b - a) * j) / 3);
+    return `<text x="${x(i).toFixed(1)}" y="${Hd - 8}" font-size="10" fill="${PREV_C.asse}" text-anchor="${j === 0 ? "start" : j === 3 ? "end" : "middle"}">${escHtml(etichetta(i))}</text>`;
+  }).join("");
+
+  const zonaFuturo = (V > 0 && a <= V - 1 && b >= V - 1)
+    ? `<rect x="${x(V - 1).toFixed(1)}" y="${mt}" width="${Math.max(0, Wd - mr - x(V - 1)).toFixed(1)}" height="${Hd - mt - mb}" fill="rgba(96,165,250,.05)"/>
+       <line x1="${x(V - 1).toFixed(1)}" y1="${mt}" x2="${x(V - 1).toFixed(1)}" y2="${Hd - mb}" stroke="${PREV_C.griglia}" stroke-dasharray="3 4"/>
+       <text x="${Math.max(x(V - 1) + 8, ml + 4).toFixed(1)}" y="${mt + 14}" font-size="10" letter-spacing="1" fill="${PREV_C.azzurroChiaro}" opacity=".9">SCENARIO</text>`
+    : "";
+
+  // il valore finale si scrive solo quando lo si sta guardando (altrimenti è un numero orfano)
+  const fut = sc.q50[h - 1];
+  const badge = kMax === h - 1
+    ? `<rect x="${Math.min(x(V + h - 1), Wd - mr) - 66}" y="${(y(fut) - 10).toFixed(1)}" width="62" height="19" rx="4" fill="#0b0e14" opacity=".82"/>
+       <text x="${Math.min(x(V + h - 1), Wd - mr) - 8}" y="${(y(fut) + 4).toFixed(1)}" font-size="12" fill="#eef2f9" text-anchor="end">${escHtml(prevNum(fut))}</text>`
+    : "";
+
+  // geometria per il puntatore/zoom e per la striscia: stessa forma del primo grafico
+  prevGeoSc = {
+    chiave: "scenario",
+    W: Wd, H: Hd, ml, mr, mt, mb, N: M, L: V, a, b, x, y, usaLog: false,
+    tutto, s: sc, h, min, max,
+    serieMini: tutto.slice(i0).concat(sc.q50),
+    dataDi: (i) => {
+      const ii = Math.max(0, Math.min(M - 1, i));
+      if (ii < V) { const d = date && date[i0 + ii]; return d ? prevQuando(d) : `passo −${V - ii}`; }
+      return `+${ii - V + 1} ${prevUnitaSerie()}`;
+    },
+    dato: (i) => {
+      const ii = Math.max(0, Math.min(M - 1, i));
+      if (ii < V) return { valore: tutto[i0 + ii], sotto: "dato osservato" };
+      const k = ii - V;
+      return { valore: sc.q50[k], sotto: `scenario 80%: ${prevNum(sc.q10[k])} – ${prevNum(sc.q90[k])}` };
+    },
+  };
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wd} ${Hd}" role="img" aria-label="Scenario costruito dai dati: andamento realistico del prezzo, con zoom e spostamento">
+      <defs><clipPath id="prevClipSc"><rect x="${ml}" y="${mt}" width="${Wd - ml - mr}" height="${Hd - mt - mb}"/></clipPath></defs>
       <rect x="0" y="0" width="${Wd}" height="${Hd}" fill="#0b0e14"/>
       ${griglia}
+      ${taccheX}
+      ${zonaFuturo}
+      <g clip-path="url(#prevClipSc)">
+        <line x1="${ml}" y1="${y(mm).toFixed(1)}" x2="${Wd - mr}" y2="${y(mm).toFixed(1)}" stroke="${PREV_C.giallo}" stroke-width="1" stroke-dasharray="6 4" opacity=".7"/>
+        ${pol(sc.q05, sc.q95) ? `<polygon points="${pol(sc.q05, sc.q95)}" fill="${PREV_C.a95}" stroke="${PREV_C.aBordo}" stroke-width="1" stroke-dasharray="4 3"/>` : ""}
+        ${pol(sc.q10, sc.q90) ? `<polygon points="${pol(sc.q10, sc.q90)}" fill="${PREV_C.a80}" stroke="${PREV_C.aBordo80}" stroke-width="1"/>` : ""}
+        ${pol(sc.q25, sc.q75) ? `<polygon points="${pol(sc.q25, sc.q75)}" fill="${PREV_C.a50}" stroke="${PREV_C.azzurroChiaro}" stroke-width="1" opacity=".9"/>` : ""}
+        ${pathStorico ? `<path d="${pathStorico}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.6" stroke-linejoin="round"/>` : ""}
+        ${pathSem ? `<path d="${pathSem}" fill="none" stroke="${PREV_C.azzurro}" stroke-width="1.2" stroke-dasharray="2 3" opacity=".55"/>` : ""}
+        ${pathMed ? `<path d="${pathMed}" fill="none" stroke="${PREV_C.azzurroChiaro}" stroke-width="2.6" stroke-linejoin="round"/>` : ""}
+        <circle cx="${x(V - 1).toFixed(1)}" cy="${y(ultimo).toFixed(1)}" r="4" fill="${PREV_C.azzurroChiaro}"/>
+      </g>
+      ${cern ? `<text x="${cern.px.toFixed(1)}" y="${(cern.py + 18).toFixed(1)}" font-size="10" fill="${PREV_C.azzurroChiaro}" text-anchor="middle">oggi</text>` : ""}
       <line x1="${ml}" y1="${y(mm).toFixed(1)}" x2="${Wd - mr}" y2="${y(mm).toFixed(1)}" stroke="${PREV_C.giallo}" stroke-width="1" stroke-dasharray="6 4" opacity=".7"/>
-      <text x="${ml + 4}" y="${(y(mm) - 5).toFixed(1)}" font-size="10" fill="${PREV_C.giallo}" opacity=".85">media ultimi ${W}: ${escHtml(prevNum(mm))}</text>
-      <polygon points="${conCerniera(pol(sc.q05, sc.q95))}" fill="${PREV_C.a95}" stroke="${PREV_C.aBordo}" stroke-width="1" stroke-dasharray="4 3"/>
-      <polygon points="${conCerniera(pol(sc.q10, sc.q90))}" fill="${PREV_C.a80}" stroke="${PREV_C.aBordo80}" stroke-width="1"/>
-      <polygon points="${conCerniera(pol(sc.q25, sc.q75))}" fill="${PREV_C.a50}" stroke="${PREV_C.azzurroChiaro}" stroke-width="1" opacity=".9"/>
-      <path d="${pathStorico}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.6" stroke-linejoin="round"/>
-      <path d="${pathMedia}" fill="none" stroke="${PREV_C.azzurro}" stroke-width="1.2" stroke-dasharray="2 3" opacity=".55"/>
-      <path d="${pathMed}" fill="none" stroke="${PREV_C.azzurroChiaro}" stroke-width="2.6" stroke-linejoin="round"/>
-      <circle cx="${x(L - 1).toFixed(1)}" cy="${y(ultimo).toFixed(1)}" r="4" fill="${PREV_C.azzurroChiaro}"/>
-      <text x="${x(L - 1).toFixed(1)}" y="${(y(ultimo) + 18).toFixed(1)}" font-size="10" fill="${PREV_C.azzurroChiaro}" text-anchor="middle">oggi</text>
-      <rect x="${Wd - mr - 62}" y="${(y(fut) - 10).toFixed(1)}" width="58" height="19" rx="4" fill="#0b0e14" opacity=".82"/>
-      <text x="${Wd - mr - 8}" y="${(y(fut) + 4).toFixed(1)}" font-size="12" fill="#eef2f9" text-anchor="end">${escHtml(prevNum(fut))}</text>
-      <text x="${ml}" y="${Hd - 8}" font-size="10" fill="${PREV_C.asse}">${escHtml(prevQuando((out.date && out.date[0] && out.date[0][i0]) || ""))}</text>
-      <text x="${Wd - mr}" y="${Hd - 8}" font-size="10" fill="${PREV_C.asse}" text-anchor="end">+${h} ${escHtml(prevUnitaSerie())} · scenario storico: ${sc.K} rendimenti, ${400} percorsi</text>
+      <rect x="${ml + 2}" y="${(y(mm) - 16).toFixed(1)}" width="126" height="14" rx="3" fill="#0b0e14" opacity=".78"/>
+      <text x="${ml + 5}" y="${(y(mm) - 5).toFixed(1)}" font-size="10" fill="${PREV_C.giallo}" opacity=".9">media ultimi ${W}: ${escHtml(prevNum(mm))}</text>
+      ${badge}
+      ${prevCursoreMarkup(prevGeoSc)}
     </svg>`;
 }
 
@@ -6711,155 +7029,230 @@ function prevTrendHtml(out) {
   const d1 = g.dateTutte && g.dateTutte[ultimoI] ? prevQuando(g.dateTutte[ultimoI]) : null;
   return `<span>nella finestra: <b>${varPct === null ? "—" : prevPct(varPct)}</b>${d0 && d1 ? ` (${escHtml(d0)} → ${escHtml(d1)})` : ""}</span>` +
     `<span>ultimo valore <b>${sopra ? "sopra" : "sotto"}</b> la media delle ultime ${w} ${escHtml(u)}</span>` +
-    `<span>${st.length} ${escHtml(u)} disegnati${g.usaLog ? " · scala logaritmica" : ""}${PREV_CTRL.confronto ? " · confronto attivo" : ""}</span>`;
+    `<span>${st.length} ${escHtml(u)} disegnati${g.usaLog ? " · scala logaritmica" : ""}${PREV_CTRL.confronto ? " · confronto: tratteggio rosa = periodo prima, riscalato" : ""}</span>`;
 }
 
-/** Cosa si sta guardando: punti visibili e date agli estremi. */
+/** «Dove stai guardando»: punti visibili, date agli estremi, e l'avviso quando lo zoom è al limite. */
 function prevAggiornaZoomInfo() {
-  const el = $("prevZoomInfo");
-  if (!el || !prevGeo) return;
-  const g = prevGeo;
-  const da = Math.max(0, Math.floor(g.a)), al = Math.min(g.N - 1, Math.ceil(g.b));
-  const d0 = da < g.L && g.dateTutte && g.dateTutte[da] ? prevQuando(g.dateTutte[da]) : null;
-  const d1 = al < g.L && g.dateTutte && g.dateTutte[al] ? prevQuando(g.dateTutte[al]) : (al >= g.L ? "previsione" : null);
-  el.textContent = `${al - da + 1} punti${d0 ? ` · ${d0}` : ""}${d1 ? ` → ${d1}` : ""}`;
+  navInfo("modello");
+  navInfo("scenario");
+}
+
+/** I gesti, scritti dove si guarda: senza, la navigazione resta un segreto per chi non li prova. */
+function prevGestiNota() {
+  return `<span class="prev-gesti">rotella o pizzico: zoom sul puntatore · trascinare: spostarsi nel tempo · ` +
+    `doppio clic, <b>0</b> o «reset»: si torna alla vista di partenza · <b>9</b>: tutto · frecce: un passo · ` +
+    `la striscia sotto ogni grafico dice sempre dove sei.</span>`;
 }
 
 /**
- * Puntatore, zoom e spostamento — il grafico si guarda come su un terminale:
- *  - muovendo il mouse: mirino con il valore sotto il puntatore e le etichette sui due assi;
- *  - rotella: zoom centrato sul puntatore; trascinando: ci si sposta nel tempo;
- *  - doppio clic o tasto 0: si torna a vedere tutto; due dita su mobile: zoom.
+ * Puntatore, zoom e spostamento sui DUE grafici — installati UNA volta sola.
+ *
+ * Prima questa funzione si richiamava a ogni ridisegno e agganciava i gestori all'SVG (che
+ * veniva ricreato) e anche a `window`: ogni colpo di rotella lasciava dietro un gestore in più,
+ * e dopo qualche zoom la pagina rallentava. Adesso i gestori stanno sui contenitori, che non
+ * vengono mai ricreati, e leggono la geometria corrente (`prevGeo` / `prevGeoSc`) a ogni evento.
+ *
+ * Gesti: muovendo il mouse mirino con il valore e le etichette sugli assi; rotella = zoom
+ * ancorato al puntatore (Shift larghi, Ctrl fini); trascinamento = ci si sposta; doppio clic =
+ * reset; due dita = zoom su mobile. La striscia sotto il grafico è la bussola: clic o
+ * trascinamento portano la vista in quel punto.
  */
-function prevAgganciaPuntatore() {
-  const box = $("prevSvgBox");
-  const svg = box && box.querySelector("svg");
-  if (!svg || !prevGeo) return;
-  let tip = box.querySelector(".prev-tip");
-  if (!tip) {
-    tip = document.createElement("div");
-    tip.className = "prev-tip";
-    box.appendChild(tip);
-  }
-  const g = () => prevGeo;
-  const indiceDaEvento = (e) => {
-    const gg = g();
-    const r = svg.getBoundingClientRect();
-    const xv = ((e.clientX - r.left) / r.width) * gg.W;
-    const rel = (xv - gg.ml) / (gg.W - gg.ml - gg.mr);
-    return gg.a + rel * (gg.b - gg.a);
-  };
-  const disegnaMirino = (iFraz) => {
-    const gg = g();
-    const i = Math.max(0, Math.min(gg.N - 1, Math.round(iFraz)));
-    const group = svg.querySelector("#prevCursor");
-    if (!group) return;
-    const px = gg.x(i);
-    const isStorico = i < gg.L;
-    const valore = isStorico ? gg.tutto[i] : gg.s.median[i - gg.L];
-    const py = gg.y(valore);
-    group.setAttribute("opacity", "1");
-    const cx = svg.querySelector("#prevCrossX"), cy = svg.querySelector("#prevCrossY");
-    if (cx) { cx.setAttribute("x1", px.toFixed(1)); cx.setAttribute("x2", px.toFixed(1)); }
-    if (cy) { cy.setAttribute("y1", py.toFixed(1)); cy.setAttribute("y2", py.toFixed(1)); }
-    const tagY = svg.querySelector("#prevTagY"), tagYT = svg.querySelector("#prevTagYT");
-    if (tagY) tagY.setAttribute("y", Math.max(0, Math.min(gg.H - 20, py - 9)).toFixed(1));
-    if (tagYT) {
-      tagYT.setAttribute("y", Math.max(12, Math.min(gg.H - 8, py + 4)).toFixed(1));
-      tagYT.textContent = prevNum(valore);
+function prevInstallaNavigazione() {
+  const CHIAVI = ["modello", "scenario"];
+
+  const boxDi = (ch) => PREV_GRAFICI[ch].box();
+  const geoDi = (ch) => PREV_GRAFICI[ch].geo();
+  const svgDi = (ch) => { const b = boxDi(ch); return b ? b.querySelector("svg") : null; };
+  const tipDi = (ch) => {
+    const box = boxDi(ch);
+    if (!box) return null;
+    let tip = box.querySelector(".prev-tip");
+    if (!tip) {
+      tip = document.createElement("div");
+      tip.className = "prev-tip";
+      box.appendChild(tip);
     }
-    const etichetta = isStorico
-      ? (gg.dateTutte && gg.dateTutte[i] ? prevQuando(gg.dateTutte[i]) : `passo −${gg.L - i}`)
-      : `+${i - gg.L + 1} ${prevUnitaSerie()}`;
-    const tagX = svg.querySelector("#prevTagX"), tagXT = svg.querySelector("#prevTagXT");
-    const lx = Math.max(gg.ml, Math.min(gg.W - gg.mr - 88, px - 43));
-    if (tagX) tagX.setAttribute("x", lx.toFixed(1));
-    if (tagXT) { tagXT.setAttribute("x", (lx + 5).toFixed(1)); tagXT.textContent = etichetta; }
-    return { i, isStorico, valore };
+    return tip;
   };
 
-  svg.addEventListener("mousemove", (e) => {
-    if (prevDrag) return; // durante il trascinamento il mirino non serve
-    const info = disegnaMirino(indiceDaEvento(e));
-    if (!info) { tip.style.display = "none"; return; }
-    const u = prevUnitaSerie();
-    if (info.isStorico) {
-      tip.innerHTML = `${escHtml(prevQuando((g().dateTutte && g().dateTutte[info.i]) || ""))} · <b>${prevNum(info.valore)}</b><br><span style="color:#8a93a6">dato osservato</span>`;
-    } else {
-      const k = info.i - g().L;
-      tip.innerHTML =
-        `fra ${k + 1} ${escHtml(u)} · stima <b>${prevNum(g().s.median[k])}</b><br>` +
-        `<span style="color:#8a93a6">intervallo 80%: ${prevNum(g().s.q10[k])} – ${prevNum(g().s.q90[k])}</span>`;
+  /** Indice (frazionario) sotto il puntatore, nello spazio dei dati del grafico. */
+  const indiceDaEvento = (ch, e) => {
+    const g = geoDi(ch), svg = svgDi(ch);
+    if (!g || !svg) return null;
+    const r = svg.getBoundingClientRect();
+    if (!r.width) return null;
+    const xv = ((e.clientX - r.left) / r.width) * g.W;
+    const rel = (xv - g.ml) / Math.max(1, g.W - g.ml - g.mr);
+    return g.a + rel * (g.b - g.a);
+  };
+
+  /** Indice corrispondente a una x della striscia (minimappa). */
+  const indiceDaStriscia = (ch, e) => {
+    const g = geoDi(ch), el = PREV_GRAFICI[ch].striscia();
+    const svg = el && el.querySelector("svg");
+    if (!g || !svg) return null;
+    const r = svg.getBoundingClientRect();
+    const W = 900, pad = 5;
+    const xv = ((e.clientX - r.left) / r.width) * W;
+    return ((xv - pad) / (W - 2 * pad)) * (g.N - 1);
+  };
+
+  function attivo(ch) { prevNavAttivo = ch; }
+
+  function nascondi(ch) {
+    const box = boxDi(ch), svg = svgDi(ch);
+    if (box) { const t = box.querySelector(".prev-tip"); if (t) t.style.display = "none"; }
+    if (svg) { const c = svg.querySelector(".nav-cursor"); if (c) c.setAttribute("opacity", "0"); }
+  }
+
+  function mirino(ch, iFraz, e) {
+    const g = geoDi(ch), svg = svgDi(ch), box = boxDi(ch);
+    if (!g || !svg || !box) return;
+    const i = Math.max(0, Math.min(g.N - 1, Math.round(iFraz)));
+    const gruppo = svg.querySelector(".nav-cursor");
+    if (!gruppo) return;
+    const info = g.dato(i);
+    const px = g.x(i), py = g.y(info.valore);
+    gruppo.setAttribute("opacity", "1");
+    const cx = svg.querySelector(".nav-cross-x"), cy = svg.querySelector(".nav-cross-y");
+    if (cx) { cx.setAttribute("x1", px.toFixed(1)); cx.setAttribute("x2", px.toFixed(1)); }
+    if (cy) { cy.setAttribute("y1", py.toFixed(1)); cy.setAttribute("y2", py.toFixed(1)); }
+    const tagY = svg.querySelector(".nav-tag-y"), tagYT = svg.querySelector(".nav-tag-y-t");
+    if (tagY) tagY.setAttribute("y", Math.max(0, Math.min(g.H - 20, py - 9)).toFixed(1));
+    if (tagYT) {
+      tagYT.setAttribute("y", Math.max(12, Math.min(g.H - 8, py + 4)).toFixed(1));
+      tagYT.textContent = prevNum(info.valore);
     }
+    const etichetta = g.dataDi(i);
+    const tagX = svg.querySelector(".nav-tag-x"), tagXT = svg.querySelector(".nav-tag-x-t");
+    const lx = Math.max(g.ml, Math.min(g.W - g.mr - 98, px - 48));
+    if (tagX) { tagX.setAttribute("x", lx.toFixed(1)); tagX.setAttribute("width", "96"); }
+    if (tagXT) { tagXT.setAttribute("x", (lx + 5).toFixed(1)); tagXT.textContent = etichetta; }
+
+    const tip = tipDi(ch);
+    tip.innerHTML = `${escHtml(etichetta)} · <b>${prevNum(info.valore)}</b><br><span style="color:#8a93a6">${escHtml(info.sotto)}</span>`;
     tip.style.display = "block";
     const r = svg.getBoundingClientRect();
     const boxR = box.getBoundingClientRect();
-    const px = ((e.clientX - r.left) / r.width) * boxR.width;
-    tip.style.left = `${Math.min(Math.max(px, 70), boxR.width - 70)}px`;
+    const xPx = ((e.clientX - r.left) / r.width) * boxR.width;
+    tip.style.left = `${Math.min(Math.max(xPx, 70), boxR.width - 70)}px`;
     tip.style.top = `${Math.max(10, ((e.clientY - r.top) / r.height) * boxR.height - 10)}px`;
-  });
-  svg.addEventListener("mouseleave", () => {
-    tip.style.display = "none";
-    const group = svg.querySelector("#prevCursor");
-    if (group) group.setAttribute("opacity", "0");
+  }
+
+  CHIAVI.forEach((ch) => {
+    const box = boxDi(ch);
+    if (!box) return;
+
+    // il grafico che si sta guardando: a lui parlano pulsanti e tastiera
+    box.addEventListener("pointerenter", () => attivo(ch));
+    box.addEventListener("mousedown", () => attivo(ch));
+
+    box.addEventListener("mousemove", (e) => {
+      if (prevDrag) return;                       // durante il trascinamento il mirino non serve
+      const i = indiceDaEvento(ch, e);
+      if (i === null) { nascondi(ch); return; }
+      mirino(ch, i, e);
+    });
+    box.addEventListener("mouseleave", () => { if (!prevDrag) nascondi(ch); });
+
+    // rotella = zoom sul puntatore. Shift allarga il passo, Ctrl lo fa fine.
+    box.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      attivo(ch);
+      const centro = indiceDaEvento(ch, e);
+      if (centro === null) return;
+      const passo = e.altKey || e.ctrlKey || e.metaKey ? 1.06 : e.shiftKey ? 1.5 : 1.18;
+      navZoomAt(ch, centro, e.deltaY > 0 ? passo : 1 / passo);
+    }, { passive: false });
+
+    // trascinamento = ci si sposta nel tempo
+    box.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      const svg = svgDi(ch);
+      if (!svg) return;
+      e.preventDefault();
+      const { a, b } = navSpan(ch);
+      prevDrag = { ch, tipo: "grafico", x: e.clientX, a, b, larghezza: svg.getBoundingClientRect().width };
+      box.classList.add("trascinando");
+      svg.classList.add("trascinando");
+    });
+    box.addEventListener("dblclick", () => navReset(ch));
+
+    // touch: un dito sposta, due dita zoomano
+    let t0 = null;
+    box.addEventListener("touchstart", (e) => {
+      attivo(ch);
+      const { a, b } = navSpan(ch);
+      if (e.touches.length === 1) t0 = { tipo: "pan", x: e.touches[0].clientX, a, b, larghezza: box.getBoundingClientRect().width };
+      else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
+        t0 = { tipo: "pinza", dist: Math.hypot(dx, dy), a, b, x: (e.touches[0].clientX + e.touches[1].clientX) / 2 };
+      }
+    }, { passive: true });
+    box.addEventListener("touchmove", (e) => {
+      if (!t0) return;
+      e.preventDefault();
+      if (e.touches.length === 1 && t0.tipo === "pan") {
+        const delta = -((e.touches[0].clientX - t0.x) / Math.max(1, t0.larghezza)) * (t0.b - t0.a);
+        navApplica(ch, t0.a + delta, t0.b + delta);
+        navDisegna(ch);
+      } else if (e.touches.length === 2 && t0.tipo === "pinza" && t0.dist) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
+        const fattore = t0.dist / Math.max(1, Math.hypot(dx, dy));
+        const svg = svgDi(ch);
+        const r = svg ? svg.getBoundingClientRect() : null;
+        const rel = r ? ((t0.x - r.left) / Math.max(1, r.width)) : 0.5;
+        const centro = t0.a + Math.min(1, Math.max(0, rel)) * (t0.b - t0.a);
+        navZoomAt(ch, centro, fattore);
+      }
+    }, { passive: false });
+    box.addEventListener("touchend", () => { t0 = null; }, { passive: true });
   });
 
-  // zoom con la rotella, centrato sul puntatore
-  svg.addEventListener("wheel", (e) => {
-    e.preventDefault();
-    const centro = indiceDaEvento(e);
-    prevZoomAt(centro, e.deltaY > 0 ? 1.18 : 1 / 1.18);
-  }, { passive: false });
-
-  // trascinamento: sposta la finestra
-  svg.addEventListener("mousedown", (e) => {
-    e.preventDefault();
-    prevDrag = { x: e.clientX, a: prevView.a, b: prevView.b === null ? prevNTotale() - 1 : prevView.b };
-    svg.classList.add("trascinando");
+  // la striscia: clic = salta lì, trascinamento = ci si sposta
+  CHIAVI.forEach((ch) => {
+    const el = PREV_GRAFICI[ch].striscia();
+    if (!el) return;
+    el.addEventListener("mousedown", (e) => {
+      if (e.button !== 0 || !geoDi(ch)) return;
+      e.preventDefault();
+      attivo(ch);
+      prevDrag = { ch, tipo: "striscia" };
+      const i = indiceDaStriscia(ch, e);
+      if (i !== null) navCentra(ch, i);
+    });
+    el.addEventListener("touchstart", (e) => {
+      if (!geoDi(ch) || !e.touches.length) return;
+      attivo(ch);
+      const i = indiceDaStriscia(ch, e.touches[0]);
+      if (i !== null) navCentra(ch, i);
+    }, { passive: true });
   });
+
+  // trascinamento globale: i gestori sono qui, una volta sola, non uno per ridisegno
   window.addEventListener("mousemove", (e) => {
     if (!prevDrag) return;
-    const r = svg.getBoundingClientRect();
+    if (prevDrag.tipo === "striscia") {
+      const i = indiceDaStriscia(prevDrag.ch, e);
+      if (i !== null) navCentra(prevDrag.ch, i);
+      return;
+    }
     const span = prevDrag.b - prevDrag.a;
-    const delta = -((e.clientX - prevDrag.x) / r.width) * span * 0.9;
-    prevPan(delta - (prevView.a - prevDrag.a) * 0); // pan relativo al punto di partenza
+    const delta = -((e.clientX - prevDrag.x) / Math.max(1, prevDrag.larghezza)) * span;
+    navApplica(prevDrag.ch, prevDrag.a + delta, prevDrag.b + delta);
+    navDisegna(prevDrag.ch);
   });
   window.addEventListener("mouseup", () => {
-    if (prevDrag) {
-      prevDrag = null;
-      svg.classList.remove("trascinando");
-    }
+    if (!prevDrag) return;
+    const box = PREV_GRAFICI[prevDrag.ch].box();
+    if (box) box.classList.remove("trascinando");
+    const svg = svgDi(prevDrag.ch);
+    if (svg) svg.classList.remove("trascinando");
+    prevDrag = null;
   });
-
-  svg.addEventListener("dblclick", () => { prevView = { a: 0, b: null }; prevRidisegna(); });
-
-  // touch: un dito sposta, due dita zoomano
-  let t0 = null;
-  svg.addEventListener("touchstart", (e) => {
-    if (e.touches.length === 1) t0 = { x: e.touches[0].clientX, a: prevView.a, b: prevView.b === null ? prevNTotale() - 1 : prevView.b };
-    else if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
-      t0 = { dist: Math.hypot(dx, dy), a: prevView.a, b: prevView.b === null ? prevNTotale() - 1 : prevView.b };
-    }
-  }, { passive: true });
-  svg.addEventListener("touchmove", (e) => {
-    if (!t0) return;
-    if (e.touches.length === 1 && t0.x !== undefined) {
-      e.preventDefault();
-      const r = svg.getBoundingClientRect();
-      const span = t0.b - t0.a;
-      prevView = { a: Math.max(0, t0.a - ((e.touches[0].clientX - t0.x) / r.width) * span), b: Math.min(prevNTotale() - 1, t0.b - ((e.touches[0].clientX - t0.x) / r.width) * span) };
-      prevRidisegna();
-    } else if (e.touches.length === 2 && t0.dist) {
-      e.preventDefault();
-      const dx = e.touches[0].clientX - e.touches[1].clientX, dy = e.touches[0].clientY - e.touches[1].clientY;
-      const fattore = t0.dist / Math.max(1, Math.hypot(dx, dy));
-      const centro = (t0.a + t0.b) / 2;
-      prevView = { a: t0.a, b: t0.b };
-      prevZoomAt(centro, fattore);
-    }
-  }, { passive: false });
-  svg.addEventListener("touchend", () => { t0 = null; }, { passive: true });
+  // se il puntatore esce dal grafico con il tasto premuto, non si resta «appesi» al trascinamento
+  window.addEventListener("blur", () => { prevDrag = null; });
 }
 
 /**
@@ -7221,7 +7614,7 @@ async function prevEsegui() {
     $("prevTrend").innerHTML = prevTrendHtml(out);
     prevAggiornaScenario(out);
     prevAggiornaZoomInfo();
-    prevAgganciaPuntatore();
+    prevAggiornaStriscia("modello");
 
     $("prevVerdetto").innerHTML = prevVerdettoHtml(out);
     $("prevNumeri").innerHTML = prevNumeri(out);
@@ -7234,6 +7627,7 @@ async function prevEsegui() {
       "La linea verde è la stima più probabile (un punto per ogni passo previsto), la fascia dice quanto il modello è incerto. " +
       "Il tratteggio viola è dove arriverebbe il valore se il movimento degli ultimi passi continuasse con la stessa pendenza: " +
       "quando diverge dalla linea verde, il modello <b>non</b> sta scommettendo sulla continuazione del trend — e la verifica storica dice se ha ragione a non farlo." +
+      prevGestiNota() +
       `<span class="prev-tecnico">Modello Timestral di Mistral, eseguito in locale — pesi con licenza Modified MIT. Non conosce notizie né eventi annunciati.</span>`;
     $("prevCorpo").hidden = false;
     $("prevStato").innerHTML =
@@ -7365,7 +7759,7 @@ function prevScaricaPng() {
   const svg = $("prevSvgBox").querySelector("svg");
   if (!svg) return;
   const clone = svg.cloneNode(true);
-  const cur = clone.querySelector("#prevCursor");
+  const cur = clone.querySelector(".nav-cursor");
   if (cur) cur.remove(); // il mirino non fa parte dell'immagine
   const dati = new XMLSerializer().serializeToString(clone);
   const img = new Image();
@@ -9638,7 +10032,7 @@ $("prevOrizzonte").onchange = () => { prevAggiornaControlli(); prevSalvaScelta()
 $("prevFinestra")?.addEventListener("change", (e) => {
   PREV_CTRL.finestra = Number(e.target.value) || 0;
   PREV_CTRL.offset = 0;
-  prevRidisegna();
+  prevApplicaFinestra();
 });
 $("prevLog")?.addEventListener("change", (e) => {
   const box = prevRisultato;
@@ -9665,11 +10059,11 @@ $("prevConfronto")?.addEventListener("change", (e) => { PREV_CTRL.confronto = e.
 $("prevIndietro")?.addEventListener("click", (e) => {
   const passo = e.shiftKey ? prevFinestraPunti() * 10 : prevFinestraPunti();
   PREV_CTRL.offset = Math.min(prevOffsetMax(), (PREV_CTRL.offset || 0) + passo);
-  prevRidisegna();
+  prevApplicaFinestra();
 });
 $("prevAvanti")?.addEventListener("click", () => {
   PREV_CTRL.offset = Math.max(0, (PREV_CTRL.offset || 0) - prevFinestraPunti());
-  prevRidisegna();
+  prevApplicaFinestra();
 });
 /**
  * Elimina la serie scelta. Solo i CSV (importati o caricati a mano): le quattro serie incluse
@@ -9853,18 +10247,34 @@ function prevAttendiSerie(prima, richiesta) {
 }
 $("prevElimina")?.addEventListener("click", () => prevEliminaSerie());
 $("prevChiedi")?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); $("prevChiediBtn").click(); } });
-$("prevZoomIn")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1 / 1.35));
-$("prevZoomOut")?.addEventListener("click", () => prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1.35));
-$("prevResetZoom")?.addEventListener("click", () => { prevView = { a: 0, b: null }; prevRidisegna(); });
+/* Zoom del primo grafico: − + reset tutto. Il «centro» è il centro della finestra visibile. */
+const prevCentroVisibile = (ch) => { const { a, b } = navSpan(ch); return (a + b) / 2; };
+$("prevZoomIn")?.addEventListener("click", () => { prevNavAttivo = "modello"; navZoomPasso("modello", true); });
+$("prevZoomOut")?.addEventListener("click", () => { prevNavAttivo = "modello"; navZoomPasso("modello", false); });
+$("prevResetZoom")?.addEventListener("click", () => { prevNavAttivo = "modello"; navReset("modello"); });
+$("prevTuttoZoom")?.addEventListener("click", () => { prevNavAttivo = "modello"; navTutto("modello"); });
+/* Zoom del secondo grafico (lo scenario): stessa coppia di gesti, dominio suo. */
+$("prevScZoomIn")?.addEventListener("click", () => { prevNavAttivo = "scenario"; navZoomPasso("scenario", true); });
+$("prevScZoomOut")?.addEventListener("click", () => { prevNavAttivo = "scenario"; navZoomPasso("scenario", false); });
+$("prevScReset")?.addEventListener("click", () => { prevNavAttivo = "scenario"; navReset("scenario"); });
 document.addEventListener("keydown", (e) => {
   // scorciatoie solo quando la vista è aperta e non si sta scrivendo in un campo
   if (document.body.dataset.tab !== "previsioni" || /input|textarea|select/i.test(e.target?.tagName || "")) return;
-  if (e.key === "0") { prevView = { a: 0, b: null }; prevRidisegna(); }
-  if (e.key === "+" || e.key === "=") prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1 / 1.35);
-  if (e.key === "-") prevZoomAt((prevView.a + (prevView.b === null ? prevNTotale() - 1 : prevView.b)) / 2, 1.35);
-  if (e.key === "ArrowLeft") prevPan(-(prevFinestraPunti() / 4));
-  if (e.key === "ArrowRight") prevPan(prevFinestraPunti() / 4);
+  const ch = prevNavAttivo;
+  // 0 = reset (vista di partenza), 9 = tutto: due cose diverse, quindi due tasti diversi
+  if (e.key === "0") { e.preventDefault(); navReset(ch); }
+  if (e.key === "9") { e.preventDefault(); navTutto(ch); }
+  if (e.key === "+" || e.key === "=") { e.preventDefault(); navZoomPasso(ch, true); }
+  if (e.key === "-") { e.preventDefault(); navZoomPasso(ch, false); }
+  if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    const { a, b } = navSpan(ch);
+    const passo = Math.max(1, (b - a) * (e.shiftKey ? 0.5 : 0.12));
+    e.preventDefault();
+    navPan(ch, e.key === "ArrowLeft" ? -passo : passo);
+  }
 });
+// i gestori di puntatore, zoom e trascinamento si installano UNA volta, sui contenitori stabili
+prevInstallaNavigazione();
 $("prevFull")?.addEventListener("click", () => {
   const card = document.querySelector(".prev-grafico");
   if (!card) return;

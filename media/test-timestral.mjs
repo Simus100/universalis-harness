@@ -313,6 +313,20 @@ section("4. coerenza interfaccia ↔ API ↔ documentazione");
   const py = readFileSync(ROOT + "/media/timestral-service.py", "utf8");
   const MAX_HORIZON = Number((py.match(/MAX_HORIZON = (\d+)/) || [])[1]);
   check("orizzonte massimo coerente: servizio 4096 e UI non lo supera", MAX_HORIZON === 4096 && /max="366"/.test(html), `servizio ${MAX_HORIZON} · UI ${(html.match(/id="prevOrizzonte"[^>]*max="(\d+)"/) || [])[1]}`);
+
+  // 4h. navigazione dei grafici: entrambi devono avere zoom, reset e la striscia-posizione
+  const idNav = ["prevZoomIn", "prevZoomOut", "prevResetZoom", "prevTuttoZoom", "prevMini",
+    "prevScZoomIn", "prevScZoomOut", "prevScReset", "prevMiniSc"];
+  const navMancanti = idNav.filter((id) => !new RegExp(`id="${id}"`).test(html));
+  check("i due grafici hanno zoom, reset e la striscia che dice dove sei", navMancanti.length === 0, `mancano: ${navMancanti.join(", ")}`);
+  check("il secondo grafico ha un dominio suo ma lo stesso motore di navigazione",
+    /let prevViewSc = /.test(html) && /navSpan\("scenario"\)/.test(html) && /function navZoomAt\(ch, /.test(html),
+    "prevViewSc / navSpan(\"scenario\") / navZoomAt non trovati");
+  // i gestori sui contenitori si installano UNA volta: se tornassero dentro il ridisegno, ogni
+  // colpo di rotella lascerebbe un gestore in più (era il difetto: zoom sempre più lento)
+  const installa = (html.match(/\nprevInstallaNavigazione\(\);/g) || []).length;
+  check("i gestori di puntatore/zoom si installano una volta sola", installa === 1, `chiamate: ${installa}`);
+  check("la vista dichiara i gesti di navigazione", /rotella o pizzico: zoom/.test(html), "nessuna riga di aiuto sui gesti");
 }
 
 /* ─────── 5. INTEGRAZIONE: la catena dashboard → servizio, come la usa la vista ─────── */

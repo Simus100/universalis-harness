@@ -155,6 +155,15 @@ on/off, **media mobile** per togliere il rumore, **il valore esatto sotto il pun
 valore osservato, oppure stima e intervallo nel futuro), **schermo intero**. Sotto il grafico una
 riga dice cosa si è mosso nella finestra: variazione %, se l'ultimo valore è sopra o sotto la media.
 
+Entrambi i grafici (**la previsione** e l'**andamento realistico** ricampionato dai dati) sono
+navigabili allo stesso modo: rotella o pizzico = zoom sul puntatore, trascinamento = ci si sposta
+nel tempo, **reset** (o doppio clic, o tasto `0`) = si torna alla vista di partenza, **tutto**
+(tasto `9`) = tutto lo storico e tutta la previsione, frecce = un passo, `+`/`−` = zoom.
+Sotto ogni grafico c'è una **striscia-posizione** con tutto il disegno in miniatura e il riquadro
+di ciò che si sta guardando: con lo zoom profondo è la bussola (e il modo per tornare indietro
+senza ripartire da capo). La scala verticale si ricalcola sui valori visibili, quindi la linea
+non esce mai dal riquadro per quanto si zoomi.
+
 Accanto alla previsione c'è **«Cosa dicono i dati»**: variazione su 1/7/30 passi, tendenza con
 R², volatilità, rumore, ciclicità (con la quota di variabilità che spiega), anomalie con la data,
 qualità della serie. Sono numeri calcolati sulla serie, non opinioni del modello: se citi una

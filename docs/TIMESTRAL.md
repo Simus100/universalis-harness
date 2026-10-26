@@ -233,6 +233,11 @@ limita l'uso del modello, non la gestione dei file di chi lavora.
 | intervalli on/off | toglie il ventaglio quando interessa solo la linea |
 | media mobile | lisciato il rumore, la direzione si vede; la finestra è automatica (1/12 dei punti) oppure 7/20/50 a scelta |
 | puntatore | data e valore osservato, oppure stima e intervallo 80% nel futuro |
+| rotella / pizzico | zoom ancorato al puntatore (Shift = passi larghi, Ctrl = fini) |
+| trascinamento | ci si sposta nel tempo; la scala verticale si ricalcola sui valori visibili, quindi la linea non esce dal riquadro |
+| reset / tutto (tasti `0` e `9`) | `reset` torna alla vista di partenza (la finestra scelta, con la previsione); `tutto` mostra tutto lo storico e tutta la previsione. Doppio clic = reset |
+| striscia sotto il grafico | minimappa con tutto il disegno e il riquadro di ciò che si sta guardando: clic o trascinamento per spostarsi. Serve a non perdere la rotta quando si è molto zoomati |
+| confronto col periodo prima | sovrappone la finestra precedente allineata per posizione e riscalata (si confronta la **forma**, non il livello): mostra se il movimento attuale somiglia a quello di prima |
 | schermo intero | per guardare una serie lunga senza il resto dell'interfaccia |
 | riga «cosa si è mosso» | variazione % nella finestra, sopra/sotto la media, quanti punti disegnati |
 
@@ -243,6 +248,7 @@ Si apre dal menu **risorse → 📈 previsioni** (vista a sé, come File o Memor
 | parte | cosa dice |
 |---|---|
 | grafico | storico in grigio, mediana in verde, ventaglio con tre livelli (50 / 80 / 95%), linea verticale sull'ultimo dato osservato. Le date compaiono solo se la fonte le ha; altrimenti l'asse x è «passi» |
+| andamento realistico (secondo grafico) | scenario ricampionato dai rendimenti recenti (bootstrap): fasce 50/80/95%, mediana azzurra e media degli ultimi 20 passi. **Navigabile come il primo**: rotella/pizzico per lo zoom, trascinamento, `−` `+` `reset`, doppio clic e tasto `0`; ha la sua striscia-posizione |
 | numeri | ultimo osservato, mediana a fine orizzonte, variazione attesa (con freccia), banda 80% e 95%, P(rialzo) con la lettura in parole |
 | tabella | tutti i passi con mediana, q05, q95 (ogni *n*, più l'ultimo) |
 | verifica storica | rolling-origin su quella serie: MAE del modello contro il naive, vantaggio in %, copertura empirica delle bande, e un **giudizio in chiaro** («il modello fa come il naive: qui aggiunge solo l'incertezza», «banda sottostimata», …) |
