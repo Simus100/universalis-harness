@@ -2159,7 +2159,7 @@ footer {
       <button class="ghost" id="prevCarica" type="button" title="Carica un CSV con una colonna di date e una di valori (oppure trascinalo qui)">carica csv</button>
       <button class="ghost" id="prevElimina" type="button" title="Elimina dall'elenco la serie scelta (file e metadati): le serie incluse di esempio non si toccano">elimina serie</button>
       <input id="prevFile" type="file" accept=".csv,.txt,text/csv" hidden />
-      <button class="ghost" id="prevBacktest" type="button" title="Rifà la previsione sul passato e la confronta con i metodi più semplici: «domani come oggi», media mobile, deriva. Dice se il modello aggiunge qualcosa">confronto</button>
+      <button class="ghost" id="prevBacktest" type="button" title="Affidabilità: rifà la previsione sul passato e la confronta con i metodi più semplici («domani come oggi», media mobile, deriva), più la copertura degli intervalli. Dice quanto fidarsi di questa previsione su questa serie">affidabilità</button>
       <span class="prev-export">
         <button class="ghost" id="prevCsv" type="button" title="CSV con storico e previsione affiancati, date comprese">esporta csv</button>
         <button class="ghost" id="prevPng" type="button" title="PNG del grafico come lo stai guardando (zoom compreso)">esporta png</button>
@@ -6856,14 +6856,15 @@ function prevVerdettoHtml(out, errBasso) {
 
   // semaforo: quanto è utilizzabile questa previsione
   let sem = { classe: "basso", testo: "da prendere con le molle" };
-  if (Number.isFinite(errBasso)) {
+  const haVerifica = !!(errBasso && Number.isFinite(Number(errBasso.skill_mae_pct)));
+  if (haVerifica) {
     const skill = Number(errBasso.skill_mae_pct);
     const cop = Number(errBasso.copertura80_pct);
     if (skill > 5 && cop >= 60 && cop <= 92) sem = { classe: "ok", testo: "affidabile su questa serie" };
     else if (skill > -5) sem = { classe: "medio", testo: "poco più di «domani come oggi»: usalo come indicazione" };
     else sem = { classe: "basso", testo: "meno affidabile di «domani come oggi»: non usarlo come previsione" };
   } else if (Number.isFinite(p)) {
-    sem = { classe: "medio", testo: "affidabilità non ancora verificata (premi «affidabilità»)" };
+    sem = { classe: "medio", testo: "affidabilità non ancora verificata" };
   }
 
   const frase1 =
@@ -6886,6 +6887,7 @@ function prevVerdettoHtml(out, errBasso) {
 
   return `<div class="prev-card-h">In parole semplici <span class="prev-legenda">la stessa previsione, senza gergo</span></div>
     <div class="sem ${sem.classe}"><span class="pallino"></span>${escHtml(sem.testo)}</div>
+    ${haVerifica ? "" : `<div class="frase"><button type="button" class="ghost mini" data-affidabilita title="Rifà la previsione sul passato e la confronta con «domani come oggi», la media mobile e la deriva: dice se di questa previsione ci si può fidare">calcola l'affidabilità</button> <span class="prev-legenda">verifica storica: se il modello sbaglia più di «domani come oggi», il valore centrale non va usato</span></div>`}
     <div class="frase">${frase1}</div>
     <div class="frase">${frase2}</div>
     ${frase3 ? `<div class="frase">${frase3}</div>` : ""}
@@ -7029,7 +7031,7 @@ async function prevVerifica() {
   if (!val) return;
   const card = $("prevBacktestCard");
   card.hidden = false;
-  card.innerHTML = `<div class="prev-card-h">verifica storica…</div><div class="prev-nota">il modello rifà la previsione sul passato e si confronta con «domani come oggi». Su una serie lunga ci vuole qualche secondo.</div>`;
+  card.innerHTML = `<div class="prev-card-h">affidabilità — verifica storica in corso…</div><div class="prev-nota">il modello rifà la previsione sul passato e si confronta con «domani come oggi». Su una serie lunga ci vuole qualche secondo.</div>`;
   const hScelto = Math.max(1, Math.min(366, Number($("prevOrizzonte").value) || 30));
   const tre = prevOrizzonti(prevUnitaSerie(), hScelto);
   const fonte = val.startsWith("demo:") ? { demo: [val.slice(5)] } : { csv: val.slice(4) };
@@ -7073,7 +7075,7 @@ async function prevVerifica() {
           ? ["attenzione", `L'intervallo 80% ha contenuto il valore vero il ${String(cop).replace(".", ",")}% delle volte: è più largo del necessario, quindi dice meno di quanto potrebbe.`]
           : ["", `L'intervallo 80% ha contenuto il valore vero il ${String(cop).replace(".", ",")}% delle volte: promesso e mantenuto, ci si può ragionare.`];
     card.innerHTML = `
-      <div class="prev-card-h">Confronto con i metodi semplici <span class="prev-legenda">${b.folds} prove sul passato, ${b.passi_per_fold} ${escHtml(prevUnitaSerie())} ciascuna · errore medio (MAE), più basso è meglio</span></div>
+      <div class="prev-card-h">Affidabilità — confronto con i metodi semplici <span class="prev-legenda">${b.folds} prove sul passato, ${b.passi_per_fold} ${escHtml(prevUnitaSerie())} ciascuna · errore medio (MAE), più basso è meglio</span></div>
       <table class="prev-conf">
         <thead><tr><th>metodo</th><th>errore medio</th><th>RMSE</th><th>rispetto al migliore</th></tr></thead>
         <tbody>
@@ -7094,8 +7096,13 @@ async function prevVerifica() {
       <div class="prev-avviso ${giudizio[0]}">${escHtml(giudizio[1])}</div>
       ${calib[1] ? `<div class="prev-avviso ${calib[0]}">${escHtml(calib[1])}</div>` : ""}
       <div class="prev-tecnico">Metodo: ${b.folds} prove sul passato (${b.passi_per_fold} ${escHtml(prevUnitaSerie())} per prova, ${b.contesto} dati di contesto). L'errore è la distanza media fra stima e valore reale; la copertura è quanto spesso il valore vero è caduto nell'intervallo dichiarato.</div>`;
+    // la card sta in fondo alla griglia: senza portarla in vista, premere «affidabilità» sembra
+    // non fare niente (era uno dei motivi per cui il tasto risultava «sparito»)
+    card.scrollIntoView({ block: "nearest", behavior: "smooth" });
   } catch (e) {
-    card.innerHTML = `<div class="prev-card-h">verifica storica</div><div class="prev-avviso grave">${escHtml(String(e.message || e))}</div>`;
+    card.hidden = false;
+    card.innerHTML = `<div class="prev-card-h">Affidabilità — verifica storica</div><div class="prev-avviso grave">${escHtml(String(e.message || e))}</div>`;
+    card.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 }
 
@@ -9385,6 +9392,8 @@ $("featPrevisioni").onclick = (e) => { e.stopPropagation(); setFeatPanel(false);
 $("prevBack").onclick = () => showTab("chat");
 $("prevPrevedi").onclick = () => prevEsegui();
 $("prevBacktest").onclick = () => prevVerifica();
+// il verdetto rimanda all'affidabilità: il rimando deve essere cliccabile, non solo scritto
+$("prevVerdetto")?.addEventListener("click", (e) => { if (e.target.closest("[data-affidabilita]")) prevVerifica(); });
 $("prevCsv").onclick = () => prevScaricaCsv();
 $("prevSvg").onclick = () => prevScaricaSvg();
 $("prevPng").onclick = () => prevScaricaPng();
