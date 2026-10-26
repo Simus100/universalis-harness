@@ -212,3 +212,8 @@ media/previsioni/*.csv
 # Screenshot di verifica del grafico (prima/dopo una correzione): si rigenerano in un
 # secondo dal codice di dashboard.html, e i dati che mostrano sono già nei CSV qui sopra.
 media/previsioni/verifiche/
+
+# ---- risultati grezzi del backtest Timestral ----
+# JSON di misura (~500 KB) rigenerabili con media/timestral-backtest-affidabilita.py:
+# pubblicare i numeri senza il metodo che li produce non serve a nessuno, e rigenerarli costa 80 s
+media/backtest-affidabilita-*.json
