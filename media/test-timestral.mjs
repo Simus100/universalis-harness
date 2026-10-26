@@ -388,6 +388,18 @@ section("4. coerenza interfaccia ↔ API ↔ documentazione");
   check("il tool dichiara il raggruppamento nella risposta", /Serie raggruppata a/.test(toolSrc), "il modello non saprebbe di che passo parla");
   check("il tool elenca le granularità in timestral_series", /GRANULARITA\.map/.test(toolSrc), "l'elenco non arriva al modello");
   check("i numeri del tool usano il formato italiano (virgola decimale)", /toLocaleString\("it-IT"/.test(toolSrc), "104.332 si leggerebbe come 104,332");
+
+  // 4k. report PDF: il documento esiste, la stampa è impaginata e i grafici hanno una palette chiara
+  check("la vista ha il pulsante «esporta pdf»", /id="prevPdf"/.test(html) && /prevEsportaPdf\(\)/.test(html), "pulsante o gestore assenti");
+  check("il report raccoglie le sezioni della vista", /function prevReportHtml\(\)/.test(html) && /const sezioni = \[/.test(html), "generatore del report assente");
+  check("il foglio di stampa è A4 e nasconde il resto della pagina",
+    /@media print/.test(html) && /size: A4/.test(html) && /body > \*:not\(#prevReport\)/.test(html),
+    "senza questo si stampa l'interfaccia intera");
+  check("i due grafici hanno una palette chiara per la stampa",
+    /PREV_C_CHIARO/.test(html) && /prevPalette\("chiaro"\)/.test(html) && !/fill="#0b0e14"/.test(html),
+    "sfondo scuro cablato nei disegni: il report uscirebbe nero");
+  check("il nome del file PDF viene dal titolo del documento", /document\.title = `previsione-/.test(html), "il PDF si chiamerebbe come la pagina");
+  check("la doc spiega il report PDF e come si genera", /Report PDF/.test(doc) && /Salva come PDF/.test(doc), "la doc non dice dove si prende il PDF");
 }
 
 /* ─────── 5. INTEGRAZIONE: la catena dashboard → servizio, come la usa la vista ─────── */

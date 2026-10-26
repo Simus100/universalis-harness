@@ -155,6 +155,13 @@ on/off, **media mobile** per togliere il rumore, **il valore esatto sotto il pun
 valore osservato, oppure stima e intervallo nel futuro), **schermo intero**. Sotto il grafico una
 riga dice cosa si è mosso nella finestra: variazione %, se l'ultimo valore è sopra o sotto la media.
 
+**esporta pdf** produce il **report completo** (A4, colori chiari per la carta): intestazione con serie,
+orizzonte, granularità, fonte e data; avviso che è una stima; indice; «in parole semplici»; i numeri;
+i due grafici in vettoriale; i tre orizzonti; l'affidabilità; «cosa dicono i dati»; la tabella
+completa; il glossario. Il PDF lo fa il browser (si apre la stampa: destinazione «Salva come PDF»).
+Se l'utente chiede «un report da presentare», questo è il pulsante — non serve altro, e non va
+promesso un PDF generato dal server: la via headless qui non funziona (documentata in `docs/TIMESTRAL.md`).
+
 Entrambi i grafici (**la previsione** e l'**andamento realistico** ricampionato dai dati) sono
 navigabili allo stesso modo: rotella o pizzico = zoom sul puntatore, trascinamento = ci si sposta
 nel tempo, **reset** (o doppio clic, o tasto `0`) = si torna alla vista di partenza, **tutto**

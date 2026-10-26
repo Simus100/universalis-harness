@@ -268,12 +268,37 @@ Si apre dal menu **risorse → 📈 previsioni** (vista a sé, come File o Memor
 | parte | cosa dice |
 |---|---|
 | grafico | storico in grigio, mediana in verde, ventaglio con tre livelli (50 / 80 / 95%), linea verticale sull'ultimo dato osservato. Le date compaiono solo se la fonte le ha; altrimenti l'asse x è «passi» |
-| andamento realistico (secondo grafico) | scenario ricampionato dai rendimenti recenti (bootstrap): fasce 50/80/95%, mediana azzurra e media degli ultimi 20 passi. **Navigabile come il primo**: rotella/pizzico per lo zoom, trascinamento, `−` `+` `reset`, doppio clic e tasto `0`; ha la sua striscia-posizione |
 | numeri | ultimo osservato, mediana a fine orizzonte, variazione attesa (con freccia), banda 80% e 95%, P(rialzo) con la lettura in parole |
 | tabella | tutti i passi con mediana, q05, q95 (ogni *n*, più l'ultimo) |
 | verifica storica | rolling-origin su quella serie: MAE del modello contro il naive, vantaggio in %, copertura empirica delle bande, e un **giudizio in chiaro** («il modello fa come il naive: qui aggiunge solo l'incertezza», «banda sottostimata», …) |
 | ＋ csv | carica un CSV (una colonna date + una valori): validato dal server prima di salvarlo, righe scartate dichiarate, e la previsione parte da sola |
 | ⬇ csv / ⬇ svg | esporta i passi con tutti i quantili, o il grafico come vettoriale |
+| andamento realistico, dentro la card del grafico | secondo disegno: scenario ricampionato dai rendimenti recenti (bootstrap), fasce 50/80/95%, mediana azzurra e media degli ultimi 20 passi. **Navigabile come il primo** (rotella/pizzico, trascinamento, `−` `+` `reset`, doppio clic, tasto `0`) e con la sua striscia-posizione |
+
+### Report PDF (per presentare i dati)
+
+**esporta pdf** nella barra produce un documento A4 pronto da stampare o mandare: intestazione con
+cosa si sta guardando (serie, orizzonte, granularità, fonte, data di generazione), avviso che è una
+stima, indice, «in parole semplici», i numeri, i due grafici, i tre orizzonti, l'affidabilità (o la
+frase che dice che non è stata ancora verificata), «cosa dicono i dati», la tabella completa dei
+valori e il glossario.
+
+Come funziona e perché così:
+
+- il PDF lo produce **il browser** (si apre la finestra di stampa, destinazione «Salva come PDF»):
+  è vettoriale, il testo resta selezionabile, i grafici restano nitidi a qualsiasi ingrandimento,
+  e non serve né una libreria PDF nel repository né un browser headless sul server;
+- provata la via del `chrome --print-to-pdf` lato server: **in questa VPS non termina** (resta
+  appeso finché non lo si uccide), quindi sarebbe stata una funzione rotta a metà. Se un giorno
+  serve il download diretto, la strada è `Page.printToPDF` via CDP con un Chrome che si chiude;
+- i grafici vengono **ridisegnati nella palette chiara** prima della stampa (`PREV_C_CHIARO`):
+  su carta il fondo scuro è illeggibile e consuma toner. La vista a schermo non cambia (il report
+  si costruisce in memoria, non c'è nessun «lampo» bianco);
+- il foglio di stampa ridefinisce le **variabili colore** e ripristina le griglie che le media query
+  mobile mettono in colonna (il «viewport» di stampa è largo ~816 px); le sezioni non si spezzano
+  a metà, la tabella sì (con l'intestazione ripetuta su ogni foglio);
+- il nome proposto per il file viene dal titolo del documento: `previsione-<serie>-<orizzonte><unità>-<data>`;
+- se l'utente annulla la stampa, `afterprint` ripulisce il DOM e ripristina il titolo della pagina.
 
 Perché il backtest sta nella vista: un ventaglio disegnato bene sembra una promessa. Il giudizio
 «la mediana non batte il naive» o «la banda dichiarata contiene il valore reale il 67,8% delle

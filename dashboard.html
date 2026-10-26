@@ -1852,6 +1852,80 @@ footer {
 .prev-glossario dt { color: var(--text-soft); font-weight: 600; font-size: var(--fs-sm); }
 .prev-glossario dd { margin: 0; color: var(--dim); font-size: var(--fs-sm); line-height: 1.5; }
 @media (max-width: 620px) { .prev-glossario dl { grid-template-columns: minmax(0, 1fr); } }
+/* ---------- report stampabile (esporta pdf) ----------
+ * #prevReport esiste solo durante la stampa: contiene una COPIA delle sezioni della vista, con i
+ * grafici già ridisegnati nella palette chiara (su carta il fondo scuro è illeggibile e consuma
+ * toner). Il resto della pagina sparisce, le card mantengono le loro classi e le VARIABILI colore
+ * vengono ridefinite qui: un solo posto decide i colori del report. Il PDF lo produce il browser
+ * (Stampa → Salva come PDF): vettoriale, con il testo selezionabile, senza dipendenze. */
+#prevReport { display: none; }
+@media print {
+  @page { size: A4; margin: 13mm 11mm; }
+  /* il body dell'app è un contenitore flex alto 100vh con overflow:hidden: in stampa taglierebbe
+     tutto dopo il primo foglio. Qui torna un documento normale che scorre. */
+  html, body {
+    height: auto !important; min-height: 0 !important; max-height: none !important;
+    display: block !important; overflow: visible !important;
+    background: #fff !important; color: #111827; margin: 0 !important; padding: 0 !important;
+  }
+  body > *:not(#prevReport) { display: none !important; }
+  #prevReport {
+    display: block !important; width: auto !important; max-width: 100% !important;
+    margin: 0 !important; padding: 0 3mm !important; position: static !important;
+    background: #fff; color: #111827; font-size: 10.5pt; line-height: 1.45;
+    --text: #111827; --text-soft: #1f2937; --dim: #4b5563; --faint: #6b7280;
+    --panel: #fff; --panel-2: #f9fafb; --panel-3: #f3f4f6; --panel-4: #e5e7eb;
+    --border: #d1d5db; --border-soft: #e5e7eb; --accent: #047857; --green: #047857;
+    --orange: #b45309; --bg-soft: #f9fafb;
+  }
+  #prevReport article, #prevReport section, #prevReport div { max-width: 100%; }
+  #prevReport * { box-sizing: border-box; }
+  /* i titoli delle card si tolgono: ogni sezione ha già il suo (evita «In parole semplici»
+     ripetuto due volte, che nella prima prova del PDF si vedeva) */
+  #prevReport .prev-card-h, #prevReport .prev-legenda, #prevReport .prev-glossario summary { display: none !important; }
+  #prevReport h1 { font-size: 18pt; margin: 0 0 2mm; letter-spacing: -.2px; }
+  #prevReport h2 { font-size: 11.5pt; margin: 0 0 2mm; padding-bottom: 1mm; border-bottom: 1px solid #d1d5db; }
+  #prevReport p { margin: 0 0 2mm; }
+  #prevReport .prev-report-sezione { margin: 0 0 4.5mm; break-inside: avoid; }
+  #prevReport .prev-report-sezione.lunga { break-inside: auto; }
+  /* Il "viewport" della stampa è largo ~816px, quindi le media query mobile della vista si
+     attivano e mettono in colonna ciò che qui deve stare affiancato: si ripristinano le griglie.
+     I selettori non possono contare sulle classi dei contenitori originali (nel report i pezzi
+     sono copiati dentro le sezioni, senza il loro wrapper). */
+  #prevReport .prev-oriz-tre { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 3mm; }
+  #prevReport .prev-ins-grid { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 3mm; }
+  #prevReport .prev-bt-fila { display: flex; gap: 6mm; flex-wrap: wrap; }
+  #prevReport dl { display: grid !important; grid-template-columns: 38mm minmax(0, 1fr) !important; gap: 1.2mm 4mm; font-size: 9pt; }
+  #prevReport dt { font-weight: 600; color: #1f2937; }
+  #prevReport dd { margin: 0; color: #374151; }
+  #prevReport .prev-report-nota { font-size: 9.5pt; color: #1f2937; line-height: 1.45; }
+  #prevReport .prev-report-indice { margin: 0 0 4mm; font-size: 9pt; color: #374151; }
+  #prevReport .prev-report-indice b { display: block; font-size: 9pt; letter-spacing: .4px; text-transform: uppercase; color: #6b7280; margin-bottom: 1mm; }
+  #prevReport .prev-report-indice ol { margin: 0; padding-left: 5mm; columns: 2; column-gap: 8mm; }
+  #prevReport .prev-report-indice li { margin: 0 0 .6mm; }
+  #prevReport .prev-report-sub { font-size: 11pt; color: #1f2937; }
+  #prevReport .prev-report-dati { font-size: 8.5pt; color: #4b5563; }
+  #prevReport .prev-report-avviso { border-left: 3px solid #b45309; border-radius: 1mm; background: #fffbeb; padding: 2.5mm 3mm; font-size: 9pt; color: #1f2937; }
+  #prevReport svg { display: block; width: 100%; height: auto; }
+  /* i due grafici restano leggibili ma non si mangiano mezza pagina: così due sezioni stanno
+     nella stessa pagina e il report non è fatto di fogli semivuoti */
+  #prevReport .prev-svgbox svg { max-height: 72mm; }
+  #prevReport button, #prevReport .prev-zoom, #prevReport .prev-map, #prevReport input,
+  #prevReport select, #prevReport label, #prevReport .prev-tip, #prevReport .nav-cursor { display: none !important; }
+  #prevReport .prev-gesti { display: none !important; }
+  #prevReport .prev-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 2mm; padding: 3mm; }
+  #prevReport .prev-griglia { display: block; }
+  #prevReport .prev-numeri { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3mm; }
+  #prevReport .prev-num .v { color: #111827; font-size: 12pt; }
+  #prevReport table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+  #prevReport th, #prevReport td { border-bottom: 1px solid #e5e7eb; padding: 1.1mm 1.6mm; text-align: right; }
+  #prevReport th:first-child, #prevReport td:first-child { text-align: left; }
+  #prevReport thead { display: table-header-group; }
+  #prevReport tr { break-inside: avoid; }
+  #prevReport .prev-glossario dl { display: grid; grid-template-columns: 40mm minmax(0, 1fr); gap: 1.5mm 4mm; font-size: 9pt; }
+  #prevReport .prev-tecnico { font-size: 8pt; color: #6b7280; }
+  #prevReport .prev-report-pie { margin: 6mm 0 0; padding-top: 2mm; border-top: 1px solid #e5e7eb; font-size: 8pt; color: #6b7280; }
+}
 .prev-zoom { display: inline-flex; gap: 3px; }
 .prev-zoominfo { color: var(--faint); font-size: var(--fs-xs); min-width: 92px; font-variant-numeric: tabular-nums; }
 /* Lo zoom è arrivato al limite: si dice, invece di lasciare un pulsante che sembra rotto. */
@@ -2230,6 +2304,7 @@ footer {
       <input id="prevFile" type="file" accept=".csv,.txt,text/csv" hidden />
       <button class="ghost" id="prevBacktest" type="button" title="Affidabilità: rifà la previsione sul passato e la confronta con i metodi più semplici («domani come oggi», media mobile, deriva), più la copertura degli intervalli. Dice quanto fidarsi di questa previsione su questa serie">affidabilità</button>
       <span class="prev-export">
+        <button class="ghost" id="prevPdf" type="button" title="Report completo in PDF: verdetto, numeri, i due grafici, orizzonti, affidabilità, tabella e glossario, impaginato su A4 in colori chiari per la stampa. Si apre la finestra di stampa: scegli «Salva come PDF» come destinazione">esporta pdf</button>
         <button class="ghost" id="prevCsv" type="button" title="CSV con storico e previsione affiancati, date comprese">esporta csv</button>
         <button class="ghost" id="prevPng" type="button" title="PNG del grafico come lo stai guardando (zoom compreso)">esporta png</button>
         <button class="ghost" id="prevJson" type="button" title="JSON con dati, previsione, orizzonti e analisi: tutto quello che serve per rielaborare">esporta json</button>
@@ -2294,7 +2369,7 @@ footer {
       <section class="prev-card prev-orizzonti" id="prevOrizzonti" hidden></section>
       <section class="prev-card prev-tabella" id="prevTabella"></section>
       <section class="prev-card prev-insight" id="prevInsight" hidden></section>
-      <details class="prev-card prev-glossario">
+      <details class="prev-card prev-glossario" id="prevGlossario">
         <summary>Che cosa vogliono dire questi numeri <span class="prev-legenda">(glossario in parole semplici)</span></summary>
         <dl>
           <dt>stima centrale</dt><dd>il valore più probabile secondo il modello: non è un obiettivo, è il centro della previsione.</dd>
@@ -6143,7 +6218,18 @@ applyStatsHidden();
 /* Tre fasce, tre livelli: il riempimento cresce verso il centro (dove il modello crede di più)
    e ogni fascia ha il PROPRIO bordo, perché su fondo scuro tre verdi con opacità simile
    diventano una macchia sola e l'incertezza non si legge più. */
-const PREV_C = { hist: "#a3adc0", med: "#34d399", medChiaro: "#6ee7b7", deriva: "#8b5cff", azzurro: "#38bdf8", azzurroChiaro: "#7dd3fc", a95: "rgba(56,189,248,.07)", a80: "rgba(56,189,248,.15)", a50: "rgba(56,189,248,.28)", aBordo: "rgba(56,189,248,.45)", aBordo80: "rgba(125,211,252,.6)", b95: "rgba(52,211,153,.07)", b80: "rgba(52,211,153,.15)", b50: "rgba(52,211,153,.30)", bordo: "rgba(52,211,153,.35)", bordo80: "rgba(52,211,153,.55)", bordo50: "rgba(110,231,183,.65)", griglia: "#1c222b", asse: "#8a93a6", testo: "#eef2f9", soft: "#c6cfdd", giallo: "#fbbf24", rosso: "#fb7185" };
+/* Due palette, una sola logica di disegno: schermo = fondo scuro, report = fondo bianco.
+   Un report stampato (o presentato in proiezione) su fondo scuro è illeggibile su carta e
+   consuma toner: i grafici si ridisegnano nella palette chiara PRIMA della stampa, e le
+   regole CSS delle card vengono riportate in chiaro dal foglio di stampa. */
+const PREV_C_SCURO = { sfondo: "#0b0e14", hist: "#a3adc0", med: "#34d399", medChiaro: "#6ee7b7", deriva: "#8b5cff", azzurro: "#38bdf8", azzurroChiaro: "#7dd3fc", a95: "rgba(56,189,248,.07)", a80: "rgba(56,189,248,.15)", a50: "rgba(56,189,248,.28)", aBordo: "rgba(56,189,248,.45)", aBordo80: "rgba(125,211,252,.6)", b95: "rgba(52,211,153,.07)", b80: "rgba(52,211,153,.15)", b50: "rgba(52,211,153,.30)", bordo: "rgba(52,211,153,.35)", bordo80: "rgba(52,211,153,.55)", bordo50: "rgba(110,231,183,.65)", griglia: "#1c222b", asse: "#8a93a6", testo: "#eef2f9", soft: "#c6cfdd", giallo: "#fbbf24", rosso: "#fb7185", zona: "rgba(52,211,153,.045)", zonaSc: "rgba(96,165,250,.05)", alone: "#0b0e14" };
+const PREV_C_CHIARO = { sfondo: "#ffffff", hist: "#4b5563", med: "#047857", medChiaro: "#059669", deriva: "#6d28d9", azzurro: "#0369a1", azzurroChiaro: "#0e7490", a95: "rgba(3,105,161,.06)", a80: "rgba(3,105,161,.13)", a50: "rgba(3,105,161,.22)", aBordo: "rgba(3,105,161,.40)", aBordo80: "rgba(14,116,144,.55)", b95: "rgba(4,120,87,.06)", b80: "rgba(4,120,87,.13)", b50: "rgba(4,120,87,.22)", bordo: "rgba(4,120,87,.35)", bordo80: "rgba(4,120,87,.5)", bordo50: "rgba(5,150,105,.6)", griglia: "#dfe4ea", asse: "#4b5563", testo: "#111827", soft: "#374151", giallo: "#b45309", rosso: "#b91c1c", zona: "rgba(4,120,87,.05)", zonaSc: "rgba(3,105,161,.05)", alone: "#ffffff" };
+let PREV_C = PREV_C_SCURO;
+
+/** Cambia palette e ridisegna i due grafici con i colori giusti per il supporto. */
+function prevPalette(nome) {
+  PREV_C = nome === "chiaro" ? PREV_C_CHIARO : PREV_C_SCURO;
+}
 let prevStato = null;      // ultimo GET /api/timestral
 let prevRisultato = null;  // ultima previsione mostrata (per gli export)
 let prevCaricata = false;
@@ -6846,7 +6932,7 @@ function prevGrafico(out) {
      pallini si vede dove cadono i punti di calcolo e quanto sono fitti (uno per barra/giorno). */
   const palliniMediana = PREV_CTRL.bande && puntiMediana.length > 1 && puntiMediana.length <= 61
     ? puntiMediana.slice(cerniera ? 1 : 0)
-        .map(([px, py]) => `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.1" fill="${PREV_C.medChiaro}" stroke="#0b0e14" stroke-width=".9"/>`)
+        .map(([px, py]) => `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.1" fill="${PREV_C.medChiaro}" stroke="${PREV_C.alone}" stroke-width=".9"/>`)
         .join("")
     : "";
   /* Il prolungamento del trend recente: il confronto che manca quando la stima centrale sembra
@@ -6886,7 +6972,7 @@ function prevGrafico(out) {
     : "";
   // La zona della previsione è marcata: senza, il ventaglio si confonde con lo storico
   const zonaFuturo = (a <= L - 1 && b >= L - 1)
-    ? `<rect x="${x(L - 1).toFixed(1)}" y="${mt}" width="${Math.max(0, W - mr - x(L - 1)).toFixed(1)}" height="${H - mt - mb}" fill="rgba(52,211,153,.045)"/>
+    ? `<rect x="${x(L - 1).toFixed(1)}" y="${mt}" width="${Math.max(0, W - mr - x(L - 1)).toFixed(1)}" height="${H - mt - mb}" fill="${PREV_C.zona}"/>
        <text x="${Math.max(x(L - 1) + 8, ml + 4).toFixed(1)}" y="${mt + 14}" font-size="10" letter-spacing="1" fill="${PREV_C.med}" opacity=".85">PREVISIONE</text>`
     : "";
   const bande = PREV_CTRL.bande && pathMediana
@@ -6921,7 +7007,7 @@ function prevGrafico(out) {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafico della serie, con zoom e spostamento${usaLog ? ", scala logaritmica" : ""}">
       <defs><clipPath id="prevClip"><rect x="${ml}" y="${mt}" width="${W - ml - mr}" height="${H - mt - mb}"/></clipPath></defs>
-      <rect x="0" y="0" width="${W}" height="${H}" fill="#0b0e14"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="${PREV_C.sfondo}"/>
       ${griglia}
       ${taccheX.join("")}
       ${zonaFuturo}
@@ -7090,7 +7176,7 @@ function prevScenarioSvg(out, precalcolato = null) {
   }).join("");
 
   const zonaFuturo = (V > 0 && a <= V - 1 && b >= V - 1)
-    ? `<rect x="${x(V - 1).toFixed(1)}" y="${mt}" width="${Math.max(0, Wd - mr - x(V - 1)).toFixed(1)}" height="${Hd - mt - mb}" fill="rgba(96,165,250,.05)"/>
+    ? `<rect x="${x(V - 1).toFixed(1)}" y="${mt}" width="${Math.max(0, Wd - mr - x(V - 1)).toFixed(1)}" height="${Hd - mt - mb}" fill="${PREV_C.zonaSc}"/>
        <line x1="${x(V - 1).toFixed(1)}" y1="${mt}" x2="${x(V - 1).toFixed(1)}" y2="${Hd - mb}" stroke="${PREV_C.griglia}" stroke-dasharray="3 4"/>
        <text x="${Math.max(x(V - 1) + 8, ml + 4).toFixed(1)}" y="${mt + 14}" font-size="10" letter-spacing="1" fill="${PREV_C.azzurroChiaro}" opacity=".9">SCENARIO</text>`
     : "";
@@ -7098,8 +7184,8 @@ function prevScenarioSvg(out, precalcolato = null) {
   // il valore finale si scrive solo quando lo si sta guardando (altrimenti è un numero orfano)
   const fut = sc.q50[h - 1];
   const badge = kMax === h - 1
-    ? `<rect x="${Math.min(x(V + h - 1), Wd - mr) - 66}" y="${(y(fut) - 10).toFixed(1)}" width="62" height="19" rx="4" fill="#0b0e14" opacity=".82"/>
-       <text x="${Math.min(x(V + h - 1), Wd - mr) - 8}" y="${(y(fut) + 4).toFixed(1)}" font-size="12" fill="#eef2f9" text-anchor="end">${escHtml(prevNum(fut))}</text>`
+    ? `<rect x="${Math.min(x(V + h - 1), Wd - mr) - 66}" y="${(y(fut) - 10).toFixed(1)}" width="62" height="19" rx="4" fill="${PREV_C.alone}" opacity=".82"/>
+       <text x="${Math.min(x(V + h - 1), Wd - mr) - 8}" y="${(y(fut) + 4).toFixed(1)}" font-size="12" fill="${PREV_C.testo}" text-anchor="end">${escHtml(prevNum(fut))}</text>`
     : "";
 
   // geometria per il puntatore/zoom e per la striscia: stessa forma del primo grafico
@@ -7123,7 +7209,7 @@ function prevScenarioSvg(out, precalcolato = null) {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wd} ${Hd}" role="img" aria-label="Scenario costruito dai dati: andamento realistico del prezzo, con zoom e spostamento">
       <defs><clipPath id="prevClipSc"><rect x="${ml}" y="${mt}" width="${Wd - ml - mr}" height="${Hd - mt - mb}"/></clipPath></defs>
-      <rect x="0" y="0" width="${Wd}" height="${Hd}" fill="#0b0e14"/>
+      <rect x="0" y="0" width="${Wd}" height="${Hd}" fill="${PREV_C.sfondo}"/>
       ${griglia}
       ${taccheX}
       ${zonaFuturo}
@@ -7139,7 +7225,7 @@ function prevScenarioSvg(out, precalcolato = null) {
       </g>
       ${cern ? `<text x="${cern.px.toFixed(1)}" y="${(cern.py + 18).toFixed(1)}" font-size="10" fill="${PREV_C.azzurroChiaro}" text-anchor="middle">oggi</text>` : ""}
       <line x1="${ml}" y1="${y(mm).toFixed(1)}" x2="${Wd - mr}" y2="${y(mm).toFixed(1)}" stroke="${PREV_C.giallo}" stroke-width="1" stroke-dasharray="6 4" opacity=".7"/>
-      <rect x="${ml + 2}" y="${(y(mm) - 16).toFixed(1)}" width="126" height="14" rx="3" fill="#0b0e14" opacity=".78"/>
+      <rect x="${ml + 2}" y="${(y(mm) - 16).toFixed(1)}" width="126" height="14" rx="3" fill="${PREV_C.alone}" opacity=".78"/>
       <text x="${ml + 5}" y="${(y(mm) - 5).toFixed(1)}" font-size="10" fill="${PREV_C.giallo}" opacity=".9">media ultimi ${W}: ${escHtml(prevNum(mm))}</text>
       ${badge}
       ${prevCursoreMarkup(prevGeoSc)}
@@ -7938,7 +8024,7 @@ function imagenPng(img, dati) {
     canvas.width = img.width * scala || 1800;
     canvas.height = img.height * scala || 760;
     const ctx = canvas.getContext("2d");
-    ctx.fillStyle = "#0b0e14";
+    ctx.fillStyle = PREV_C.sfondo;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     canvas.toBlob((b) => {
@@ -7982,6 +8068,169 @@ function prevScaricaJson() {
   a.download = `previsione-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ---------- report PDF: tutte le sezioni in un documento impaginato ----------
+   Il PDF lo produce il browser (finestra di stampa → «Salva come PDF»): è VETTORIALE, il testo
+   resta selezionabile, e non dipende da una libreria da portare nel repository né da un browser
+   headless sul server. Quello che fa questo codice è costruire il DOCUMENTO: intestazione con
+   cosa si sta guardando e da dove vengono i dati, le sezioni nell'ordine in cui si leggono, i
+   due grafici ridisegnati nella palette chiara, glossario aperto, nota metodologica in fondo.
+   Se l'utente annulla la stampa non resta niente in giro (afterprint ripulisce). */
+
+/** Un SVG della vista copiato per il report: cursore via, id unici (nel documento ce ne sono due). */
+function prevSvgPerReport(markup, suffisso) {
+  if (!markup) return "";
+  const t = document.createElement("template");
+  t.innerHTML = String(markup);
+  const svg = t.content.querySelector("svg");
+  if (!svg) return "";
+  svg.querySelectorAll(".nav-cursor").forEach((n) => n.remove());
+  return svg.outerHTML.replace(/prevClip(Sc)?/g, (_m, sc) => `prevClip${sc || ""}_${suffisso}`);
+}
+
+/** Il documento del report, in HTML autonomo (foglio di stampa in dashboard.html). */
+function prevReportHtml() {
+  const out = prevRisultato;
+  if (!out) return "";
+  const s0 = out.series[0];
+  const meta = (out.meta && out.meta[0]) || {};
+  const u = prevUnitaSerie();
+  const h = s0.median.length;
+  const gran = meta.granularita || null;
+  const dati = out.date && out.date[0] ? out.date[0] : null;
+  const primo = dati && dati[0] ? prevQuando(dati[0]) : null;
+  const ultimo = dati && dati[dati.length - 1] ? prevQuando(dati[dati.length - 1]) : null;
+  const nome = String(meta.nome || s0.name || "serie").replace(/\.(csv|txt)$/i, "");
+  const quando = new Date().toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" });
+  const come = (a) => (a === "somma" ? "somma" : a === "ultimo" ? "ultimo valore" : "media");
+
+  // i grafici si costruiscono IN MEMORIA con la palette chiara: la vista a schermo non lampeggia
+  const prima = PREV_C;
+  let svg1 = "", svg2 = "";
+  prevPalette("chiaro");
+  try {
+    svg1 = prevGrafico(out);
+    if (prevScCache) svg2 = prevScenarioSvg(out, prevScCache);
+  } finally {
+    PREV_C = prima;
+  }
+
+  const pezzo = (id) => { const el = $(id); return el && !el.hidden ? el.innerHTML : ""; };
+  const sez = (titolo, corpo, lunga = false) =>
+    (corpo ? `<section class="prev-report-sezione${lunga ? " lunga" : ""}"><h2>${titolo}</h2>${corpo}</section>` : "");
+  const legenda = $("prevLegenda") && $("prevLegenda").textContent ? $("prevLegenda").textContent : "";
+  const scenarioVuoto = $("prevScenarioBox") && $("prevScenarioBox").classList.contains("vuoto");
+  const scenarioNota = $("prevScenarioNota") ? $("prevScenarioNota").innerHTML : "";
+  const glossario = (() => {
+    const el = $("prevGlossario");
+    if (!el) return "";
+    const copia = el.cloneNode(true);
+    copia.querySelector("summary")?.remove();
+    return copia.innerHTML;
+  })();
+  const verificata = $("prevBacktestCard") && !$("prevBacktestCard").hidden;
+
+  /* Le sezioni si costruiscono come elenco: serve sia a stamparle nell'ordine giusto sia a
+     ricavarne l'indice in testa (una pagina di sintesi senza indice sembra un foglio qualunque). */
+  const sezioni = [
+    { titolo: "In parole semplici", corpo: pezzo("prevVerdetto") },
+    { titolo: "I numeri", corpo: pezzo("prevNumeri") ? `<div class="prev-numeri">${pezzo("prevNumeri")}</div>` : "" },
+    {
+      titolo: "Previsione del modello",
+      corpo: `<div class="prev-svgbox">${prevSvgPerReport(svg1, "a")}</div>` + (legenda ? `<p class="prev-report-dati">${escHtml(legenda)}</p>` : ""),
+    },
+    {
+      titolo: "Andamento realistico (scenario ricampionato dai dati)",
+      corpo: svg2 && !scenarioVuoto
+        ? `<div class="prev-svgbox">${prevSvgPerReport(svg2, "b")}</div>${scenarioNota ? `<p class="prev-report-dati">${scenarioNota}</p>` : ""}`
+        : `<p class="prev-report-nota">${scenarioNota || "Scenario non calcolabile con questa serie."}</p>`,
+    },
+    { titolo: "Tre orizzonti", corpo: pezzo("prevOrizzonti") },
+    {
+      titolo: "Affidabilità (verifica storica)",
+      corpo: verificata ? pezzo("prevBacktestCard")
+        : `<p class="prev-report-nota">Non ancora verificata su questa serie: nella vista «Previsioni» il pulsante
+         <b>affidabilità</b> rifà la previsione sul passato e la confronta con i metodi semplici. Senza quel numero,
+         la mediana qui sopra va letta come indicazione, non come previsione verificata.</p>`,
+    },
+    { titolo: "Cosa dicono i dati", corpo: pezzo("prevInsight") },
+    { titolo: "Tutti i valori previsti", corpo: pezzo("prevTabella"), lunga: true },
+    { titolo: "Come leggere questi numeri", corpo: glossario },
+  ].filter((x) => x.corpo);
+  const indice = sezioni.length > 3
+    ? `<nav class="prev-report-indice"><b>In questo report</b><ol>${sezioni.map((x) => `<li>${escHtml(x.titolo)}</li>`).join("")}</ol></nav>`
+    : "";
+
+  return `<article>
+      <header class="prev-report-sezione">
+        <h1>Previsione — ${escHtml(nome)}</h1>
+        <p class="prev-report-sub">Orizzonte <b>${h} ${escHtml(u)}</b>` +
+          (gran ? ` · serie raggruppata a <b>${escHtml(gran.etichetta)}</b> (${escHtml(come(gran.agg))} del periodo: ${gran.a} punti da ${gran.da})` : "") +
+          ` · modello Timestral ${escHtml(String(out.taglia || "28M"))}, locale, zero-shot</p>
+        <p class="prev-report-dati">` +
+          (meta.fonte ? `Dati: ${escHtml(String(meta.fonte))}` : "Dati: fonte non dichiarata") +
+          (meta.unita ? ` · unità ${escHtml(String(meta.unita))}` : "") +
+          (primo && ultimo ? ` · ${escHtml(primo)} → ${escHtml(ultimo)}` : "") +
+          (meta.sintetica ? " · serie di esempio (sintetica)" : "") +
+          ` · generato il ${escHtml(quando)}</p>
+        <p class="prev-report-avviso">È una <b>stima probabilistica</b> di un modello pre-addestrato: mediana e
+        quantili, non un fatto. Il modello non conosce notizie né eventi annunciati; le probabilità vengono
+        dai quantili e non sono calibrate. Non è un consiglio finanziario.</p>
+      </header>
+      ${indice}
+      ${sezioni.map((x) => sez(x.titolo, x.corpo, x.lunga)).join("\n      ")}
+      <p class="prev-report-pie">Generato da Universalis Harness, vista «Previsioni», il ${escHtml(quando)}. I grafici
+      sono vettoriali (si ingrandiscono senza perdere nitidezza). Modello Timestral di Mistral, pesi con licenza
+      Modified MIT, eseguito in locale su CPU. Questa è una stima probabilistica: non è un fatto e non è un consiglio
+      di investimento.</p>
+    </article>`;
+}
+
+/**
+ * Esporta il report completo. Il PDF è prodotto dal browser: si apre la stampa e la destinazione
+ * da scegliere è «Salva come PDF». Perché così: un PDF stampato dal browser è vettoriale, con il
+ * testo selezionabile e i grafici nitidi, e non richiede né una libreria PDF né un Chrome
+ * headless sul server (provato: in questa VPS `--print-to-pdf` non termina, quindi quella via
+ * sarebbe stata una funzione rotta a metà).
+ */
+function prevEsportaPdf() {
+  if (!prevRisultato) {
+    $("prevStato").innerHTML = `Per esportare il report serve prima una previsione: scegli una serie e premi <b>calcola</b>.`;
+    return;
+  }
+  const html = prevReportHtml();
+  if (!html) return;
+  let box = $("prevReport");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "prevReport";
+    document.body.appendChild(box);
+  }
+  box.innerHTML = html;
+  // il nome proposto per il file PDF è il titolo del documento, quindi va detto bene
+  const slug = String((prevRisultato.meta && prevRisultato.meta[0] && prevRisultato.meta[0].nome) || prevRisultato.series[0].name || "serie")
+    .replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase().slice(0, 40) || "serie";
+  const titoloPrima = document.title;
+  document.title = `previsione-${slug}-${prevRisultato.series[0].median.length}${prevUnitaSerie()}-${new Date().toISOString().slice(0, 10)}`;
+  let timer = null;
+  const pulisci = () => {
+    window.removeEventListener("afterprint", pulisci);
+    if (timer) clearTimeout(timer);
+    box.innerHTML = "";
+    document.title = titoloPrima;
+  };
+  window.addEventListener("afterprint", pulisci);
+  // rete di sicurezza: se la stampa non emette afterprint (stampante virtuale, browser strani),
+  // il report non resta appeso nel DOM per sempre
+  timer = setTimeout(pulisci, 600000);
+  $("prevStato").querySelectorAll(".prev-ricalcola").forEach((n) => n.remove());
+  $("prevStato").insertAdjacentHTML(
+    "beforeend",
+    `<span class="prev-ricalcola">report pronto: si apre la finestra di stampa — come destinazione scegli <b>«Salva come PDF»</b> (A4, colori chiari per la carta).</span>`,
+  );
+  void box.offsetHeight;   // il layout va calcolato prima che il browser fotografì la pagina
+  window.print();
 }
 
 function prevScaricaSvg() {
@@ -10183,6 +10432,7 @@ $("prevBacktest").onclick = () => prevVerifica();
 $("prevVerdetto")?.addEventListener("click", (e) => { if (e.target.closest("[data-affidabilita]")) prevVerifica(); });
 $("prevCsv").onclick = () => prevScaricaCsv();
 $("prevSvg").onclick = () => prevScaricaSvg();
+$("prevPdf").onclick = () => prevEsportaPdf();
 $("prevPng").onclick = () => prevScaricaPng();
 $("prevJson").onclick = () => prevScaricaJson();
 $("prevCarica").onclick = () => $("prevFile").click();
