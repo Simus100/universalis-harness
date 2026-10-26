@@ -5870,7 +5870,7 @@ applyStatsHidden();
 /* Tre fasce, tre livelli: il riempimento cresce verso il centro (dove il modello crede di più)
    e ogni fascia ha il PROPRIO bordo, perché su fondo scuro tre verdi con opacità simile
    diventano una macchia sola e l'incertezza non si legge più. */
-const PREV_C = { hist: "#a3adc0", med: "#34d399", medChiaro: "#6ee7b7", b95: "rgba(52,211,153,.07)", b80: "rgba(52,211,153,.15)", b50: "rgba(52,211,153,.30)", bordo: "rgba(52,211,153,.35)", bordo80: "rgba(52,211,153,.55)", bordo50: "rgba(110,231,183,.65)", griglia: "#1c222b", asse: "#8a93a6", testo: "#eef2f9", soft: "#c6cfdd", giallo: "#fbbf24", rosso: "#fb7185" };
+const PREV_C = { hist: "#a3adc0", med: "#34d399", medChiaro: "#6ee7b7", deriva: "#8b5cff", b95: "rgba(52,211,153,.07)", b80: "rgba(52,211,153,.15)", b50: "rgba(52,211,153,.30)", bordo: "rgba(52,211,153,.35)", bordo80: "rgba(52,211,153,.55)", bordo50: "rgba(110,231,183,.65)", griglia: "#1c222b", asse: "#8a93a6", testo: "#eef2f9", soft: "#c6cfdd", giallo: "#fbbf24", rosso: "#fb7185" };
 let prevStato = null;      // ultimo GET /api/timestral
 let prevRisultato = null;  // ultima previsione mostrata (per gli export)
 let prevCaricata = false;
@@ -5889,6 +5889,26 @@ function prevNum(v, dec) {
 }
 const prevPct = (v) => (Number.isFinite(Number(v)) ? `${Number(v) > 0 ? "+" : ""}${Number(v).toFixed(2).replace(".", ",")}%` : "–");
 
+/**
+ * Etichetta temporale leggibile: su una serie intraday la sola data non dice niente
+ * («2026-10-26» per ogni barra di una giornata). Se la riga porta anche l'ora, si mostra
+ * «26/10 14:15». È la differenza fra un timeframe a 15 minuti leggibile e uno illeggibile.
+ */
+function prevQuando(v) {
+  const s = String(v || "");
+  if (!s) return "";
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/.exec(s);
+  if (m) return `${m[3]}/${m[2]} ${m[4]}:${m[5]}`;
+  return s.slice(0, 10);
+}
+
+/** Vero se la serie ha un passo più fine del giorno (barre intraday). */
+function prevIntraday() {
+  const g = prevGeo;
+  if (!g || !g.dateTutte) return false;
+  return g.dateTutte.some((d) => /\d{2}:\d{2}/.test(String(d || "")));
+}
+
 /** L'unità dell'orizzonte, presa dalla serie scelta: «giorni», «ore» o «passi» se non si sa. */
 function prevUnitaSerie() {
   const v = ($("prevSerie") && $("prevSerie").value) || "";
@@ -5902,6 +5922,7 @@ function prevUnitaSerie() {
     const c = ((prevStato && prevStato.csv) || []).find((x) => x.nome === nome);
     f = c && c.meta && c.meta.frequenza ? String(c.meta.frequenza).toLowerCase() : "";
   }
+  if (f.includes("minut")) return "minuti";
   if (f.includes("giorno")) return "giorni";
   if (f.includes("ora")) return "ore";
   if (f.includes("settiman")) return "settimane";
@@ -5916,7 +5937,7 @@ function prevAggiornaControlli() {
   const u = prevUnitaSerie();
   const el = $("prevUnita");
   if (el) el.textContent = u;
-  const presets = u === "mesi" ? [3, 6, 12, 24] : u === "ore" ? [24, 72, 168] : u === "settimane" ? [4, 12, 26, 52] : [7, 30, 90];
+  const presets = u === "mesi" ? [3, 6, 12, 24] : u === "ore" ? [24, 72, 168] : u === "minuti" ? [8, 32, 96] : u === "settimane" ? [4, 12, 26, 52] : [7, 30, 90];
   const box = $("prevPreset");
   if (box) {
     // i pulsanti si rigenerano con l'unità giusta; il gestore è sul contenitore, quindi restano vivi
@@ -5931,8 +5952,8 @@ function prevAggiornaControlli() {
 function prevOrizzonteAdatto() {
   const u = prevUnitaSerie();
   const h = Number($("prevOrizzonte").value) || 30;
-  const sensato = u === "mesi" ? h <= 24 : u === "ore" ? h <= 720 : true;
-  if (!sensato) $("prevOrizzonte").value = u === "mesi" ? 12 : 72;
+  const sensato = u === "mesi" ? h <= 24 : u === "ore" ? h <= 720 : u === "minuti" ? h <= 480 : true;
+  if (!sensato) $("prevOrizzonte").value = u === "mesi" ? 12 : u === "minuti" ? 32 : 72;
 }
 
 /** La scelta di serie e orizzonte sopravvive alla chiusura della pagina: è lo stesso lavoro che
@@ -6039,12 +6060,15 @@ function prevOffsetMax() {
 function prevOpzioniFinestra() {
   const u = prevUnitaSerie();
   const scale =
-    u === "ore" ? [12, 24, 48, 72, 168, 720]
+    u === "minuti" ? [30, 60, 120, 240, 480, 1440]
+    : u === "ore" ? [12, 24, 48, 72, 168, 720]
     : u === "mesi" ? [3, 6, 12, 24, 60, 120]
     : u === "settimane" ? [4, 8, 12, 26, 52, 104]
     : u === "anni" ? [3, 5, 10, 20]
     : [7, 14, 30, 90, 180, 365];
-  const et = (n) => `${n} ${u}`;
+  // Su una serie intraday «ultimi 30 minuti» sarebbe un numero di BARRE travestito da orologio:
+  // meglio dire «ultimi 30 passi» e lasciare che sia l'asse del tempo a raccontare la durata.
+  const et = (n) => (u === "minuti" ? `${n} passi` : `${n} ${u}`);
   const opts = scale.map((n) => `<option value="${n}">ultimi ${et(n)}</option>`).join("");
   return `<option value="-1">automatico</option>${opts}<option value="0">tutto lo storico</option>`;
 }
@@ -6182,6 +6206,27 @@ function prevGrafico(out) {
   const pathMediana = puntiMediana.length > 1
     ? puntiMediana.map(([px, py], j) => `${j ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ")
     : "";
+  /* I punti della stima centrale, non solo la linea: una linea continua fra pochi passi sembra
+     «una retta tracciata», mentre la previsione è un valore calcolato passo per passo. Con i
+     pallini si vede dove cadono i punti di calcolo e quanto sono fitti (uno per barra/giorno). */
+  const palliniMediana = PREV_CTRL.bande && puntiMediana.length > 1 && puntiMediana.length <= 61
+    ? puntiMediana.slice(cerniera ? 1 : 0)
+        .map(([px, py]) => `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="2.1" fill="${PREV_C.medChiaro}" stroke="#0b0e14" stroke-width=".9"/>`)
+        .join("")
+    : "";
+  /* Il prolungamento del trend recente: il confronto che manca quando la stima centrale sembra
+     ignorare l'andamento. La mediana di un modello probabilistico NON estrapola la pendenza —
+     dice dove il modello crede che si fermerà il prezzo. Il tratteggio dice dove finirebbe se il
+     movimento degli ultimi passi continuasse con la stessa pendenza. Le due linee divergono
+     spesso: è la risposta alla domanda «perché la previsione è piatta?», messa nel disegno. */
+  const pathDeriva = (() => {
+    if (!pathMediana || L < 6) return "";
+    const k = Math.min(14, L - 1);
+    const pend = (tutto[L - 1] - tutto[L - k - 1]) / k;
+    const punti = [[cerniera ? cerniera.px : x(L - 1), y(tutto[L - 1])]];
+    for (let kk = kMin; kk <= kMax; kk += 1) punti.push([x(L + kk), y(tutto[L - 1] + pend * (kk + 1))]);
+    return punti.map(([px, py], j) => `${j ? "L" : "M"}${px.toFixed(1)} ${py.toFixed(1)}`).join(" ");
+  })();
 
   const tacche = [];
   for (let i = 0; i <= 4; i += 1) {
@@ -6196,7 +6241,7 @@ function prevGrafico(out) {
   for (let j = 0; j <= 3; j += 1) {
     const i = Math.round(a + ((b - a) * j) / 3);
     const et = i < L
-      ? (dateTutte && dateTutte[i] ? String(dateTutte[i]).slice(0, 10) : `−${L - i}`)
+      ? (dateTutte && dateTutte[i] ? prevQuando(dateTutte[i]) : `−${L - i}`)
       : `+${i - L + 1}`;
     taccheX.push(`<text x="${x(i).toFixed(1)}" y="${H - 12}" font-size="11" fill="${PREV_C.asse}" text-anchor="${j === 0 ? "start" : j === 3 ? "end" : "middle"}">${escHtml(et)}</text>`);
   }
@@ -6227,17 +6272,22 @@ function prevGrafico(out) {
   };
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafico della serie, con zoom e spostamento${usaLog ? ", scala logaritmica" : ""}">
+      <defs><clipPath id="prevClip"><rect x="${ml}" y="${mt}" width="${W - ml - mr}" height="${H - mt - mb}"/></clipPath></defs>
       <rect x="0" y="0" width="${W}" height="${H}" fill="#0b0e14"/>
       ${griglia}
       ${taccheX.join("")}
       ${zonaFuturo}
       ${divisione}
+      <g clip-path="url(#prevClip)">
       ${bande}
       ${pathStorico ? `<path d="${pathStorico}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.4" stroke-linejoin="round"/>` : ""}
       ${puntiStorico}
       ${media ? `<path d="${media.map((v, k) => `${k ? "L" : "M"}${x(storicoVis[k]).toFixed(1)} ${y(v).toFixed(1)}`).join(" ")}" fill="none" stroke="${PREV_C.giallo}" stroke-width="1.8" stroke-linejoin="round" opacity=".85"/>` : ""}
+      ${pathDeriva ? `<path d="${pathDeriva}" fill="none" stroke="${PREV_C.deriva}" stroke-width="1.6" stroke-dasharray="5 4" stroke-linejoin="round" opacity=".9"/>` : ""}
       ${pathMediana ? `<path d="${pathMediana}" fill="none" stroke="${PREV_C.med}" stroke-width="6" stroke-linejoin="round" opacity=".16"/>
       <path d="${pathMediana}" fill="none" stroke="${PREV_C.medChiaro}" stroke-width="2.6" stroke-linejoin="round"/>` : ""}
+      ${palliniMediana}
+      </g>
       <line x1="${ml}" y1="${H - mb}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
       <line x1="${W - mr}" y1="${mt}" x2="${W - mr}" y2="${H - mb}" stroke="${PREV_C.griglia}"/>
       <g id="prevCursor" opacity="0">
@@ -6264,8 +6314,8 @@ function prevTrendHtml(out) {
   const ultimaMedia = st.slice(-w).reduce((a, b) => a + b, 0) / Math.min(w, st.length);
   const sopra = ultimo >= ultimaMedia;
   const primoI = g.storicoVis[0], ultimoI = g.storicoVis[g.storicoVis.length - 1];
-  const d0 = g.dateTutte && g.dateTutte[primoI] ? String(g.dateTutte[primoI]).slice(0, 10) : null;
-  const d1 = g.dateTutte && g.dateTutte[ultimoI] ? String(g.dateTutte[ultimoI]).slice(0, 10) : null;
+  const d0 = g.dateTutte && g.dateTutte[primoI] ? prevQuando(g.dateTutte[primoI]) : null;
+  const d1 = g.dateTutte && g.dateTutte[ultimoI] ? prevQuando(g.dateTutte[ultimoI]) : null;
   return `<span>nella finestra: <b>${varPct === null ? "—" : prevPct(varPct)}</b>${d0 && d1 ? ` (${escHtml(d0)} → ${escHtml(d1)})` : ""}</span>` +
     `<span>ultimo valore <b>${sopra ? "sopra" : "sotto"}</b> la media delle ultime ${w} ${escHtml(u)}</span>` +
     `<span>${st.length} ${escHtml(u)} disegnati${g.usaLog ? " · scala logaritmica" : ""}${PREV_CTRL.confronto ? " · confronto attivo" : ""}</span>`;
@@ -6277,8 +6327,8 @@ function prevAggiornaZoomInfo() {
   if (!el || !prevGeo) return;
   const g = prevGeo;
   const da = Math.max(0, Math.floor(g.a)), al = Math.min(g.N - 1, Math.ceil(g.b));
-  const d0 = da < g.L && g.dateTutte && g.dateTutte[da] ? String(g.dateTutte[da]).slice(0, 10) : null;
-  const d1 = al < g.L && g.dateTutte && g.dateTutte[al] ? String(g.dateTutte[al]).slice(0, 10) : (al >= g.L ? "previsione" : null);
+  const d0 = da < g.L && g.dateTutte && g.dateTutte[da] ? prevQuando(g.dateTutte[da]) : null;
+  const d1 = al < g.L && g.dateTutte && g.dateTutte[al] ? prevQuando(g.dateTutte[al]) : (al >= g.L ? "previsione" : null);
   el.textContent = `${al - da + 1} punti${d0 ? ` · ${d0}` : ""}${d1 ? ` → ${d1}` : ""}`;
 }
 
@@ -6326,7 +6376,7 @@ function prevAgganciaPuntatore() {
       tagYT.textContent = prevNum(valore);
     }
     const etichetta = isStorico
-      ? (gg.dateTutte && gg.dateTutte[i] ? String(gg.dateTutte[i]).slice(0, 10) : `passo −${gg.L - i}`)
+      ? (gg.dateTutte && gg.dateTutte[i] ? prevQuando(gg.dateTutte[i]) : `passo −${gg.L - i}`)
       : `+${i - gg.L + 1} ${prevUnitaSerie()}`;
     const tagX = svg.querySelector("#prevTagX"), tagXT = svg.querySelector("#prevTagXT");
     const lx = Math.max(gg.ml, Math.min(gg.W - gg.mr - 88, px - 43));
@@ -6341,7 +6391,7 @@ function prevAgganciaPuntatore() {
     if (!info) { tip.style.display = "none"; return; }
     const u = prevUnitaSerie();
     if (info.isStorico) {
-      tip.innerHTML = `${escHtml(String((g().dateTutte && g().dateTutte[info.i]) || "").slice(0, 10))} · <b>${prevNum(info.valore)}</b><br><span style="color:#8a93a6">dato osservato</span>`;
+      tip.innerHTML = `${escHtml(prevQuando((g().dateTutte && g().dateTutte[info.i]) || ""))} · <b>${prevNum(info.valore)}</b><br><span style="color:#8a93a6">dato osservato</span>`;
     } else {
       const k = info.i - g().L;
       tip.innerHTML =
@@ -6688,7 +6738,7 @@ function prevNumeri(out) {
   const p = Number(st.p_rise_end);
   const lettura = !Number.isFinite(p) ? "" : p >= 0.6 ? "il modello propende per un rialzo" : p <= 0.4 ? "il modello propende per un calo" : "nessuna direzione netta";
   return `
-    <div class="prev-num"><span class="k">ultimo dato${ultimaData ? ` · ${escHtml(String(ultimaData).slice(0, 10))}` : ""}</span><span class="v">${prevNum(s.last_observed)} <small>${escHtml((out.meta && out.meta[0] && out.meta[0].unita) || "")}</small></span></div>
+    <div class="prev-num"><span class="k">ultimo dato${ultimaData ? ` · ${escHtml(prevQuando(ultimaData))}` : ""}</span><span class="v">${prevNum(s.last_observed)} <small>${escHtml((out.meta && out.meta[0] && out.meta[0].unita) || "")}</small></span></div>
     <div class="prev-num ${direzione}"><span class="k">stima centrale fra ${h} ${escHtml(u)}</span><span class="v">${prevNum(st.median_end)}</span></div>
     <div class="prev-num ${direzione}"><span class="k">variazione attesa</span><span class="v">${prevPct(varPct)}${freccia}</span></div>
     <div class="prev-num"><span class="k">fascia probabile 80%</span><span class="v">${prevNum(s.q10[h - 1])} – ${prevNum(s.q90[h - 1])}</span><small class="nota-riga">dove il modello mette l'80% delle sue aspettative</small></div>
@@ -6748,7 +6798,8 @@ async function prevEsegui() {
     out.storico = Array.isArray(out.storico) ? out.storico[0] || [] : [];
     prevRisultato = out;
     $("prevTitolo").textContent = out.series[0].name;
-    $("prevLegenda").textContent = "grigio: dati passati · verde: stima · fasce 50 / 80 / 95% (più chiara = più probabile)";
+    $("prevLegenda").textContent =
+      "grigio: dati passati · verde: stima · fasce 50 / 80 / 95% (più chiara = più probabile) · tratteggio viola: prolungamento del trend recente";
     // Il servizio ha calcolato il lungo (per i tre orizzonti). Grafico, numeri e tabella si
     // fermano all'orizzonte che l'utente ha scelto: prima mostrava 90 giorni anche con 30.
     const pieno = out.series[0];
@@ -6784,7 +6835,9 @@ async function prevEsegui() {
     // l'analisi dei dati si calcola in parallelo e non blocca il grafico
     void prevCaricaInsight(corpo);
     $("prevNotaGrafico").innerHTML =
-      "La linea verde è la stima più probabile, la fascia dice quanto il modello è incerto." +
+      "La linea verde è la stima più probabile (un punto per ogni passo previsto), la fascia dice quanto il modello è incerto. " +
+      "Il tratteggio viola è dove arriverebbe il valore se il movimento degli ultimi passi continuasse con la stessa pendenza: " +
+      "quando diverge dalla linea verde, il modello <b>non</b> sta scommettendo sulla continuazione del trend — e la verifica storica dice se ha ragione a non farlo." +
       `<span class="prev-tecnico">Modello Timestral di Mistral, eseguito in locale — pesi con licenza Modified MIT. Non conosce notizie né eventi annunciati.</span>`;
     $("prevCorpo").hidden = false;
     $("prevStato").innerHTML =
