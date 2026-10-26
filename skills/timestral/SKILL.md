@@ -13,12 +13,12 @@ e la RAM è condivisa da tutte le istanze dell'harness.
 
 ## Come si usa in questa istanza
 
-Due tool, entrambi accesi dall'interruttore `timestral` nel menu «servizi»:
+Tre tool, accesi dall'interruttore `timestral` nel menu «servizi»:
 
 | tool | quando |
 |---|---|
-| `timestral_series` | prima di tutto: quali serie esistono (demo incluse, CSV caricati), stato del servizio |
-| `timestral_forecast` | la previsione vera: `demo` (id), `csv` (file in `media/previsioni/dati/`) o `series` (valori in mano tua) |
+| `timestral_series` | prima di tutto: quali serie esistono (demo incluse, CSV caricati), il loro passo, le granularità possibili, lo stato del servizio |
+| `timestral_forecast` | la previsione vera: `demo` (id), `csv` (file in `media/previsioni/dati/`) o `series` (valori in mano tua); con `granularita` (`15m…1Y`) e `agg` (`media`/`ultimo`/`somma`) raggruppa i dati **prima** del modello |
 
 Il servizio è `timestral.service` (systemd), in ascolto su `127.0.0.1:8018`. Non è un processo
 dell'istanza: la stessa copia dei pesi serve tutte le istanze. Si scarica da solo dopo 15
@@ -179,6 +179,10 @@ non a «fra un quarto d'ora». Regole che l'agente deve rispettare quando lo pro
 - con meno di ~40 punti la stima è debole e va detto; la vista lo scrive nel verdetto.
 - In chat, se i dati sono grezzi a 15 minuti e la domanda è settimanale, chiedi prima la serie
   intera e aggrega tu (o proponi la granularità nella vista): non chiedere al modello 2.880 passi.
+Il tool `timestral_forecast` ha gli stessi parametri: `granularita` (`"15m". "30m". "1h". "4h". "1g". "1w". "1M". "3M". "1Y"`)
+e `agg` (`"media"` | `"ultimo"` | `"somma"`). Usalo quando la domanda è su un passo diverso dai
+dati, e nella risposta scrivi a quale passo hai raggruppato e con quale regola: senza quel dato
+«12» non si sa se sono ore o settimane. `prediction_length` si esprime nel passo scelto.
 
 Accanto alla previsione c'è **«Cosa dicono i dati»**: variazione su 1/7/30 passi, tendenza con
 R², volatilità, rumore, ciclicità (con la quota di variabilità che spiega), anomalie con la data,

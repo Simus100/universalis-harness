@@ -235,7 +235,7 @@ export function granulare({ valori, date = null, ogni, agg = "media" }) {
     outV.push(modo === "somma" ? gr.somma : modo === "ultimo" ? gr.ultimo : gr.somma / gr.n);
     outD.push(gr.data);
   }
-  if (outV.length < 3) throw new Error(`con questa granularità la serie resta con ${outV.length} punti: troppo pochi per una previsione`);
+  if (outV.length < 8) throw new Error(`con questa granularità la serie resta con ${outV.length} punti: il servizio ne chiede almeno 8 per prevedere`);
   return {
     valori: outV,
     date: outD,

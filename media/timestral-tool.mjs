@@ -14,7 +14,7 @@
  * media/timestral-client.mjs.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { analizza } from "./timestral-client.mjs";
+import { analizza, GRANULARITA } from "./timestral-client.mjs";
 import { join } from "node:path";
 
 const RAM = "471 MB con il modello da 28M caricato, 35 MB a vuoto";
@@ -28,6 +28,7 @@ const FORECAST_DESCRIPTION = [
   "Quando NON usarlo: (a) serie più corte di ~50 punti, o con buchi enormi; (b) quando il futuro dipende da un evento noto e datato (un aumento di prezzo annunciato, uno sciopero, un lancio) — il modello non lo sa e va detto all'utente; (c) per una decisione finanziaria: qui si produce una STIMA probabilistica, e va presentata come tale, mai come una previsione certa o un consiglio di investimento.",
   "Come leggerlo: la mediana è il centro; la banda 80% (q10–q90) e 95% (q05–q95) dicono quanto è larga l'incertezza; `p_rise_end` è la probabilità che il valore finale superi l'ultimo osservato, calcolata dai quantili (non calibrata: buona per ordinare, non come frequenza esatta). Se la banda è più larga della differenza che interessa, la risposta onesta è «non si può dire».",
   "Sorgenti: `demo` (serie incluse, vedi timestral_series), `csv` (un file caricato in media/previsioni/dati/), `series` (valori già in mano tua).",
+  "Granularità: se la domanda è su un passo diverso da quello dei dati (dati a 15 minuti e domanda settimanale), usa `granularita` per raggruppare PRIMA del modello — vedi il parametro. Si va solo verso il grosso, e il punto di un periodo è la media (default), l'ultimo valore o la somma: dichiaralo nella risposta.",
 ].join("\n");
 
 const FORECAST_PARAMETERS = {
@@ -57,6 +58,20 @@ const FORECAST_PARAMETERS = {
     },
     column: { type: "string", description: "Solo CSV: nome della colonna delle date/etichette." },
     value_column: { type: "string", description: "Solo CSV: nome della colonna dei valori." },
+    granularita: {
+      type: "string",
+      enum: ["15m", "30m", "1h", "4h", "1g", "1w", "1M", "3M", "1Y"],
+      description:
+        "Passo con cui prevedere, raggruppando i dati PRIMA del modello: 15m = 15 minuti, 30m = 30 minuti, 1h = un'ora, 4h = 4 ore, 1g = un giorno, 1w = una settimana, 1M = un mese, 3M = 3 mesi, 1Y = un anno. " +
+        "Serve quando i dati sono più fini della domanda (dati orari, domanda settimanale): si va SOLO verso il grosso — chiedere un passo più fine di quello dei dati è un errore, perché quei punti non esistono. " +
+        "Richiede le date: con `series` passate solo i valori, senza date, non si può aggregare. `prediction_length` si esprime nel passo scelto (es. granularita 1w + prediction_length 12 = 12 settimane).",
+    },
+    agg: {
+      type: "string",
+      enum: ["media", "ultimo", "somma"],
+      description:
+        "Solo con `granularita`: cosa rappresenta il punto di un periodo. media (default) = media del periodo, stessa unità di misura; ultimo = ultimo valore del periodo (la chiusura, come una barra di mercato); somma = totale del periodo (per i flussi: incassi, consumi, pezzi venduti).",
+    },
   },
   required: [],
 };
@@ -101,20 +116,20 @@ const SERIES_PARAMETERS = {
   required: [],
 };
 
-/** Numeri leggibili senza mentire sulla precisione: 0,88511 non diventa 0,9. */
+/** Numeri leggibili senza mentire sulla precisione: 0,88511 non diventa 0,9.
+ *  Formato italiano per intero: virgola per i decimali, punto per le migliaia. Prima erano misti
+ *  (`toFixed` col punto decimale e `toLocaleString` col punto delle migliaia) e «104.332» si
+ *  poteva leggere come 104,332: in una previsione un numero frainteso è un errore, non un dettaglio. */
 function num(v) {
   if (v === null || v === undefined || !Number.isFinite(Number(v))) return "—";
   const n = Number(v);
   const a = Math.abs(n);
   if (a === 0) return "0";
-  if (a < 0.001) return n.toPrecision(3);
-  if (a < 1) return n.toFixed(4);
-  if (a < 100) return n.toFixed(2);
-  if (a < 100000) return n.toFixed(1);
-  return n.toLocaleString("it-IT", { maximumFractionDigits: 0 });
+  const dec = a < 0.001 ? 5 : a < 1 ? 4 : a < 100 ? 2 : a < 100000 ? 1 : 0;
+  return n.toLocaleString("it-IT", { minimumFractionDigits: 0, maximumFractionDigits: dec });
 }
 
-const pc = (v) => (Number.isFinite(Number(v)) ? `${Number(v) > 0 ? "+" : ""}${Number(v).toFixed(2)}%` : "—");
+const pc = (v) => (Number.isFinite(Number(v)) ? `${Number(v) > 0 ? "+" : ""}${Number(v).toFixed(2).replace(".", ",")}%` : "—");
 
 /** Almeno una differenza fra i numeri, senza rumore: tabella con 6-10 righe. */
 function tabella(serie, passi = 8) {
@@ -186,6 +201,7 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
       "Presenta il risultato come stima probabilistica: mediana + intervallo, non un numero secco. Se la banda 80% è larga rispetto a ciò che interessa all'utente, la risposta onesta è che il modello non lo sa.",
       "Non omettere `p_rise_end` quando c'è: è la probabilità (dai quantili, non calibrata) che il valore finale superi l'ultimo osservato.",
       "Se il futuro dipende da un evento noto e datato, dillo: il modello non conosce notizie, e la previsione è la continuazione statistica della serie.",
+      "Se la domanda è su un passo diverso dai dati (serie a 15 minuti, domanda «la prossima settimana»), usa `granularita` e dì nella risposta a quale passo hai raggruppato e con quale regola (media/ultimo/somma): 672 quarti d'ora non rispondono a una domanda settimanale.",
       "Per una serie troppo corta o troppo irregolare, il tool risponde con un errore istruttivo: non insistere con altri parametri, spiega il limite.",
       "Se il servizio non risponde non è un guasto della feature: è il processo `timestral.service` spento. Dillo all'utente con il comando per accenderlo, e non riprovare a vuoto.",
     ],
@@ -206,6 +222,8 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
           series: params?.series,
           column: params?.column,
           valueColumn: params?.value_column,
+          granularita: params?.granularita || null,
+          agg: params?.agg || "media",
         });
         const h = Math.max(1, Math.min(4096, Number(params?.prediction_length) || client.prefs.prediction_length));
         const congiunta = params?.congiunta === true && fonti.length > 1;
@@ -234,10 +252,15 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
         // l'unità dell'orizzonte si deduce dalla frequenza dichiarata della serie: «12 passi»
         // non dice niente, «12 mesi» sì
         const freq = (fonti[0]?.meta?.frequenza || "").toLowerCase();
-        const unita = /mese/.test(freq) ? "mesi" : /settiman/.test(freq) ? "settimane" : /ora/.test(freq) ? "ore" : /giorn/.test(freq) ? "giorni" : "passi";
+        const unita = /minut/.test(freq) ? "minuti" : /mese/.test(freq) ? "mesi" : /settiman/.test(freq) ? "settimane" : /ora/.test(freq) ? "ore" : /ann/.test(freq) ? "anni" : /giorn/.test(freq) ? "giorni" : "passi";
+        const gran = fonti[0]?.meta?.granularita || null;
         const blocchi = [
           `**Timestral ${out.taglia}** — ${fonti.length === 1 ? `serie «${fonti[0].nome}»` : `${fonti.length} serie${congiunta ? " (previsione congiunta)" : " (separate)"}`}, ${h} ${unita} (${out.latency_s}s di calcolo, ${(ms / 1000).toFixed(1)}s totali).`,
-        ];
+          // se ho raggruppato, va detto subito: cambia di cosa si sta parlando
+          gran
+            ? `Serie raggruppata a **${gran.etichetta}** (${gran.agg === "somma" ? "somma" : gran.agg === "ultimo" ? "ultimo valore" : "media"} del periodo): ${gran.a} punti da ${gran.da} osservazioni. Le date dei punti sono l'ultima osservazione di ogni periodo.`
+            : "",
+        ].filter(Boolean);
         const dettagli = [];
         for (const [i, s] of out.series.entries()) {
           const meta = fonti[i]?.meta || {};
@@ -249,8 +272,8 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
               // l'ampiezza in percentuale ha senso solo su serie positive: su valori che
               // attraversano lo zero diventa un numero enorme e inutile
               `- fine orizzonte: mediana **${num(st2.median_end)}** · intervallo 80% ${num(s.q10[s.median.length - 1])}–${num(s.q90[s.median.length - 1])} · intervallo 95% ${num(s.q05[s.median.length - 1])}–${num(s.q95[s.median.length - 1])}` +
-                (Number.isFinite(Number(st2.band80_width_pct)) && (s.last_observed ?? 0) > 0 ? ` · ampiezza ${st2.band80_width_pct}%` : ""),
-              `- variazione attesa alla fine: ${st2.expected_change_end == null ? "—" : num(st2.expected_change_end)} (${pc(st2.expected_change_end_pct)}) · P(rialzo) = ${st2.p_rise_end == null ? "—" : Number(st2.p_rise_end).toFixed(2)}`,
+                (Number.isFinite(Number(st2.band80_width_pct)) && (s.last_observed ?? 0) > 0 ? ` · ampiezza ${num(st2.band80_width_pct)}%` : ""),
+              `- variazione attesa alla fine: ${st2.expected_change_end == null ? "—" : num(st2.expected_change_end)} (${pc(st2.expected_change_end_pct)}) · P(rialzo) = ${st2.p_rise_end == null ? "—" : Number(st2.p_rise_end).toFixed(2).replace(".", ",")}`,
               tabella(s),
             ].join("\n"),
           );
@@ -268,7 +291,7 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
         // serve a non attribuire al modello una tendenza che si vede già nella serie.
         let bloccoInsight = "";
         try {
-          const unitaIns = /mese/.test(fonti[0]?.meta?.frequenza || "") ? "mesi" : /ora/.test(fonti[0]?.meta?.frequenza || "") ? "ore" : /giorn/.test(fonti[0]?.meta?.frequenza || "") ? "giorni" : "passi";
+          const unitaIns = /minut/.test(fonti[0]?.meta?.frequenza || "") ? "minuti" : /mese/.test(fonti[0]?.meta?.frequenza || "") ? "mesi" : /ora/.test(fonti[0]?.meta?.frequenza || "") ? "ore" : /ann/.test(fonti[0]?.meta?.frequenza || "") ? "anni" : /settiman/.test(fonti[0]?.meta?.frequenza || "") ? "settimane" : /giorn/.test(fonti[0]?.meta?.frequenza || "") ? "giorni" : "passi";
           const an = analizza({ values: fonti[0].valori, dates: fonti[0].date || null, unita: unitaIns });
           bloccoInsight = `\n**Cosa dicono i dati** (calcolato sulla serie, non dal modello)\n${righeInsight(an)}`;
         } catch (err) {
@@ -293,7 +316,7 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
         );
         return {
           content: [{ type: "text", text: blocchi.join("\n") }],
-          details: { taglia: out.taglia, prediction_length: h, latenza_s: out.latency_s, serie: dettagli, file: percorso },
+          details: { taglia: out.taglia, prediction_length: h, latenza_s: out.latency_s, granularita: gran, serie: dettagli, file: percorso },
         };
       } catch (err) {
         const msg = String(err?.message ?? err);
@@ -365,6 +388,7 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
     promptGuidelines: [
       "Chiamalo prima di timestral_forecast se non sai quali serie esistono; non inventare id di serie.",
       "Se l'utente vuole prevedere dati propri e non c'è nessun CSV, dirgli di caricarlo in media/previsioni/dati/ (colonna data + colonna valore) oppure passare i valori direttamente.",
+      "Guarda il passo delle serie: se i dati sono molto più fini della domanda (ore contro settimane), la risposta giusta è aggregare con `granularita`, non chiedere centinaia di passi.",
     ],
     parameters: SERIES_PARAMETERS,
     async execute(_id, params, _ctx) {
@@ -386,7 +410,18 @@ export function createTimestralExtension({ client, mediaDir, log = (m) => consol
       }
       righe.push("\n**CSV caricati** (`media/previsioni/dati/`):");
       if (!csv.length) righe.push("- nessuno: per usarne uno, carica un CSV con una colonna di date e una di valori.");
-      for (const c of csv) righe.push(`- \`${c.nome}\`${c.kb ? ` (${c.kb} KB)` : ""}`);
+      for (const c of csv) {
+        const fr = c.meta && c.meta.frequenza ? `, passo ${c.meta.frequenza}` : "";
+        const un = c.meta && c.meta.unita ? `, unità ${c.meta.unita}` : "";
+        righe.push(`- \`${c.nome}\`${c.kb ? ` (${c.kb} KB)` : ""}${fr}${un}`);
+      }
+      /* Le granularità si dicono qui una volta: sono la risposta a «posso prevedere per
+         settimana?», e senza questo elenco il modello inventerebbe stringhe libere. */
+      righe.push(
+        `\n**Passo della previsione** (parametro \`granularita\`, solo verso il grosso): ` +
+          GRANULARITA.map((g) => `\`${g.chiave}\` = ${g.etichetta}`).join(" · ") +
+          ". \`agg\` sceglie cosa rappresenta il punto: media del periodo (default), ultimo valore, somma.",
+      );
       righe.push(
         `\n**Servizio:** ${st.up ? `acceso, taglia ${st.taglia}${st.caricato ? `, modello caricato (${st.ram_processo_mb} MB)` : ", modello non caricato"}` : `non in ascolto su 127.0.0.1:${st.port}`}.`,
       );

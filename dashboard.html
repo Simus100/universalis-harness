@@ -6235,21 +6235,29 @@ function prevGranScelta() {
   return prevGranList().find((g) => g.chiave === PREV_CTRL.granularita) || null;
 }
 
-/** Riempie la tendina con «come i dati» + le granularità possibili; disabilita quelle che
- *  chiederebbero un dettaglio che i dati non hanno. */
+/** Le opzioni di granularità sensate per la serie scelta: mai più fini del suo passo e mai
+ *  così grosse da lasciare meno di 8 punti (il minimo del servizio). Il conteggio si conosce
+ *  per le serie incluse (il server dichiara `punti`); per un CSV senza metadati si mostra
+ *  l'opzione e sarà il motore a dire di no con un messaggio chiaro. */
 function prevPopolaGranularita() {
   const sel = $("prevGran");
   if (!sel) return;
   const lista = prevGranList();
   const nativa = prevFrequenzaSerie();
   const nativaMs = prevPassoNativoMs(nativa);
+  const puntiGrezzi = prevPuntiSerie();
   const opts = [`<option value="">come i dati${nativa ? ` (${escHtml(nativa.replace(/^1 /, ""))})` : ""}</option>`];
   for (const g of lista) {
     const troppoFina = nativaMs && g.ms < nativaMs * 0.9;
-    opts.push(`<option value="${escAttr(g.chiave)}"${troppoFina ? " disabled" : ""}>${escHtml(g.etichetta)}${troppoFina ? " — i dati sono più radi" : ""}</option>`);
+    const stimati = puntiGrezzi && nativaMs ? Math.round((puntiGrezzi * nativaMs) / g.ms) : null;
+    const pochi = stimati !== null && stimati < 8;
+    const extra = troppoFina ? " — i dati sono più radi" : pochi ? " — resterebbero troppo pochi punti" : stimati !== null ? ` · ${stimati} punti` : "";
+    opts.push(`<option value="${escAttr(g.chiave)}"${troppoFina || pochi ? " disabled" : ""}>${escHtml(g.etichetta)}${escHtml(extra)}</option>`);
   }
   sel.innerHTML = opts.join("");
-  const valida = prevGranScelta() !== null;
+  // la scelta ricordata resta valida solo se quell'opzione esiste ANCORA e non è disabilitata
+  const scelta = Array.from(sel.options).find((o) => o.value === PREV_CTRL.granularita);
+  const valida = !!scelta && !scelta.disabled;
   sel.value = valida ? PREV_CTRL.granularita : "";
   if (!valida) PREV_CTRL.granularita = "";
   const agg = $("prevAgg");
@@ -6257,6 +6265,14 @@ function prevPopolaGranularita() {
     agg.hidden = !sel.value;            // aggregare o no: la scelta ha senso solo se si aggrega
     agg.value = PREV_CTRL.agg || "media";
   }
+}
+
+/** Quanti punti ha la serie scelta, quando il server lo sa dichiarare (serie incluse). */
+function prevPuntiSerie() {
+  const v = ($("prevSerie") && $("prevSerie").value) || "";
+  if (!v.startsWith("demo:")) return null;
+  const d = ((prevStato && prevStato.demo) || []).find((x) => x.id === v.slice(5));
+  return d && Number.isFinite(Number(d.punti)) ? Number(d.punti) : null;
 }
 
 /** Stima del passo di una frequenza dichiarata (ms). Serve SOLO a disabilitare le opzioni

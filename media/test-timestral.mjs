@@ -15,7 +15,7 @@
  * Esce con codice 1 se un controllo fallisce.
  */
 import { readFileSync } from "node:fs";
-import { parseCsv, analizza, granulare, istante, passoNativoMs } from "./timestral-client.mjs";
+import { parseCsv, analizza, granulare, istante, passoNativoMs, GRANULARITA } from "./timestral-client.mjs";
 
 const ROOT = "/root/pi-harness";
 const BASE = `http://127.0.0.1:${process.env.TIMESTRAL_PORT || 8018}`;
@@ -378,6 +378,16 @@ section("4. coerenza interfaccia ↔ API ↔ documentazione");
   check("le granularità disponibili vengono dal client condiviso", /granularita: TIMESTRAL_GRANULARITA/.test(mjs), "la vista se le riscrive a mano");
   check("l'unità dell'orizzonte segue la granularità scelta", /function prevUnitaSerie\(\)[\s\S]{0,220}prevGranScelta\(\)/.test(html), "l'etichetta resterebbe quella dei dati");
   check("la doc dichiara i tre modi di aggregare", /media/.test(doc) && /ultimo valore/.test(doc) && /somma/.test(doc) && /GRANULARITÀ|granularità/.test(doc), "la doc non spiega l'aggregazione");
+
+  // 4j. il tool in chat espone la STESSA granularità della vista (e non stringhe inventate)
+  const toolSrc = readFileSync(ROOT + "/media/timestral-tool.mjs", "utf8");
+  const enumTool = (toolSrc.match(/enum: \[([^\]]*"15m"[^\]]*)\]/) || [])[1] || "";
+  const chiaviGran = GRANULARITA.map((g) => g.chiave);
+  check("il tool espone tutte le granularità del client", chiaviGran.every((k) => enumTool.includes(`"${k}"`)), enumTool.slice(0, 140) || "enum assente");
+  check("il tool passa granularità e aggregazione al client", /granularita: params\?\.granularita/.test(toolSrc) && /agg: params\?\.agg/.test(toolSrc), "parametri non passati a preparaSerie");
+  check("il tool dichiara il raggruppamento nella risposta", /Serie raggruppata a/.test(toolSrc), "il modello non saprebbe di che passo parla");
+  check("il tool elenca le granularità in timestral_series", /GRANULARITA\.map/.test(toolSrc), "l'elenco non arriva al modello");
+  check("i numeri del tool usano il formato italiano (virgola decimale)", /toLocaleString\("it-IT"/.test(toolSrc), "104.332 si leggerebbe come 104,332");
 }
 
 /* ─────── 5. INTEGRAZIONE: la catena dashboard → servizio, come la usa la vista ─────── */

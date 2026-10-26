@@ -364,6 +364,22 @@ Il modello **non** fa questo: prevede. Queste tre cose dicono **se vale la pena 
 | «prossimi 4 mesi» | 4 | solo su serie mensili; su una giornaliera sono ~120 punti |
 | «prossimo trimestre» | 3 (mensile) / 90 (giornaliero) | dichiarare la convenzione |
 | «fine anno» | mesi che mancano a dicembre | calcolare, non indovinare |
+| «la prossima settimana», con dati a 15 minuti | `granularita: "1w"` + 1–4 passi | non 672 quarti d'ora: si raggruppa prima del modello e si dichiara la regola (`media`/`ultimo`/`somma`) |
+| «l'anno prossimo», con dati mensili | 12 passi | da dati mensili non si va più fini; con `granularita: "3M"` la stessa previsione si legge a trimestri |
+
+### Granularità anche nel tool in chat (`timestral_forecast`)
+
+Il tool ha gli stessi parametri della vista, perché il raggruppamento avviene nel client condiviso:
+
+| parametro | valori | a cosa serve |
+|---|---|---|
+| `granularita` | `15m` `30m` `1h` `4h` `1g` `1w` `1M` `3M` `1Y` | passo della previsione; si va **solo verso il grosso** (rifiuto esplicito se più fine dei dati) |
+| `agg` | `media` (default) `ultimo` `somma` | cosa rappresenta il punto di un periodo |
+
+`prediction_length` si esprime **nel passo scelto** (`granularita: "1w"` + `prediction_length: 12`
+sono dodici settimane). La risposta del tool dichiara sempre il raggruppamento
+(«serie raggruppata a 1 settimana (media del periodo): 53 punti da 365 osservazioni»), e
+`timestral_series` elenca le granularità disponibili perché il modello non debba inventarle.
 
 La serie si riconosce per **sinonimi** (`PREV_SINONIMI` nella vista: cambio/valuta → cambio USD-EUR,
 bitcoin/cripto, cassa/incassi/vendite, carico/energia) e poi per nome, con un punteggio pesato sulla
