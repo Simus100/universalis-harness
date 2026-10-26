@@ -50,7 +50,25 @@ export function parseCsv(text, { column = null, valueColumn = null } = {}) {
   const righe = text.split(/\r?\n/).filter((r) => r.trim());
   if (!righe.length) throw new Error("CSV vuoto");
   const sep = [",", ";", "\t"].sort((a, b) => righe[0].split(b).length - righe[0].split(a).length)[0];
-  const prima = righe[0].split(sep).map((c) => c.trim().replace(/^"|"$/g, ""));
+  // Split di una riga CSV che rispetta le virgolette: un campo quotato può contenere il
+  // separatore («"1.234,56"» in un file a virgole). Con un semplice `split(sep)` quel campo
+  // veniva spezzato in due e il valore letto era 1.234 — sbagliato di mille volte, in silenzio.
+  const dividi = (riga, s) => {
+    const out = [];
+    let cur = "", dentro = false;
+    for (let i = 0; i < riga.length; i += 1) {
+      const ch = riga[i];
+      if (ch === '"') {
+        if (dentro && riga[i + 1] === '"') { cur += '"'; i += 1; } else dentro = !dentro;
+        continue;
+      }
+      if (!dentro && ch === s) { out.push(cur); cur = ""; continue; }
+      cur += ch;
+    }
+    out.push(cur);
+    return out;
+  };
+  const prima = dividi(righe[0], sep).map((c) => c.trim().replace(/^"|"$/g, ""));
   const num = (c) => {
     const v = String(c).trim().replace(/^"|"$/g, "").replace(/\s/g, "");
     if (!v) return NaN;
@@ -81,7 +99,7 @@ export function parseCsv(text, { column = null, valueColumn = null } = {}) {
   const punti = [];
   let scartate = 0;
   for (const r of (header ? righe.slice(1) : righe)) {
-    const celle = r.split(sep);
+    const celle = dividi(r, sep);
     const v = num(celle[idxValore]);
     if (!Number.isFinite(v)) {
       scartate += 1;
@@ -152,25 +170,54 @@ export function analizza({ values, dates = null, unita = "passi" }) {
   const escursione = variazioni.length ? media(variazioni.map(Math.abs)) : null;
 
   // rumore rispetto a una media mobile
-  const w = Math.max(3, Math.round(N / 12));
-  const mm = y.map((_, i) => media(y.slice(Math.max(0, i - w + 1), i + 1)));
-  const residui = y.map((val, i) => val - mm[i]);
-  const sdResidui = std(residui);
+  /* Media mobile CENTRATA, con gli estremi «riflessi». Due difetti nascono da una media
+     sbilanciata all'indietro: su una serie in salita resta sempre sotto il valore corrente (bias
+     costante → falsi «anomalie» lungo tutto il trend). Una riflessione ai bordi non basta: gli
+     scarti diventano tutti positivi e il bias resta. Quindi la stima si fa solo dove la finestra
+     è completa (`null` altrove) e i residui si leggono solo lì. Su una retta perfetta, ora, gli
+     scarti sono esattamente zero. */
+  const w = Math.max(3, Math.round(N / 12) | 1);   // dispari: centro esatto
+  const metaW = Math.floor(w / 2);
+  const mm = y.map((_, i) => {
+    if (i - metaW < 0 || i + metaW >= N) return null;   // finestra incompleta: nessuna stima
+    let somma = 0;
+    for (let j = i - metaW; j <= i + metaW; j += 1) somma += y[j];
+    return somma / w;
+  });
+  const indiciResidui = mm.map((v, i) => (v === null ? -1 : i)).filter((i) => i >= 0);
+  const residui = y.map((val, i) => (mm[i] === null ? null : val - mm[i]));
+  const sdResidui = std(indiciResidui.map((i) => residui[i]));
   const sdTot = std(y);
   const rumore = sdTot ? sdResidui / sdTot : null;
 
-  // ciclicità: autocorrelazione sui lag tipici dell'unità
+  /* Ciclicità: autocorrelazione sui lag tipici dell'unità, calcolata sui RESIDUI e non sulla
+     serie grezza. Su un prezzo (un random walk) l'autocorrelazione della serie è alta a
+     qualunque lag breve — dice «il prezzo di ieri somiglia a quello di oggi», non «c'è un ciclo
+     settimanale»: era il motivo per cui la vista dichiarava «si ripete ogni 7 giorni» su serie
+     che non hanno alcuna stagionalità. Sui residui (dopo il movimento medio) il numero misura
+     la ricorrenza vera. */
   const lagCand = /mese|mensil/.test(unita) ? [12, 6, 24] : /ora/.test(unita) ? [24, 168, 12] : /settiman/.test(unita) ? [52, 4, 12] : [7, 30, 12];
+  const serieAcf = indiciResidui.map((i) => residui[i]);
   const acf = (lag) => {
-    if (N <= lag + 2) return null;
-    const m = media(y);
+    const M = serieAcf.length;
+    if (M <= lag + 2) return null;
+    const m = media(serieAcf);
     let num2 = 0, den2 = 0;
-    for (let i = 0; i < N; i += 1) den2 += (y[i] - m) ** 2;
-    for (let i = lag; i < N; i += 1) num2 += (y[i] - m) * (y[i - lag] - m);
+    for (let i = 0; i < M; i += 1) den2 += (serieAcf[i] - m) ** 2;
+    for (let i = lag; i < M; i += 1) num2 += (serieAcf[i] - m) * (serieAcf[i - lag] - m);
     return den2 ? num2 / den2 : null;
   };
   const cicli = lagCand.map((lag) => ({ lag, r: acf(lag) })).filter((c) => c.r !== null);
-  const cicloForte = cicli.filter((c) => Math.abs(c.r) >= 0.3).sort((x, z) => Math.abs(z.r) - Math.abs(x.r))[0] || null;
+  let cicloForte = cicli.filter((c) => Math.abs(c.r) >= 0.3).sort((x, z) => Math.abs(z.r) - Math.abs(x.r))[0] || null;
+  /* Autocorrelazione NEGATIVA a metà ciclo: il valore è OPPOSTO a metà periodo, non uguale.
+     Dire «si ripete ogni 12» sarebbe falso: si ripete ogni 24 e a 12 è rovesciato. Qui si
+     raddoppia e si tiene il ciclo solo se al periodo intero la correlazione è positiva; se non
+     è misurabile (serie corta) si dice che non c'è, invece di affermare un periodo inventato. */
+  if (cicloForte && cicloForte.r < 0) {
+    const doppio = cicloForte.lag * 2;
+    const rDoppio = acf(doppio);
+    cicloForte = rDoppio !== null && rDoppio >= 0.3 ? { lag: doppio, r: rDoppio } : null;
+  }
 
   // Quanta parte della variabilità è SPIEGATA dal ciclo: senza questo, una serie con weekend
   // forti (cassa, carichi) verrebbe descritta come «rumorosa», che è falso — è stagionale.
@@ -187,9 +234,13 @@ export function analizza({ values, dates = null, unita = "passi" }) {
   }
 
   // anomalie: scostamenti oltre 3 deviazioni standard dei residui
-  const soglia = sdResidui > 0 ? 3 * sdResidui : Infinity;
+  /* Su una serie perfettamente regolare (una retta) i residui sono zero a meno dell'errore di
+     macchina — 3e-13 — e la soglia scende con loro, segnalando «anomalie» che sono rumore di
+     virgola mobile. Sotto questa tolleranza relativa i residui si considerano nulli. */
+  const tolleranza = 1e-9 * (Math.abs(media(y)) || 1);
+  const soglia = sdResidui > tolleranza ? 3 * sdResidui : Infinity;
   const anomalie = [];
-  for (let i = 0; i < N; i += 1) {
+  for (const i of indiciResidui) {
     if (Math.abs(residui[i]) > soglia) {
       anomalie.push({ data: d[i], valore: Number(y[i].toFixed(6)), scostamento: Number(residui[i].toFixed(6)), posizione: i === N - 1 ? "ultimo" : `${N - i} fa` });
     }
@@ -215,6 +266,11 @@ export function analizza({ values, dates = null, unita = "passi" }) {
   // spettro su un segnale (DFT), per trovare i periodi candidati
   const spettro = (segnale, escludi = []) => {
     const out = [];
+    // Il LIVELLO va tolto prima della DFT: un segnale non centrato (y = 50 + 10·sin, come quasi
+    // ogni serie di prezzi) fa «traboccare» la componente costante sui periodi lunghi che non
+    // dividono la lunghezza, e il periodo trovato era 69 invece di 24. Verificato nel test.
+    const mSp = segnale.reduce((x, y2) => x + y2, 0) / (segnale.length || 1);
+    segnale = segnale.map((v) => v - mSp);
     const maxP = Math.max(2, Math.floor(segnale.length / 3));
     for (let p = 2; p <= maxP; p += 1) {
       if (escludi.some((e) => p === e || (e > 1 && (p % e === 0 || e % p === 0)))) continue;
@@ -242,6 +298,10 @@ export function analizza({ values, dates = null, unita = "passi" }) {
       if (migliore.ampiezza >= amp1 * 0.5) p1 = migliore.periodo;
     }
   }
+  /* Lo spettro su una serie finita sbaglia di un passo (una sinusoide di periodo 24 veniva letta
+     come 25, perché 25 divide peggio la lunghezza). L'autocorrelazione invece il periodo lo misura
+     direttamente: se le due stime sono vicine, si tiene quella dell'ACF. */
+  if (cicloForte && p1 && Math.abs(p1 - cicloForte.lag) <= Math.max(1, Math.round(cicloForte.lag * 0.1))) p1 = cicloForte.lag;
   const larghezzaTrend = Math.max(3, Math.min(Math.floor(N / 3), (p1 || 7) * 2 + 1));
   const meta = Math.floor(larghezzaTrend / 2);
   const trendArr = y.map((_, i) => zMedia(y.slice(Math.max(0, i - meta), Math.min(N, i + meta + 1))));

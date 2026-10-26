@@ -6107,6 +6107,9 @@ function prevAggiornaScenario(out) {
   if (!sc) return;
   $("prevSvgScenario").innerHTML = prevScenarioSvg(out, sc);
   $("prevScenarioNota").innerHTML = prevScenarioNota(out, sc);
+  // la legenda dichiara i parametri veri dello scenario: quante osservazioni, quale media
+  const leg = $("prevScenarioLeg");
+  if (leg) leg.textContent = `se il comportamento degli ultimi ${sc.K} passi continuasse · fasce 50 / 80 / 95% · linea gialla: media degli ultimi ${sc.W}`;
 }
 
 /* Dominio visibile, in indici sull'array «storico + previsione»: è ciò che rende il grafico

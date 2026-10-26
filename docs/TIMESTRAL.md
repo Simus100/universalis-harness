@@ -82,7 +82,7 @@ disco da 2 GB e una sandbox, non devono installare torch (886 MB di venv).
 | rotta | cosa fa |
 |---|---|
 | `GET /health` | stato: taglia, se il modello è carico, RAM del processo, richieste, ultimo errore |
-| `POST /forecast` | `{series:[{name,values}], prediction_length, mode:"separate"\|"joint", past_covariates?, known_covariates?}` → mediana, quantili 5/25/75/95, statistiche per serie. `separate` (default) = una previsione per serie; `joint` = variate di un unico sistema, il modello usa le dipendenze (le covariate valgono solo qui) |
+| `POST /forecast` | `{series:[{name,values}], prediction_length, mode:"separate"\|"joint", past_covariates?, known_covariates?}` → mediana, quantili **5/10/25/50/75/90/95** (sette livelli: le fasce 80% e 95% della vista si leggono da qui), statistiche per serie (`stats`: mediana finale, q05/q95 finali, ampiezza della banda 80%, P(fine > ultimo), variazione attesa). `prediction_length` è obbligatorio nell'intervallo 1…4096 e vale 30 solo se **assente**: un valore fuori intervallo è un errore, non un default silenzioso. `separate` (default) = una previsione per serie; `joint` = variate di un unico sistema, il modello usa le dipendenze (le covariate valgono solo qui) |
 | `POST /model` | `{size:"5M"\|"28M"\|"123M"\|"209M"}` — cambia taglia (scarica e ricarica) |
 | `POST /unload` | scarica subito il modello dalla RAM |
 

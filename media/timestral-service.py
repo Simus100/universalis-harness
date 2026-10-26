@@ -183,7 +183,14 @@ class Motore:
                 arr = arr[-MAX_CONTEXT:]  # il modello tiene i passi più recenti
             matrici.append(arr)
 
-        h = int(req.get("prediction_length") or 30)
+        # ATTENZIONE: `req.get("prediction_length") or 30` trasformava uno 0 (o una stringa
+        # vuota) in un orizzonte 30: la richiesta sbagliata veniva servita in silenzio con un
+        # altro numero. Ora l'assenza del campo vale 30 e un valore fuori intervallo è un errore.
+        _h = req.get("prediction_length", None)
+        try:
+            h = 30 if _h is None else int(float(_h))
+        except (TypeError, ValueError):
+            raise ValueError(f"prediction_length non numerico: {_h!r}")
         if not (1 <= h <= MAX_HORIZON):
             raise ValueError(f"prediction_length fuori intervallo (1..{MAX_HORIZON})")
 
