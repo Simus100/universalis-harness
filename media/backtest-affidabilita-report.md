@@ -151,3 +151,78 @@ non c'è**, e infatti il modello finisce dietro a una formula.
   molto. È l'unico terreno su cui i numeri lo sostengono.
 - Se una previsione di prezzo serve comunque, la strada giusta è la banda da volatilità (o EWMA),
   non questo modello.
+
+---
+
+# Terzo test: si può renderlo utile in finanza? Tre strade, misurate
+
+Strumento: `media/timestral-test-finanza.py`. Risultati: `media/test-finanza-30f.json`.
+30 finestre per caso, rolling origin, solo passato, stesso metro (pinball sugli stessi 7 livelli).
+
+## A. Più contesto — non funziona
+
+Stessa serie, stesso modello, contesto da 60 a 480 punti (h=5):
+
+| serie | ctx 60 | ctx 120 | ctx 250 | ctx 480 |
+|---|---|---|---|---|
+| cambio USD/EUR | +3.7 % | −0.8 % | −0.3 % | **+6.9 %** |
+| Bitcoin USD | −0.8 % | −0.3 % | **+10.8 %** | — |
+| oro COMEX | −6.3 % | −4.5 % | **+7.4 %** | — |
+| Nasdaq Composite | −1.4 % | −0.6 % | — | — |
+
+(guadagno in pinball contro la banda da volatilità calcolata sullo **stesso** contesto: più storia
+aiuta anche la baseline, quindi il confronto è onesto). Non c'è monotonia: si passa da −6 % a
++7 % cambiando il contesto, cioè l'effetto è dentro il rumore. **Più storia non dà al modello
+un'informazione che non c'è.** E il centro resta ≥ 1 rispetto al naive (1.01–1.10 su BTC e oro).
+
+## B. Previsione congiunta (le dipendenze fra serie) — non funziona
+
+Pannello allineato sulle date comuni (231 giorni, 2025-10-27 → 2026-10-01) di EUR/USD, Bitcoin e
+oro COMEX, previsto in `mode=joint` contro le stesse serie previste separatamente:
+
+| serie | joint vs separate | joint vs banda da volatilità |
+|---|---|---|
+| cambio USD/EUR | +2.1 % | 0.0 % |
+| Bitcoin USD | −4.3 % | −6.8 % |
+| oro COMEX | −1.0 % | −5.8 % |
+
+Le dipendenze cross-asset non aggiungono nulla di misurabile. (Nota: `oro-comex-usd-toz-giornaliero`
+e `xauusd-comex-giornaliero` contengono gli **stessi** valori — differenza media 0.0 su 181 date:
+nel pannello entra una serie sola, altrimenti si conterebbe due volte la stessa variata.)
+
+## C. Cambiare bersaglio — qui c'è qualcosa
+
+### C1. Rendimenti logaritmici: nessun segnale
+Guadagno in pinball contro il naive «rendimento zero» con banda da volatilità: −4.4 % … +3.9 %,
+MAE del centro 0.98–1.10. **La direzione del prezzo non è prevedibile**, come da manuale.
+
+### C2. Volatilità realizzata (√ della somma dei quadrati dei rendimenti su 5 giorni)
+Contro «volatilità come ieri» e contro EWMA (λ 0.94), con bande calibrate sui **propri** residui
+in-sample: Timestral vince in **7 casi su 8**, da +7.5 % a +30.2 % in pinball. Il centro batte la
+EWMA ovunque (rapporto 0.39–0.90).
+
+### C3. Contro HAR-RV, il benchmark accademico della volatilità (multi-orizzonte, OLS sul contesto)
+
+| serie | h | Timestral vs HAR (pinball) | centro vs HAR (MAE) |
+|---|---|---|---|
+| cambio USD/EUR | **1** | **+24.2 %** | 0.90 |
+| Bitcoin USD | **1** | **+19.7 %** | 0.80 |
+| Nasdaq Composite | **1** | **+5.0 %** | 0.88 |
+| oro COMEX | **1** | **+6.1 %** | 1.00 |
+| cambio USD/EUR | 5 | −14.7 % | 1.29 |
+| Bitcoin USD | 5 | +4.3 % | 0.79 |
+| Nasdaq Composite | 5 | +5.2 % | 0.86 |
+| oro COMEX | 5 | −11.9 % | 1.04 |
+
+**A un passo Timestral batte HAR-RV su tutte e quattro le serie** (5–24 % in pinball, centro
+migliore in tre su quattro). A cinque passi il risultato è misto e quindi non lo si afferma.
+
+## Conclusione
+
+- **Prezzo**: no. Né centro né incertezza, e non si recupera con più contesto o con le dipendenze
+  fra serie (misurate entrambe, negative).
+- **Volatilità a un giorno**: **sì, e per la prima volta contro un benchmark serio**. È l'unico
+  uso finanziario che i numeri sostengono: prevedere *quanto* si muoverà il mercato, non *dove*.
+- Cautela da dichiarare: quattro serie, trenta finestre, HAR stimato su 150 punti. È un segnale
+  da confermare su più serie e più lungo storico, non una legge. E serve a dimensionare il rischio
+  (VaR, sizing, margini), non a guadagnare dalla direzione.

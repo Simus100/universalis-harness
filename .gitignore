@@ -217,3 +217,5 @@ media/previsioni/verifiche/
 # JSON di misura (~500 KB) rigenerabili con media/timestral-backtest-affidabilita.py:
 # pubblicare i numeri senza il metodo che li produce non serve a nessuno, e rigenerarli costa 80 s
 media/backtest-*.json
+# risultati grezzi dei test finanziari (rigenerabili con media/timestral-test-finanza.py)
+media/test-finanza-*.json
