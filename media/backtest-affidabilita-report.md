@@ -32,6 +32,12 @@ Misura fatta il 26/10/2026 su questa VPS, modello `28M` (confronto con `209M`), 
 Una frase: **affidabile come macchina per dire l'incertezza, non come macchina per indovinare il
 valore di domani.** Il centro è un random walk con qualche rifinitura; la banda è la parte che vale.
 
+**Ma la banda non vale più di una formula di tre righe**: nel test contro una banda costruita dalla
+volatilità storica (sezione in fondo) sui prezzi reali Timestral è **3.0 % peggiore** della
+migliore baseline probabilistica. Quindi sui prezzi non è utile né per il centro né per
+l'incertezza; resta utile dove la serie ha stagionalità (cassa, carichi, consumi): lì è
+**85.8 % migliore** di qualunque banda da volatilità.
+
 ## Il dettaglio che conta (campione 60 finestre, 28M)
 
 | serie | h | MAE mod./naive | bande 80 % | 95 % | pinball vs naive |
@@ -91,3 +97,57 @@ Questo è un avvertimento anche sui numeri qui sopra: servono a dire «il centro
   non il centro: al centro basta il naive.
 - Prima di fidarsi di una serie nuova, guarda la **verifica storica** della vista Previsioni: è la
   stessa misura, in piccolo.
+
+---
+
+# Secondo test: contro una banda da volatilità storica (il confronto che conta sui prezzi)
+
+Strumento: `media/timestral-backtest-volatilita.py`. Risultati: `media/backtest-volatilita-28M-60f.json`.
+19 casi su serie di prezzo reali + 4 casi di controllo su serie sintetiche, 60 finestre, passo 1.
+
+Perché serviva: nel test generale il pinball di Timestral batteva quello di un **naive senza
+incertezza** (distribuzione degenere), il che è facile. Il confronto onesto è contro una banda
+costruita come si deve: random walk gaussiano con sigma dei rendimenti logaritmici del contesto,
+allargato con sqrt(passo) — nella versione semplice (`vol`), con la deriva media (`vol+deriva`) e
+con sigma EWMA stile RiskMetrics (`ewma`). Stessi livelli quantili (0.05…0.95), stesso contesto.
+
+## Esito, prezzi reali (19 casi)
+
+| | pinball | banda 80 % coperta | ampiezza media banda 80 % |
+|---|---|---|---|
+| Timestral 28M | 161.54 | 81.4 % | 6.95 % del prezzo |
+| vol storica | **159.74** | **85.0 %** | 7.30 % |
+| vol + deriva | 165.9 | — | — |
+| EWMA (λ 0.94) | 166.5 | 79.4 % | — |
+
+**Timestral è 3.0 % peggiore della migliore baseline probabilistica.** Batte la `vol` semplice in
+13 casi su 19, ma sempre di 1-3 %, cioè dentro il rumore, e perde nettamente dove conta:
+
+| caso | Timestral vs migliore baseline |
+|---|---|
+| oro mensile h=12 | **−30.0 %** (vince `vol+deriva`: portare la deriva batte il modello) |
+| oro mensile h=3 | −7.7 % |
+| Bitcoin h=20 | −5.5 % |
+| oro mensile h=1 | −4.2 % |
+| oro 15 min h=16 | −3.7 % |
+| cassa / carico elettrico (controllo) | **+83.7 / +90.0 / +78.3 / +91.2 %** |
+
+La banda di Timestral è anche **più stretta** di quella da volatilità (6.95 % contro 7.30 %) e
+per questo copre meno (81.4 % contro 85.0 %): non è più prudente, è solo più ottimista.
+
+## Il controllo che valida il banco di prova
+
+Sulle due serie sintetiche — stagionalità settimanale e giornaliera pulita — Timestral vince di
+**85.8 %** in pinball con una banda 10 volte più stretta (15 % del valore contro 154 %). Quindi il
+test discrimina: quando nella serie c'è struttura da imparare, il modello la trova. **Sui prezzi
+non c'è**, e infatti il modello finisce dietro a una formula.
+
+## Conclusione operativa
+
+- **Prezzo puntuale**: inutile (pari al naive, già misurato).
+- **Incertezza sul prezzo**: inutile anche quella — non batte la volatilità storica, e su un
+  orizzonte lungo perde del 30 % contro la stessa formula più la deriva.
+- **Serie con stagionalità** (incassi, consumi, carichi, presenze): qui il modello **è** utile, e di
+  molto. È l'unico terreno su cui i numeri lo sostengono.
+- Se una previsione di prezzo serve comunque, la strada giusta è la banda da volatilità (o EWMA),
+  non questo modello.
