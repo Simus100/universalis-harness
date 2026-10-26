@@ -1751,6 +1751,9 @@ footer {
 .prev-check { display: inline-flex; align-items: center; gap: 5px; color: var(--dim); font-size: var(--fs-sm); cursor: pointer; }
 .prev-check input { accent-color: var(--accent); }
 .prev-svgbox { position: relative; }
+/* secondo grafico: lo scenario costruito dai dati, accanto alla previsione del modello */
+.prev-scenario { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
+.prev-scenario svg { display: block; width: 100%; height: auto; }
 /* tooltip del grafico: leggero, non deve coprire il punto che si sta guardando */
 .prev-tip {
   position: absolute; pointer-events: none; z-index: 3; transform: translate(-50%, -110%);
@@ -2199,6 +2202,11 @@ footer {
           <label class="prev-check" title="Sovrappone la finestra precedente, allineata per posizione: serve a vedere se il movimento attuale somiglia a quello di prima"><input type="checkbox" id="prevConfronto" /> confronta col periodo prima</label>
         </div>
         <div id="prevSvgBox" class="prev-svgbox"></div>
+        <div class="prev-scenario" id="prevScenarioBox">
+          <div class="prev-card-h">Andamento realistico <span class="prev-legenda" id="prevScenarioLeg">se il comportamento recente continuasse — ricampionato dai dati, non dal modello</span></div>
+          <div id="prevSvgScenario" class="prev-svgbox"></div>
+          <div class="prev-nota" id="prevScenarioNota"></div>
+        </div>
         <div class="prev-trend" id="prevTrend"></div>
         <div class="prev-nota" id="prevNotaGrafico"></div>
       </section>
@@ -5870,7 +5878,7 @@ applyStatsHidden();
 /* Tre fasce, tre livelli: il riempimento cresce verso il centro (dove il modello crede di più)
    e ogni fascia ha il PROPRIO bordo, perché su fondo scuro tre verdi con opacità simile
    diventano una macchia sola e l'incertezza non si legge più. */
-const PREV_C = { hist: "#a3adc0", med: "#34d399", medChiaro: "#6ee7b7", deriva: "#8b5cff", b95: "rgba(52,211,153,.07)", b80: "rgba(52,211,153,.15)", b50: "rgba(52,211,153,.30)", bordo: "rgba(52,211,153,.35)", bordo80: "rgba(52,211,153,.55)", bordo50: "rgba(110,231,183,.65)", griglia: "#1c222b", asse: "#8a93a6", testo: "#eef2f9", soft: "#c6cfdd", giallo: "#fbbf24", rosso: "#fb7185" };
+const PREV_C = { hist: "#a3adc0", med: "#34d399", medChiaro: "#6ee7b7", deriva: "#8b5cff", azzurro: "#38bdf8", azzurroChiaro: "#7dd3fc", a95: "rgba(56,189,248,.07)", a80: "rgba(56,189,248,.15)", a50: "rgba(56,189,248,.28)", aBordo: "rgba(56,189,248,.45)", aBordo80: "rgba(125,211,252,.6)", b95: "rgba(52,211,153,.07)", b80: "rgba(52,211,153,.15)", b50: "rgba(52,211,153,.30)", bordo: "rgba(52,211,153,.35)", bordo80: "rgba(52,211,153,.55)", bordo50: "rgba(110,231,183,.65)", griglia: "#1c222b", asse: "#8a93a6", testo: "#eef2f9", soft: "#c6cfdd", giallo: "#fbbf24", rosso: "#fb7185" };
 let prevStato = null;      // ultimo GET /api/timestral
 let prevRisultato = null;  // ultima previsione mostrata (per gli export)
 let prevCaricata = false;
@@ -6082,8 +6090,23 @@ function prevRidisegna() {
   if (!prevRisultato) return;
   $("prevSvgBox").innerHTML = prevGrafico(prevRisultato);
   $("prevTrend").innerHTML = prevTrendHtml(prevRisultato);
+  prevAggiornaScenario(prevRisultato);
   prevAggiornaZoomInfo();
   prevAgganciaPuntatore();
+}
+
+/**
+ * Secondo grafico: lo scenario costruito dai dati. Si ricalcola insieme al primo (l'orizzonte
+ * può cambiare) e si nasconde quando la serie è troppo corta per ricampionare qualcosa.
+ */
+function prevAggiornaScenario(out) {
+  const box = $("prevScenarioBox");
+  if (!box) return;
+  const sc = prevScenario(out);
+  box.hidden = !sc;
+  if (!sc) return;
+  $("prevSvgScenario").innerHTML = prevScenarioSvg(out, sc);
+  $("prevScenarioNota").innerHTML = prevScenarioNota(out, sc);
 }
 
 /* Dominio visibile, in indici sull'array «storico + previsione»: è ciò che rende il grafico
@@ -6300,6 +6323,149 @@ function prevGrafico(out) {
       </g>
     </svg>`;
 }
+
+/* ---------- scenario «la storia si ripete»: l'altro grafico, quello che si capisce ----------
+   Il modello dà una stima centrale quasi piatta e una fascia larghissima: guardando solo lui non
+   si ricava un'indicazione su «che cosa è ragionevole aspettarsi». Accanto si disegna quindi un
+   SECONDO scenario, costruito solo dai dati: si prendono i rendimenti passo-passo degli ultimi N
+   passi, se ne ricampionano M percorsi (bootstrap con reimmissione, quindi con le code vere della
+   serie, non una gaussiana) e se ne leggono i quantili. Non è «un modello migliore»: è il metro
+   con cui giudicare la previsione — e la verifica storica dice quale dei due ha sbagliato meno.
+   Il generatore ha un seme fisso: ridisegnando, il ventaglio non balla. */
+function prevPrng(seme) {
+  let s = (seme >>> 0) || 1;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function prevScenario(out) {
+  const s0 = out.series[0];
+  const h = s0 ? s0.median.length : 0;
+  const tutto = (out.storico || []).filter((v) => Number.isFinite(v));
+  const L = tutto.length;
+  if (!h || L < 30) return null;
+  // rendimenti degli ultimi N passi (mai più di 120: oltre, «il comportamento recente» non è più recente)
+  const K = Math.min(120, L - 1);
+  const rend = [];
+  for (let i = L - K; i < L; i += 1) {
+    const a = tutto[i - 1], b = tutto[i];
+    if (a !== 0) rend.push(b / a - 1);
+  }
+  if (rend.length < 20) return null;
+  const ultimo = tutto[L - 1];
+  const media = rend.reduce((x, y) => x + y, 0) / rend.length;
+  const sigma = Math.sqrt(rend.reduce((x, r) => x + (r - media) ** 2, 0) / (rend.length - 1));
+  const M = 400;
+  const rnd = prevPrng(20261026);
+  const percorsi = [];
+  for (let m = 0; m < M; m += 1) {
+    let v = ultimo;
+    const p = [];
+    for (let k = 0; k < h; k += 1) {
+      v *= 1 + rend[Math.floor(rnd() * rend.length)];
+      p.push(v);
+    }
+    percorsi.push(p);
+  }
+  // si ordina UNA volta per passo e si leggono tutti i quantili: con orizzonti lunghi
+  // (366 passi) sette ordinamenti per passo sarebbero sette volte il lavoro necessario
+  const perPasso = Array.from({ length: h }, (_, k) => percorsi.map((p) => p[k]).sort((x, y) => x - y));
+  const quant = (k, q) => {
+    const a = perPasso[k];
+    const pos = (a.length - 1) * q;
+    const lo = Math.floor(pos), hi = Math.ceil(pos);
+    return lo === hi ? a[lo] : a[lo] + (a[hi] - a[lo]) * (pos - lo);
+  };
+  const serie = (q) => Array.from({ length: h }, (_, k) => quant(k, q));
+  // la «media precedente»: media mobile degli ultimi W valori, il livello da cui si sta partendo
+  const W = Math.min(20, L);
+  const mm = tutto.slice(L - W).reduce((x, y) => x + y, 0) / W;
+  return {
+    h, L, tutto, ultimo, K: rend.length, media, sigma, W, mm,
+    q05: serie(0.05), q10: serie(0.1), q25: serie(0.25), q50: serie(0.5),
+    q75: serie(0.75), q90: serie(0.9), q95: serie(0.95),
+    mediaPerc: Array.from({ length: h }, (_, k) => percorsi.reduce((x, p) => x + p[k], 0) / M),
+  };
+}
+
+/** Il disegno dello scenario: storico recente, ventaglio empirico, mediana e livello medio. */
+function prevScenarioSvg(out, precalcolato = null) {
+  const sc = precalcolato || prevScenario(out);
+  if (!sc) return "";
+  const { h, L, tutto, ultimo, mm, W } = sc;
+  const V = Math.min(L, Math.max(30, Math.round(h * 2)));   // quanta storia mostrare per contesto
+  const i0 = L - V;
+  const Wd = 900, Hd = 210, ml = 62, mr = 66, mt = 12, mb = 26;
+  const x = (i) => ml + ((i - i0) / Math.max(1, V + h - 1)) * (Wd - ml - mr);
+  const valori = [
+    ...tutto.slice(i0),
+    sc.q05[h - 1], sc.q95[h - 1], mm,
+  ].filter((v) => Number.isFinite(v));
+  let min = Math.min(...valori), max = Math.max(...valori);
+  if (min === max) { min -= 1; max += 1; }
+  const pad = (max - min) * 0.08;
+  min -= pad; max += pad;
+  const y = (v) => mt + (Hd - mt - mb) * (1 - (v - min) / (max - min));
+
+  const pol = (lo, hi) => {
+    const su = [], giu = [];
+    for (let k = 0; k < h; k += 1) su.push(`${x(L + k).toFixed(1)},${y(hi[k]).toFixed(1)}`);
+    for (let k = h - 1; k >= 0; k -= 1) giu.push(`${x(L + k).toFixed(1)},${y(lo[k]).toFixed(1)}`);
+    return su.concat(giu).join(" ");
+  };
+  const cerniera = `${x(L - 1).toFixed(1)},${y(ultimo).toFixed(1)}`;
+  const conCerniera = (pts) => `${cerniera} ${pts}`;
+  const pathMed = Array.from({ length: h }, (_, k) => `${k ? "L" : "M"}${x(L + k).toFixed(1)} ${y(sc.q50[k]).toFixed(1)}`).join(" ");
+  const pathStorico = tutto.slice(i0).map((v, j) => `${j ? "L" : "M"}${x(i0 + j).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
+  const pathMedia = Array.from({ length: h }, (_, k) => `${k ? "L" : "M"}${x(L + k).toFixed(1)} ${y(sc.mediaPerc[k]).toFixed(1)}`).join(" ");
+  const griglia = [0, 0.5, 1].map((f) => {
+    const v = min + (max - min) * f;
+    return `<line x1="${ml}" y1="${y(v).toFixed(1)}" x2="${Wd - mr}" y2="${y(v).toFixed(1)}" stroke="${PREV_C.griglia}"/>
+      <text x="${Wd - mr + 6}" y="${(y(v) + 4).toFixed(1)}" font-size="11" fill="${PREV_C.asse}">${escHtml(prevNum(v))}</text>`;
+  }).join("\n      ");
+  const fut = sc.q50[h - 1], lo80 = sc.q10[h - 1], hi80 = sc.q90[h - 1];
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${Wd} ${Hd}" role="img" aria-label="Scenario costruito dai dati: andamento realistico del prezzo">
+      <rect x="0" y="0" width="${Wd}" height="${Hd}" fill="#0b0e14"/>
+      ${griglia}
+      <line x1="${ml}" y1="${y(mm).toFixed(1)}" x2="${Wd - mr}" y2="${y(mm).toFixed(1)}" stroke="${PREV_C.giallo}" stroke-width="1" stroke-dasharray="6 4" opacity=".7"/>
+      <text x="${ml + 4}" y="${(y(mm) - 5).toFixed(1)}" font-size="10" fill="${PREV_C.giallo}" opacity=".85">media ultimi ${W}: ${escHtml(prevNum(mm))}</text>
+      <polygon points="${conCerniera(pol(sc.q05, sc.q95))}" fill="${PREV_C.a95}" stroke="${PREV_C.aBordo}" stroke-width="1" stroke-dasharray="4 3"/>
+      <polygon points="${conCerniera(pol(sc.q10, sc.q90))}" fill="${PREV_C.a80}" stroke="${PREV_C.aBordo80}" stroke-width="1"/>
+      <polygon points="${conCerniera(pol(sc.q25, sc.q75))}" fill="${PREV_C.a50}" stroke="${PREV_C.azzurroChiaro}" stroke-width="1" opacity=".9"/>
+      <path d="${pathStorico}" fill="none" stroke="${PREV_C.hist}" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="${pathMedia}" fill="none" stroke="${PREV_C.azzurro}" stroke-width="1.2" stroke-dasharray="2 3" opacity=".55"/>
+      <path d="${pathMed}" fill="none" stroke="${PREV_C.azzurroChiaro}" stroke-width="2.6" stroke-linejoin="round"/>
+      <circle cx="${x(L - 1).toFixed(1)}" cy="${y(ultimo).toFixed(1)}" r="4" fill="${PREV_C.azzurroChiaro}"/>
+      <text x="${x(L - 1).toFixed(1)}" y="${(y(ultimo) + 18).toFixed(1)}" font-size="10" fill="${PREV_C.azzurroChiaro}" text-anchor="middle">oggi</text>
+      <rect x="${Wd - mr - 62}" y="${(y(fut) - 10).toFixed(1)}" width="58" height="19" rx="4" fill="#0b0e14" opacity=".82"/>
+      <text x="${Wd - mr - 8}" y="${(y(fut) + 4).toFixed(1)}" font-size="12" fill="#eef2f9" text-anchor="end">${escHtml(prevNum(fut))}</text>
+      <text x="${ml}" y="${Hd - 8}" font-size="10" fill="${PREV_C.asse}">${escHtml(prevQuando((out.date && out.date[0] && out.date[0][i0]) || ""))}</text>
+      <text x="${Wd - mr}" y="${Hd - 8}" font-size="10" fill="${PREV_C.asse}" text-anchor="end">+${h} ${escHtml(prevUnitaSerie())} · scenario storico: ${sc.K} rendimenti, ${400} percorsi</text>
+    </svg>`;
+}
+
+/** I numeri dello scenario in una riga: senza, il secondo grafico è solo un altro disegno. */
+function prevScenarioNota(out, precalcolato = null) {
+  const sc = precalcolato || prevScenario(out);
+  if (!sc) return "";
+  const ultimo = sc.q50[sc.h - 1];
+  const varPct = sc.ultimo ? (100 * (ultimo - sc.ultimo)) / Math.abs(sc.ultimo) : null;
+  return (
+    `Se il comportamento degli ultimi <b>${sc.K} passi</b> continuasse (volatilità tipica ` +
+    `${prevPct(100 * sc.sigma)} per passo), fra ${sc.h} ${escHtml(prevUnitaSerie())} il prezzo starebbe ` +
+    `intorno a <b>${escHtml(prevNum(ultimo))}</b> (${prevPct(varPct)}), con l'80% degli scenari fra ` +
+    `<b>${escHtml(prevNum(sc.q10[sc.h - 1]))}</b> e <b>${escHtml(prevNum(sc.q90[sc.h - 1]))}</b>. ` +
+    `La linea gialla tratteggiata è la <b>media degli ultimi ${sc.W} passi</b>: dice da quale livello si parte, ` +
+    `non dove si andrà. Scenario costruito ricampionando i rendimenti storici, senza il modello: confrontalo con la ` +
+    `stima verde qui sopra — la verifica storica dice quale dei due sbaglia meno.`
+  );
+}
+
 
 /** Cosa si è mosso nella finestra guardata: la frase che si cerca guardando il disegno. */
 function prevTrendHtml(out) {
@@ -6824,6 +6990,7 @@ async function prevEsegui() {
     prevImpostaDominio();                          // si parte dalla finestra scelta, poi si naviga
     $("prevSvgBox").innerHTML = prevGrafico(out);
     $("prevTrend").innerHTML = prevTrendHtml(out);
+    prevAggiornaScenario(out);
     prevAggiornaZoomInfo();
     prevAgganciaPuntatore();
 
