@@ -5675,14 +5675,16 @@ const server = http.createServer(async (req, res) => {
       // quanto pesa — è quello che la chat usa per decidere se mostrare l'anteprima.
       const richiesto = url.searchParams.get("path") || "";
       const soloMeta = url.searchParams.get("meta") === "1";
-      let abs;
-      try {
-        abs = await safeResolve(richiesto);
-      } catch (e) {
-        return json(res, e?.code === 403 ? 403 : 404, {
-          error: e?.code === 403 ? "percorso fuori dalla root" : `file non trovato: «${richiesto}»`,
-        });
-      }
+      // `resolveCitedPath` e non `safeResolve`: il percorso arriva da un blocco ```img scritto
+      // dall'agente, che cita lo stesso file in tre modi (assoluto, relativo alla cartella di
+      // lavoro `media/x.png`, relativo ai file generati `x.png`). Con la sola root — che su
+      // questa istanza è `/root`, non la cartella dell'harness — un «media/x.png» scritto nel
+      // blocco non esisteva e la chat rispondeva «file non trovato»; è lo stesso difetto già
+      // corretto per /api/video («bello ma invisibile» lì, qui si vedeva).
+      const trovato = await resolveCitedPath(richiesto);
+      if (!trovato) return json(res, 404, { error: `file non trovato: «${richiesto}»` });
+      if (trovato.type === "dir") return json(res, 400, { error: "è una cartella, non un file" });
+      const abs = resolve(ROOT, trovato.path);
       let st;
       try {
         st = await fs.stat(abs);
