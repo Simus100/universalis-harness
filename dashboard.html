@@ -294,6 +294,45 @@ main {
   background: var(--panel); border: 1px solid var(--border-soft); font-size: var(--fs-lg); color: var(--text-soft);
   box-shadow: var(--shadow-sm);
 }
+/* ---------- markdown reso nella bolla ----------
+   La bolla usa `white-space: pre-wrap` perché il testo arriva in streaming; quando il markdown
+   viene reso, il contenitore torna a capo da sé e le tabelle non devono allargare il messaggio:
+   scorrono dentro il proprio riquadro. Sotto i 620px ogni riga diventa una scheda «campo: valore»,
+   perché una tabella a tre colonne su un telefono è illeggibile in qualunque modo la si comprima. */
+.mdtext.mdhtml { white-space: normal; display: block; }
+.mdhtml > :first-child { margin-top: 0; }
+.mdhtml > :last-child { margin-bottom: 0; }
+.mdhtml p { margin: 8px 0; }
+.md-h { margin: 16px 0 6px; font-size: var(--fs-md); color: var(--text); line-height: 1.35; }
+.md-list { margin: 8px 0; padding-left: 22px; }
+.md-list li { margin: 3px 0; }
+.md-quote { margin: 8px 0; padding: 6px 12px; border-left: 3px solid var(--border); color: var(--dim); }
+.md-hr { border: 0; border-top: 1px solid var(--border-soft); margin: 14px 0; }
+.mdhtml code { background: rgba(255,255,255,.06); padding: 1px 5px; border-radius: 5px; font-size: .95em; overflow-wrap: anywhere; }
+.md-pre { margin: 10px 0; padding: 10px 12px; border: 1px solid var(--border-soft); border-radius: 10px; overflow-x: auto; background: rgba(0,0,0,.22); }
+.md-pre code { background: none; padding: 0; font-size: var(--fs-sm); }
+.md-table-wrap { overflow-x: auto; margin: 10px 0; border: 1px solid var(--border-soft); border-radius: 10px; background: rgba(255,255,255,.014); }
+.md-table { border-collapse: collapse; width: 100%; font-size: var(--fs-sm); }
+.md-table th, .md-table td { padding: 8px 11px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border-soft); }
+.md-table th { position: sticky; top: 0; z-index: 1; background: color-mix(in srgb, var(--panel-2) 96%, transparent); font-weight: 600; color: var(--text); }
+.md-table tbody tr:last-child td { border-bottom: 0; }
+.md-table tbody tr:nth-child(even) { background: rgba(255,255,255,.022); }
+.md-table td:first-child { color: var(--text-soft); }
+/* prima colonna ferma mentre si scorre in orizzontale: la si perde sempre, altrimenti */
+@media (min-width: 621px) {
+  .md-table td:first-child, .md-table th:first-child { position: sticky; left: 0; background: var(--panel); }
+  .md-table th:first-child { z-index: 2; background: color-mix(in srgb, var(--panel-2) 96%, transparent); }
+}
+@media (max-width: 620px) {
+  .md-table-wrap { overflow: visible; border: 0; border-radius: 0; }
+  .md-table thead { display: none; }
+  .md-table, .md-table tbody, .md-table tr, .md-table td { display: block; width: auto; }
+  .md-table tbody tr:nth-child(even) { background: none; }
+  .md-table tr { border: 1px solid var(--border-soft); border-radius: 10px; margin: 0 0 8px; padding: 4px 0; background: rgba(255,255,255,.014); }
+  .md-table td { border: 0; padding: 4px 11px; display: grid; grid-template-columns: minmax(72px, 38%) 1fr; gap: 8px; }
+  .md-table td::before { content: attr(data-label); color: var(--dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .4px; line-height: 1.5; }
+}
+
 .msg.user .bubble {
   background: linear-gradient(135deg, rgba(91,157,255,.20), rgba(139,92,255,.18));
   border-color: rgba(91,157,255,.35); border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
@@ -3027,6 +3066,183 @@ function appendBubbleText(bubble, delta) {
   if (tail.text.includes("```") || tail.pending) flushSvgBlocks(bubble, tail, false);
 }
 
+/* ---------- markdown dei messaggi: tabelle e testo leggibile ----------
+   Fino a ieri il testo dell'assistente arrivava nella bolla come TESTO PURO (`textContent` +
+   `white-space: pre-wrap`): una tabella markdown si vedeva come righe di pipe, e la sua
+   leggibilità dipendeva dalla larghezza della finestra. Qui c'è un convertitore VOLUTAMENTE
+   piccolo (niente dipendenze) che copre quello che serve leggere in chat: tabelle, titoli, liste,
+   citazioni, codice in linea, grassetto/corsivo, righe orizzontali, link.
+   Sicurezza: tutto il testo viene escapato PRIMA di qualunque markup; i soli tag che compaiono
+   sono quelli costruiti qui (p, h1-h4, ul, ol, li, table, blockquote, pre, code, strong, em, a, hr).
+   I blocchi ``` non li vede quasi mai: le fence speciali (svg/img/pdf/video) sono già diventate
+   card prima di questa funzione.
+*/
+const MD_ESC = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+const mdEsc = (s) => String(s).replace(/[&<>"']/g, (c) => MD_ESC[c]);
+
+/** Il testo «merita» il convertitore? Se non c'è nessun costrutto, si lascia com'è: meno rischio. */
+function sembraMarkdown(text) {
+  const t = String(text || "");
+  if (/\|\s*:?-{2,}/.test(t)) return true;                 // riga separatrice di tabella
+  if (/^\s*\|.*\|\s*$/m.test(t) && /\|/.test(t)) return true;
+  if (/```/.test(t)) return true;
+  if (/^\s{0,3}#{1,6}\s+\S/m.test(t)) return true;
+  if (/^\s{0,3}([-*+]|\d+\.)\s+\S/m.test(t)) return true;
+  if (/^\s{0,3}>\s?\S/m.test(t)) return true;
+  if (/\*\*[^*\n]+\*\*|`[^`\n]+`|~~[^~\n]+~~/.test(t)) return true;
+  if (/\[[^\]\n]+\]\((https?:\/\/|mailto:|\/)/.test(t)) return true;
+  return false;
+}
+
+/** Inline: codice, grassetto, corsivo, barrato, link. Il testo è già escapato. */
+function mdInline(testo) {
+  let s = mdEsc(testo);
+  s = s.replace(/`([^`]+)`/g, (_, c) => `<code>${c}</code>`);
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>");
+  s = s.replace(/~~([^~]+)~~/g, "<del>$1</del>");
+  s = s.replace(/\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:|\/)[^)\s]+)\)/g,
+    (_, txt, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${txt}</a>`);
+  return s;
+}
+
+/** Una riga di tabella → celle. Le pipe dentro `codice` non separano (era il caso dei comandi). */
+function mdCelle(riga) {
+  const r = String(riga).trim().replace(/^\|/, "").replace(/\|$/, "");
+  const celle = [];
+  let cur = "", inCode = false;
+  for (let i = 0; i < r.length; i += 1) {
+    const ch = r[i];
+    if (ch === "`") inCode = !inCode;
+    if (ch === "|" && !inCode) { celle.push(cur.trim()); cur = ""; continue; }
+    cur += ch;
+  }
+  celle.push(cur.trim());
+  return celle;
+}
+
+/** Allineamento dichiarato dalla riga separatrice (`:---`, `---:`, `:---:`). */
+function mdAllinea(sep) {
+  return sep.map((c) => {
+    const s = c.trim();
+    if (/^:-+:$/.test(s)) return "center";
+    if (/^-+:$/.test(s)) return "right";
+    return "left";
+  });
+}
+
+/**
+ * Markdown → HTML. Restituisce SOLO HTML costruito qui, con il testo escapato.
+ * Le tabelle diventano `<div class="md-table-wrap">` (scorre da sola, non allarga la bolla) e ogni
+ * cella porta `data-label` con l'intestazione: sotto i 620px la tabella diventa un elenco di
+ * schede «campo: valore», che è l'unico modo leggibile su un telefono.
+ */
+function mdRender(text) {
+  const righe = String(text || "").replace(/\r\n?/g, "\n").split("\n");
+  const out = [];
+  let i = 0;
+  const paragrafo = [];
+  const chiudiParagrafo = () => {
+    if (!paragrafo.length) return;
+    out.push(`<p>${paragrafo.join("<br>")}</p>`);
+    paragrafo.length = 0;
+  };
+
+  while (i < righe.length) {
+    const riga = righe[i];
+
+    // blocco di codice residuo (le fence speciali sono già state trasformate in card)
+    if (/^\s*```/.test(riga)) {
+      chiudiParagrafo();
+      const corpo = [];
+      i += 1;
+      while (i < righe.length && !/^\s*```/.test(righe[i])) { corpo.push(righe[i]); i += 1; }
+      i += 1; // fence di chiusura
+      out.push(`<pre class="md-pre"><code>${mdEsc(corpo.join("\n"))}</code></pre>`);
+      continue;
+    }
+
+    // tabella: intestazione + riga separatrice
+    // la riga separatrice deve contenere almeno una pipe: senza, `---` è una riga orizzontale
+    if (/\|/.test(riga) && i + 1 < righe.length && /\|/.test(righe[i + 1]) &&
+        /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(righe[i + 1])) {
+      chiudiParagrafo();
+      const intest = mdCelle(riga);
+      const allinea = mdAllinea(mdCelle(righe[i + 1]));
+      i += 2;
+      const corpo = [];
+      while (i < righe.length && /\|/.test(righe[i]) && righe[i].trim() !== "") { corpo.push(mdCelle(righe[i])); i += 1; }
+      const th = intest.map((c, k) => `<th${allinea[k] && allinea[k] !== "left" ? ` style="text-align:${allinea[k]}"` : ""}>${mdInline(c)}</th>`).join("");
+      const tr = corpo.map((celle) => {
+        const tds = intest.map((_, k) => {
+          const c = celle[k] === undefined ? "" : celle[k];
+          const all = allinea[k] && allinea[k] !== "left" ? ` style="text-align:${allinea[k]}"` : "";
+          return `<td${all} data-label="${mdEsc(intest[k])}">${mdInline(c)}</td>`;
+        }).join("");
+        return `<tr>${tds}</tr>`;
+      }).join("");
+      out.push(`<div class="md-table-wrap"><table class="md-table"><thead><tr>${th}</tr></thead><tbody>${tr}</tbody></table></div>`);
+      continue;
+    }
+
+    // titoli
+    const h = /^\s{0,3}(#{1,6})\s+(.*)$/.exec(riga);
+    if (h) {
+      chiudiParagrafo();
+      const liv = Math.min(4, h[1].length);
+      out.push(`<h${liv} class="md-h">${mdInline(h[2].trim())}</h${liv}>`);
+      i += 1;
+      continue;
+    }
+
+    // riga orizzontale
+    if (/^\s{0,3}(-{3,}|\*{3,}|_{3,})\s*$/.test(riga) && !paragrafo.length) {
+      out.push("<hr class=\"md-hr\">");
+      i += 1;
+      continue;
+    }
+
+    // citazione
+    if (/^\s{0,3}>\s?/.test(riga)) {
+      chiudiParagrafo();
+      const corpo = [];
+      while (i < righe.length && /^\s{0,3}>\s?/.test(righe[i])) { corpo.push(righe[i].replace(/^\s{0,3}>\s?/, "")); i += 1; }
+      out.push(`<blockquote class="md-quote">${mdInline(corpo.join(" "))}</blockquote>`);
+      continue;
+    }
+
+    // liste (non ordinate e ordinate)
+    if (/^\s{0,3}([-*+]|\d+\.)\s+\S/.test(riga)) {
+      chiudiParagrafo();
+      const ordinata = /^\s{0,3}\d+\./.test(riga);
+      const voci = [];
+      while (i < righe.length && /^\s{0,3}([-*+]|\d+\.)\s+\S/.test(righe[i])) {
+        voci.push(righe[i].replace(/^\s{0,3}([-*+]|\d+\.)\s+/, ""));
+        i += 1;
+      }
+      const tag = ordinata ? "ol" : "ul";
+      out.push(`<${tag} class="md-list">${voci.map((v) => `<li>${mdInline(v)}</li>`).join("")}</${tag}>`);
+      continue;
+    }
+
+    // riga vuota = fine paragrafo
+    if (!riga.trim()) { chiudiParagrafo(); i += 1; continue; }
+
+    paragrafo.push(mdInline(riga.trim()));
+    i += 1;
+  }
+  chiudiParagrafo();
+  return out.join("");
+}
+
+/** Sostituisce il testo di un elemento con la sua resa markdown (solo se c'è qualcosa da rendere). */
+function mdApplica(el, text) {
+  if (!el || !sembraMarkdown(text)) return false;
+  el.innerHTML = mdRender(text);
+  el.classList.add("mdhtml");
+  return true;
+}
+
 /** Rendering completo del testo di una bolla (messaggi salvati e ricaricati). */
 function renderRichText(bubble, text) {
   bubble.textContent = "";
@@ -3034,6 +3250,9 @@ function renderRichText(bubble, text) {
   tail.text = text || "";
   tail.el.textContent = tail.text;
   if (tail.text.includes("```")) flushSvgBlocks(bubble, tail, true);
+  // dopo l'estrazione delle card, ciò che resta è testo: se contiene markdown (tabelle, elenchi,
+  // grassetti) si rende. Senza questo, una tabella arrivava a schermo come righe di `|`.
+  for (const el of bubble.querySelectorAll(".mdtext")) mdApplica(el, el.textContent);
 }
 
 /**
@@ -3053,6 +3272,11 @@ function finalizeSvgStreaming() {
       tail.searched = 0;
       flushSvgBlocks(bubble, tail, true);
     }
+  }
+  // A turno concluso il markdown si può rendere: durante lo streaming il testo resta testo
+  // (i delta arrivano a pezzi e un convertitore a ogni carattere rifarebbe il lavoro da capo).
+  for (const bubble of cur.wrap.querySelectorAll(".bubble")) {
+    for (const el of bubble.querySelectorAll(".mdtext")) mdApplica(el, el.textContent);
   }
 }
 
