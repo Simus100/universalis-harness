@@ -219,3 +219,8 @@ media/previsioni/verifiche/
 media/backtest-*.json
 # risultati grezzi dei test finanziari (rigenerabili con media/timestral-test-finanza.py)
 media/test-finanza-*.json
+
+# ---- libreria Python per generare i PDF (installata con pip --target) ----
+# fpdf2 + dipendenze (54 MB): codice di terze parti, si reinstallano con
+#   python3 -m pip install --target media/.lib fpdf2
+media/.lib/
