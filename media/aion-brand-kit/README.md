@@ -85,6 +85,21 @@ Serve `rsvg-convert` (per i PNG dai vettoriali) e i font DejaVu installati. Lo s
 SVG (modificabili) sia i PNG (da consegnare): se un PNG non convince, si corregge l'SVG o il sorgente
 del marchio, **mai** il PNG.
 
+## Variante in rilievo (3D), non ancora adottata
+
+Il marchio esiste anche come **solido estruso** (`scripts/aion-logo-3d.mjs`), utile come immagine del
+profilo «elaborata»: stesso profilo della A (letto da `aion-mark.mjs`), taglio a 45° rispettato,
+smusso, tre luci, riflesso e la sfera verde in rilievo. Due pose pronte: `media/aion-logo-3d-a.*`
+(calma, consigliata) e `media/aion-logo-3d-b.*` (due lastre staccate, più scenografica).
+
+```bash
+node scripts/aion-logo-3d.mjs --out media/aion-logo-3d-a --yaw -14 --pitch 8 --gap 30 --bevel 0.016 --depth 0.14
+rsvg-convert -w 2048 -h 2048 -o media/aion-logo-3d-a@2x.png media/aion-logo-3d-a.svg
+```
+
+Non è ancora il marchio ufficiale: finché non viene adottato, i file da usare sulla Pagina restano
+`profilo/aion-profilo-2048.png` e `media/aion-logo@2x.png`.
+
 ## Cosa non c'è qui, di proposito
 
 Nessun template di post «generico», nessun mockup, nessun carattere alternativo, nessuna variante di
