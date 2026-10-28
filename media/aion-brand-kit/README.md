@@ -93,9 +93,18 @@ smusso, tre luci, riflesso e la sfera verde in rilievo. Due pose pronte: `media/
 (calma, consigliata) e `media/aion-logo-3d-b.*` (due lastre staccate, più scenografica).
 
 ```bash
-node scripts/aion-logo-3d.mjs --out media/aion-logo-3d-a --yaw -14 --pitch 8 --gap 30 --bevel 0.016 --depth 0.14
+# A · rilievo calmo (spessore 14%, posa quasi frontale)
+node scripts/aion-logo-3d.mjs --out media/aion-logo-3d-a --yaw -14 --pitch 8 --gap 22 --bevel 0.012 --depth 0.14
+# B · più profondo (spessore 17%, prospettiva più marcata)
+node scripts/aion-logo-3d.mjs --out media/aion-logo-3d-b --yaw -18 --pitch 9.5 --gap 22 --bevel 0.013 --depth 0.17
 rsvg-convert -w 2048 -h 2048 -o media/aion-logo-3d-a@2x.png media/aion-logo-3d-a.svg
 ```
+
+Tre regole che il generatore rispetta e che vanno tenute se lo si modifica: il taglio a 45° è un
+**bordo vivo** (mai smussato, altrimenti nasce un piano diagonale che attraversa la lettera); le due
+metà usano i **gradienti del marchio** (`markTop`/`markBot`), non i due accenti della palette; la
+faccia interna del taglio sta **in ombra**, così il taglio si legge come una fessura e non come una
+striscia chiara.
 
 Non è ancora il marchio ufficiale: finché non viene adottato, i file da usare sulla Pagina restano
 `profilo/aion-profilo-2048.png` e `media/aion-logo@2x.png`.
