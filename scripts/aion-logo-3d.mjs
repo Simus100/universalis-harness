@@ -30,9 +30,10 @@ const YAW = parseFloat(arg('yaw', '-14')) * Math.PI / 180;
 const PITCH = parseFloat(arg('pitch', '8')) * Math.PI / 180;
 const ROLL = parseFloat(arg('roll', '0')) * Math.PI / 180;
 const HALF_DEPTH = parseFloat(arg('depth', '0.14'));
-const BEVEL = parseFloat(arg('bevel', '0.016'));
+const BEVEL = parseFloat(arg('bevel', '0.010'));
 const GAP_PX = parseFloat(arg('gap', '22'));
 const SHIFT = parseFloat(arg('shift', '0'));
+const CUT_FACE = !!arg('cutface', false);   // false = il taglio è una cesura netta, senza spessore visibile
 const SIZE = parseInt(arg('size', '1024'), 10);
 const REFLECT = !arg('flat', false);
 const TRANSPARENT = !!arg('transparent', false);
@@ -118,7 +119,7 @@ function offsetInward(pts, sn, dist, onCut) {
 // svg: metà alta y < x - 3 → unità marchio: v > -u - CUT ; metà bassa y > x + 19 → v < -u - CUT - fessura
 // rette del marchio: metà alta y < x - 3 ; metà bassa y > x + 19 (fessura di 22 px)
 const CUT_TOP = 3 / 540;
-const CUT_BOT = (3 + GAP_PX) / 540;
+const CUT_BOT = (GAP_PX - 3) / 540;   // fessura verticale = CUT_TOP + CUT_BOT = GAP_PX
 const isTop = (p) => p[0] + p[1] - CUT_TOP;        // >= 0 → metà alta
 const isBottom = (p) => -p[0] - p[1] - CUT_BOT;    // >= 0 → metà bassa
 const onCutLine = (p) => Math.abs(isTop(p)) < 1e-9 || Math.abs(isBottom(p)) < 1e-9;
@@ -159,18 +160,22 @@ function buildSolid(rings, colors, zShift, cutFn) {
       const bothOnCut = Math.abs(cutFn(a)) < 1e-9 && Math.abs(cutFn(b)) < 1e-9;
       if (!bothOnCut) {                                        // smusso solo sugli spigoli veri
         faces.push({
-          kind: 'bevel', colors,
+          kind: ri > 0 ? 'holebevel' : 'bevel', colors,
           quad3: [[qa[0], qa[1], zF + zShift], [qb[0], qb[1], zF + zShift],
                   [b[0], b[1], zBev + zShift], [a[0], a[1], zBev + zShift]],
           hint: [outN[0], outN[1], 1.7],
         });
       }
-      faces.push({                                             // parete laterale (per il taglio: la faccia di taglio)
-        kind: bothOnCut ? 'cutwall' : 'wall', colors,
-        quad3: [[a[0], a[1], zB + zShift], [b[0], b[1], zB + zShift],
-                [b[0], b[1], zBev + zShift], [a[0], a[1], zBev + zShift]],
-        hint: outN,
-      });
+      // parete laterale. Sul taglio NON si disegna: lì il bordo è una cesura, non uno spessore
+      // (è quello che nel marchio piatto non c'è, e che in 3D diventava una riga diagonale).
+      if (!bothOnCut || CUT_FACE) {
+        faces.push({
+          kind: bothOnCut ? 'cutwall' : 'wall', colors,
+          quad3: [[a[0], a[1], zB + zShift], [b[0], b[1], zB + zShift],
+                  [b[0], b[1], zBev + zShift], [a[0], a[1], zBev + zShift]],
+          hint: outN,
+        });
+      }
     });
   });
   return faces;
@@ -300,14 +305,17 @@ const markup = sorted.map((f, idx) => {
     if (!holes) return `<path d="${outer}" fill="url(#${gid})"/><path d="${outer}" fill="url(#${sid})"/>`;
     // il foro è una MASCHERA: l'evenodd si rompe dove il taglio tocca il buco
     const mid = 'm' + (f.id || idx);
-    gidReg.push(`<mask id="${mid}"><rect width="${W}" height="${H}" fill="#ffffff"/><path d="${holes}" fill="#000000"/></mask>`);
+    // il foro nella maschera è leggermente "mangiato" dal bordo (stroke nero) per coprire
+    // l'antialiasing del fronte, che altrimenti lascia una riga chiara attraverso il buco
+    gidReg.push(`<mask id="${mid}"><rect width="${W}" height="${H}" fill="#ffffff"/><path d="${holes}" fill="#000000" stroke="#000000" stroke-width="2.2"/></mask>`);
     return `<path d="${outer}" fill="url(#${gid})" mask="url(#${mid})"/><path d="${outer}" fill="url(#${sid})" mask="url(#${mid})"/>`;
   }
   if (dot3(f.N, norm3([0, 0, 1])) <= 0.01) return '';            // backface culling
   // la faccia del taglio è incassata fra le due lastre: sta in ombra, così il taglio si legge come una fessura
-  const col = f.kind === 'cutwall'
-    ? hex(f.colors.bottom.map((v) => v * 0.74 + 0.05))
-    : hex(shade(f.N, f.colors.bottom, f.kind === 'wall' ? 0.25 : 0.5));
+  let col;
+  if (f.kind === 'cutwall') col = hex(f.colors.bottom.map((v) => v * 0.74 + 0.05));
+  else if (f.kind === 'holebevel') col = hex(shade(f.N, f.colors.bottom.map((v) => v * 0.78), 0.15));
+  else col = hex(shade(f.N, f.colors.bottom, f.kind === 'wall' ? 0.25 : 0.5));
   return `<path d="${pathScreen(f.pts)}" fill="${col}" stroke="${col}" stroke-width="0.9"/>`;
 }).filter(Boolean);
 
