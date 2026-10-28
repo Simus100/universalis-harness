@@ -85,7 +85,7 @@ Serve `rsvg-convert` (per i PNG dai vettoriali) e i font DejaVu installati. Lo s
 SVG (modificabili) sia i PNG (da consegnare): se un PNG non convince, si corregge l'SVG o il sorgente
 del marchio, **mai** il PNG.
 
-## Variante in rilievo (3D), non ancora adottata
+## Variante in rilievo (3D) — ADOTTATA il 28 ottobre 2026
 
 Il marchio esiste anche come **solido estruso** (`scripts/aion-logo-3d.mjs`), utile come immagine del
 profilo «elaborata»: stesso profilo della A (letto da `aion-mark.mjs`), taglio a 45° rispettato,
@@ -115,8 +115,10 @@ Quattro regole che il generatore rispetta e che vanno tenute se lo si modifica:
 4. gli smussi **interni** (bordo del foro) e quelli **di taglio** stanno in ombra: sono superfici
    incassate, e se prendono la luce chiave sembrano errori.
 
-Non è ancora il marchio ufficiale: finché non viene adottato, i file da usare sulla Pagina restano
-`profilo/aion-profilo-2048.png` e `media/aion-logo@2x.png`.
+La variante **A** è l'immagine del profilo in uso sulla Pagina dal 28 ottobre 2026 (caricata via
+Pages API, `POST /{page-id}/picture` con `no_feed_story=true`, e riletta da Graph per verifica). I file
+piatti (`profilo/aion-profilo-2048.png`, `media/aion-logo@2x.png`) restano come ripiego: è lo stesso
+segno, quindi si può tornare indietro senza toccare nient'altro.
 
 ## Cosa non c'è qui, di proposito
 

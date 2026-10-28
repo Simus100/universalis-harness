@@ -169,12 +169,16 @@ Il disegno è vettoriale (SVG), quindi si rende alla dimensione che serve senza 
 
 | Cosa | File da caricare | Dimensione | Note |
 |---|---|---|---|
-| Immagine del profilo | `media/aion-logo@2x.png` | 2048×2048 | FB la mostra a 170 px: il 2x serve per retina |
+| Immagine del profilo | `media/aion-logo-3d-a@2x.png` | 2048×2048 | **in uso dal 28 ottobre 2026**: è la versione in rilievo. Il piatto resta in `media/aion-logo@2x.png` come ripiego |
 | Copertina | `media/aion-copertina@2x.png` | 3280×1248 | il 1x resta per l'anteprima |
 | Card dei post | `media/card-*@2x.png` | 2400×1260 | quelle 1x non vanno pubblicate |
 
 Comandi:
 ```bash
+# immagine del profilo in rilievo (A): vedi media/aion-brand-kit/README.md per i parametri
+node scripts/aion-logo-3d.mjs --out media/aion-logo-3d-a --yaw -14 --pitch 8 --gap -4 --bevel 0.010 --depth 0.14
+rsvg-convert -w 2048 -h 2048 -o media/aion-logo-3d-a@2x.png media/aion-logo-3d-a.svg
+# ripiego piatto, e copertina
 rsvg-convert -w 2048 -h 2048 -o media/aion-logo@2x.png media/aion-logo.svg
 rsvg-convert -w 3280 -h 1248 -o media/aion-copertina@2x.png media/aion-copertina.svg
 ```
