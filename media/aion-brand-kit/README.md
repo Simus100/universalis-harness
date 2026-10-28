@@ -94,9 +94,9 @@ smusso, tre luci, riflesso e la sfera verde in rilievo. Due pose pronte: `media/
 
 ```bash
 # A · rilievo calmo (spessore 14%, posa quasi frontale)
-node scripts/aion-logo-3d.mjs --out media/aion-logo-3d-a --yaw -14 --pitch 8 --gap 22 --bevel 0.010 --depth 0.14
+node scripts/aion-logo-3d.mjs --out media/aion-logo-3d-a --yaw -14 --pitch 8 --gap -4 --bevel 0.010 --depth 0.14
 # B · più profondo (spessore 17%, prospettiva più marcata)
-node scripts/aion-logo-3d.mjs --out media/aion-logo-3d-b --yaw -18 --pitch 9.5 --gap 22 --bevel 0.011 --depth 0.17
+node scripts/aion-logo-3d.mjs --out media/aion-logo-3d-b --yaw -18 --pitch 9.5 --gap -4 --bevel 0.011 --depth 0.17
 rsvg-convert -w 2048 -h 2048 -o media/aion-logo-3d-a@2x.png media/aion-logo-3d-a.svg
 ```
 
@@ -105,8 +105,11 @@ Quattro regole che il generatore rispetta e che vanno tenute se lo si modifica:
 1. il taglio a 45° è un **bordo vivo**: mai smussato (altrimenti nasce un piano diagonale che
    attraversa la lettera);
 2. lungo il taglio **non si disegna la faccia di taglio** (lo spessore interno): nel marchio piatto
-   non c'è, e in 3D diventa una riga diagonale colorata che attraversa la A. Sul taglio si vede il
-   fondo, esattamente come nel logo piatto — `--cutface` la riaccende, ma non serve;
+   non c'è, e in 3D diventa una riga diagonale colorata che attraversa la A (`--cutface` la
+   riaccende, ma non serve);
+2b. le due metà **si sovrappongono** di pochi pixel (`--gap -4`): con una fessura, o anche con le
+   metà solo accostate, tra i due colori resta una riga scura — il fondo che traspare. In
+   sovrapposizione il confine è solo un cambio di colore, come nel piatto;
 3. le due metà usano i **gradienti del marchio** (`markTop`/`markBot`), non i due accenti della
    palette, e i laterali stanno in una gamma chiusa perché quei colori sono già chiari;
 4. gli smussi **interni** (bordo del foro) e quelli **di taglio** stanno in ombra: sono superfici
