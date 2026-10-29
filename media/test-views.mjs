@@ -152,7 +152,7 @@ const VIS = [
 const apriVoce = async (voce) => {
   for (let i = 0; i < 3; i++) {
     try {
-      ab(["find", "role", "button", "click", "--name", "features"]);
+      ab(["find", "role", "button", "click", "--name", "Risorse"]);
       await new Promise((r) => setTimeout(r, 500));
       ab(["find", "role", "button", "click", "--name", voce]);
       return true;
@@ -261,10 +261,15 @@ console.log("\n== Adattamento a mobile (viewport 390x844) ==");
     check("su mobile lo storico prompt è nascosto", m.histBtn === "none", String(m.histBtn));
 
     // nella vista live, l'input deve essere comodo da toccare e il riquadro ampio
-    try { ab(["find", "role", "button", "click", "--name", "features"]); } catch {}
+    try { ab(["find", "role", "button", "click", "--name", "Risorse"]); } catch {}
     await wait(500);
     try { ab(["find", "role", "button", "click", "--name", "live"]); } catch {}
     await wait(1500);
+    // Su telefono il log parte chiuso e con lui il campo comandi (per non rubare altezza al
+    // browser): si apre il log per misurarlo, perché è quello lo stato in cui si usa.
+    evalJs(`(() => { const c = document.getElementById("liveChatLog"); let n = 0;
+      while (c && c.classList.contains("hidden") && n++ < 4) document.getElementById("liveLogToggle").click(); return 1; })()`);
+    await wait(600);
     const lv = evalJs(`(() => {
       const i = document.getElementById("liveInput");
       const s = document.getElementById("liveStage");

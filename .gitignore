@@ -224,3 +224,9 @@ media/test-finanza-*.json
 # fpdf2 + dipendenze (54 MB): codice di terze parti, si reinstallano con
 #   python3 -m pip install --target media/.lib fpdf2
 media/.lib/
+
+# ---- screenshot dei checkup ----
+# media/checkup/ contiene le immagini che i due checkup (checkup-live-view.mjs e
+# checkup-viste.mjs) producono per far vedere com'è la vista: sono artefatti di verifica,
+# rigenerabili con un comando, e non fanno parte del prodotto.
+media/checkup/

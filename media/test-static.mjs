@@ -40,7 +40,11 @@ const check = (desc, cond, extra = "") => (cond ? ok(desc) : ko(`${desc} ${extra
 // --- 1. id richiesti dal JS vs id presenti nel DOM -------------------------
 const idsInHtml = new Set([...html.matchAll(/id="([\w-]+)"/g)].map((m) => m[1]));
 const idsUsed = new Set([...html.matchAll(/\$\("([\w-]+)"\)/g)].map((m) => m[1]));
-const missing = [...idsUsed].filter((i) => !idsInHtml.has(i));
+// #prevReport non è nel markup: lo crea il codice al momento della stampa del report
+// (una copia delle sezioni, montata solo mentre si stampa). Gli id creati così non possono
+// stare nell'HTML, quindi si escludono per nome — dichiarandolo, invece di allargare il filtro.
+const ID_CREATI_DAL_JS = new Set(["prevReport"]);
+const missing = [...idsUsed].filter((i) => !idsInHtml.has(i) && !ID_CREATI_DAL_JS.has(i));
 check(`tutti i ${idsUsed.size} id usati dal JS esistono nell'HTML`, missing.length === 0, missing.join(", "));
 
 // --- 2. endpoint chiamati dal browser vs rotte del server -----------------
@@ -152,22 +156,45 @@ check(
   "la live view si ferma quando si lascia la vista (non consuma banda inutilmente)",
   /if \(name !== "live" && liveWatching\) stopWatch\(\)/.test(html),
 );
-check("il click sull'immagine invia input al browser", /\$\("liveImg"\)\.addEventListener\("click"/.test(html));
+// Il click non è più un listener su `click` dell'immagine: è un GESTO (pointerdown/move/up) che
+// manda pressione e rilascio insieme, nell'ordine giusto. Un click fatto di tre richieste HTTP
+// separate arrivava in ordine casuale e la pagina non riceveva nessun click.
+check(
+  "il click è un gesto (pointer) e non un listener su click",
+  /liveStageEl\.addEventListener\("pointerdown"/.test(html) && /liveStageEl\.addEventListener\("pointerup"/.test(html),
+);
+check(
+  "gli eventi di un gesto partono in un solo invio (ordine garantito)",
+  /JSON\.stringify\(\{ events: lista \}\)/.test(html) && /function liveInvia\(eventi\)/.test(html),
+);
+check("il doppio click è riconosciuto (clickCount)", /function liveClickCount/.test(html) && /clickCount: count/.test(html));
+check("il passaggio del mouse arriva alla pagina (hover)", /function liveHover/.test(html));
 check(
   "le coordinate del click sono scalate sulla dimensione reale del frame",
   /img\.naturalWidth \/ r\.width/.test(html),
 );
+check("con l'ingrandimento la rotella muove il riquadro, non la pagina remota",
+  /zoom-1x"\) \|\| stage\.classList\.contains\("zoom-2x"\)\) return/.test(html));
+check("lo schermo intero usa l'API Fullscreen e ha il ripiego a overlay",
+  /requestFullscreen\(/.test(html) && /wrap\.classList\.toggle\("full", on\)/.test(html));
+check("il viewport del browser remoto segue l'area del riquadro",
+  /\/api\/browser\/viewport/.test(html) && /new ResizeObserver/.test(html));
 check("la tastiera \u00e8 inoltrata solo in modalit\u00e0 controllo", /liveControl !== "human"\) return/.test(html));
 check("il server espone /api/browser/live", routes.has("/api/browser/live"));
 check("il server espone /api/browser/watch", routes.has("/api/browser/watch"));
 check("il server espone /api/browser/input", routes.has("/api/browser/input"));
 check("il server espone /api/browser/control", routes.has("/api/browser/control"));
+check("il server espone /api/browser/history (indietro/avanti)", routes.has("/api/browser/history"));
+check("il server espone /api/browser/viewport (frame = area)", routes.has("/api/browser/viewport"));
+check("l'input accetta una sequenza di eventi", /Array\.isArray\(body\.events\)/.test(mjs));
 check("lo stream passa dalla dashboard (nessuna porta diretta esposta)", /createBrowserLive\(/.test(mjs));
 check("l'input \u00e8 rifiutato se il controllo \u00e8 dell'agente", /il controllo \u00e8 dell'agente/.test(mjs));
 check(
   "il bridge ammette solo input mouse/tastiera/touch",
-  /allowed = new Set\(\["input_mouse", "input_keyboard", "input_touch"\]\)/.test(liveMod),
+  /TIPI_INPUT = new Set\(\["input_mouse", "input_keyboard", "input_touch"\]\)/.test(liveMod),
 );
+check("il bridge accetta una SEQUENZA di input e la valida tutta prima di inviarla",
+  /function inputs\(list\)/.test(liveMod) && /list\.map\(normalizzaInput\)/.test(liveMod));
 check("il bridge limita la banda (pacing ack + maxFps)", /pacing=ack&maxFps=/.test(liveMod));
 
 // --- 9. correzioni emerse dall'uso reale del tool -------------------------

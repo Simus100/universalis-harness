@@ -5461,6 +5461,30 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // indietro/avanti nella cronologia (pulsanti ← → della live view). Non è un input: come
+    // `open` è navigazione, quindi non richiede il controllo in mano all'utente.
+    if (req.method === "POST" && url.pathname === "/api/browser/history") {
+      const body = await readBody(req, 4096);
+      try {
+        const dir = await browserLive.history(body.dir);
+        return json(res, 200, { ok: true, dir });
+      } catch (e) {
+        return json(res, 400, { error: String(e?.message || e) });
+      }
+    }
+
+    // viewport del browser pilotato: lo usa lo schermo intero della live view per far
+    // coincidere il frame con l'area disponibile (niente bande nere, pagina alla sua misura)
+    if (req.method === "POST" && url.pathname === "/api/browser/viewport") {
+      const body = await readBody(req, 4096);
+      try {
+        const vp = await browserLive.setViewport(body.width, body.height);
+        return json(res, 200, { ok: true, viewport: vp });
+      } catch (e) {
+        return json(res, 400, { error: String(e?.message || e) });
+      }
+    }
+
     // apre/chiude il flusso dei frame verso i client (consuma banda: si attiva a richiesta)
     if (req.method === "POST" && url.pathname === "/api/browser/watch") {
       const body = await readBody(req);
@@ -5472,13 +5496,21 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { live: browserLive.snapshot(), control: browserControlMode });
     }
 
-    // inoltro degli input dell'utente al browser (solo in modalità human)
+    // inoltro degli input dell'utente al browser (solo in modalità human).
+    // Accetta UN evento (`{type,eventType,x,y…}`) oppure una SEQUENZA (`{events:[…]}`): la
+    // sequenza è quella che serve a un click o a un trascinamento, perché arriva al browser
+    // tutta insieme e quindi NELL'ORDINE giusto (tre richieste HTTP in parallelo arrivano in
+    // ordine qualsiasi, e un rilascio che precede la pressione non produce nessun click).
     if (req.method === "POST" && url.pathname === "/api/browser/input") {
-      const body = await readBody(req, 64 * 1024);
+      const body = await readBody(req, 256 * 1024);
       if (browserControlMode !== "human") {
         return json(res, 409, { error: "il controllo è dell'agente: premi 'prendi il controllo' per guidare tu il browser" });
       }
       try {
+        if (Array.isArray(body.events)) {
+          const out = browserLive.inputs(body.events);
+          return json(res, 200, out);
+        }
         const out = browserLive.input(body);
         return json(res, 200, out);
       } catch (e) {

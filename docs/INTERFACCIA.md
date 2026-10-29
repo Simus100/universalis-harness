@@ -78,16 +78,45 @@ regola dentro la media query usa il selettore `#stats .stat .value`. Chi aggiung
 deve tenerne conto. Una decima voce (es. «spazio» su un'istanza con quota) entra nella stessa
 griglia senza regole nuove.
 
-## 5-bis. Live view su telefono
+## 5-bis. Live view: usarla come un browser
 
-La barra dei comandi della vista live sta su **una riga** (`#liveView .gtoolbar .ghost` con padding
-ridotto e corpo 12px) e l'intestazione del log pure (l'hint `.gcount` sparisce). Il **log parte
-nascosto** su schermo stretto: lo riapre `▸ log`, che porta un pallino ● quando arrivano messaggi a
-log chiuso (`#liveLogToggle.nuovo`). Il campo indirizzi è alto 44px come gli altri bersagli da dito.
-Ingrandimento (`⤢ adatta → 1:1 → 2×`) e schermo intero (`⛶`) sono classi sul riquadro
-(`.livestage.zoom-1x`, `.livewrap.full`), non trasformazioni inline. In schermo intero la barra dei
-comandi resta **sopra** l'overlay (`z-index: 90`): senza quello, su un telefono senza Esc, il
-riquadro diventerebbe una trappola da cui si esce solo ricaricando la pagina.
+La vista live non è un riquadro da guardare ma **un browser da usare**: click, doppio click,
+trascinamento, passaggio del mouse (hover e menu a comparsa), tasto destro, dito che scorre la
+pagina, cronologia indietro/avanti, tastiera, schermo intero e ingrandimento.
+
+**Il frame coincide con l'area.** Con la vista aperta il viewport del browser remoto viene portato
+alla misura del riquadro (`POST /api/browser/viewport`, debounce 500ms, `ResizeObserver` sul
+riquadro — non sulla finestra, perché l'area cambia anche aprendo il log o entrando in schermo
+intero). Effetto: niente bande nere, e su un telefono la pagina è impaginata *per il telefono*
+invece di essere un francobollo. All'uscita dalla vista il viewport torna com'era (1280×720),
+perché quel browser è anche quello dell'agente.
+
+**Le cromature non rubano spazio** (misure su 390×844):
+
+| stato | riquadro | cosa cambia |
+|---|---|---|
+| log aperto | 375px | log 76px + campo comandi 44px |
+| log chiuso | **507px** | a log chiuso sparisce anche il campo comandi (`.livechatlog.hidden ~ .livechatin`) |
+| schermo intero | **681px** | il log si chiude da sé e torna com'era all'uscita; se lo riapri è un **pannello sopra** il riquadro |
+
+La barra dei comandi sta su **una riga** con le sole icone: le etichette lunghe («prendi il
+controllo», «ferma», «guarda») sono dentro `span.lbl-largo`, che sotto i 760px non si vede; lo stato
+dell'ingrandimento resta perché è corto e informativo (`1:1`, `2×`). La **navigazione** (`◀ ▶ ↻`)
+sta dentro la barra indirizzi, come in un browser, invece di occupare una riga propria; le frecce
+`↑ ↓` si tolgono su telefono (col dito si scorre trascinando la pagina). Il campo indirizzi è alto
+44px, i pulsanti della barra 40px, i tre della navigazione 44px.
+
+**Ingrandimento** (`⤢ adatta → 1:1 → 2×`) e **schermo intero** (`⛶`) sono classi
+(`.livestage.zoom-1x`, `.livewrap.full`) e non trasformazioni inline. Con l'ingrandimento attivo la
+rotellina e il dito muovono il **riquadro** (pan locale: `overflow:auto`), non la pagina remota —
+prima la rotella scorreva il sito sotto un'immagine ferma. A riquadro adattato vale il contrario, e
+il tocco diventa click / lo swipe diventa scorrimento (`touch-action:none` solo in quello stato).
+
+**Schermo intero** prova prima l'API Fullscreen sull'elemento della vista (schermo intero vero,
+senza header della dashboard, con Esc gestito dal browser) e ripiega sull'overlay `position:fixed`
+se il browser la nega. In entrambi i casi la barra dei comandi resta **sopra** (`z-index: 90`):
+senza quello, su un telefono senza Esc, il riquadro diventerebbe una trappola da cui si esce solo
+ricaricando la pagina. `fullscreenchange` riallinea la classe quando si esce da fuori.
 
 **Riga «scrivi qui / incolla» (`#liveTypeBar`).** Compare **solo** con il controllo in mano
 all'utente (`hidden` gestito in `applyLive`), perché nel caso normale deve togliere zero altezza al
@@ -95,14 +124,20 @@ riquadro del browser. Contiene il campo `#liveTypeBox` (classe `.liveurl`, quind
 schermo stretto) e i pulsanti `⇩ incolla`, `⌫`, `⏎`, tutti a 44px su mobile. Il campo è una
 **tastiera**, non un secondo campo di testo: `input` e `paste` inoltrano e svuotano, i tasti che non
 producono testo (Backspace, Enter, frecce) passano dal listener `keydown` del campo verso la CLI.
-Sopra le 12 battute l'inoltro passa da `POST /api/browser/inserttext` (un inserimento solo) invece
-che da un evento di tasto per carattere.
+Fino a 12 battute gli eventi partono in **un solo invio** (l'ordine è quello del testo); sopra le
+12 l'inoltro passa da `POST /api/browser/inserttext` (un inserimento solo).
 
-**Guasti visibili.** `sendInput` controlla la risposta: se il canale degli input non è pronto
-(ponte caduto, flusso spento) lo dice nel log della vista, **una volta sola** (`liveInputKoAvvisato`,
-azzerato al primo invio riuscito) per non riempire il log di righe identiche, e `liveSendText`
-smette di sparare eventi. Prima l'esito veniva ignorato: si scriveva e non succedeva niente senza
-sapere perché — il tipo di guasto che fa sembrare rotta la vista mentre il difetto è nel canale.
+**Ordine degli eventi = una coda.** Un click è muovi+premi+rilascia e un trascinamento è una
+raffica di movimenti: mandarli come richieste HTTP separate le fa arrivare in ordine qualsiasi (si è
+visto il rilascio precedere la pressione, e allora il browser non sintetizza il click). `liveInvia`
+accoda i gesti e manda ogni gesto in **un solo** `POST /api/browser/input` con `{events:[…]}`;
+l'hover e i movimenti di trascinamento si **fondono** (coalescing) per non saturare il canale.
+
+**Guasti visibili.** `avvisaInputKo` controlla la risposta: se il canale degli input non è pronto
+(ponte caduto, flusso spento) lo dice nel log della vista, **una volta sola**
+(`liveInputKoAvvisato`, azzerato al primo invio riuscito) per non riempire il log di righe
+identiche. Il **pallino** accanto al badge ripete lo stato in un colpo d'occhio: verde = frame in
+arrivo, giallo = collegamento in corso, rosso = errore, grigio = flusso fermo.
 
 ## 6. Movimento
 

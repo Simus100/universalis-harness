@@ -744,16 +744,19 @@ body[data-tab="previsioni"] #chatFooter,
 body[data-tab="previsioni"] #chatView { display: none !important; }
 
 /* live view del browser */
-/* Griglia: la prima riga è il browser e ha un minimo garantito, così il log crescente
-   non lo comprime mai. Il log ha altezza FISSA con scroll interno. */
-/* Flex (non grid): su schermi piccoli il riquadro del browser prende TUTTO lo spazio
-   rimanente e il log, che ha altezza fissa, non lo comprime mai. */
+/* Flex (non grid): il riquadro del browser prende TUTTO lo spazio rimanente e le cromature
+   (barra indirizzi, riga tastiera, log) hanno altezza propria, quindi non lo comprimono mai. */
 .livewrap { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; padding: 0 8px 6px; }
 .livestage { position: relative; flex: 1 1 auto; min-height: 200px; display: flex; align-items: center;
   justify-content: center; overflow: hidden; background: #07070b; border: 1px solid rgba(255,255,255,.08);
   border-radius: var(--radius-lg); }
 .livestage img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
-.livestage.control img { cursor: crosshair; }
+.livestage:focus { outline: none; }
+.livestage:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* Il cursore dice chi comanda: con il controllo in mano il riquadro è la pagina (freccia che
+   diventa manina sopra i link), non più un'immagine da guardare. */
+.livestage.control { cursor: default; }
+.livestage.control.dragging { cursor: grabbing; }
 /* --- ingrandimento del riquadro (⤢) ---
    Su un telefono il frame 1280×720 adattato a ~374px è illeggibile: serviva un modo per
    guardare la pagina ALLA SUA dimensione, con scorrimento per muoversi (pan nativo, funziona
@@ -764,47 +767,95 @@ body[data-tab="previsioni"] #chatView { display: none !important; }
 .livestage.zoom-1x img { width: auto; height: auto; }
 .livestage.zoom-2x img { width: 200%; height: auto; }
 .livestage.zoom-1x, .livestage.zoom-2x { align-items: flex-start; justify-content: flex-start; }
-/* --- riquadro a schermo intero (⛶): overlay invece dell'API Fullscreen, così funziona
-   anche nei browser che non la concedono a elementi non video --- */
+/* Con il controllo in mano e il riquadro adattato, il dito NON scorre il contenitore (non c'è
+   niente da scorrere: l'immagine sta tutta): lo swipe diventa uno scorrimento DELLA PAGINA
+   remota. Con l'ingrandimento attivo vale il contrario, e il pan lo fa il browser in locale. */
+.livestage.control:not(.zoom-1x):not(.zoom-2x) { touch-action: none; }
+.livestage.zoom-1x, .livestage.zoom-2x { cursor: grab; }
+.livestage.zoom-1x.dragging, .livestage.zoom-2x.dragging { cursor: grabbing; }
+
+/* --- riquadro a schermo intero (⛶) ---
+   Due strade, nello stesso ordine in cui le prova il pulsante: l'API Fullscreen (vero schermo
+   intero, senza cornice del browser e senza header della dashboard) e, se il browser non la
+   concede, un overlay `position: fixed` con la stessa geometria. In entrambi i casi la barra
+   dei comandi resta SOPRA: su un telefono senza Esc deve restare raggiungibile, altrimenti si
+   esce solo ricaricando la pagina. */
 .livewrap.full { position: fixed; inset: 0; z-index: 80; background: var(--bg); padding: 0;
   padding-top: env(safe-area-inset-top); gap: 0; }
-/* La barra dei comandi resta SOPRA l'overlay: su telefono non c'è Esc e la barra (con il
-   pulsante per uscire, «guarda», l'ingrandimento) deve restare raggiungibile, altrimenti lo
-   schermo intero diventa una trappola da cui si esce solo ricaricando. */
 #liveView > .gtoolbar { position: relative; z-index: 90; }
 body.live-full #liveView > .gtoolbar { background: var(--glass); border-bottom: 1px solid var(--border-soft); }
 .livewrap.full .livestage { border: none; border-radius: 0; min-height: 0; }
 .livewrap.full .livebar { padding: 6px 8px; }
 .livewrap.full .livechat { padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); }
 body.live-full { overflow: hidden; }
+/* In schermo intero il log non deve rubare altezza al browser: resta una striscia con il
+   pulsante, e quando lo si apre diventa un PANNELLO sopra il riquadro (log + campo comandi). */
+body.live-full .livechat { position: relative; z-index: 95; padding: 0 8px calc(2px + env(safe-area-inset-bottom)); }
+body.live-full .livechatlog:not(.hidden),
+body.live-full .livechatin {
+  position: absolute; left: 8px; right: 8px; z-index: 95;
+  background: rgba(7,8,11,.97); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 8px; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+/* Il campo dei comandi sta DENTRO il pannello (sopra la striscia con «log»), e il log sopra di
+   lui: così la striscia con il pulsante per chiudere resta sempre raggiungibile. */
+body.live-full .livechatin { bottom: 52px; }
+body.live-full .livechatlog:not(.hidden) { bottom: 106px; height: min(32vh, 240px); }
+/* In schermo intero NATIVO l'elemento è nel top layer: le misure vanno dichiarate, perché il
+   `flex: 1` di `main` non vale più (il genitore è la finestra, non il body). */
+#liveView:fullscreen { width: 100vw; height: 100vh; display: flex; flex-direction: column;
+  background: var(--bg); padding: 0; padding-top: env(safe-area-inset-top); }
+#liveView:fullscreen .livewrap { padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
 /* Lightbox delle immagini aperta: la pagina sotto non scorre */
 body.v-open { overflow: hidden; }
 .liveempty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   text-align: center; padding: 20px; color: var(--muted, #9aa0a6); font-size: var(--fs-lg); }
+/* Misure del frame: HUD in un angolo del riquadro, non una riga in più da pagare in altezza. */
+.livestats { position: absolute; right: 8px; bottom: 6px; padding: 2px 7px; border-radius: 999px;
+  background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.10); color: var(--dim);
+  font-size: var(--fs-2xs); font-variant-numeric: tabular-nums; pointer-events: none;
+  max-width: calc(100% - 16px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.livestats:empty { display: none; }
+.livestats.ko { color: #fca5a5; border-color: rgba(248,113,113,.45); }
 .livebar { display: flex; align-items: center; gap: 6px; padding: 6px 0 0; font-size: var(--fs-sm);
-  color: var(--muted, #9aa0a6); }
+  color: var(--muted, #9aa0a6); flex: none; }
+/* Barra di navigazione: i tre comandi stanno DENTRO la barra indirizzi, come in un browser
+   normale, invece di occupare una riga della toolbar (che su telefono è la risorsa scarsa). */
+.livenav .navbtn { min-height: 34px; min-width: 36px; padding: 0 8px; justify-content: center;
+  font-size: var(--fs-md); flex: 0 0 auto; }
 .liveurl { flex: 1; min-width: 0; min-height: 34px; padding: 0 10px; border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.25); color: inherit; font-size: var(--fs-md); }
 .liveurl:focus { outline: none; border-color: rgba(167,139,250,.6); }
-.livebadge { font-size: var(--fs-xs); padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); }
+.livebadge { font-size: var(--fs-xs); padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14);
+  white-space: nowrap; }
 .livebadge.human { border-color: rgba(250,204,21,.6); color: #facc15; }
+/* Pallino di stato del canale: verde = i frame arrivano, giallo = collegamento in corso,
+   rosso = errore, grigio = flusso spento. Sostituisce la scritta «collegato», che su telefono
+   costava una parola intera della barra. */
+.livedot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--panel-4); }
+.livedot.on { background: var(--green); box-shadow: 0 0 0 3px rgba(52,211,153,.16); }
+.livedot.attesa { background: #facc15; box-shadow: 0 0 0 3px rgba(250,204,21,.14); animation: livePulse 1.4s ease-in-out infinite; }
+.livedot.ko { background: var(--red); box-shadow: 0 0 0 3px rgba(248,113,113,.16); }
+@keyframes livePulse { 50% { opacity: .35; } }
 
 /* chat compatta dentro la vista live: dare comandi senza lasciare il browser */
 .livechat { border-top: 1px solid rgba(255,255,255,.08); padding: 6px 10px 8px; display: flex;
-  flex-direction: column; gap: 6px; }
+  flex-direction: column; gap: 6px; flex: none; }
 .livechathead { display: flex; align-items: center; gap: 6px; padding: 4px 2px 0; }
 .livechathead .gcount { font-size: var(--fs-xs); opacity: .75; }
 .livechatlog { height: 88px; flex: none; overflow-y: auto; font-size: var(--fs-md); line-height: 1.45;
   display: flex; flex-direction: column; gap: 4px; }
 .livechatlog.expanded { height: 38vh; }
 .livechatlog.hidden { display: none; }
-.livebar { flex: none; }
+/* Log chiuso = non si sta parlando con l'agente: anche il campo dei comandi sparisce, così le
+   cromature in fondo non tolgono altezza al browser per un campo che non si userà. Si riapre
+   con «log». */
+.livechatlog.hidden ~ .livechatin { display: none; }
 /* Riga «scrivi qui / incolla»: compare SOLO quando il controllo è tuo, quindi nel caso
  * normale non ruba altezza al riquadro del browser. Su telefono è l'unico modo per scrivere
  * dentro la pagina: lì non c'è una tastiera fisica, e quei tasti non esistono. */
 #liveTypeBar[hidden] { display: none; }
 #liveTypeBar { padding-top: 4px; }
-.livechat { flex: none; }
 .livechatlog .lm { padding: 3px 8px; border-radius: var(--radius); white-space: pre-wrap; word-break: break-word; }
 .livechatlog .lm.you { background: rgba(139,92,255,.16); align-self: flex-end; max-width: 86%; }
 .livechatlog .lm.agent { background: rgba(255,255,255,.05); max-width: 96%; }
@@ -818,18 +869,24 @@ body.v-open { overflow: hidden; }
 .livechatin input:focus { outline: none; border-color: rgba(167,139,250,.6); }
 
 /* --- live view su TELEFONO -------------------------------------------------
-   Misurato su 390×844 prima di questi ritocchi: toolbar 117px (due righe), intestazione del
-   log 57px, log 88px, barra indirizzi 50px, campo 44px → al riquadro del browser restavano
-   324px su 844, e la pagina adattata a 374px era illeggibile. Qui le cromature si stringono:
-   toolbar su UNA riga, intestazione su una riga, campo indirizzi a misura di dito. Il log si
-   nasconde all'apertura (lo riapre «▫ log», che segnala i messaggi nuovi) e lo ingrandimento
-   / schermo intero fanno il resto. */
+   Misurato su 390×844: al riquadro del browser devono restare almeno ~450px, perché il frame
+   1280×720 adattato a 374px di larghezza è illeggibile e serve spazio per l'ingrandimento.
+   Qui le cromature si stringono: toolbar su UNA riga (le etichette lunghe spariscono, restano
+   le icone), navigazione dentro la barra indirizzi, log nascosto all'apertura, bersagli da
+   dito a 44px. Le frecce ↑↓ si tolgono: con il dito si scorre trascinando la pagina. */
 @media (max-width: 760px) {
-  #liveView .gtoolbar { gap: 6px; padding: 8px 10px; }
-  #liveView .gtoolbar .ghost { padding: 0 9px; font-size: var(--fs-sm); gap: 4px; }
+  #liveView .gtoolbar { gap: 5px; padding: 8px 10px; flex-wrap: nowrap; }
+  #liveView .gtoolbar .ghost { padding: 0 9px; font-size: var(--fs-lg); gap: 3px; min-height: 40px; flex: 0 0 auto; }
+  /* la striscia dei comandi deve stare in 390px: le parole lunghe spariscono (restano le
+     icone), lo stato dello zoom resta perché è corto e dice qualcosa («1:1», «2×») */
+  #liveZoomLbl { font-size: var(--fs-sm); }
   #liveView .livebadge { padding: 2px 6px; font-size: var(--fs-2xs); }
   .livewrap { padding: 0 6px 4px; gap: 4px; }
+  .livenav { gap: 4px; padding-top: 4px; }
+  .livenav .navbtn { min-height: 44px; min-width: 44px; padding: 0 6px; }
+  .livenav .solo-largo { display: none; }
   .liveurl { min-height: 44px; font-size: var(--fs-md); }
+  .livestats { font-size: var(--fs-2xs); right: 6px; bottom: 4px; }
   .livechat { padding: 4px 8px 6px; }
   .livechathead { padding: 2px 0 0; gap: 6px; }
   .livechathead .gcount { display: none; }
@@ -2220,26 +2277,32 @@ footer {
 </main>
 
 <main id="liveView" hidden>
-  <div class="gtoolbar">
-    <button class="ghost" id="liveBack" type="button" title="Torna alla chat">← chat</button>
+  <div class="gtoolbar livetop">
+    <button class="ghost" id="liveBack" type="button" title="Torna alla chat">←<span class="lbl-largo"> chat</span></button>
     <span class="livebadge" id="liveMode">agente</span>
+    <span class="livedot" id="liveDot" title="collegamento al browser" aria-hidden="true"></span>
     <span style="flex:1"></span>
-    <button class="ghost" id="liveWatch" type="button" title="Avvia/ferma il flusso dei frame">▶ guarda</button>
-    <button class="ghost" id="liveControl" type="button" title="Passa il controllo del browser a te">🖐 prendi il controllo</button>
-    <button class="ghost" id="liveZoom" type="button" title="Ingrandisci il riquadro del browser: adatta → 1:1 → 2×. Serve a LEGGERE una pagina, non solo a guardarla.">⤢ adatta</button>
-    <button class="ghost" id="liveFull" type="button" title="Riquadro a schermo intero (Esc o di nuovo il pulsante per uscire)">⛶</button>
+    <button class="ghost" id="liveWatch" type="button" title="Avvia/ferma il flusso dei frame"><span id="liveWatchIco">▶</span><span class="lbl-largo" id="liveWatchLbl"> guarda</span></button>
+    <button class="ghost" id="liveControl" type="button" title="Passa il controllo del browser a te"><span id="liveControlIco">🖐</span><span class="lbl-largo" id="liveControlLbl"> prendi il controllo</span></button>
+    <button class="ghost" id="liveZoom" type="button" title="Ingrandisci il riquadro del browser: adatta → 1:1 → 2×. Serve a LEGGERE una pagina, non solo a guardarla."><span id="liveZoomIco">⤢</span><span id="liveZoomLbl"> adatta</span></button>
+    <button class="ghost" id="liveFull" type="button" title="Schermo intero: il riquadro prende tutta la finestra e il browser remoto si adatta all'area (Esc per uscire)">⛶</button>
   </div>
   <div class="livewrap">
-    <div class="livestage" id="liveStage">
+    <div class="livestage" id="liveStage" tabindex="0" role="group"
+         aria-label="Browser remoto: clicca o tocca la pagina per interagire (serve prima «prendi il controllo»)">
       <img id="liveImg" alt="live view del browser" draggable="false" />
       <div class="liveempty" id="liveEmpty">La live view non è attiva.<br>Premi «guarda» (e apri una pagina con il tool browser).</div>
+      <span class="livestats" id="liveStats"></span>
     </div>
-    <div class="livebar">
+    <div class="livebar livenav">
+      <button class="ghost navbtn" id="liveHistoryBack" type="button" title="Pagina precedente (Alt+←)">◀</button>
+      <button class="ghost navbtn" id="liveHistoryFwd" type="button" title="Pagina successiva (Alt+→)">▶</button>
+      <button class="ghost navbtn" id="liveReload" type="button" title="Ricarica la pagina nel browser (utile se sembra ferma)">↻</button>
       <input class="liveurl" id="liveUrlBar" type="text" spellcheck="false" autocomplete="off"
+             autocapitalize="off" autocorrect="off" enterkeyhint="go"
              placeholder="URL o ricerca… (Invio per andare)" />
-      <button class="ghost" id="liveScrollUp" type="button" title="Scorri su">↑</button>
-      <button class="ghost" id="liveScrollDown" type="button" title="Scorri giù">↓</button>
-      <span id="liveStats"></span>
+      <button class="ghost navbtn solo-largo" id="liveScrollUp" type="button" title="Scorri su">↑</button>
+      <button class="ghost navbtn solo-largo" id="liveScrollDown" type="button" title="Scorri giù">↓</button>
     </div>
     <div class="livebar livetype" id="liveTypeBar" hidden>
       <input class="liveurl" id="liveTypeBox" type="text" spellcheck="false" autocomplete="off"
@@ -2252,7 +2315,6 @@ footer {
     <div class="livechat">
       <div class="livechathead">
         <button class="ghost" id="liveLogToggle" type="button" title="Espandi o comprimi il log">▴ log</button>
-        <button class="ghost" id="liveReload" type="button" title="Ricarica la pagina nel browser (utile se sembra ferma)">↻ pagina</button>
         <span class="gcount" id="liveHint">i comandi scritti qui riguardano il browser mostrato</span>
         <span style="flex:1"></span>
         <button class="ghost" id="liveFocusBtn" type="button" title="Porta i tasti al browser invece che alla chat">⌨ → browser</button>
@@ -8289,6 +8351,8 @@ function showTab(name) {
   $("previsioniView").hidden = name !== "previsioni";
   // la live view consuma banda: il flusso si ferma quando si lascia la vista
   if (name !== "live" && liveWatching) stopWatch();
+  // e il browser torna al viewport che aveva prima (è anche quello dell'agente)
+  if (name !== "live" && typeof liveRipristinaViewport === "function") liveRipristinaViewport();
   // il riquadro a schermo intero è un overlay: uscendo dalla vista deve sparire
   if (name !== "live") setSchermoIntero(false);
   if (name === "live") { openLive(); liveLogSuMisura(); }
@@ -9863,19 +9927,57 @@ let liveControl = "agent";
 let liveLastFrame = 0;
 let liveLastSeq = 0;
 let liveFps = 3;
+/** Ultimo stato del ponte (serve a chi deve sapere il viewport corrente o se è connesso). */
+let liveStatoLive = {};
+/* Stato dell'adattamento del viewport remoto all'area del riquadro (vedi liveAllineaViewport). */
+let liveViewportPrima = null;   // viewport che il browser aveva prima di adattarlo
+let liveViewportTimer = null;
+let liveUltimoViewport = { w: 0, h: 0 };
+/** Stato del log prima di entrare in schermo intero (per rimetterlo com'era uscendo). */
+let liveLogPrimaFull = null;
+
+/** Il pallino accanto al badge dice in un colpo d'occhio se il canale è vivo: verde = frame in
+ *  arrivo, giallo = collegato ma fermo, rosso = errore, grigio = flusso spento. */
+function liveAggiornaPallino(live) {
+  const d = $("liveDot");
+  if (!d) return;
+  const stato = !liveWatching ? "off" : live && live.error ? "ko" : live && live.connected ? "on" : "attesa";
+  d.className = "livedot " + stato;
+  d.title =
+    stato === "on" ? `collegato${live && live.fps ? " · " + live.fps : ""}` :
+    stato === "attesa" ? "collegamento in corso…" :
+    stato === "ko" ? "errore: " + (live && live.error) : "flusso fermo (premi «guarda»)";
+}
 
 function applyLive(live, control) {
   if (live) {
+    liveStatoLive = live;
     liveWatching = !!live.watching;
     // la barra indirizzi mostra l'URL corrente, senza disturbare chi sta digitando
     const bar = $("liveUrlBar");
     if (bar && live.url && document.activeElement !== bar) bar.value = live.url;
-    if (live.error) $("liveStats").textContent = "\u26a0 " + live.error;
+    if (bar) {
+      const attiva = (live.tabs || []).find((t) => t.active) || (live.tabs || [])[0];
+      bar.title = attiva && attiva.title ? attiva.title + (live.url ? "\n" + live.url : "") : live.url || "";
+    }
+    const stats = $("liveStats");
+    if (live.error) {
+      stats.textContent = "\u26a0 " + live.error;
+      stats.classList.add("ko");
+    } else {
+      stats.classList.remove("ko");
+    }
     if (live.maxFps) liveFps = live.maxFps;
   }
+  liveAggiornaPallino(live || liveStatoLive);
   if (control) liveControl = control;
-  $("liveWatch").textContent = liveWatching ? "\u23f8 ferma" : "\u25b6 guarda";
-  $("liveControl").textContent = liveControl === "human" ? "\u21a9 restituisci" : "\ud83d\udd90 prendi il controllo";
+  // icone ed etichette separate: su telefono resta l'icona, su desktop anche la parola
+  $("liveWatchIco").textContent = liveWatching ? "\u23f8" : "\u25b6";
+  $("liveWatchLbl").textContent = liveWatching ? " ferma" : " guarda";
+  $("liveWatch").title = liveWatching ? "Ferma il flusso dei frame (la pagina resta visibile, si aggiorna solo quando cambia)" : "Avvia il flusso dei frame";
+  $("liveControlIco").textContent = liveControl === "human" ? "\u21a9" : "\ud83d\udd90";
+  $("liveControlLbl").textContent = liveControl === "human" ? " restituisci" : " prendi il controllo";
+  $("liveControl").title = liveControl === "human" ? "Restituisci il controllo all'agente" : "Passa il controllo del browser a te";
   const m = $("liveMode");
   if (m) {
     m.textContent = liveControl === "human" ? "controllo tuo" : "agente";
@@ -9917,6 +10019,7 @@ async function openLive() {
       /* niente */
     }
   }
+  liveAllineaViewport();
 }
 
 /** Disegna l'ultimo frame disponibile, così la vista non è vuota su una pagina ferma. */
@@ -9940,11 +10043,15 @@ function liveRenderFrame(f) {
   liveLastSeq = f.seq || liveLastSeq;
   const kb = Math.round((f.data.length * 0.75) / 1024);
   const age = f.ageNowMs != null ? f.ageNowMs : f.ageMs;
+  // l'età si mostra solo quando è un'informazione: su una pagina ferma un frame di due minuti
+  // è normale, e scriverlo sempre farebbe sembrare rotto quello che è solo fermo.
   $("liveStats").textContent =
     `${f.width}×${f.height} · ${kb} KB` +
-    (age != null ? ` · età ${age}ms` : "") +
+    (age != null && age > 1500 ? ` · ${Math.round(age / 1000)}s fa` : "") +
     (liveFps ? ` · ${liveFps} fps` : "");
+  $("liveStats").classList.remove("ko");
   $("liveEmpty").style.display = "none";
+  liveAggiornaPallino(liveStatoLive);
 }
 
 async function startWatch() {
@@ -9992,6 +10099,7 @@ async function setControl(mode) {
     });
     const j = await r.json();
     applyLive(j.live, j.control);
+    liveAllineaViewport();
   } catch {
     /* niente */
   }
@@ -10003,14 +10111,16 @@ function liveScroll(dx, dy) {
     liveChatPush("tool", "per scorrere prendi prima il controllo");
     return;
   }
-  sendInput({
-    type: "input_mouse",
-    eventType: "mouseWheel",
-    x: 400,
-    y: 300,
-    deltaX: Math.round(dx),
-    deltaY: Math.round(dy),
-  });
+  liveInvia([
+    {
+      type: "input_mouse",
+      eventType: "mouseWheel",
+      x: liveUltimoPunto.x,
+      y: liveUltimoPunto.y,
+      deltaX: Math.round(dx),
+      deltaY: Math.round(dy),
+    },
+  ]);
 }
 
 /** Naviga a un URL o cerca: quello che si scrive nella barra indirizzi. */
@@ -10038,27 +10148,51 @@ async function liveNavigate(input) {
   }
 }
 
-async function sendInput(payload) {
-  if (liveControl !== "human") return false;
-  try {
-    const r = await fetch("/api/browser/input", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!r.ok) {
-      // Un tasto che non arriva è un guasto SILENZIOSO: chi scrive crede di aver scritto e
-      // invece la pagina non ha ricevuto niente. Si dice, ma una volta sola: altrimenti un
-      // canale giù riempirebbe il log di righe identiche.
-      avvisaInputKo((await r.json().catch(() => ({}))).error || `errore ${r.status}`);
+/* ---- input verso il browser: una CODA, perché l'ordine conta ----------------------------
+ * Un click non è un evento: è muovi → premi → rilascia. Un trascinamento è una raffica di
+ * movimenti. Mandarli come richieste HTTP separate sembra innocuo e non lo è: partono in
+ * parallelo e arrivano in ordine qualsiasi (misurato: il rilascio prima della pressione, e
+ * la pagina non riceve NESSUN click perché Chrome sintetizza il click al rilascio). Qui gli
+ * eventi di un gesto viaggiano in un solo POST, e i gesti si accodano l'uno all'altro: quello
+ * che si è toccato arriva al browser nell'ordine in cui lo si è toccato. */
+let liveCodaInvio = Promise.resolve();
+let liveInviiInVolo = 0;
+
+/** Manda una sequenza di eventi (o un evento solo). Ritorna true se è arrivata al server. */
+function liveInvia(eventi) {
+  if (liveControl !== "human") return Promise.resolve(false);
+  const lista = Array.isArray(eventi) ? eventi : [eventi];
+  if (!lista.length) return Promise.resolve(false);
+  const giro = async () => {
+    liveInviiInVolo++;
+    try {
+      const r = await fetch("/api/browser/input", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ events: lista }),
+      });
+      if (!r.ok) {
+        // Un input che non arriva è un guasto SILENZIOSO: chi clicca crede di aver cliccato.
+        // Si dice, ma una volta sola: un canale giù riempirebbe il log di righe identiche.
+        avvisaInputKo((await r.json().catch(() => ({}))).error || `errore ${r.status}`);
+        return false;
+      }
+      liveInputKoAvvisato = false;
+      return true;
+    } catch (e) {
+      avvisaInputKo(e.message);
       return false;
+    } finally {
+      liveInviiInVolo--;
     }
-    liveInputKoAvvisato = false;
-    return true;
-  } catch (e) {
-    avvisaInputKo(e.message);
-    return false;
-  }
+  };
+  liveCodaInvio = liveCodaInvio.then(giro, giro);
+  return liveCodaInvio;
+}
+
+/** Un evento solo, con lo stesso ordine garantito (per compatibilità con i chiamanti). */
+function sendInput(payload) {
+  return liveInvia([payload]);
 }
 
 let liveInputKoAvvisato = false;
@@ -10066,6 +10200,67 @@ function avvisaInputKo(motivo) {
   if (liveInputKoAvvisato) return;
   liveInputKoAvvisato = true;
   liveChatPush("err", `i tasti non sono arrivati al browser (${motivo}). Riprova: il ponte si riattacca da sé.`);
+}
+
+/* ---- coordinate ----------------------------------------------------------------
+ * Il frame è la pagina alla sua misura CSS: il punto dove si clicca nel riquadro va riportato
+ * a quella misura. Si calcola SEMPRE dalla immagine (che è ciò che si vede), quindi funziona
+ * uguale adattata, a 1:1 e a 2×, e con il riquadro scorso. */
+function livePuntoIn(e) {
+  const img = $("liveImg");
+  if (!img || !img.naturalWidth) return null;
+  const r = img.getBoundingClientRect();
+  if (!r.width || !r.height) return null;
+  const x = (e.clientX - r.left) * (img.naturalWidth / r.width);
+  const y = (e.clientY - r.top) * (img.naturalHeight / r.height);
+  if (x < 0 || y < 0 || x > img.naturalWidth || y > img.naturalHeight) return null; // fuori dalla pagina
+  return { x: Math.round(x), y: Math.round(y) };
+}
+
+/** Ultima posizione nota del puntatore sulla pagina (la rotella ha bisogno di un punto). */
+let liveUltimoPunto = { x: 400, y: 300 };
+
+/** Ultimo click, per contare i click ravvicinati: è così che nasce un doppio click. */
+let liveUltimoClick = { t: 0, x: 0, y: 0, count: 0 };
+function liveClickCount(x, y) {
+  const ora = performance.now();
+  const vicino = Math.abs(x - liveUltimoClick.x) < 12 && Math.abs(y - liveUltimoClick.y) < 12;
+  const count = ora - liveUltimoClick.t < 500 && vicino ? Math.min(3, liveUltimoClick.count + 1) : 1;
+  liveUltimoClick = { t: ora, x, y, count };
+  return count;
+}
+
+/** Un click completo (o doppio, se ravvicinato) in un solo giro: il browser sintetizza il
+ *  `click`/`dblclick` solo se vede pressione e rilascio NELL'ORDINE giusto. */
+function liveClickIn(x, y, button = "left") {
+  const count = liveClickCount(x, y);
+  liveUltimoPunto = { x, y };
+  return liveInvia([
+    { type: "input_mouse", eventType: "mouseMoved", x, y },
+    { type: "input_mouse", eventType: "mousePressed", x, y, button, clickCount: count },
+    { type: "input_mouse", eventType: "mouseReleased", x, y, button, clickCount: count },
+  ]);
+}
+
+/* ---- passaggio del mouse (hover) -------------------------------------------------------
+ * Senza `mouseMoved` i menu a comparsa non si aprono e `:hover` non esiste: la pagina sembra
+ * viva a metà. Il movimento però è una raffica, quindi si COALESCE: se ce n'è già uno in volo
+ * si tiene solo l'ultimo, e durante un gesto (dito o tasto premuto) non si manda niente, per
+ * non spostare il puntatore in mezzo a un click. */
+let liveHoverPendente = null;
+let liveHoverInCorso = false;
+function liveHover(x, y) {
+  if (liveControl !== "human") return;
+  liveUltimoPunto = { x, y };
+  if (liveInviiInVolo > 0) { liveHoverPendente = { x, y }; return; }
+  if (liveHoverInCorso) { liveHoverPendente = { x, y }; return; }
+  liveHoverInCorso = true;
+  liveInvia([{ type: "input_mouse", eventType: "mouseMoved", x, y }]).finally(() => {
+    liveHoverInCorso = false;
+    const p = liveHoverPendente;
+    liveHoverPendente = null;
+    if (p) liveHover(p.x, p.y);
+  });
 }
 
 /* ---- chat dentro la vista live: comandi all'agente senza cambiare vista ---- */
@@ -10764,18 +10959,191 @@ $("liveReload").onclick = async () => {
   }
 };
 
-// scorrimento: pulsanti (comodi su mobile) e rotellina sul riquadro
-$("liveScrollUp").onclick = () => liveScroll(0, -350);
-$("liveScrollDown").onclick = () => liveScroll(0, 350);
+/* La rotellina: se il riquadro è INGRANDITO (1:1 o 2×) deve muovere il riquadro — è il modo per
+ * guardarsi intorno su una pagina più grande della finestra — e NON la pagina remota, che
+ * scorrerebbe sotto un'immagine immobile (difetto misurato: con 1:1 la rotella faceva scorrere
+ * il sito e il riquadro restava fermo). Adattata, invece, la rotella va alla pagina. */
 $("liveStage").addEventListener(
   "wheel",
   (e) => {
+    const stage = $("liveStage");
+    if (stage.classList.contains("zoom-1x") || stage.classList.contains("zoom-2x")) return; // pan locale
     if (liveControl !== "human") return;
     e.preventDefault();
-    liveScroll(e.deltaX, e.deltaY);
+    // con Shift la rotellina scorre di lato, come in un browser
+    const orizzontale = e.shiftKey && !e.deltaX;
+    const dx = orizzontale ? e.deltaY : e.deltaX;
+    const dy = orizzontale ? 0 : e.deltaY;
+    liveInvia([
+      {
+        type: "input_mouse",
+        eventType: "mouseWheel",
+        x: liveUltimoPunto.x,
+        y: liveUltimoPunto.y,
+        deltaX: Math.round(dx),
+        deltaY: Math.round(dy),
+      },
+    ]);
   },
   { passive: false },
 );
+
+/* ---- gesti sul riquadro: click, doppio click, trascinamento, hover, swipe ---------------
+ * Un browser si usa così, e prima mancavano tre cose su quattro: si cliccava (con l'ordine dei
+ * tre eventi lasciato al caso), ma il passaggio del mouse non arrivava (niente hover né menu),
+ * il doppio click restava due click, il trascinamento non trascinava e col dito non si
+ * scorreva. Qui i gesti si riconoscono UNA volta e si mandano in sequenza. */
+let liveGesto = null; // gesto in corso: { id, touch, x0, y0, x, y, sy, mosso, scrollato, t0, count, bottone }
+
+/** Muove il puntatore durante un gesto: accodato (l'ordine conta), coalescendo le ripetizioni. */
+let liveMovePendente = null;
+let liveMoveInCorso = false;
+function liveMoveGesto(x, y) {
+  liveUltimoPunto = { x, y };
+  if (liveInviiInVolo > 0 || liveMoveInCorso) { liveMovePendente = { x, y }; return; }
+  liveMoveInCorso = true;
+  liveInvia([{ type: "input_mouse", eventType: "mouseMoved", x, y }]).finally(() => {
+    liveMoveInCorso = false;
+    const p = liveMovePendente;
+    liveMovePendente = null;
+    if (p) liveMoveGesto(p.x, p.y);
+  });
+}
+
+const liveStageEl = $("liveStage");
+// il riquadro prende il focus quando lo si tocca: da lì in poi i tasti fisici vanno alla pagina
+liveStageEl.addEventListener("pointerdown", () => {
+  try { liveStageEl.focus({ preventScroll: true }); } catch { /* niente */ }
+});
+
+/** Avviso una volta sola: chi clicca nel riquadro senza avere il controllo deve sapere perché
+ *  non succede niente (il browser è dell'agente: è il lock anti-conflitto, non un guasto). */
+let liveAvvisoControllo = false;
+liveStageEl.addEventListener("pointerdown", (e) => {
+  if (liveControl !== "human") {
+    if (!liveAvvisoControllo) {
+      liveAvvisoControllo = true;
+      liveChatPush("tool", "per cliccare nella pagina premi «prendi il controllo»: adesso il browser è nelle mani dell'agente");
+    }
+    return;
+  }
+  if (e.pointerType === "mouse" && e.button !== 0) return; // il destro si gestisce al rilascio
+  const p = livePuntoIn(e);
+  if (!p) return; // fuori dalla pagina (banda nera)
+  e.preventDefault(); // niente selezione dell'immagine né trascinamento del file
+  liveStageEl.classList.add("dragging");
+  const touch = e.pointerType !== "mouse";
+  const count = touch ? 1 : liveClickCount(p.x, p.y);
+  liveGesto = {
+    id: e.pointerId,
+    touch,
+    x0: p.x, y0: p.y, x: p.x, y: p.y,
+    sy: e.clientY, // per riconoscere lo swipe sul touch (pixel dello schermo)
+    mosso: false,
+    scrollato: false,
+    t0: performance.now(),
+    count,
+    bottone: e.button === 2 ? "right" : e.button === 1 ? "middle" : "left",
+  };
+  try { liveStageEl.setPointerCapture(e.pointerId); } catch { /* non tutti la concedono */ }
+  if (!touch) {
+    // il mouse preme SUBITO (un trascinamento deve cominciare quando si preme, non al rilascio)
+    liveInvia([
+      { type: "input_mouse", eventType: "mouseMoved", x: p.x, y: p.y },
+      { type: "input_mouse", eventType: "mousePressed", x: p.x, y: p.y, button: liveGesto.bottone, clickCount: count },
+    ]);
+  }
+});
+
+liveStageEl.addEventListener("pointermove", (e) => {
+  if (liveControl !== "human") return;
+  const p = livePuntoIn(e);
+  if (!p) return; // il puntatore è uscito dalla pagina: si ignora
+  if (!liveGesto || liveGesto.id !== e.pointerId) {
+    // nessun gesto: è un passaggio del mouse (hover)
+    if (e.pointerType === "mouse") liveHover(p.x, p.y);
+    return;
+  }
+  liveGesto.x = p.x;
+  liveGesto.y = p.y;
+  if (liveGesto.touch) {
+    // SWIPE = scorrimento della pagina remota. Si misura in pixel dello schermo, perché lo
+    // scorrimento è una sensazione: 1px di dito deve corrispondere a ~1px di pagina.
+    const dy = e.clientY - liveGesto.sy;
+    if (Math.abs(dy) >= 6) {
+      liveGesto.scrollato = true;
+      liveGesto.sy = e.clientY;
+      liveInvia([
+        {
+          type: "input_mouse",
+          eventType: "mouseWheel",
+          x: liveGesto.x,
+          y: liveGesto.y,
+          deltaX: 0,
+          deltaY: Math.round(-dy * 1.4),
+        },
+      ]);
+    }
+    return;
+  }
+  if (Math.abs(p.x - liveGesto.x0) > 2 || Math.abs(p.y - liveGesto.y0) > 2) liveGesto.mosso = true;
+  liveMoveGesto(p.x, p.y);
+});
+
+function liveChiudiGesto(e, annulla) {
+  const g = liveGesto;
+  if (!g || (e && g.id !== e.pointerId)) return;
+  liveGesto = null;
+  liveStageEl.classList.remove("dragging");
+  const durata = performance.now() - g.t0;
+  if (g.touch) {
+    // dito: un tocco breve e fermo è un click; uno swipe è già stato mandato come scorrimento
+    if (!g.scrollato && !annulla && durata < 700) liveClickIn(g.x, g.y);
+    return;
+  }
+  if (annulla) return; // gesto annullato: si lascia com'è (niente rilascio inventato)
+  liveInvia([
+    { type: "input_mouse", eventType: "mouseMoved", x: g.x, y: g.y },
+    { type: "input_mouse", eventType: "mouseReleased", x: g.x, y: g.y, button: g.bottone, clickCount: g.count || 1 },
+  ]);
+}
+liveStageEl.addEventListener("pointerup", (e) => liveChiudiGesto(e, false));
+liveStageEl.addEventListener("pointercancel", (e) => liveChiudiGesto(e, true));
+// il tasto destro: si manda alla pagina (in un browser vero il menu contestuale è della pagina)
+liveStageEl.addEventListener("contextmenu", (e) => {
+  if (liveControl !== "human") return;
+  e.preventDefault();
+  const p = livePuntoIn(e);
+  if (!p) return;
+  liveClickIn(p.x, p.y, "right");
+});
+/* Doppio click sul riquadro SENZA controllo in mano: apre lo schermo intero. È il gesto che si
+ * aspetta da un riquadro che si vuole usare come browser; con il controllo in mano il doppio
+ * click è della pagina (link, selezione di parola) e non va rubato. */
+$("liveStage").addEventListener("dblclick", (e) => {
+  if (liveControl === "human") return;
+  if (e.target !== $("liveImg")) return;
+  setSchermoIntero(!document.querySelector(".livewrap").classList.contains("full"));
+});
+
+// barra di navigazione della vista live: indietro e avanti, come in un browser
+async function liveHistory(dir) {
+  try {
+    const r = await fetch("/api/browser/history", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ dir }),
+    });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      liveChatPush("err", j.error || `navigazione non riuscita (${r.status})`);
+    }
+  } catch (e) {
+    liveChatPush("err", e.message);
+  }
+}
+$("liveHistoryBack").onclick = () => liveHistory("back");
+$("liveHistoryFwd").onclick = () => liveHistory("forward");
 
 // barra indirizzi: Invio naviga (o cerca, se non sembra un dominio)
 $("liveUrlBar").addEventListener("keydown", (e) => {
@@ -10785,24 +11153,25 @@ $("liveUrlBar").addEventListener("keydown", (e) => {
   liveNavigate(e.target.value);
   e.target.blur();
 });
-$("liveLogToggle").onclick = () => {
+/** Tre stati del log, in un posto solo: compatto, espanso, nascosto. */
+function liveLogStato(modo) {
   const el = $("liveChatLog");
   const btn = $("liveLogToggle");
+  if (!el || !btn) return;
+  el.classList.toggle("hidden", modo === "nascosto");
+  el.classList.toggle("expanded", modo === "espanso");
   btn.classList.remove("nuovo");
-  if (el.classList.contains("hidden")) {
-    el.classList.remove("hidden", "expanded");
-    btn.textContent = "▴ log";
-    btn.title = "Espandi il log";
-  } else if (el.classList.contains("expanded")) {
-    el.classList.remove("expanded");
-    el.classList.add("hidden");
-    btn.textContent = "▸ log";
-    btn.title = "Mostra il log";
-  } else {
-    el.classList.add("expanded");
-    btn.textContent = "▾ log";
-    btn.title = "Comprimi il log";
-  }
+  btn.textContent = modo === "espanso" ? "▾ log" : modo === "nascosto" ? "▸ log" : "▴ log";
+  btn.title = modo === "espanso" ? "Comprimi il log" : modo === "nascosto" ? "Mostra il log" : "Espandi il log";
+}
+function liveLogModo() {
+  const el = $("liveChatLog");
+  if (!el) return "compatto";
+  return el.classList.contains("hidden") ? "nascosto" : el.classList.contains("expanded") ? "espanso" : "compatto";
+}
+$("liveLogToggle").onclick = () => {
+  const modo = liveLogModo();
+  liveLogStato(modo === "nascosto" ? "compatto" : modo === "espanso" ? "nascosto" : "espanso");
 };
 
 /* --- ingrandimento del riquadro: adatta → 1:1 → 2× -------------------------
@@ -10810,9 +11179,9 @@ $("liveLogToggle").onclick = () => {
  * «c'è una pagina», non cosa dice. Le tre modalità sono classi sul riquadro, quindi il pan
  * è lo scorrimento nativo del contenitore (funziona col dito, senza JS). */
 const LIVE_ZOOM = [
-  { cls: "", label: "⤢ adatta", titolo: "Riquadro adattato alla finestra (clicca per ingrandire a 1:1)" },
-  { cls: "zoom-1x", label: "⤢ 1:1", titolo: "Pagina alla sua dimensione reale: scorri per muoverti (clicca per 2×)" },
-  { cls: "zoom-2x", label: "⤢ 2×", titolo: "Pagina al doppio: scorri per muoverti (clicca per tornare ad adattata)" },
+  { cls: "", testo: "adatta", titolo: "Riquadro adattato alla finestra (clicca per ingrandire a 1:1)" },
+  { cls: "zoom-1x", testo: "1:1", titolo: "Pagina alla sua dimensione reale: scorri per muoverti (clicca per 2×)" },
+  { cls: "zoom-2x", testo: "2×", titolo: "Pagina al doppio: scorri per muoverti (clicca per tornare ad adattata)" },
 ];
 let liveZoom = 0;
 function applicaZoom() {
@@ -10821,7 +11190,8 @@ function applicaZoom() {
   if (!stage || !btn) return;
   stage.classList.remove("zoom-1x", "zoom-2x");
   if (LIVE_ZOOM[liveZoom].cls) stage.classList.add(LIVE_ZOOM[liveZoom].cls);
-  btn.textContent = LIVE_ZOOM[liveZoom].label;
+  $("liveZoomIco").textContent = "\u2922";
+  $("liveZoomLbl").textContent = " " + LIVE_ZOOM[liveZoom].testo;
   btn.title = LIVE_ZOOM[liveZoom].titolo;
 }
 $("liveZoom").onclick = () => {
@@ -10829,16 +11199,139 @@ $("liveZoom").onclick = () => {
   applicaZoom();
 };
 $("liveFull").onclick = () => setSchermoIntero(!document.querySelector(".livewrap").classList.contains("full"));
+
+/**
+ * Schermo intero, su due strade.
+ *
+ * 1. `requestFullscreen` sull'elemento della vista: è lo schermo intero VERO — niente header
+ *    della dashboard, niente cornice del browser, e `Esc` funziona senza che lo dobbiamo
+ *    simulare. Se il browser non la concede (iPhone su elementi che non sono video) si resta
+ *    sull'overlay, che ha la stessa geometria.
+ * 2. In entrambi i casi il riquadro prende l'area, e il VIEWPORT del browser remoto viene
+ *    portato a quella misura: senza, un frame 1280×720 dentro un'area 1600×900 lascia due
+ *    bande nere e la pagina resta impaginata per uno schermo più piccolo. Il viewport si
+ *    riporta a com'era quando si esce, perché il browser è anche quello dell'agente.
+ */
+async function liveSetViewport(width, height) {
+  try {
+    const r = await fetch("/api/browser/viewport", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ width, height }),
+    });
+    if (!r.ok) return null;
+    return (await r.json()).viewport || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fa coincidere il browser remoto con l'area che si vede.
+ *
+ * Perché serve: un frame 1280×720 dentro un riquadro 1600×700 lascia due bande nere, e su un
+ * telefono la stessa pagina ridotta a 374px è un francobollo. Con il viewport uguale all'area
+ * la pagina è impaginata per lo spazio che ha davvero — che è quello che fa un browser.
+ * Si fa solo quando il browser è NELLE MANI DELL'UTENTE (o a schermo intero): se sta lavorando
+ * l'agente, il viewport resta quello suo, e quello che si vede è il suo schermo.
+ * Il viewport iniziale si ricorda e si rimette quando si esce, perché il browser è condiviso.
+ */
+function liveAllineaViewport() {
+  clearTimeout(liveViewportTimer);
+  // con la vista aperta il browser remoto prende la misura dell'area: niente bande nere, e su
+  // telefono la pagina è impaginata per il telefono invece di essere un francobollo
+  const deveAdattare = document.body.dataset.tab === "live" || document.body.classList.contains("live-full");
+  if (!deveAdattare) {
+    if (liveViewportPrima) {
+      liveSetViewport(liveViewportPrima.width, liveViewportPrima.height);
+      liveViewportPrima = null;
+      liveUltimoViewport = { w: 0, h: 0 };
+    }
+    return;
+  }
+  // ritardo: il layout deve finire di assestarsi (e non si cambia viewport a ogni pixel)
+  liveViewportTimer = setTimeout(async () => {
+    const st = $("liveStage").getBoundingClientRect();
+    if (st.width < 300 || st.height < 240) return;
+    const w = Math.min(1920, Math.max(320, Math.round(st.width / 2) * 2));
+    const h = Math.min(1200, Math.max(300, Math.round(st.height / 2) * 2));
+    if (Math.abs(w - liveUltimoViewport.w) < 30 && Math.abs(h - liveUltimoViewport.h) < 30) return;
+    if (!liveViewportPrima) {
+      const v = (liveStatoLive && liveStatoLive.viewport) || {};
+      liveViewportPrima = { width: v.width || 1280, height: v.height || 720 };
+    }
+    liveUltimoViewport = { w, h };
+    await liveSetViewport(w, h);
+  }, 500);
+}
+
 function setSchermoIntero(on) {
   const wrap = document.querySelector(".livewrap");
   const btn = $("liveFull");
   if (!wrap) return;
   wrap.classList.toggle("full", on);
   document.body.classList.toggle("live-full", on);
+  // a schermo intero il browser deve avere tutto lo spazio: il log si chiude da sé (torna
+  // com'era uscendo), altrimenti resterebbe un pannello che copre la pagina
+  if (on) {
+    if (!liveLogPrimaFull) liveLogPrimaFull = liveLogModo();
+    if (liveLogModo() !== "espanso") liveLogStato("nascosto");
+  } else if (liveLogPrimaFull) {
+    liveLogStato(liveLogPrimaFull);
+    liveLogPrimaFull = null;
+  }
   if (btn) {
     btn.textContent = on ? "⤡" : "⛶";
-    btn.title = on ? "Torna alla vista normale" : "Riquadro a schermo intero";
+    btn.title = on ? "Torna alla vista normale (Esc)" : "Schermo intero: il riquadro prende tutta la finestra e il browser remoto si adatta all'area";
   }
+  const vista = $("liveView");
+  if (on) {
+    // lo schermo intero nativo è la strada preferita; se il browser lo nega resta l'overlay
+    if (vista && vista.requestFullscreen && !document.fullscreenElement) {
+      vista.requestFullscreen({ navigationUI: "hide" }).catch(() => { /* overlay: va bene lo stesso */ });
+    }
+    liveAllineaViewport();
+  } else {
+    clearTimeout(liveViewportTimer);
+    if (document.fullscreenElement && (document.fullscreenElement === vista || document.fullscreenElement.contains(vista))) {
+      document.exitFullscreen?.().catch(() => { /* niente */ });
+    }
+    // fuori dallo schermo intero: se il browser è ancora nelle mani dell'utente si riadatta
+    // all'area normale; altrimenti torna com'era (liveAllineaViewport decide)
+    liveAllineaViewport();
+  }
+}
+
+/** Riporta il browser remoto al viewport che aveva prima che lo adattassimo. Si chiama quando
+ *  si lascia la vista live: il browser è condiviso con l'agente, non deve restare "a misura
+ *  del riquadro" di una vista che non è più aperta. */
+function liveRipristinaViewport() {
+  clearTimeout(liveViewportTimer);
+  if (!liveViewportPrima) return;
+  liveSetViewport(liveViewportPrima.width, liveViewportPrima.height);
+  liveViewportPrima = null;
+  liveUltimoViewport = { w: 0, h: 0 };
+}
+// Se si esce dallo schermo intero da fuori (Esc del browser, gesto di sistema), la classe di
+// overlay va allineata: altrimenti resterebbe "full" senza essere a schermo intero.
+document.addEventListener("fullscreenchange", () => {
+  if (!document.fullscreenElement && document.querySelector(".livewrap.full")) {
+    const wrap = document.querySelector(".livewrap");
+    wrap.classList.remove("full");
+    document.body.classList.remove("live-full");
+    const btn = $("liveFull");
+    if (btn) { btn.textContent = "⛶"; btn.title = "Schermo intero: il riquadro prende tutta la finestra e il browser remoto si adatta all'area"; }
+    liveAllineaViewport();
+  }
+});
+addEventListener("resize", () => { if (document.body.dataset.tab === "live") liveAllineaViewport(); });
+/* L'area del riquadro cambia anche senza un resize della finestra: aprire il log, mostrare la
+ * riga «scrivi qui», entrare in schermo intero. Il viewport remoto segue l'area vera, quindi si
+ * osserva l'elemento e non la finestra. */
+if (window.ResizeObserver) {
+  try {
+    new ResizeObserver(() => { if (document.body.dataset.tab === "live") liveAllineaViewport(); }).observe($("liveStage"));
+  } catch { /* niente: resta il resize della finestra */ }
 }
 addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
@@ -10848,14 +11341,9 @@ addEventListener("keydown", (e) => {
 /** Su telefono il log parte chiuso (lascia ~130px al riquadro del browser) ma solo se non ci
  *  sono messaggi da leggere: chi torna sulla vista non perde quello che era arrivato. */
 function liveLogSuMisura() {
-  const log = $("liveChatLog");
-  const btn = $("liveLogToggle");
-  if (!log || !btn || !window.matchMedia("(max-width: 760px)").matches) return;
+  if (!window.matchMedia("(max-width: 760px)").matches) return;
   if (liveChatMsgs.length) return;
-  log.classList.add("hidden");
-  log.classList.remove("expanded");
-  btn.textContent = "▸ log";
-  btn.title = "Mostra il log";
+  liveLogStato("nascosto");
 }
 $("liveFocusBtn").onclick = () => {
   // toglie il focus dalla chat: da qui in poi i tasti vanno al browser (modalità controllo)
@@ -10872,22 +11360,21 @@ $("liveInput").addEventListener("keydown", (e) => {
     liveChatSend();
   }
 });
-$("liveImg").addEventListener("click", (e) => {
-  if (liveControl !== "human") return;
-  // coordinate nel sistema del dispositivo, ricavate dalla dimensione reale del frame
-  const img = $("liveImg");
-  const r = img.getBoundingClientRect();
-  if (!r.width || !img.naturalWidth) return;
-  const x = Math.round((e.clientX - r.left) * (img.naturalWidth / r.width));
-  const y = Math.round((e.clientY - r.top) * (img.naturalHeight / r.height));
-  sendInput({ type: "input_mouse", eventType: "mouseMoved", x, y });
-  sendInput({ type: "input_mouse", eventType: "mousePressed", x, y, button: "left", clickCount: 1 });
-  sendInput({ type: "input_mouse", eventType: "mouseReleased", x, y, button: "left", clickCount: 1 });
-});
+/* Il click non si ascolta qui: lo producono i gesti (pointerdown/move/up), che distinguono
+ * click, doppio click, trascinamento e swipe e mandano gli eventi NELL'ORDINE giusto. */
+
 // tastiera: solo nella vista live e solo in modalità controllo, per non rubare i tasti alla chat
 addEventListener("keydown", (e) => {
-  if (document.body.dataset.tab !== "live" || liveControl !== "human") return;
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if (document.body.dataset.tab !== "live") return;
+  // Alt+← / Alt+→ = indietro/avanti: valgono sempre, è navigazione (come i pulsanti della barra)
+  if (e.altKey && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+    e.preventDefault();
+    liveHistory(e.key === "ArrowLeft" ? "back" : "forward");
+    return;
+  }
+  if (liveControl !== "human") return;
+  // i tasti scritti in un campo dell'interfaccia (chat, indirizzo, «scrivi qui») sono di quel campo
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
   // Modificatori attivi => è una scorciatoia, non un carattere da inserire
   const conModificatore = e.ctrlKey || e.altKey || e.metaKey;
   const stampabile = e.key.length === 1 && !conModificatore;
@@ -10900,20 +11387,29 @@ addEventListener("keydown", (e) => {
   if (!stampabile && !speciale && !conModificatore) return;
   e.preventDefault();
   if (stampabile) {
-    // carattere singolo: dallo stream (immediato, nessun giro sulla CLI)
-    sendInput({ type: "input_keyboard", eventType: "keyDown", key: e.key, text: e.key });
-    sendInput({ type: "input_keyboard", eventType: "keyUp", key: e.key });
-  } else {
-    // tasto speciale o scorciatoia: lo stream non li supporta (manda solo key+text),
-    // quindi si usa la CLI che li invia al browser correttamente
-    let combo = "";
-    if (e.ctrlKey) combo += "Control+";
-    if (e.altKey) combo += "Alt+";
-    if (e.metaKey) combo += "Meta+";
-    if (e.shiftKey && e.key.length > 1) combo += "Shift+";
-    combo += e.key === " " ? "Space" : e.key;
-    pressKeys(combo);
+    // carattere singolo: dallo stream (immediato, nessun giro sulla CLI), in un solo invio
+    liveInvia([
+      { type: "input_keyboard", eventType: "keyDown", key: e.key, text: e.key },
+      { type: "input_keyboard", eventType: "keyUp", key: e.key },
+    ]);
+    return;
   }
+  // Ctrl/Cmd+V: gli appunti sono quelli del TUO dispositivo, il browser remoto non li ha.
+  // Invece di mandare una scorciatoia che non incollerebbe niente, si legge il testo qui e
+  // lo si inserisce nel campo attivo della pagina.
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && String(e.key).toLowerCase() === "v") {
+    liveIncollaDaAppunti();
+    return;
+  }
+  // tasto speciale o scorciatoia: lo stream non li supporta (manda solo key+text),
+  // quindi si usa la CLI che li invia al browser correttamente
+  let combo = "";
+  if (e.ctrlKey) combo += "Control+";
+  if (e.altKey) combo += "Alt+";
+  if (e.metaKey) combo += "Meta+";
+  if (e.shiftKey && e.key.length > 1) combo += "Shift+";
+  combo += e.key === " " ? "Space" : e.key;
+  pressKeys(combo);
 });
 
 /** Invia un tasto o una scorciatoia (Backspace, frecce, Control+a…) tramite il server. */
@@ -10972,12 +11468,14 @@ async function liveSendText(text, { avvisa = true } = {}) {
       return false;
     }
   }
+  // testo corto: i tasti veri, in UN SOLO invio (l'ordine è quello del testo, senza un giro
+  // HTTP per carattere: prima erano due richieste a carattere, quindi 24 per un codice di 12)
+  const eventi = [];
   for (const ch of t) {
-    const arrivato = await sendInput({ type: "input_keyboard", eventType: "keyDown", key: ch, text: ch });
-    await sendInput({ type: "input_keyboard", eventType: "keyUp", key: ch });
-    if (!arrivato) return false; // canale giù: si smette di sparare eventi (l'avviso è già uscito)
+    eventi.push({ type: "input_keyboard", eventType: "keyDown", key: ch, text: ch });
+    eventi.push({ type: "input_keyboard", eventType: "keyUp", key: ch });
   }
-  return true;
+  return liveInvia(eventi); // canale giù: l'avviso è già uscito, si evita di insistere
 }
 
 /** Il campo è una tastiera: quello che ci finisce dentro (digitato, dettato o incollato) parte
@@ -11023,12 +11521,15 @@ async function liveReadClipboard() {
   }
 }
 
-$("livePasteBtn").onclick = async () => {
+/** Incolla nel campo attivo della pagina il testo degli appunti del TUO dispositivo. Usato dal
+ *  pulsante «⇩ incolla» e da Ctrl+V: gli appunti del desktop non esistono nel browser remoto,
+ *  quindi la scorciatoia da sola non incollerebbe niente. */
+async function liveIncollaDaAppunti() {
   if (liveControl !== "human") {
     liveChatPush("err", "prima premi «prendi il controllo», poi incolla");
     return;
   }
-  let t = await liveReadClipboard();
+  const t = await liveReadClipboard();
   if (!t) {
     // niente appunti leggibili: il campo è la via sicura (tocco lungo o Ctrl+V)
     $("liveTypeBox").focus();
@@ -11037,7 +11538,8 @@ $("livePasteBtn").onclick = async () => {
   }
   const inviato = await liveSendText(t, { avvisa: false });
   if (inviato) liveChatPush("tool", `incollati ${t.length} caratteri nel campo attivo`);
-};
+}
+$("livePasteBtn").onclick = () => liveIncollaDaAppunti();
 $("liveBackspaceBtn").onclick = () => pressKeys("Backspace");
 $("liveEnterBtn").onclick = () => pressKeys("Enter");
 $("progettoBack").onclick = () => showTab("chat");

@@ -32,6 +32,9 @@ const DEFAULT_MAX_FPS = 3;
  *  la richiesta e il comando entro limiti ragionevoli. */
 export const MAX_PASTE = 8192;
 
+/** Tetto di eventi in una sequenza (un trascinamento lungo è una raffica di `mouseMoved`). */
+export const MAX_INPUT_BATCH = 64;
+
 export function createBrowserLive({
   bin = "/usr/bin/agent-browser",
   user = "pi-browser",
@@ -292,10 +295,14 @@ export function createBrowserLive({
   }
 
   /** Inoltra un input (mouse/tastiera/touch) dal browser dell'utente. */
-  function input(payload) {
-    const allowed = new Set(["input_mouse", "input_keyboard", "input_touch"]);
+  const TIPI_INPUT = new Set(["input_mouse", "input_keyboard", "input_touch"]);
+
+  /** Valida UN evento di input e lo normalizza (nessun effetto: non invia niente).
+   *  Sta a parte perché una SEQUENZA va validata tutta PRIMA di spedire il primo evento:
+   *  un errore a metà sequenza lascerebbe il browser con un tasto premuto e mai rilasciato. */
+  function normalizzaInput(payload) {
     const type = String(payload?.type || "");
-    if (!allowed.has(type)) throw new Error(`tipo di input non ammesso: "${type}"`);
+    if (!TIPI_INPUT.has(type)) throw new Error(`tipo di input non ammesso: "${type}"`);
     const out = { ...payload, type };
     if (type === "input_mouse") {
       for (const k of ["x", "y"]) {
@@ -304,16 +311,76 @@ export function createBrowserLive({
       }
       out.eventType = String(out.eventType || "mouseMoved");
       out.button = String(out.button || "left");
-      out.clickCount = Number(out.clickCount || 1);
+      out.clickCount = Math.max(1, Math.min(3, Math.round(Number(out.clickCount || 1))));
     }
     if (type === "input_keyboard") {
       out.eventType = String(out.eventType || "keyDown");
       out.key = String(out.key ?? "");
       if (out.text !== undefined) out.text = String(out.text);
     }
+    if (type === "input_touch") {
+      out.eventType = String(out.eventType || "touchStart");
+    }
+    return out;
+  }
+
+  function input(payload) {
+    const out = normalizzaInput(payload);
     const sent = send(out);
     if (!sent) throw new Error("live view non attiva: apri prima la vista del browser");
     return { ok: true, sent: out.type, eventType: out.eventType };
+  }
+
+  /**
+   * Una SEQUENZA di input in un solo giro (un click è muovi+premi+rilascia, un trascinamento
+   * è decine di movimenti). Perché non chiamare `input` tre volte: ogni chiamata diventava una
+   * richiesta HTTP separata, e tre richieste in parallelo arrivano in ordine QUALSIASI — si è
+   * visto il rilascio arrivare prima della pressione, e allora il browser non sintetizza il
+   * click: la pagina riceveva mousedown+mouseup e nessun click. Qui l'ordine è quello
+   * dell'array, perché i messaggi viaggiano sullo stesso WebSocket, che è ordinato.
+   */
+  function inputs(list) {
+    if (!Array.isArray(list) || !list.length) throw new Error("nessun input da inviare");
+    if (list.length > MAX_INPUT_BATCH)
+      throw new Error(`troppi eventi in una sequenza (massimo ${MAX_INPUT_BATCH})`);
+    const out = list.map(normalizzaInput); // tutta la validazione prima del primo invio
+    let n = 0;
+    for (const o of out) {
+      if (!send(o)) {
+        throw new Error(
+          n === 0
+            ? "live view non attiva: apri prima la vista del browser"
+            : `canale chiuso dopo ${n} di ${out.length} eventi: la pagina potrebbe essere rimasta a metà gesto, riprova`,
+        );
+      }
+      n++;
+    }
+    return { ok: true, count: out.length };
+  }
+
+  /** Indietro/avanti nella cronologia della scheda attiva (barra del browser della live view). */
+  async function history(dir) {
+    const d = String(dir || "");
+    if (d !== "back" && d !== "forward") throw new Error('direzione non ammessa: "back" oppure "forward"');
+    await cli([d]);
+    return d;
+  }
+
+  /**
+   * Cambia il viewport del browser pilotato. Serve allo schermo intero: un frame 1280×720 in
+   * un riquadro 1600×900 lascerebbe due bande nere, e la pagina resterebbe pensata per uno
+   * schermo più piccolo. Non ricarica la pagina (verificato), quindi lo stato del sito resta.
+   */
+  async function setViewport(width, height) {
+    const w = Math.round(Number(width));
+    const h = Math.round(Number(height));
+    if (!Number.isFinite(w) || !Number.isFinite(h)) throw new Error("larghezza e altezza devono essere numeri");
+    if (w < 320 || w > 2560 || h < 240 || h > 1600)
+      throw new Error("viewport fuori dai limiti (320–2560 × 240–1600)");
+    await cli(["set", "viewport", String(w), String(h)]);
+    state.viewport = { ...(state.viewport || {}), width: w, height: h };
+    onEvent({ type: "live", state: snapshot() });
+    return { width: w, height: h };
   }
 
   /** Cambia il tetto di frame al volo. Serve più fluidità quando guida l'utente:
@@ -406,5 +473,5 @@ export function createBrowserLive({
     return { ...lastFrame, ageNowMs: lastFrame.ts ? Date.now() - lastFrame.ts : null };
   }
 
-  return { start, stop, input, snapshot, send, lastFrame: lastFrameNow, setMaxFps, reload, press, insertText, open };
+  return { start, stop, input, inputs, snapshot, send, lastFrame: lastFrameNow, setMaxFps, reload, press, insertText, open, history, setViewport };
 }

@@ -794,7 +794,9 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
 | GET | `/api/browser/live` | stato della live view (porta, URL, frame, viewport, controllo) |
 | GET | `/api/browser/live/frame` | ultimo frame disponibile (204 se assente: evita una vista vuota su pagina ferma) |
 | POST | `/api/browser/watch` | `{ on }` apre/chiude il flusso dei frame |
-| POST | `/api/browser/input` | `{ type: input_mouse\|input_keyboard\|input_touch, … }` input remoti (solo se il controllo è dell'utente) |
+| POST | `/api/browser/input` | `{ type: input_mouse\|input_keyboard\|input_touch, … }` un input remoto **oppure** `{ events: […] }` una **sequenza** (un click è muovi+premi+rilascia: in una richiesta sola, quindi nell'ordine giusto). Solo se il controllo è dell'utente |
+| POST | `/api/browser/history` | `{ dir: "back"\|"forward" }` indietro/avanti nella cronologia della scheda attiva |
+| POST | `/api/browser/viewport` | `{ width, height }` porta il browser remoto alla misura del riquadro (320–2560 × 240–1600): lo usa la live view per far coincidere il frame con l'area |
 | POST | `/api/browser/press` | `{ keys: "Control+a" \| "Backspace" \| "ArrowLeft" … }` tasti e scorciatoie (whitelist rigida): lo stream accetta solo `key`+`text`, quindi i tasti speciali passano dalla CLI |
 | POST | `/api/browser/control` | `{ mode: "agent"\|"human" }` lock anti-conflitto (in modalità human il frame rate sale a 10/s) |
 | POST | `/api/browser/reload` | ricarica la pagina attiva: i frame arrivano solo ai cambi, così una pagina ferma non sembra bloccata |
@@ -907,6 +909,8 @@ node media/test-svg-sanitize.mjs # sanitizzatore SVG: whitelist, XSS, entità, l
 node --experimental-vm-modules media/test-svg-sanitizer-retry.mjs # caricamento del sanitizzatore: un fallimento non deve restare in cache (fallimento → retry → successo)
 node media/test-svg-preview.mjs  # anteprima SVG in chat nel browser vero: rendering, sicurezza, streaming, vista ingrandita
 node media/test-svg-stream.mjs   # scansione dei blocchi svg durante lo streaming (fence spezzate) — nessuna rete
+node media/checkup-live-view.mjs  # live view del browser, misurata con un browser vero: click, doppio click, hover, trascinamento, rotella, tastiera, indietro/avanti, schermo intero con viewport adattato, telefono (istanze di prova su :8494/:8495 + sito :8497)
+node media/checkup-viste.mjs     # checkup di tutte le viste (chat, file, goal, cron, skill, progetto, agenda, memoria, previsioni) con dati veri e zero errori JavaScript (istanza su :8493)
 node media/test-progetto.mjs     # cartelle del progetto: aggiunta, attiva, rimozione, limiti, persistenza al riavvio (istanza di prova su :8496)
 node media/test-image-api.mjs    # immagini: il formato è verificato dai magic number, SVG rimandato al blocco svg, percorsi e limiti (istanza di prova su :8497)
 node media/test-image-ui.mjs     # immagini in chat e lettore a schermo intero nel browser vero: anteprima, errori, miniatura, galleria, zoom, rotazione (istanze di prova su :8482/:8483)
@@ -1044,30 +1048,47 @@ Come funziona: lo stream di `agent-browser` ascolta su `127.0.0.1` e accetta sol
 stream e ripubblica frame, URL e stato sulla sua SSE. Così la live view **eredita l'autenticazione
 esistente**: nessuna porta nuova, nessuna modifica a Caddy, nessun endpoint esposto.
 
+La vista si usa **come un browser normale**: click, doppio click, trascinamento, passaggio del
+mouse (hover e menu a comparsa), tasto destro, schermo intero, indietro/avanti e tastiera.
+
 | Comando | Effetto |
 |---------|--------|
 | `▶ guarda` / `⏸ ferma` | apre/chiude il flusso dei frame (`POST /api/browser/watch`) |
 | `🖐 prendi il controllo` / `↩ restituisci` | passa il browser a te (`POST /api/browser/control`) |
-| click nell'immagine | inoltra il click al browser, con coordinate scalate sulla dimensione reale del frame |
-| `⌨ → browser` | porta i tasti **fisici** al browser invece che alla chat (richiede «prendi il controllo») |
+| click nell'immagine | click **nella pagina**: pressione e rilascio viaggiano in **un solo invio**, nell'ordine giusto (`POST /api/browser/input` con `{events:[…]}`) |
+| doppio click | arriva alla pagina come **vero doppio click** (conteggio dei click ravvicinati: `clickCount` 2), non come due click separati |
+| trascinamento | trascina davvero: pressione → movimenti → rilascio, quindi slider, selezioni di testo e drag&drop funzionano |
+| passaggio del mouse | l'hover arriva alla pagina (menu a comparsa, `:hover`): i movimenti si fondono (coalescing) per non saturare il canale |
+| tasto destro | il menu contestuale è **della pagina**, non del browser locale |
+| `◀` / `▶` | indietro/avanti nella cronologia (`POST /api/browser/history`), anche con **Alt+←/Alt+→** |
+| `↻` | ricarica la pagina (`POST /api/browser/reload`) |
+| **barra indirizzi** | scrivi un **URL** (o un dominio: `wikipedia.org`) e premi **Invio**; se non sembra un indirizzo, **cerca su Google**. Endpoint `POST /api/browser/open`, validato (solo http/https). Il tooltip mostra il titolo della pagina |
+| `⌨ → browser` | porta i tasti **fisici** al browser invece che alla chat (richiede «prendi il controllo»); **basta anche cliccare nel riquadro** |
 | **riga «scrivi qui»** | compare **solo quando il controllo è tuo** e serve a scrivere nel sito **anche senza tastiera fisica**: tocchi il riquadro, si apre la tastiera di sistema, e quello che scrivi va al **campo attivo** della pagina. Il riquadro non trattiene il testo (si svuota a ogni inoltro): è una tastiera, non un secondo campo |
-| **`⇩ incolla`** | inserisce nel campo attivo il testo degli appunti (`POST /api/browser/inserttext`, inserimento diretto senza eventi di tasto). Se il browser non concede la lettura degli appunti, la vista lo dice e ti manda al riquadro: lì l'incolla va al sito comunque |
+| **`⇩ incolla`** | inserisce nel campo attivo il testo degli appunti (`POST /api/browser/inserttext`, inserimento diretto senza eventi di tasto). Se il browser non concede la lettura degli appunti, la vista lo dice e ti manda al riquadro: lì l'incolla va al sito comunque. **Ctrl+V** fa la stessa cosa |
 | **`⌫` / `⏎`** | cancellano e inviano nel campo attivo del sito: sono i due tasti che da telefono non si possono premere |
-| tastiera completa | caratteri singoli dallo stream (immediato); **Backspace, Tab, frecce, Home/End, F1-F12 e le scorciatoie** (Ctrl+A/C/V/Z…) passano dalla CLI, perché lo stream accetta solo `key`+`text` e senza testo il browser non riceve l'evento |
-| `▴ log` | log della chat a tre stati: compatto (88px) → espanso → nascosto. **Su telefono parte nascosto** (lascia spazio al riquadro) e il pulsante mostra un pallino ● quando arrivano messaggi a log chiuso |
-| `⤢ adatta / 1:1 / 2×` | **ingrandisce il riquadro**: adattato alla finestra → pagina alla sua dimensione reale → al doppio. Serve a *leggere* una pagina, non solo a vederla: in 1:1 e 2× ci si muove con lo scorrimento (dito o rotellina) |
-| `⛶` | riquadro a **schermo intero** (overlay, non l'API Fullscreen: funziona anche dove il browser non la concede). Si esce con `⤡` o con Esc; la barra dei comandi resta raggiungibile in alto, quindi non è una trappola su telefono |
-| **barra indirizzi** | scrivi un **URL** (o un dominio: `wikipedia.org`) e premi **Invio**; se non sembra un indirizzo, **cerca su Google**. Endpoint `POST /api/browser/open`, validato (solo http/https) |
-| **↑ / ↓ e rotellina** | scorrono la pagina nel browser (`mouseWheel`) — i pulsanti servono su mobile, dove la rotellina non c'è |
+| tastiera completa | caratteri singoli dallo stream, in **un solo invio** e nell'ordine del testo; **Backspace, Tab, frecce, Home/End, F1-F12 e le scorciatoie** (Ctrl+A/C/V/Z…) passano dalla CLI, perché lo stream accetta solo `key`+`text` |
+| dito sul riquadro | **tocco = click**, **trascinamento = scorrimento della pagina** (non serve cercare i pulsanti ↑↓) |
+| `▴ log` | log della chat a tre stati: compatto (88px) → espanso → nascosto. **A log chiuso sparisce anche il campo comandi** (non si sta parlando con l'agente): così le cromature in fondo non rubano altezza al browser. Su telefono parte nascosto e il pulsante mostra un pallino ● quando arrivano messaggi a log chiuso |
+| `⤢ adatta / 1:1 / 2×` | **ingrandisce il riquadro**: adattato alla finestra → pagina alla sua dimensione reale → al doppio. Serve a *leggere* una pagina, non solo a vederla. Con l'ingrandimento attivo la rotellina e il dito muovono il **riquadro** (pan locale), non la pagina remota |
+| `⛶` | **schermo intero**: prima l'API Fullscreen (schermo intero vero, senza header della dashboard), e se il browser non la concede un overlay con la stessa geometria. Si esce con `⤡` o con Esc; la barra dei comandi resta raggiungibile, quindi non è una trappola su telefono. **Il log si chiude da sé** e torna com'era all'uscita |
+| **↑ / ↓ e rotellina** | scorrono la pagina nel browser (`mouseWheel`); con Shift la rotellina scorre di lato |
 | **chat nella vista** | dai comandi all'agente senza lasciare il browser: il messaggio parte già con il **contesto** "sto scrivendo dalla live view, pagina X, usa il tool browser su quella pagina" |
 
-Il riquadro del browser ha **dimensione garantita**: il log ha altezza fissa e non lo comprime
-mai; nascondendo il log il browser guadagna circa il 45% di altezza.
+**Il frame coincide con l'area che vedi.** Con la vista aperta la dashboard porta il viewport del
+browser remoto alla misura del riquadro (`POST /api/browser/viewport`): niente bande nere, e su
+telefono la pagina è impaginata per il telefono invece di essere un francobollo. Quando si lascia
+la vista il viewport torna a quello che era (1280×720), perché il browser è condiviso con l'agente.
+È la differenza fra «guardare uno schermo remoto» e «usare un browser».
 
-**Su telefono** (misure prese su 390×844, iPhone 12) la barra dei comandi sta su una riga e
-l'intestazione del log su una: il riquadro è passato da **324px a 449px**, e a **683px** in schermo
-intero. Il campo indirizzi è alto 44px (misura da dito), il log parte nascosto. Con `⤢ 1:1` una
-pagina desktop si legge davvero, invece di essere rimpicciolita a un francobollo.
+Il riquadro del browser ha **dimensione garantita**: il log ha altezza fissa e non lo comprime
+mai; chiudendo il log il browser guadagna circa 130px.
+
+**Su telefono** (misure prese su 390×844, iPhone 12): la barra dei comandi sta su **una riga** con
+le sole icone (le parole lunghe spariscono), la navigazione sta dentro la barra indirizzi, il campo
+indirizzi è alto 44px (misura da dito). Il riquadro misura **507px** con il log chiuso, **375px**
+con il log aperto e **681px** a schermo intero; il frame è **378×507**, cioè la pagina impaginata
+per il telefono e leggibile senza ingrandire.
 
 **Il lock anti-conflitto:** quando prendi il controllo, il tool `browser` **rifiuta** di agire e
 spiega perché. Così agente e persona non si contendono lo stesso browser. Il controllo torna
@@ -1077,7 +1098,9 @@ non te le toglie.
 
 **Niente guasti silenziosi:** se il canale degli input non è pronto (ponte caduto, flusso
 spento, vista non aperta), la vista **lo dice nel log** invece di lasciarti credere di aver
-scritto. Il ponte si riattacca da sé, quindi il più delle volte basta riprovare.
+scritto o cliccato. Il ponte si riattacca da sé, quindi il più delle volte basta riprovare. Il
+pallino accanto al badge dice lo stato del canale: verde = frame in arrivo, giallo = collegamento
+in corso, rosso = errore, grigio = flusso fermo.
 
 **Cosa non si può fare, e non è una svista:** il browser è `Chrome headless` e l'IP del server è
 un datacenter. Meta blocca un login da lì **prima** di guardare come è arrivata la password
@@ -1088,12 +1111,15 @@ Note operative:
 - i frame arrivano **quando la pagina cambia** (delta), non a intervalli fissi: una pagina ferma
   costa quasi nulla;
 - il flusso si chiude da sé quando si lascia la vista, e comunque dopo 15 minuti di inattività;
-- protocollo: `pacing=ack` + `maxFps` (default 3, `DASH_BROWSER_STREAM_FPS`) per contenere la banda
-  su mobile. La misura reale: ~16-39 KB per frame a 1280×720.
+- protocollo: `pacing=ack` + `maxFps` (default 3, `DASH_BROWSER_STREAM_FPS`; 10 quando guidi tu,
+  `DASH_BROWSER_STREAM_FPS_HUMAN`) per contenere la banda su mobile;
 - l'input è ristretto a mouse/tastiera/touch: nessun comando arbitrario al browser.
 
-API: `GET /api/browser/live`, `POST /api/browser/watch {on}`, `POST /api/browser/input {…}`,
-`POST /api/browser/control {mode:"agent"|"human"}`.
+API: `GET /api/browser/live`, `GET /api/browser/live/frame`, `POST /api/browser/watch {on}`,
+`POST /api/browser/input {…}` oppure `{events:[…]}`, `POST /api/browser/control {mode}`,
+`POST /api/browser/open {url}`, `POST /api/browser/history {dir}`, `POST /api/browser/reload`,
+`POST /api/browser/press {keys}`, `POST /api/browser/inserttext {text}`,
+`POST /api/browser/viewport {width,height}`.
 Protocollo completo e prove: `media/browser-live.mjs`, `media/probe-stream.mjs`.
 
 ## Prestazioni (misurate, non stimate)
