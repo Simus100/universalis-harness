@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harness pi — ciclo Attuale vs Ottimizzato</title>
+<style>
+  :root{
+    --bg:#08111f; --s1:#172033; --s2:#1d2634; --line:#2a3448;
+    --txt:#eef2f9; --txt2:#c6cfdd; --dim:#8b97ac;
+    --blue:#5b9dff; --cyan:#38bdf8; --violet:#8b5cff; --green:#34d399; --amber:#fbbf24; --red:#fb7185;
+    --r:12px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);
+    font:16px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:40px 24px 72px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+  /* ---------- testata ---------- */
+  header{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:32px}
+  .eyebrow{color:var(--dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 12px}
+  h1{margin:0;font-size:31px;line-height:1.2;font-weight:600;letter-spacing:-.01em}
+  h1 .em{color:var(--red)}
+  h1 .em2{color:var(--green)}
+  .lead{margin:12px 0 0;max-width:70ch;color:var(--txt2);font-size:16px}
+  .meta{margin-top:16px;color:var(--dim);font-size:13px;display:flex;gap:16px;flex-wrap:wrap}
+  .meta span::before{content:"·";margin-right:8px;color:var(--line)}
+  .meta span:first-child::before{content:none;margin:0}
+
+  /* ---------- KPI misurati ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);
+        border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:40px}
+  .kpi{background:var(--s1);padding:16px 18px}
+  .kpi .v{font-size:25px;font-weight:600;letter-spacing:-.02em;line-height:1.1}
+  .kpi .l{font-size:12px;color:var(--txt2);margin-top:6px}
+  .kpi .s{font-size:11px;color:var(--dim);margin-top:6px}
+  .kpi.flag .v{color:var(--red)}
+
+  /* ---------- sezioni ---------- */
+  h2{font-size:20px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+  .h2sub{color:var(--dim);font-size:13px;margin:0 0 20px}
+  section{margin-bottom:40px}
+
+  .sim{display:grid;grid-template-columns:288px 1fr;gap:24px;align-items:start}
+  @media (max-width:980px){.sim{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+
+  /* ---------- controlli ---------- */
+  .panel{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:20px}
+  .panel h3{margin:0 0 16px;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  .field{margin-bottom:16px}
+  .field label{display:flex;justify-content:space-between;align-items:baseline;
+    font-size:13px;color:var(--txt2);margin-bottom:6px;gap:8px}
+  .field .val{color:var(--txt);font-size:13px;font-weight:600}
+  .field .hint{display:block;color:var(--dim);font-size:11.5px;margin-top:4px;line-height:1.4}
+  input[type=range]{width:100%;accent-color:var(--blue);height:20px}
+  input[type=text]{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;
+    color:var(--txt);padding:9px 10px;font-size:13px;font-family:inherit}
+  input[type=text]:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:transparent}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .chip{background:var(--s2);border:1px solid var(--line);color:var(--txt2);border-radius:999px;
+    padding:4px 10px;font-size:11.5px;cursor:pointer;font-family:inherit}
+  .chip:hover{border-color:var(--blue);color:var(--txt)}
+  .actions{display:flex;gap:8px;margin-top:20px}
+  button{font-family:inherit;font-size:13px;font-weight:600;border-radius:9px;padding:10px 14px;
+    border:1px solid var(--line);background:var(--s2);color:var(--txt);cursor:pointer}
+  button:hover{border-color:var(--blue)}
+  button.primary{background:var(--blue);border-color:var(--blue);color:#06101f;flex:1}
+  button.primary:hover{background:#74adff}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+  /* ---------- colonne confronto ---------- */
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:820px){.cols{grid-template-columns:1fr}}
+  .col{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+       display:flex;flex-direction:column}
+  .col.now{border-top:3px solid var(--red)}
+  .col.opt{border-top:3px solid var(--green)}
+  .colhead{display:flex;justify-content:space-between;align-items:baseline;padding:14px 16px;
+    border-bottom:1px solid var(--line)}
+  .colhead .t{font-size:14px;font-weight:600}
+  .colhead .tag{font-size:11px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+  .colbody{padding:16px}
+
+  .ctxbar{height:26px;background:var(--bg);border-radius:6px;overflow:hidden;display:flex;position:relative}
+  .seg{height:100%;transition:width .25s ease}
+  .seg.fix{background:var(--violet)}
+  .seg.hist{background:var(--blue)}
+  .seg.rec{background:var(--cyan)}
+  .barwrap{position:relative;margin-top:8px}
+  .tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--amber);opacity:.9}
+  .barlab{display:flex;justify-content:space-between;font-size:11.5px;color:var(--dim);margin-top:6px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--txt2)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px}
+  .legend .lf{background:var(--violet)}.legend .lh{background:var(--blue)}.legend .lr{background:var(--cyan)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-top:16px}
+  .m{background:var(--s2);padding:10px 12px}
+  .m .v{font-size:17px;font-weight:600;letter-spacing:-.01em}
+  .m .l{font-size:11px;color:var(--dim);margin-top:2px}
+  .m.good .v{color:var(--green)}.m.bad .v{color:var(--red)}.m.warn .v{color:var(--amber)}
+
+  /* ---------- log passi ---------- */
+  .log{margin-top:16px;max-height:232px;overflow:auto;border:1px solid var(--line);
+       border-radius:8px;background:var(--bg)}
+  .log table{width:100%;border-collapse:collapse;font-size:11.5px}
+  .log th{position:sticky;top:0;background:var(--s2);color:var(--dim);text-align:left;
+    font-weight:600;padding:6px 8px;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+  .log td{padding:5px 8px;border-top:1px solid #141c2b;color:var(--txt2);vertical-align:top}
+  .log td.ph{color:var(--dim);white-space:nowrap}
+  .log tr.err td{background:rgba(251,113,133,.09)}
+  .log tr.cache td{background:rgba(251,191,36,.08)}
+  .log tr.comp td{background:rgba(139,92,255,.10)}
+  .log tr.off td{background:rgba(52,211,153,.09)}
+  .log .empty{padding:18px;color:var(--dim);font-size:12px;text-align:center}
+
+  /* ---------- grafico ---------- */
+  .chartcard{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);
+    padding:20px;margin-top:16px}
+  .chartcard h3{margin:0 0 4px;font-size:15px;font-weight:600}
+  .chartcard p{margin:0 0 14px;color:var(--dim);font-size:12.5px}
+  .chart{width:100%;height:auto;display:block}
+
+  /* ---------- modello ---------- */
+  .formulas{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:820px){.formulas{grid-template-columns:1fr}}
+  .fbox{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+  .fbox h4{margin:0 0 10px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+  .fbox ul{margin:0;padding-left:18px;color:var(--txt2);font-size:13px}
+  .fbox li{margin-bottom:7px}
+  .note{margin-top:16px;padding:14px 16px;border-left:3px solid var(--amber);background:var(--s1);
+    border-radius:0 8px 8px 0;color:var(--txt2);font-size:13px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:.92em;background:#0d1727;
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:#a9c6ff}
+  .verdict{margin-top:16px;padding:16px 18px;border-radius:var(--r);background:var(--s1);
+    border:1px solid var(--line);border-left:3px solid var(--green);font-size:14px;color:var(--txt)}
+  .verdict b{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Audit dell'harness · Prompt → Context → Harness</p>
+  <h1>Il ciclo costa <span class="em">tre volte</span> quello che dovrebbe: <span class="em2">il prefisso non è stabile</span></h1>
+  <p class="lead">Simulatore del ciclo di esecuzione della dashboard, con i due comportamenti fianco a fianco:
+     quello di oggi (prefisso ricostruito, osservazioni intere, compaction all'ultimo momento) e quello
+     proposto dal report (prefisso stabile, offload ripristinabile, recitation, errori classificati).
+     I parametri sono tuoi: le formule sono dichiarate in fondo.</p>
+  <div class="meta">
+    <span>dashboard.mjs 6.306 righe</span>
+    <span>prefisso di sistema ≈ 1.900 token</span>
+    <span>indice di 29 skill ≈ 4.200 token</span>
+    <span>compaction a finestra − 16.384</span>
+  </div>
+</header>
+
+<div class="kpis" id="kpis">
+  <div class="kpi"><div class="v mono">6.306</div><div class="l">righe di dashboard.mjs</div><div class="s">un solo processo, stato globale</div></div>
+  <div class="kpi"><div class="v mono">668 KB</div><div class="l">dashboard.html, un solo &lt;script&gt;</div><div class="s">12.931 righe</div></div>
+  <div class="kpi"><div class="v mono">6.100</div><div class="l">token fissi per chiamata</div><div class="s">istruzioni + indice skill, stimati</div></div>
+  <div class="kpi flag"><div class="v mono">0</div><div class="l">valutazioni di qualità</div><div class="s">43 test, tutti sull'interfaccia</div></div>
+  <div class="kpi"><div class="v mono">95%</div><div class="l">soglia di compaction</div><div class="s">quando il contesto è già degradato</div></div>
+</div>
+
+<section>
+  <h2>Simulatore del turno</h2>
+  <p class="h2sub">Imposta la richiesta e la forma del turno; poi esegui. Le due colonne avanzano insieme, passo per passo, sugli stessi eventi casuali.</p>
+
+  <div class="sim">
+    <div class="panel">
+      <h3>Parametri</h3>
+
+      <div class="field">
+        <label for="req">Richiesta</label>
+        <input type="text" id="req" value="analizza il repo e proponi tre interventi">
+        <div class="chips" id="presets">
+          <button class="chip" data-p="domanda breve: che cosa c'è in media?">domanda breve</button>
+          <button class="chip" data-p="analizza il repo e proponi tre interventi">audit del repo</button>
+          <button class="chip" data-p="leggi il PDF di 40 pagine e riassumilo">PDF lungo</button>
+          <button class="chip" data-p="genera un video promo di 20 secondi">video</button>
+        </div>
+        <span class="hint">Il tipo di richiesta cambia la forma del turno, non il modello: nei preset cambiano passi e dimensione delle osservazioni.</span>
+      </div>
+
+      <div class="field">
+        <label for="passi">Passi del turno <span class="val" id="v-passi">24</span></label>
+        <input type="range" id="passi" min="4" max="60" step="1" value="24">
+        <span class="hint">Una tool call = un passo. Manus misura ~50 passi su un task reale.</span>
+      </div>
+
+      <div class="field">
+        <label for="oss">Osservazione media <span class="val" id="v-oss">6.000 token</span></label>
+        <input type="range" id="oss" min="300" max="30000" step="300" value="6000">
+        <span class="hint">Quanto torna grande il risultato di un tool (read, snapshot, fetch).</span>
+      </div>
+
+      <div class="field">
+        <label for="gate">Cambi di gate (tool tolti/aggiunti) <span class="val" id="v-gate">2</span></label>
+        <input type="range" id="gate" min="0" max="6" step="1" value="2">
+        <span class="hint">In modalità auto il browser si accende e si spegne da solo: ogni cambio ricostruisce il prefisso.</span>
+      </div>
+
+      <div class="field">
+        <label for="soglia">Soglia di compaction (proposta) <span class="val" id="v-soglia">72%</span></label>
+        <input type="range" id="soglia" min="55" max="95" step="1" value="72">
+        <span class="hint">Oggi la soglia è 95%. La colonna «attuale» resta a 95% per confronto onesto.</span>
+      </div>
+
+      <div class="field">
+        <label for="errore">Errori dei tool <span class="val" id="v-errore">15%</span></label>
+        <input type="range" id="errore" min="0" max="45" step="1" value="15">
+        <span class="hint">Percentuale di tool call che falliscono (rete, schema, permessi).</span>
+      </div>
+
+      <div class="field">
+        <label for="prezzo">Prezzo input <span class="val" id="v-prezzo">$0,27 / Mtok</span></label>
+        <input type="range" id="prezzo" min="5" max="300" step="5" value="27">
+        <span class="hint">Il token letto da cache costa il 10% in tutti e due i rami.</span>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="go">Esegui</button>
+        <button id="reset" title="Riporta i parametri ai valori iniziali">Reset</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="cols">
+        <!-- ATTUALe -->
+        <div class="col now">
+          <div class="colhead"><span class="t">Oggi</span><span class="tag">as-is</span></div>
+          <div class="colbody">
+            <div class="barwrap">
+              <div class="ctxbar" id="bar-now">
+                <div class="seg fix" style="width:5%"></div>
+                <div class="seg hist" style="width:0%"></div>
+              </div>
+              <div class="tick" id="tick-now" style="left:95%"></div>
+            </div>
+            <div class="barlab"><span id="ctx-now">contesto —</span><span id="pct-now">—</span></div>
+
+            <div class="grid2" id="m-now">
+              <div class="m"><div class="v mono" id="now-in">—</div><div class="l">token input totali</div></div>
+              <div class="m"><div class="v mono" id="now-cost">—</div><div class="l">costo stimato</div></div>
+              <div class="m"><div class="v mono" id="now-cache">—</div><div class="l">da cache</div></div>
+              <div class="m"><div class="v mono" id="now-lat">—</div><div class="l">latenza stimata</div></div>
+              <div class="m"><div class="v mono" id="now-comp">—</div><div class="l">compaction</div></div>
+              <div class="m"><div class="v mono" id="now-err">—</div><div class="l">errori non recuperati</div></div>
+            </div>
+
+            <div class="log" id="log-now"><div class="empty">Premi «Esegui» per avviare il turno.</div></div>
+          </div>
+        </div>
+
+        <!-- OTTIMIZZATO -->
+        <div class="col opt">
+          <div class="colhead"><span class="t">Proposto</span><span class="tag">to-be</span></div>
+          <div class="colbody">
+            <div class="barwrap">
+              <div class="ctxbar" id="bar-opt">
+                <div class="seg fix" style="width:5%"></div>
+                <div class="seg hist" style="width:0%"></div>
+                <div class="seg rec" style="width:0%"></div>
+              </div>
+              <div class="tick" id="tick-opt" style="left:72%"></div>
+            </div>
+            <div class="barlab"><span id="ctx-opt">contesto —</span><span id="pct-opt">—</span></div>
+
+            <div class="grid2">
+              <div class="m"><div class="v mono" id="opt-in">—</div><div class="l">token input totali</div></div>
+              <div class="m"><div class="v mono" id="opt-cost">—</div><div class="l">costo stimato</div></div>
+              <div class="m"><div class="v mono" id="opt-cache">—</div><div class="l">da cache</div></div>
+              <div class="m"><div class="v mono" id="opt-lat">—</div><div class="l">latenza stimata</div></div>
+              <div class="m"><div class="v mono" id="opt-comp">—</div><div class="l">compaction</div></div>
+              <div class="m"><div class="v mono" id="opt-err">—</div><div class="l">errori non recuperati</div></div>
+            </div>
+
+            <div class="log" id="log-opt"><div class="empty">Premi «Esegui» per avviare il turno.</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend" style="margin-top:14px">
+        <span><i class="lf"></i>prefisso (istruzioni + skill)</span>
+        <span><i class="lh"></i>conversazione e osservazioni</span>
+        <span><i class="lr"></i>recitation dell'obiettivo</span>
+        <span style="color:var(--amber)">▍ soglia di compaction</span>
+      </div>
+
+      <div class="chartcard">
+        <h3>Occupazione del contesto, passo per passo</h3>
+        <p>Ogni coppia di barre è un passo del turno. La scala parte da zero e il tetto è la finestra del modello (128k).</p>
+        <div id="chart"><div class="empty" style="color:var(--dim);font-size:12px">Il grafico compare dopo l'esecuzione.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Il modello del simulatore</h2>
+  <p class="h2sub">Nessun numero qui è una misura: sono conseguenze aritmetiche di ipotesi dichiarate. Servono a rendere visibile l'ordine di grandezza delle scelte del report.</p>
+  <div class="formulas">
+    <div class="fbox">
+      <h4>Oggi (as-is)</h4>
+      <ul>
+        <li>Contesto = <code>6000</code> di prefisso + conversazione; le osservazioni entrano <b>intere</b>.</li>
+        <li>Compaction quando il contesto supera <code>finestra − 16384</code>: il riassunto tiene il 15% della storia.</li>
+        <li>Ogni cambio di gate azzera la cache per quel passo (il prefisso è stato ricostruito).</li>
+        <li>Errore recuperato nel <b>40%</b> dei casi; ogni recupero costa 2 passi di retry alla cieca.</li>
+        <li>Quota letta da cache: 0,55 normale · 0 nel passo di cambio gate · 0,20 dopo una compaction.</li>
+      </ul>
+    </div>
+    <div class="fbox">
+      <h4>Proposto (to-be)</h4>
+      <ul>
+        <li>Prefisso stabile: i tool si <b>mascherano</b>, non si rimuovono → cache conservata.</li>
+        <li>Osservazioni oltre 2.000 token → riferimento da 150 token, contenuto su file rileggibile.</li>
+        <li>Recitation: 300 token in coda ogni 5 passi; riduce del 25% gli errori e la deriva.</li>
+        <li>Compaction alla soglia scelta, riassunto con decisioni ed errori: tiene il 35% della storia.</li>
+        <li>Errore classificato → riparazione mirata: recupero all'<b>85%</b>, un solo passo di retry.</li>
+        <li>Quota letta da cache: 0,90 normale · 0,79 dopo una compaction.</li>
+        <li>Due volte su cinque l'agente rilegge 2.000 token dal file scaricato: è il costo dell'offload, contato.</li>
+        <li>Ogni passo porta con sé il ragionamento (400 token), uguale nei due rami.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note"><b>Onestà del modello.</b> Costo = token non in cache × prezzo + token in cache × 10% + output × 3 × prezzo.
+    Latenza = 0,35 s di base + 0,02 s ogni 1.000 token non in cache + 0,6 s per ogni retry.
+    Gli eventi casuali (errori, cambi di gate) sono gli stessi nei due rami, così il confronto è onesto.
+    Ciò che il simulatore <i>non</i> sa: la qualità della risposta. Per quella serve un set di casi d'oro (P1 del report).</div>
+</section>
+
+<div class="verdict" id="verdict">
+  Esegui la simulazione per vedere il confronto in una riga.
+</div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const WINDOW = 128000;         // finestra del modello
+  const PREFIX = 6000;           // prefisso: istruzioni (~1900) + indice 29 skill (~4200), stima
+  const RESERVE_NOW = 16384;     // riserva del motore: soglia = window - reserve
+  const OFFL_AT = 2000;          // soglia di offload (proposta)
+  const OFFL_TO = 150;           // token del riferimento
+  const REC_EVERY = 5;           // recitation ogni N passi
+  const REC_TOK = 300;
+
+  const el = (id) => document.getElementById(id);
+  const fmt = (n) => Math.round(n).toLocaleString("it-IT");
+  const money = (n) => "$" + (n < 0.01 ? n.toFixed(4) : n.toFixed(3));
+  const secs = (s) => s < 60 ? s.toFixed(1) + " s" : Math.floor(s/60) + "m " + Math.round(s%60) + "s";
+
+  // PRNG deterministico. Gli eventi casuali sono indicizzati PER PASSO, non per ordine di
+  // estrazione: così i due rami vedono gli stessi eventi anche se consumano estrazioni diverse.
+  function sequenza(seed, n){
+    let a = seed;
+    const out = [];
+    for (let i=0;i<n;i++){
+      a|=0; a=a+0x6D2B79F5|0;
+      let t=Math.imul(a^a>>>15,1|a);
+      t=t+Math.imul(t^t>>>7,61|t)^t;
+      out.push(((t^t>>>14)>>>0)/4294967296);
+    }
+    return out;
+  }
+
+  const params = () => ({
+    req: el("req").value.trim() || "analizza il repo",
+    passi: +el("passi").value,
+    oss: +el("oss").value,
+    gate: +el("gate").value,
+    soglia: +el("soglia").value / 100,
+    errore: +el("errore").value / 100,
+    prezzo: +el("prezzo").value / 100, // $/Mtok
+  });
+
+  function syncLabels(){
+    const p = params();
+    el("v-passi").textContent = p.passi;
+    el("v-oss").textContent = fmt(p.oss) + " token";
+    el("v-gate").textContent = p.gate;
+    el("v-soglia").textContent = Math.round(p.soglia*100) + "%";
+    el("v-errore").textContent = Math.round(p.errore*100) + "%";
+    el("v-prezzo").textContent = "$" + p.prezzo.toFixed(2).replace(".", ",") + " / Mtok";
+    el("tick-opt").style.left = (p.soglia*100) + "%";
+    el("tick-now").style.left = ((WINDOW - RESERVE_NOW) / WINDOW * 100) + "%";
+  }
+
+  // ---------- costruzione delle tracce ----------
+  function simula(modo, p, nums){
+    const isOpt = modo === "opt";
+    const pIn = p.prezzo / 1e6;
+    const sogliaToken = isOpt ? p.soglia * WINDOW : (WINDOW - RESERVE_NOW);
+
+    let hist = 0, comp = 0, ctx = PREFIX, picco = PREFIX;
+    let tokIn = 0, tokCached = 0, cost = 0, lat = 0, errTot = 0, errNonRec = 0;
+    const traccia = [];
+    let passo = 0, extra = 0;
+    const gateAt = new Set();
+    if (p.gate > 0){
+      for (let i=1;i<=p.gate;i++) gateAt.add(Math.max(1, Math.round(p.passi * i / (p.gate+1))));
+    }
+
+    while (passo < p.passi + extra && passo < 400){
+      passo++;
+      const ev = [];
+      let cacheFrac = isOpt ? 0.90 : 0.55;
+
+      // compaction PRIMA del passo, se serve
+      if (ctx > sogliaToken){
+        comp++;
+        hist = isOpt ? (1200 + hist*0.35) : (900 + hist*0.15);
+        cacheFrac *= isOpt ? 0.88 : 0.36;
+        ctx = PREFIX + hist;
+        ev.push({t:"comp", txt: isOpt ? "compaction a " + Math.round(p.soglia*100) + "%: riassunto con decisioni, errori, file" : "compaction a 95%: riassunto tardivo, storia ridotta al 15%", tok:0});
+      }
+
+      // cambio di gate / ricostruzione del prefisso
+      if (gateAt.has(passo) && !isOpt){
+        cacheFrac = 0;
+        ev.push({t:"cache", txt:"gate: tool rimossi dalla lista → prefisso ricostruito, cache azzerata", tok:0});
+      }
+      if (gateAt.has(passo) && isOpt){
+        cacheFrac = 0.90;
+        ev.push({t:"", txt:"gate: tool mascherati all'esecuzione, prefisso intatto", tok:0});
+      }
+
+      // la richiesta utente è nel primo passo
+      if (passo === 1) hist += 220;
+
+      // la tool call produce un'osservazione
+      let ossTok = p.oss;
+      const scaricata = isOpt && ossTok > OFFL_AT;
+      if (scaricata){
+        ossTok = OFFL_TO;
+        ev.push({t:"off", txt:"osservazione di " + fmt(p.oss) + " token scaricata su file: nel contesto resta il riferimento", tok:0});
+      }
+      hist += ossTok + 120 + 400; // + il ragionamento (thinking) del passo, uguale nei due rami
+      // costo dell'offload: due volte su cinque l'agente torna a leggere dal file scaricato.
+      // Se il simulatore non lo contasse, il confronto sarebbe truccato in favore del proposto.
+      if (scaricata && nums[1500 + passo] < 0.40){
+        hist += 2000;
+        ev.push({t:"", txt:"rilettura dal file scaricato (2.000 token): il riferimento serve a questo", tok:0});
+      }
+
+      // recitation
+      let rec = 0;
+      if (isOpt && passo % REC_EVERY === 0){
+        rec = REC_TOK;
+        ev.push({t:"", txt:"recitation: obiettivo e prossimo passo riscritti in coda", tok:rec});
+      }
+
+      ctx = PREFIX + hist + rec;
+      picco = Math.max(picco, ctx);
+
+      // errori (stessi eventi nei due rami)
+      let errore = nums[passo] < p.errore * (isOpt ? 0.75 : 1);
+      if (errore){
+        errTot++;
+        const recP = isOpt ? 0.85 : 0.40;
+        const recovered = nums[500 + passo] < recP;
+        if (recovered){
+          ev.push({t:"err", txt: isOpt ? "tool fallito · classe riconosciuta · riparazione mirata (1 passo)" : "tool fallito · retry alla cieca (2 passi, stesso errore probabile)", tok:0});
+          extra += isOpt ? 1 : 2;
+          lat += isOpt ? 0.6 : 1.2;
+          hist += isOpt ? 180 : ossTok * 0.6; // anche la traccia dell'errore resta
+        } else {
+          errNonRec++;
+          ev.push({t:"err", txt:"tool fallito · non recuperato: l'agente cambia strada o si arrende", tok:0});
+          if (!isOpt) extra += 1;
+        }
+      }
+
+      // costi
+      const cached = ctx * cacheFrac;
+      const uncached = ctx - cached;
+      const out = 160 + (isOpt ? 40 : 20);
+      tokIn += ctx; tokCached += cached;
+      cost += uncached * pIn + cached * pIn * 0.10 + out * pIn * 3;
+      lat += 0.35 + (uncached / 1000) * 0.02;
+
+      const esito = errNonRec > 4 ? "degradato" : "ok";
+      traccia.push({passo, ctx, rec, cached, cacheFrac, ev, esito, errore});
+    }
+
+    return {
+      modo, traccia, tokIn, tokCached, cost, lat, comp, errTot, errNonRec, picco,
+      cachePct: tokIn ? tokCached / tokIn : 0,
+      esito: errNonRec > 4 ? "degradato" : (errNonRec > 1 ? "ok con attrito" : "ok"),
+      passiEffettivi: traccia.length,
+    };
+  }
+
+  // ---------- rendering ----------
+  let timer = null;
+
+  function resetView(){
+    ["now","opt"].forEach(k=>{
+      el("log-"+k).innerHTML = '<div class="empty">Premi «Esegui» per avviare il turno.</div>';
+      el("bar-"+k).querySelector(".seg.fix").style.width = (PREFIX/WINDOW*100)+"%";
+      el("bar-"+k).querySelector(".seg.hist").style.width = "0%";
+      const rec = el("bar-"+k).querySelector(".seg.rec"); if (rec) rec.style.width = "0%";
+      el("ctx-"+k).textContent = "contesto —";
+      el("pct-"+k).textContent = "—";
+    });
+    [["in",""],["cost",""],["cache",""],["lat",""],["comp",""],["err",""]].forEach(([n])=>{
+      el("now-"+n).textContent = "—"; el("opt-"+n).textContent = "—";
+    });
+    el("chart").innerHTML = '<div class="empty" style="color:var(--dim);font-size:12px">Il grafico compare dopo l\'esecuzione.</div>';
+    el("verdict").innerHTML = "Esegui la simulazione per vedere il confronto in una riga.";
+  }
+
+  function paintBar(k, s){
+    const bar = el("bar-"+k);
+    const fix = PREFIX / WINDOW * 100;
+    const hist = Math.max(0, (s.ctx - PREFIX - (s.rec||0)) / WINDOW * 100);
+    const rec = (s.rec||0) / WINDOW * 100;
+    bar.querySelector(".seg.fix").style.width = fix.toFixed(2)+"%";
+    bar.querySelector(".seg.hist").style.width = Math.min(100-fix, hist).toFixed(2)+"%";
+    const r = bar.querySelector(".seg.rec"); if (r) r.style.width = rec.toFixed(2)+"%";
+    el("ctx-"+k).textContent = "contesto " + fmt(s.ctx) + " / " + fmt(WINDOW);
+    el("pct-"+k).textContent = (s.ctx/WINDOW*100).toFixed(0) + "%";
+  }
+
+  function rowHTML(s){
+    const cls = s.ev.some(e=>e.t==="err") ? "err" : s.ev.some(e=>e.t==="comp") ? "comp"
+              : s.ev.some(e=>e.t==="off") ? "off" : s.ev.some(e=>e.t==="cache") ? "cache" : "";
+    const fase = s.ev.some(e=>e.t==="comp") ? "Context"
+               : s.ev.some(e=>e.t==="err") ? "Harness" : "Context";
+    const txt = s.ev.length ? s.ev.map(e=>e.txt).join(" · ") : (s.passo===1 ? "richiesta ricevuta · prefisso + storia" : "tool call · osservazione in contesto");
+    return '<tr class="'+cls+'"><td class="mono">'+s.passo+'</td><td class="ph">'+fase+'</td>'+
+           '<td>'+txt+'</td><td class="mono" style="text-align:right">'+fmt(s.ctx)+'</td></tr>';
+  }
+
+  function paintLog(k, tracce, fino){
+    const log = el("log-"+k);
+    const visti = tracce.slice(0, fino);
+    log.innerHTML = '<table><thead><tr><th>#</th><th>fase</th><th>evento</th><th style="text-align:right">contesto</th></tr></thead><tbody>'+
+      visti.map(rowHTML).join("") + '</tbody></table>';
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function paintMetrics(k, r, fino, parziale){
+    const visti = r.traccia.slice(0, fino);
+    const ctx = visti.length ? visti[visti.length-1].ctx : PREFIX;
+    const tokIn = visti.reduce((a,s)=>a+s.ctx,0);
+    const cached = visti.reduce((a,s)=>a+s.cached,0);
+    const pIn = r.prezzoUnit;
+    const cost = tokIn ? ((tokIn-cached)*pIn + cached*pIn*0.10) : 0;
+    el(k+"-in").textContent = fmt(tokIn);
+    el(k+"-cost").textContent = cost ? money(cost) : "—";
+    el(k+"-cache").textContent = tokIn ? Math.round(cached/tokIn*100)+"%" : "—";
+    el(k+"-lat").textContent = parziale ? "…" : secs(r.lat);
+    el(k+"-comp").textContent = r.comp;
+    el(k+"-err").textContent = r.errNonRec;
+    el("ctx-"+k).textContent = "contesto " + fmt(ctx) + " / " + fmt(WINDOW);
+    el("pct-"+k).textContent = (ctx/WINDOW*100).toFixed(0) + "%";
+  }
+
+  function chart(a, b){
+    const n = Math.max(a.traccia.length, b.traccia.length);
+    if (!n) return;
+    const W = 900, H = 240, L = 52, R = 12, T = 14, B = 30;
+    const iw = W - L - R, ih = H - T - B;
+    const bw = Math.max(2, (iw / n) * 0.34);
+    const gap = iw / n;
+    const y = (v) => T + ih - (v / WINDOW) * ih;
+    let bars = "";
+    for (let i=0;i<n;i++){
+      const x = L + i*gap + gap*0.14;
+      const sa = a.traccia[i], sb = b.traccia[i];
+      if (sa) bars += '<rect x="'+x.toFixed(1)+'" y="'+y(sa.ctx).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(T+ih-y(sa.ctx)).toFixed(1)+'" fill="#fb7185" opacity="0.85"><title>passo '+(i+1)+' oggi: '+fmt(sa.ctx)+' token</title></rect>';
+      if (sb) bars += '<rect x="'+(x+bw+1).toFixed(1)+'" y="'+y(sb.ctx).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(T+ih-y(sb.ctx)).toFixed(1)+'" fill="#34d399" opacity="0.85"><title>passo '+(i+1)+' proposto: '+fmt(sb.ctx)+' token</title></rect>';
+    }
+    const grid = [0,0.25,0.5,0.75,1].map(f=>{
+      const val = WINDOW*f, yy = y(val);
+      return '<line x1="'+L+'" y1="'+yy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+yy.toFixed(1)+'" stroke="#2a3448" stroke-width="1"/>'+
+             '<text x="'+(L-8)+'" y="'+(yy+4).toFixed(1)+'" fill="#8b97ac" font-size="10" text-anchor="end">'+Math.round(val/1000)+'k</text>';
+    }).join("");
+    const sog = (a.traccia.length ? (WINDOW-RESERVE_NOW) : WINDOW);
+    const sogliaY = a.traccia.length ? (WINDOW-RESERVE_NOW) : 0;
+    const linea = (vals, col) => {
+      let d = "";
+      vals.forEach((s,i)=>{ const x = L + i*gap + gap*0.5; d += (i?"L":"M") + x.toFixed(1) + " " + y(s.ctx).toFixed(1) + " "; });
+      return '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.5" opacity="0.55"/>';
+    };
+    el("chart").innerHTML =
+      '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Confronto dell\'occupazione del contesto passo per passo">'+
+      '<title>Occupazione del contesto per passo: oggi contro proposto</title>'+
+      '<desc>Barre raggruppate per passo. Rosso: comportamento attuale. Verde: comportamento proposto. Linea tratteggiata: soglia di compaction attuale.</desc>'+
+      grid +
+      '<line x1="'+L+'" y1="'+y(sogliaY).toFixed(1)+'" x2="'+(W-R)+'" y2="'+y(sogliaY).toFixed(1)+'" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="5 4"/>'+
+      '<text x="'+(W-R)+'" y="'+(y(sogliaY)-5).toFixed(1)+'" fill="#fbbf24" font-size="10" text-anchor="end">soglia oggi: finestra − 16.384</text>'+
+      bars + linea(a.traccia,"#fb7185") + linea(b.traccia,"#34d399") +
+      '<text x="'+L+'" y="'+(H-8)+'" fill="#8b97ac" font-size="10">passo 1</text>'+
+      '<text x="'+(W-R)+'" y="'+(H-8)+'" fill="#8b97ac" font-size="10" text-anchor="end">passo '+n+'</text>'+
+      '</svg>';
+  }
+
+  function verdict(a, b, p){
+    const dCost = a.cost ? (1 - b.cost/a.cost) * 100 : 0;
+    const dTok = a.tokIn ? (1 - b.tokIn/a.tokIn) * 100 : 0;
+    const dLat = a.lat ? (1 - b.lat/a.lat) * 100 : 0;
+    const segno = dCost >= 0 ? "meno" : "più";
+    el("verdict").innerHTML =
+      "Su <b>" + p.passi + " passi</b> con osservazioni da " + fmt(p.oss) + " token, il comportamento proposto consuma <b>" +
+      Math.abs(dTok).toFixed(0) + "% " + (dTok>=0?"meno":"più") + " token di input</b>, costa <b>" +
+      Math.abs(dCost).toFixed(0) + "% " + segno + "</b> (" + money(a.cost) + " → " + money(b.cost) + ") e arriva in <b>" +
+      Math.abs(dLat).toFixed(0) + "% " + (dLat>=0?"meno":"più") + " tempo</b> stimato. " +
+      "La quota letta da cache passa dal <b>" + Math.round(a.cachePct*100) + "%</b> al <b>" + Math.round(b.cachePct*100) + "%</b>. " +
+      "Errori non recuperati: <b>" + a.errNonRec + "</b> oggi, <b>" + b.errNonRec + "</b> proposto. " +
+      "Picco di contesto: <b>" + Math.round(a.picco/WINDOW*100) + "%</b> contro <b>" + Math.round(b.picco/WINDOW*100) + "%</b>. " +
+      "<br><span style='color:var(--dim);font-size:12.5px'>Stime di un modello a parametri dichiarati, non misure: la qualità della risposta non è simulata. " +
+      "Il divario è un limite superiore, valido se ogni osservazione grande viene davvero scaricata; con osservazioni piccole si riduce (prova «oss piccole»).</span>";
+  }
+
+  function esegui(){
+    if (timer) { clearInterval(timer); timer = null; }
+    const p = params();
+    const nums = sequenza(20261030, 3000);
+    const A = simula("now", p, nums);
+    const B = simula("opt", p, nums);
+    A.prezzoUnit = p.prezzo / 1e6; B.prezzoUnit = p.prezzo / 1e6;
+
+    el("log-now").innerHTML = ""; el("log-opt").innerHTML = "";
+    el("go").disabled = true;
+
+    const n = Math.max(A.traccia.length, B.traccia.length);
+    let i = 0;
+    const step = () => {
+      i++;
+      const sa = A.traccia[i-1], sb = B.traccia[i-1];
+      if (sa) paintBar("now", sa);
+      if (sb) paintBar("opt", sb);
+      paintLog("now", A.traccia, i);
+      paintLog("opt", B.traccia, i);
+      paintMetrics("now", A, i, i < n);
+      paintMetrics("opt", B, i, i < n);
+      if (i >= n){
+        clearInterval(timer); timer = null;
+        el("go").disabled = false;
+        chart(A, B);
+        verdict(A, B, p);
+      }
+    };
+    const velocita = n > 40 ? 42 : 90;
+    timer = setInterval(step, velocita);
+  }
+
+  // ---------- eventi ----------
+  ["passi","oss","gate","soglia","errore","prezzo"].forEach(id=>{
+    el(id).addEventListener("input", ()=>{ syncLabels(); });
+  });
+  document.querySelectorAll("#presets .chip").forEach(ch=>{
+    ch.addEventListener("click", ()=>{
+      const t = ch.dataset.p;
+      el("req").value = t;
+      // i preset cambiano la forma del turno, non il modello
+      const preset = {
+        "domanda breve: che cosa c'è in media?": {passi:6, oss:900},
+        "analizza il repo e proponi tre interventi": {passi:24, oss:6000},
+        "leggi il PDF di 40 pagine e riassumilo": {passi:18, oss:14000},
+        "genera un video promo di 20 secondi": {passi:34, oss:4000},
+      }[t];
+      if (preset){ el("passi").value = preset.passi; el("oss").value = preset.oss; }
+      syncLabels();
+    });
+  });
+  el("go").addEventListener("click", esegui);
+  el("reset").addEventListener("click", ()=>{
+    if (timer){ clearInterval(timer); timer = null; el("go").disabled = false; }
+    el("passi").value = 24; el("oss").value = 6000; el("gate").value = 2;
+    el("soglia").value = 72; el("errore").value = 15; el("prezzo").value = 27;
+    el("req").value = "analizza il repo e proponi tre interventi";
+    syncLabels(); resetView();
+  });
+
+  syncLabels(); resetView();
+})();
+</script>
+</body>
+</html>
