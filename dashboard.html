@@ -2781,7 +2781,17 @@ function renderStats(st) {
     warn.textContent = alto ? "alto · valuta /compact" : "";
   }
   $("s-tokens").textContent = "↑ " + fmt(st.tokens.input) + " · ↓ " + fmt(st.tokens.output);
-  $("s-cache").textContent = fmt(st.tokens.cacheRead) + " · " + fmt(st.tokens.cacheWrite);
+  $("s-cache").textContent = fmt(st.tokens.cacheRead) + " · " + fmt(st.tokens.cacheWrite) +
+    (st.cache && st.cache.missedCost > 0.000001 ? "  −" + fmtCost(st.cache.missedCost) : "");
+  /* Lo spreco di cache è l'indicatore che dice se il prefisso si è rotto: senza il numero,
+     «ho ottimizzato il contesto» resta una promessa. Il segno meno è il costo sprecato. */
+  $("s-cache").title = st.cache && st.cache.missedTokens != null
+    ? "letti dalla cache · scritti in cache" +
+      (st.cache.missedTokens > 0
+        ? " · sprecati " + fmt(st.cache.missedTokens) + " token in " + st.cache.missCount +
+          " turni (" + fmtCost(st.cache.missedCost) + "): erano già nel prompt precedente e sono stati rifatturati"
+        : " · nessuno spreco rilevato")
+    : "";
   $("s-cost").textContent = fmtCost(st.cost);
   /* Costo dell'ultimo turno: si registra il totale all'inizio del turno e si mostra la
      differenza alla fine. Il server manda solo il cumulativo. */

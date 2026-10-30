@@ -230,3 +230,7 @@ media/.lib/
 # checkup-viste.mjs) producono per far vedere com'è la vista: sono artefatti di verifica,
 # rigenerabili con un comando, e non fanno parte del prodotto.
 media/checkup/
+
+# Temporanei della memoria (indici riscritti atomicamente: *.tmp-<pid>).
+# Non sono contenuto: sono lo stato intermedio di una scrittura, e vengono cancellati da soli.
+media/memoria/*.tmp-*

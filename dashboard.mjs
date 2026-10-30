@@ -48,6 +48,7 @@ import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato, indiceDaAg
 import { createDecisionMService } from "./media/decision-m-service.mjs";
 import { analizza as analizzaTimestral, createTimestralClient, GRANULARITA as TIMESTRAL_GRANULARITA, parseCsv as parseTimestralCsv, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
 import { createTimestralExtension } from "./media/timestral-tool.mjs";
+import { bilancioContesto, sprecoCache, classeErrore, impronta } from "./media/contesto.mjs";
 import {
   VOCI as TTS_VOCI,
   elencoCache as ttsElencoCache,
@@ -1238,8 +1239,11 @@ const BROWSER_FPS_HUMAN = Number(process.env.DASH_BROWSER_STREAM_FPS_HUMAN) || 1
 // Ponte verso lo stream di agent-browser: la live view passa da qui, quindi eredita
 // l'autenticazione della dashboard e non richiede porte nuove né modifiche a Caddy.
 // ---- progetto: cartelle scelte dall'utente -------------------------------
-// Sta QUI, prima della creazione del resourceLoader: `systemPromptOverride` (più sotto) chiama
-// `progettoPromptNote()`, e in JavaScript una `let` dichiarata dopo non è ancora accessibile
+// Sta QUI, prima della creazione del resourceLoader: `systemPromptOverride` (più sotto) memorizza
+// l'impronta del prefisso in `prefissoStato`. Prima dell'audit del 2026-10-30 la nota del progetto
+// (`progettoPromptNote()`) stava DENTRO il prefisso e una `let` dichiarata dopo non era ancora
+// accessibile: per questo la funzione era definita più in alto. Ora la nota viaggia in coda al
+// messaggio dell'utente (`conNotaProgetto`), quindi il prefisso non dipende più dal filesystem.
 // quando quella callback viene eseguita (ReferenceError: Cannot access 'progetto' before
 // initialization). Lo stesso blocco, se spostato dopo, rompe l'avvio del servizio.
 // L'utente marca alcune cartelle (dalla vista File con ☆, o dalla vista Progetto) e quelle
@@ -1369,7 +1373,33 @@ function progettoPromptNote() {
   );
 }
 
-/** Rende subito effettivo il nuovo progetto nel contesto dell'agente. */
+/**
+ * La nota del progetto, in CODA al messaggio dell'utente invece che nel sistema.
+ *
+ * Perché è cambiata (audit 2026-10-30): il prefisso (istruzioni + schemi dei tool + indice delle
+ * skill) è ciò che il provider tiene in cache. `progettoPromptNote()` legge il filesystem, quindi
+ * con la nota dentro il prefisso bastava un file nuovo perché la cache di tutti i turni
+ * successivi fosse persa. In coda il costo è lo stesso, ma il contesto resta append-only.
+ */
+function conNotaProgetto(testo) {
+  const nota = progettoPromptNote();
+  if (!nota) return testo;
+  return `${testo}\n\n[contesto progetto, aggiornato adesso]${nota}`;
+}
+
+/**
+ * Il PREFISSO del system prompt: si costruisce quando il resourceLoader lo chiede (avvio, cambio
+ * di modello, cambio del set di tool) e non contiene più niente che cambi da un turno all'altro.
+ * `prefissoStato` è la prova verificabile: l'impronta deve restare identica fra due turni
+ * consecutivi, e GET /api/contesto la espone.
+ */
+let prefissoStato = { caratteri: 0, impronta: null, aggiornato: 0 };
+
+/**
+ * Rende subito effettivo il nuovo progetto nel contesto dell'agente.
+ * NOTA: la nota del progetto NON sta più nel system prompt (vedi `conNotaProgetto`); questo
+ * reload resta per riallineare la vista 📦 e i tool quando cambia il progetto attivo.
+ */
 async function ricaricaContestoProgetto() {
   try {
     if (session?.isIdle) await session.reload();
@@ -1404,7 +1434,12 @@ const resourceLoader = new DefaultResourceLoader({
   additionalExtensionPaths,
   additionalSkillPaths: [SKILLS_DIR],
   extensionFactories: [MEDIA_GUARD_EXT, BROWSER_EXT, MEMORIA_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(DECISION_M_EXT ? [DECISION_M_EXT] : []), ...(TIMESTRAL_EXT ? [TIMESTRAL_EXT] : [])],
-  systemPromptOverride: (base) => `${base ?? ""}${SYSTEM_MEDIA_NOTE}${progettoPromptNote()}`,
+  systemPromptOverride: (base) => {
+    // NIENTE contenuto dinamico qui: la stabilità del prefisso è ciò che tiene viva la cache.
+    const testo = `${base ?? ""}${SYSTEM_MEDIA_NOTE}`;
+    prefissoStato = { caratteri: testo.length, impronta: impronta(testo), aggiornato: Date.now() };
+    return testo;
+  },
 });
 await resourceLoader.reload();
 
@@ -1428,6 +1463,14 @@ let compactEstimate = null;
 let unsubscribeSession = null;
 let sessionStartedAt = Date.now();
 let ALL_TOOLS = [];
+/** Un cambio del set di tool richiesto durante un turno resta in attesa: si applica alla fine. */
+let gateDifferito = false;
+/**
+ * C'è un turno in corso? Dichiarato QUI e non più in basso: `applyToolGate` lo legge anche durante
+ * l'inizializzazione della sessione, e una `let` dichiarata più sotto sarebbe in TDZ (ReferenceError:
+ * «Cannot access 'turnActive' before initialization») — verificato avviando l'istanza di prova.
+ */
+let turnActive = false;
 /** Tool attivati da pi all'avvio della sessione: è la base del gate, così non si allarga
  *  la superficie abilitando per errore tool che pi tiene spenti (powershell, grep, ls…). */
 let DEFAULT_TOOL_NAMES = [];
@@ -1507,8 +1550,25 @@ function allToolsOf(s) {
   return s?.agent?.state?.tools?.slice?.() || [];
 }
 
-function applyToolGate() {
-  if (!session) return;
+function applyToolGate({ forza = false } = {}) {
+  if (!session) return false;
+  /**
+   * CONGELAMENTO PER TURNO (audit 2026-10-30).
+   *
+   * Le definizioni dei tool stanno in TESTA al contesto: cambiarne l'elenco a metà turno
+   * ricostruisce il prefisso, butta via la cache KV del provider per tutti i token successivi e
+   * lascia i messaggi precedenti a riferirsi a tool che non esistono più (la lezione di Manus:
+   * «mask, don't remove»). In modalità «auto» il browser si accende e si spegne da solo, quindi
+   * il cambio avveniva anche senza che l'utente facesse niente.
+   *
+   * Qui il set si decide all'INIZIO di un turno e non cambia più fino alla fine: un cambio
+   * richiesto durante il turno viene messo da parte (`gateDifferito`) e applicato in `agent_end`,
+   * dove il prefisso si può ricostruire senza buttare via niente che sia già stato pagato.
+   */
+  if (!forza && turnActive) {
+    gateDifferito = true;
+    return false;
+  }
   // in modo "auto" lo stato del tool è una conseguenza delle condizioni, non un flag fisso
   browserEnabled = browserShouldBeEnabled();
   const registered = new Set(allToolsOf(session).map((t) => t.name));
@@ -1529,7 +1589,9 @@ function applyToolGate() {
   if (!timestralToolEnabled()) names = names.filter((n) => !TIMESTRAL_TOOL_NAMES.has(n));
   // percorso ufficiale: abilita per nome dal registry e ricostruisce il system prompt
   if (typeof session.setActiveToolsByName === "function") session.setActiveToolsByName(names);
-  else session.agent.state.tools = all.filter((t) => names.includes(t.name));
+  else session.agent.state.tools = allToolsOf(session).filter((t) => names.includes(t.name));
+  gateDifferito = false;
+  return true;
 }
 
 // Rivaluta l'accensione del browser: senza questo, in modo "auto" resterebbe nello stato
@@ -1821,8 +1883,10 @@ function toolSummary(args) {
  * diceva «sto ancora lavorando» e la chat restava con il pallino acceso e il pulsante ⏹ al
  * posto di Invia (difetto visto con il test in browser vero). `turnActive` segue gli eventi
  * del turno ed è quindi coerente nel momento in cui lo si comunica.
+ *
+ * NB: la dichiarazione di `turnActive` è più in alto (accanto a `gateDifferito`), perché
+ * `applyToolGate` la legge già durante l'inizializzazione della sessione.
  */
-let turnActive = false;
 
 // ---- goal / pianificazione / checklist -----------------------------------
 // Persistenza in media (sopravvive ai riavvii) + stato in memoria.
@@ -2449,6 +2513,143 @@ function sessionStatsSafe() {
   }
 }
 
+// ---- bilancio del contesto, spreco di cache, telemetria del turno --------------------
+//
+// Tre cose che prima non esistevano e che rendono verificabile il resto dell'audit:
+//  1. `contestoLedger()` dice QUANTO costa ogni sezione del contesto (prima si sapeva solo il
+//     totale: con un totale non si decide cosa tagliare).
+//  2. `cacheStats()` misura il prompt-cache sprecato: token che erano già nel turno precedente e
+//     che il provider ha ri-fatturato a prezzo pieno. È la prova che il prefisso si è rotto.
+//  3. una riga per turno in `media/turni.jsonl`: senza numeri per turno, «è migliorato» è
+//     un'impressione. Il file si legge con `jq` o con la vista che lo consuma.
+
+const TURNI_FILE = process.env.DASH_TURNI_FILE || join(MEDIA_DIR, "turni.jsonl");
+let turnoCtx = null;
+
+/** Cattura il punto di partenza del turno (i totali sono cumulativi: servono le differenze). */
+function turnoInizio() {
+  try {
+    const st = sessionStatsSafe();
+    turnoCtx = { t0: Date.now(), tokens: { ...st.tokens }, cost: st.cost, tools: [], errori: [], passi: 0 };
+  } catch {
+    turnoCtx = null;
+  }
+}
+
+/** Chiude il turno e scrive la riga di telemetria. Non deve mai bloccare il turno. */
+function turnoFine() {
+  if (!turnoCtx) return;
+  const t = turnoCtx;
+  turnoCtx = null;
+  try {
+    const st = sessionStatsSafe();
+    const riga = {
+      ts: new Date().toISOString(),
+      sessionId: session?.sessionId ?? null,
+      modello: model?.id ?? null,
+      ms: Date.now() - t.t0,
+      toolCall: t.passi,
+      tools: t.tools,
+      errori: t.errori,
+      tokens: {
+        input: Math.max(0, st.tokens.input - t.tokens.input),
+        output: Math.max(0, st.tokens.output - t.tokens.output),
+        cacheRead: Math.max(0, st.tokens.cacheRead - t.tokens.cacheRead),
+        cacheWrite: Math.max(0, st.tokens.cacheWrite - t.tokens.cacheWrite),
+      },
+      cost: Number(Math.max(0, st.cost - t.cost).toFixed(6)),
+      cache: cacheStats(),
+    };
+    void fs
+      .appendFile(TURNI_FILE, JSON.stringify(riga) + "\n")
+      .catch((e) => console.error("[turni] riga non scritta:", e?.message ?? e));
+    broadcast("turno", riga);
+  } catch (err) {
+    console.error("[turni] telemetria del turno non calcolabile:", err?.message ?? err);
+  }
+}
+
+/** Memoria breve: `getState` è chiamato spesso e questo calcolo scorre i messaggi. */
+let cacheMemo = { at: 0, val: null };
+
+function cacheStats() {
+  if (cacheMemo.val && Date.now() - cacheMemo.at < 3000) return cacheMemo.val;
+  const vuoto = { read: 0, write: 0, missedTokens: 0, missedCost: 0, missCount: 0, hitRate: null };
+  try {
+    const msgs = session?.state?.messages ?? [];
+    const turni = [];
+    for (const m of msgs) {
+      if (m?.role !== "assistant" || !m.usage) continue;
+      const u = m.usage;
+      const promptTokens = (u.input || 0) + (u.cacheRead || 0) + (u.cacheWrite || 0);
+      if (promptTokens > 0) turni.push({ promptTokens, cacheRead: u.cacheRead || 0 });
+    }
+    // `model.cost.input` è in dollari per MILIONE di token
+    const prezzo = Number(model?.cost?.input ?? 0) / 1e6;
+    const calcolo = sprecoCache(turni, prezzo);
+    const val = {
+      read: turni.reduce((a, t) => a + t.cacheRead, 0),
+      write: 0,
+      ...calcolo,
+    };
+    cacheMemo = { at: Date.now(), val };
+    return val;
+  } catch (err) {
+    console.error("[cache] spreco non calcolabile:", err?.message ?? err);
+    return vuoto;
+  }
+}
+
+/**
+ * Il bilancio del contesto per sezione. La stima è dichiarata (`stimato: true`): il conteggio
+ * esatto del provider arriva con `context.tokens` e vince quando c'è.
+ */
+function contestoLedger() {
+  try {
+    const msgs = session?.state?.messages ?? [];
+    const fissi = [{ nome: "istruzioni e skill (prefisso)", caratteri: prefissoStato.caratteri || 0 }];
+    const b = bilancioContesto({ messaggi: msgs, fissi, finestra: model?.contextWindow || 0 });
+
+    // Il prefisso VERO è più grande di quello che l'override riceve: l'SDK aggiunge gli schemi dei
+    // tool e l'indice delle skill DOPO `systemPromptOverride`. Se il provider ci dà il conteggio
+    // esatto del contesto, il prefisso si ricava PER DIFFERENZA e prende il posto della stima:
+    // un bilancio che dice 2.000 quando il provider ne conta 15.000 non serve a decidere niente.
+    let uso = null;
+    try {
+      uso = session.getContextUsage?.() ?? null;
+    } catch {
+      uso = null;
+    }
+    let sezioni = b.sezioni;
+    let totale = b.totale;
+    let prefissoPerDifferenza = false;
+    let scarto = null;
+    if (uso && Number.isFinite(uso.tokens) && uso.tokens > 0 && b.sezioni.length) {
+      const altro = b.sezioni.filter((s) => !s.nome.startsWith("istruzioni e skill")).reduce((a, s) => a + s.token, 0);
+      const prefisso = Math.max(0, uso.tokens - altro);
+      scarto = Math.round((b.totale - uso.tokens) * 10) / 10;
+      sezioni = [{ nome: "istruzioni, schemi dei tool, skill", token: prefisso, caratteri: null }, ...b.sezioni.filter((s) => !s.nome.startsWith("istruzioni e skill"))];
+      totale = sezioni.reduce((a, s) => a + s.token, 0);
+      prefissoPerDifferenza = true;
+    }
+
+    return {
+      ...b,
+      sezioni,
+      totale,
+      percento: model?.contextWindow ? Math.round((totale / model.contextWindow) * 1000) / 10 : b.percento,
+      stimato: !prefissoPerDifferenza,
+      prefissoPerDifferenza,
+      scarto,
+      notaProgettoToken: Math.ceil((progettoPromptNote() || "").length / 3.6),
+      prefisso: prefissoStato,
+    };
+  } catch (err) {
+    console.error("[contesto] bilancio non calcolabile:", err?.message ?? err);
+    return null;
+  }
+}
+
 function getState({ withMessages = false } = {}) {
   const stats = sessionStatsSafe();
   // Anche la stima del contesto è di contorno: se la sessione è incoerente non deve
@@ -2511,6 +2712,12 @@ function getState({ withMessages = false } = {}) {
     },
     tokens: stats.tokens,
     cost: stats.cost,
+    // spreco di prompt-cache: token già presenti nel turno precedente e ri-fatturati a prezzo
+    // pieno. È l'indicatore che dice, meglio di qualunque impressione, se il prefisso è stabile.
+    cache: cacheStats(),
+    // true quando un cambio del set di tool è stato chiesto durante un turno ed è in attesa di
+    // fine turno: senza questo campo la UI sembrerebbe non aver recepito il comando.
+    gate: { differito: gateDifferito },
     counts: {
       user: stats.userMessages,
       assistant: stats.assistantMessages,
@@ -2577,6 +2784,8 @@ function getState({ withMessages = false } = {}) {
     sessionName: session.sessionManager.getSessionName?.() || null,
     sessionFile: session.sessionFile || null,
     ...(withMessages ? { messages } : {}),
+    // il bilancio per sezione costa quanto scorrere i messaggi: solo quando serve davvero
+    ...(withMessages ? { contesto: contestoLedger() } : {}),
   };
 }
 
@@ -2624,6 +2833,21 @@ function handleSessionEvent(event) {
     return;
   }
   if (event.type === "tool_execution_end") {
+    // Telemetria: ogni errore diventa una CLASSE (rete, timeout, permesso, schema…). Non cambia
+    // la reazione dell'agente (quella richiede il ciclo di riparazione, P2 del report), ma rende
+    // visibile su cosa si perde tempo: prima era solo una stringa rossa in chat.
+    if (turnoCtx) {
+      turnoCtx.passi++;
+      if (event.toolName && !turnoCtx.tools.includes(event.toolName)) turnoCtx.tools.push(event.toolName);
+      if (event.isError) {
+        const testo =
+          typeof event.result === "string"
+            ? event.result
+            : JSON.stringify(event.result ?? "").slice(0, 400);
+        const c = classeErrore({ toolName: event.toolName, testo });
+        turnoCtx.errori.push({ tool: event.toolName, classe: c.classe, suggerimento: c.suggerimento });
+      }
+    }
     // il tool può terminare anche se il segmento non c'è (nessun client collegato
     // all'inizio, id assente): si ripiega sull'ultimo tool ancora in corso.
     const seg =
@@ -2649,11 +2873,22 @@ function handleSessionEvent(event) {
     sseReplay.length = 0;
     sseReplayBytes = 0;
     turnActive = true;
+    turnoInizio();
     broadcast("status", { streaming: true });
     return;
   }
   if (event.type === "agent_end") {
     turnActive = false;
+    // Un cambio di tool richiesto durante il turno si applica ORA, quando il prefisso si può
+    // ricostruire senza buttare via token già pagati (vedi applyToolGate).
+    if (gateDifferito) {
+      try {
+        applyToolGate({ forza: true });
+      } catch (e) {
+        console.error("[gate] applicazione differita non riuscita:", e?.message || e);
+      }
+    }
+    turnoFine();
     // Skill cambiate mentre l'agente lavorava: la ricarica era stata rinviata.
     if (skillsReloadPending) {
       skillsReloadPending = false;
@@ -4229,6 +4464,33 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && url.pathname === "/api/state") return json(res, 200, getState({ withMessages: true }));
 
+    // ---------------- bilancio del contesto e della cache (audit 2026-10-30) ----------------
+    //
+    // Perché un endpoint e non solo `getState`: questo è il dato che si vuole poter leggere e
+    // confrontare fra due momenti diversi (prima/dopo un intervento), da fuori, anche a mano con
+    // curl. `prefisso.impronta` è la prova che il system prompt non è cambiato fra due letture;
+    // `gate.differito` dice se un cambio di tool è in attesa di fine turno.
+    if (req.method === "GET" && url.pathname === "/api/contesto") {
+      return json(res, 200, {
+        ledger: contestoLedger(),
+        cache: cacheStats(),
+        prefisso: prefissoStato,
+        gate: {
+          differito: gateDifferito,
+          duranteIlTurno: turnActive,
+          attivi: session?.getActiveToolNames?.() || [],
+        },
+        finestra: model?.contextWindow ?? null,
+        uso: (() => {
+          try {
+            return session.getContextUsage();
+          } catch {
+            return null;
+          }
+        })(),
+      });
+    }
+
     // ---------------- comandi slash ----------------
     // Il browser chiede il catalogo (nomi, parametri, valori ammessi adesso) e
     // poi esegue il singolo comando: l'effetto è quello di un comando da TUI.
@@ -4926,7 +5188,7 @@ const server = http.createServer(async (req, res) => {
       // viene accodato in un blocco riconoscibile, così resta trasparente nella cronologia.
       const clientContext = String(body.clientContext || "").trim().slice(0, 700);
       const withCtx = clientContext ? `${text}\n\n[contesto dashboard] ${clientContext}` : text;
-      const { promptText, images } = await buildPromptPayload(withCtx, atts);
+      const { promptText, images } = await buildPromptPayload(conNotaProgetto(withCtx), atts);
 
       json(res, 202, { ok: true });
       // il turno è considerato attivo da subito: la UI mostra ⏹ senza aspettare agent_start
@@ -4972,10 +5234,10 @@ const server = http.createServer(async (req, res) => {
       const last = users[users.length - 1];
       const text = isEdit ? String(body.text || "").trim() : last.text;
       if (!text) return json(res, 400, { error: "testo vuoto" });
-      let payload = { promptText: text, images: [] };
+      let payload = { promptText: conNotaProgetto(text), images: [] };
       if (isEdit) {
         const atts = Array.isArray(body.attachments) ? body.attachments : [];
-        payload = await buildPromptPayload(text, atts);
+        payload = await buildPromptPayload(conNotaProgetto(text), atts);
       }
       try {
         const nav = await session.navigateTree(last.entryId);
@@ -5176,7 +5438,7 @@ const server = http.createServer(async (req, res) => {
       const g = goals.find((x) => x.id === id);
       if (!g) return json(res, 404, { error: "goal non trovato" });
       if (session.isStreaming) return json(res, 409, { error: "già in streaming" });
-      const prompt = goalExecutionPrompt(g, body.mode);
+      const prompt = conNotaProgetto(goalExecutionPrompt(g, body.mode));
       json(res, 202, { ok: true });
       turnActive = true;
       session
@@ -5190,7 +5452,8 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ---------------- progetto: cartelle scelte dall'utente ----------------
-    // L'agente vede le cartelle nel system prompt (vedi progettoPromptNote); queste rotte
+    // L'agente riceve le cartelle in coda al proprio messaggio (vedi `conNotaProgetto`): non stanno
+    // più nel system prompt, così il prefisso resta stabile e la cache del provider non si perde.
     // servono alla vista 📦 e alla stella nel file manager.
     if (req.method === "GET" && url.pathname === "/api/progetto") {
       return json(res, 200, await progettoPayload());

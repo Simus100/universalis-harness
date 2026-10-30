@@ -18,6 +18,10 @@ node media/check-skills.mjs || rc=1
 node media/audit.mjs || rc=1
 echo
 
+echo "########## 3-bis/10 bilancio del contesto, spreco di cache, classi di errore ##########"
+node media/test-contesto.mjs || rc=1
+echo
+
 echo "########## 4/10 logica frontend senza browser (notifiche, frecce, snippet) ##########"
 node media/test-ui.mjs || rc=1
 echo

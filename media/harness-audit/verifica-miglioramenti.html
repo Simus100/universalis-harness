@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verifica dei miglioramenti — harness pi</title>
+<style>
+  :root{
+    --bg:#08111f; --s1:#172033; --s2:#1d2634; --line:#2a3448;
+    --txt:#eef2f9; --txt2:#c6cfdd; --dim:#8b97ac;
+    --blue:#5b9dff; --cyan:#38bdf8; --violet:#8b5cff; --green:#34d399; --amber:#fbbf24; --red:#fb7185;
+    --r:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 24px 80px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+  header{border-bottom:1px solid var(--line);padding-bottom:28px;margin-bottom:32px}
+  .eyebrow{color:var(--dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 12px}
+  h1{margin:0;font-size:30px;line-height:1.22;font-weight:600;letter-spacing:-.01em;max-width:26ch}
+  h1 b{color:var(--green);font-weight:600}
+  .lead{margin:14px 0 0;max-width:72ch;color:var(--txt2)}
+  .meta{margin-top:18px;color:var(--dim);font-size:13px;display:flex;gap:18px;flex-wrap:wrap}
+  .meta span::before{content:"·";margin-right:8px;color:var(--line)}
+  .meta span:first-child::before{content:none;margin:0}
+
+  h2{font-size:19px;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
+  .h2sub{color:var(--dim);font-size:13.5px;margin:0 0 20px}
+  section{margin-bottom:44px}
+
+  /* stato in alto: tre caselle */
+  .stato{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:40px}
+  .stato div{background:var(--s1);padding:16px 18px}
+  .stato .k{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  .stato .v{font-size:17px;font-weight:600;margin-top:6px}
+  .stato .v.ok{color:var(--green)} .stato .v.wait{color:var(--amber)}
+  @media (max-width:780px){.stato{grid-template-columns:1fr}}
+
+  /* schede intervento */
+  .carte{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:820px){.carte{grid-template-columns:1fr}}
+  .carta{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+  .carta .num{font-size:11px;color:var(--dim);letter-spacing:.1em}
+  .carta h3{margin:6px 0 12px;font-size:15px;font-weight:600;line-height:1.35}
+  .prima,.dopo{font-size:13.5px;color:var(--txt2);display:flex;gap:8px;align-items:baseline;margin-bottom:6px}
+  .prima b{color:var(--red);font-weight:600;font-size:11px;letter-spacing:.06em;flex:none}
+  .dopo b{color:var(--green);font-weight:600;font-size:11px;letter-spacing:.06em;flex:none}
+  .carta .prova{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--dim)}
+  .carta .prova s{color:var(--green);text-decoration:none}
+
+  /* grafici */
+  .grafico{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:22px;margin-bottom:16px}
+  .grafico h3{margin:0 0 2px;font-size:15.5px;font-weight:600}
+  .grafico p{margin:0 0 18px;color:var(--dim);font-size:13px;max-width:78ch}
+  svg{display:block;width:100%;height:auto;max-width:100%}
+  .fonte{margin-top:14px;font-size:12px;color:var(--dim)}
+  .fonte code{background:#0d1727;border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  /* tabella */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+  th{text-align:left;color:var(--dim);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+    padding:8px 10px;border-bottom:1px solid var(--line);font-weight:600}
+  td{padding:9px 10px;border-bottom:1px solid #141c2b;color:var(--txt2)}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  td.ok{color:var(--green);font-weight:600}
+  td.ko{color:var(--amber);font-weight:600}
+
+  /* avvisi */
+  .nota{padding:16px 18px;border-radius:var(--r);background:var(--s1);border:1px solid var(--line);
+    border-left:3px solid var(--amber);font-size:14px;color:var(--txt2)}
+  .nota b{color:var(--txt)}
+  .resta{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+  .resta ol{margin:0;padding-left:20px;color:var(--txt2);font-size:14px}
+  .resta li{margin-bottom:8px}
+  .resta code{background:#0d1727;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:.92em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Verifica dei miglioramenti · harness pi · 30 ottobre 2026</p>
+  <h1>Cinque interventi, misurati: il cambio di tool non rompe più la cache <b>(−41% token a prezzo pieno)</b></h1>
+  <p class="lead">Ho applicato i cinque interventi a basso rischio emersi dall'audit, dopo aver fatto un backup
+    di cui ho verificato il ripristino. Qui sotto c'è cosa è cambiato, quanto ha reso (con i numeri
+    veri, non le stime del simulatore) e cosa invece <i>non</i> ha reso quanto previsto.</p>
+  <div class="meta">
+    <span>backup: <span class="mono">pre-audit-20261030-200724</span></span>
+    <span>test eseguiti: 503 verifiche</span>
+    <span>0 fallimenti</span>
+  </div>
+</header>
+
+<div class="stato">
+  <div><div class="k">Codice</div><div class="v ok">modificato e testato</div></div>
+  <div><div class="k">Dashboard principale</div><div class="v wait">riavvio programmato</div></div>
+  <div><div class="k">Ripristino</div><div class="v ok">un comando, provato</div></div>
+</div>
+
+<section>
+  <h2>Cosa è cambiato</h2>
+  <p class="h2sub">Cinque interventi scelti perché non cambiano cosa fa l'agente: cambiano quanto costa farlo.</p>
+
+  <div class="carte">
+    <div class="carta">
+      <div class="num">01 · PREFISSO</div>
+      <h3>La nota del progetto è uscita dal system prompt</h3>
+      <p class="prima"><b>PRIMA</b><span>il system prompt leggeva il filesystem: un file nuovo poteva cambiare il prefisso</span></p>
+      <p class="dopo"><b>DOPO</b><span>viaggia in coda al messaggio dell'utente, marcata «[contesto progetto]»</span></p>
+      <div class="prova">Verifica: l'impronta del prefisso resta <span class="mono">ed26416e</span> <s>prima e dopo</s> aver aggiunto una cartella al progetto · nota = 194 token, ora nel messaggio.</div>
+    </div>
+
+    <div class="carta">
+      <div class="num">02 · GATE</div>
+      <h3>Il set di tool si decide a inizio turno e non cambia più</h3>
+      <p class="prima"><b>PRIMA</b><span>in modalità «auto» il browser si spegneva da solo a metà turno: prefisso ricostruito, cache persa</span></p>
+      <p class="dopo"><b>DOPO</b><span>il cambio resta in attesa (<span class="mono">gateDifferito</span>) e si applica a fine turno</span></p>
+      <div class="prova">Verifica end-to-end: a metà turno <span class="mono">differito=true</span>, browser <s>non attivo</s>; a fine turno <s>attivo</s>. Misura: <span class="mono">−41%</span> token non cachati.</div>
+    </div>
+
+    <div class="carta">
+      <div class="num">03 · BILANCIO</div>
+      <h3>Si sa quanto costa ogni sezione del contesto</h3>
+      <p class="prima"><b>PRIMA</b><span>solo il totale: «15.112 token» senza sapere di cosa</span></p>
+      <p class="dopo"><b>DOPO</b><span><span class="mono">GET /api/contesto</span>: prefisso, conversazione, risultati dei tool, ragionamento, immagini</span></p>
+      <div class="prova">Verifica: la somma delle sezioni <s>coincide</s> con il conteggio del provider (15.112 = 15.112).</div>
+    </div>
+
+    <div class="carta">
+      <div class="num">04 · SPRECO</div>
+      <h3>Lo spreco di cache è un numero, non un sospetto</h3>
+      <p class="prima"><b>PRIMA</b><span>si vedevano i token letti dalla cache, non quelli pagati a prezzo pieno per errore</span></p>
+      <p class="dopo"><b>DOPO</b><span>token ri-fatturati, dollari sprecati e numero di turni in cui è successo</span></p>
+      <div class="prova">Verifica: in esercizio sull'istanza di prova <s>0 token</s> sprecati su 4 turni (hit rate 98%).</div>
+    </div>
+
+    <div class="carta">
+      <div class="num">05 · TELEMETRIA</div>
+      <h3>Una riga per turno in <span class="mono">media/turni.jsonl</span></h3>
+      <p class="prima"><b>PRIMA</b><span>solo totali di sessione; niente per turno, niente classi di errore</span></p>
+      <p class="dopo"><b>DOPO</b><span>tool usati, errori con classe (rete, timeout, permesso, schema…), token, cache, costo, durata</span></p>
+      <div class="prova">Verifica: 3 turni registrati, campi completi. La classificazione <s>non</s> cambia ancora la reazione dell'agente (è il passo P2).</div>
+    </div>
+
+    <div class="carta" style="border-color:#3a4a66">
+      <div class="num">+ · UNITÀ</div>
+      <h3>Un modulo nuovo, testabile senza avviare niente</h3>
+      <p class="prima"><b>PRIMA</b><span>la logica viveva dentro 6.300 righe che partono solo con un server e un modello</span></p>
+      <p class="dopo"><b>DOPO</b><span><span class="mono">media/contesto.mjs</span>: stima, bilancio, spreco, classi di errore, impronta</span></p>
+      <div class="prova">Verifica: <s>23 test</s> dedicati, ora dentro <span class="mono">media/test-all.sh</span>. Hanno trovato 3 difetti prima del rilascio.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Il guadagno misurato: dentro il turno, non fra i turni</h2>
+  <p class="h2sub">Stesso scenario con il codice vecchio (dal backup) e quello nuovo: un turno che usa 3 tool, con il tool browser acceso a metà. Due ripetizioni per parte.</p>
+
+  <div class="grafico">
+    <h3>Token non letti da cache in un turno con cambio di tool a metà</h3>
+    <p>Meno è meglio: sono i token pagati a prezzo pieno. Il totale del prompt è simile nei due casi (~72.000 token), quindi la differenza è tutta nel riuso.</p>
+    <svg viewBox="0 0 760 250" role="img" aria-label="Confronto token non cachati: vecchio 10.123, nuovo 5.957">
+      <title>Token non letti da cache, vecchio contro nuovo</title>
+      <desc>Barre orizzontali: codice vecchio 10.123 token non cachati su due ripetizioni, codice nuovo 5.957. La quota in cache passa dall'86% al 91%.</desc>
+      <line x1="230" y1="20" x2="230" y2="215" stroke="#2a3448"/>
+      <line x1="230" y1="215" x2="740" y2="215" stroke="#2a3448"/>
+
+      <text x="18" y="46" fill="#eef2f9" font-size="13" font-weight="600">VECCHIO</text>
+      <text x="18" y="63" fill="#8b97ac" font-size="11">cache 86%</text>
+      <rect x="230" y="34" width="420" height="34" rx="4" fill="#fb7185" opacity="0.85">
+        <title>10.123 token non cachati (media di 10.095 e 10.151)</title>
+      </rect>
+      <text x="660" y="56" fill="#eef2f9" font-size="13" font-weight="600" font-family="ui-monospace,monospace">10.123</text>
+
+      <text x="18" y="126" fill="#eef2f9" font-size="13" font-weight="600">NUOVO</text>
+      <text x="18" y="143" fill="#8b97ac" font-size="11">cache 91%</text>
+      <rect x="230" y="114" width="247" height="34" rx="4" fill="#34d399" opacity="0.9">
+        <title>5.957 token non cachati (media di 5.878 e 6.035)</title>
+      </rect>
+      <text x="487" y="136" fill="#eef2f9" font-size="13" font-weight="600" font-family="ui-monospace,monospace">5.957</text>
+
+      <rect x="230" y="166" width="173" height="26" rx="4" fill="#34d399" opacity="0.25"/>
+      <text x="412" y="184" fill="#34d399" font-size="12" font-weight="600">−41% token a prezzo pieno</text>
+
+      <text x="230" y="236" fill="#8b97ac" font-size="11">0</text>
+      <text x="440" y="236" fill="#8b97ac" font-size="11" text-anchor="middle">2.500</text>
+      <text x="650" y="236" fill="#8b97ac" font-size="11" text-anchor="middle">5.000</text>
+      <text x="740" y="236" fill="#8b97ac" font-size="11" text-anchor="end">10.000 token</text>
+    </svg>
+    <div class="fonte">Ripetizioni: vecchio 10.095 / 10.151 · nuovo 5.878 / 6.035 (3 tool call in tutti e quattro i turni).
+      Script riproducibile: <code>bash media/ab-test-gate.sh</code>.</div>
+  </div>
+
+  <div class="grafico">
+    <h3>Dove finiscono i token di un turno</h3>
+    <p>Il 98,6% del contesto è prefisso: istruzioni, schemi di 16 tool, indice di 29 skill. La conversazione è 215 token. È il motivo per cui il prefisso è la cosa da curare.</p>
+    <svg viewBox="0 0 760 120" role="img" aria-label="Composizione del contesto: prefisso 14.897, conversazione 215">
+      <title>Composizione del contesto</title>
+      <desc>Barra impilata: 14.897 token di prefisso (98,6%) e 215 token di conversazione (1,4%) su un totale di 15.112.</desc>
+      <rect x="18" y="30" width="732" height="40" rx="6" fill="#2a3448"/>
+      <rect x="18" y="30" width="721" height="40" rx="6" fill="#8b5cff" opacity="0.85">
+        <title>Prefisso: 14.897 token (98,6%) — istruzioni, 16 schemi di tool, 29 skill</title>
+      </rect>
+      <rect x="742" y="30" width="8" height="40" fill="#38bdf8">
+        <title>Conversazione: 215 token (1,4%)</title>
+      </rect>
+      <text x="30" y="56" fill="#eef2f9" font-size="13" font-weight="600">prefisso · 14.897 token · 98,6%</text>
+      <text x="750" y="90" fill="#8b97ac" font-size="11" text-anchor="end">conversazione 215</text>
+      <text x="18" y="90" fill="#8b97ac" font-size="11">totale 15.112 token (1,5% della finestra da 1M)</text>
+      <text x="18" y="110" fill="#8b97ac" font-size="11">Il prefisso ora è stabile e cachato: 14.848 di questi token sono stati letti da cache al 98% del prezzo scontato.</text>
+    </svg>
+    <div class="fonte">Fonte: <code>GET /api/contesto</code> sull'istanza di prova, confrontato con <code>getContextUsage()</code> del provider.</div>
+  </div>
+</section>
+
+<section>
+  <h2>Quello che non ha reso quanto previsto</h2>
+  <p class="h2sub">L'onestà della verifica sta qui: l'intervento 01 non produce il guadagno che il simulatore suggeriva.</p>
+  <div class="nota">
+    <p style="margin:0 0 10px"><b>Scenario: turno 1 → aggiungo una cartella al progetto → turno 2.</b></p>
+    <p style="margin:0 0 10px">Vecchio codice: 142 token non cachati, cache 99%. Nuovo codice: 153 token non cachati, cache 98%.
+      <b>Differenza: nessuna.</b></p>
+    <p style="margin:0">Il motivo è geometrico: la nota progetto stava già <i>in fondo</i> al system prompt, quindi tutto ciò che la precedeva
+      restava identico e il provider lo riusava dalla cache. Il danno vero avviene quando cambia qualcosa <i>in testa</i> — cioè
+      le definizioni dei tool (intervento 02), dove la misura dà −41%. L'intervento 01 resta utile per un altro motivo:
+      rende il prefisso indipendente dal filesystem e <b>verificabile</b> (l'impronta), ma sui token non si vede.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Le prove</h2>
+  <p class="h2sub">Nessuna verifica è stata dichiarata senza essere eseguita. Il browser reale è l'unica eccezione, e il motivo è dichiarato.</p>
+  <table>
+    <thead><tr><th>Verifica</th><th class="n">Esito</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Controlli statici HTML ↔ server</td><td class="n ok">223 ok</td><td><code>media/test-static.mjs</code></td></tr>
+      <tr><td>API (auth, rate-limit, sessioni, TTS, PDF, export)</td><td class="n ok">76 ok</td><td><code>media/test-api.sh</code></td></tr>
+      <tr><td>Logica frontend senza browser</td><td class="n ok">105 ok</td><td><code>media/test-ui.mjs</code></td></tr>
+      <tr><td>Funzioni (goal, pianificazioni, skill, viste)</td><td class="n ok">76 ok</td><td><code>media/test-functions.mjs</code></td></tr>
+      <tr><td>Unità nuove (bilancio, cache, errori)</td><td class="n ok">23 ok</td><td><code>media/test-contesto.mjs</code></td></tr>
+      <tr><td>Sintassi del JS dentro dashboard.html</td><td class="n ok">1/1</td><td><code>media/check-html-js.mjs</code></td></tr>
+      <tr><td>Prefisso stabile al cambio progetto</td><td class="n ok">ed26416e = ed26416e</td><td>prima/dopo, istanza di prova</td></tr>
+      <tr><td>Gate congelato dentro il turno</td><td class="n ok">differito → applicato</td><td>misurato con streaming attivo</td></tr>
+      <tr><td>A/B gate, 2 ripetizioni</td><td class="n ok">−41%</td><td>vecchio dal backup, nuovo da HEAD</td></tr>
+      <tr><td>Viste con browser reale</td><td class="n ko">non eseguite</td><td>il controllo del browser è in mano all'utente</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Cosa resta da fare</h2>
+  <div class="resta">
+    <ol>
+      <li><b>Offload delle osservazioni</b> (P1): scaricare su file i risultati oltre ~8k caratteri e lasciare un riferimento rileggibile.
+        È il punto con il guadagno maggiore sui turni lunghi, e non l'ho fatto perché richiede di intervenire dentro il ciclo dell'SDK, non attorno.</li>
+      <li><b>Riparazione per classe</b> (P2): le classi di errore esistono e vengono registrate, ma l'agente reagisce ancora come prima.
+        Il passo successivo è collegare la classe a una reazione diversa.</li>
+      <li><b>Recitation e compaction a 72%</b> (P1): l'obiettivo riscritto in coda ogni 5 passi; oggi i goal entrano solo su comando.</li>
+      <li><b>Eval harness</b> (P1): 20-30 casi d'oro. Senza, ogni intervento futuro resta una misura isolata come questa.</li>
+    </ol>
+    <p style="margin:14px 0 0;font-size:13px;color:var(--dim)">Ripristino completo, se serve:
+      <code>cp backups/pre-audit-20261030-200724/dashboard.mjs . && cp backups/pre-audit-20261030-200724/dashboard.html . && systemctl restart pi-dashboard</code>
+      (il backup è stato verificato estraendolo e confrontando gli hash).</p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
