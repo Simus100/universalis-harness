@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propagazione ai tester — harness pi</title>
+<style>
+  :root{--bg:#08111f;--s1:#172033;--s2:#1d2634;--line:#2a3448;--txt:#eef2f9;--txt2:#c6cfdd;--dim:#8b97ac;
+    --blue:#5b9dff;--green:#34d399;--amber:#fbbf24;--red:#fb7185;--violet:#8b5cff;--r:12px}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 24px 80px}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  header{border-bottom:1px solid var(--line);padding-bottom:26px;margin-bottom:32px}
+  .eyebrow{color:var(--dim);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 12px}
+  h1{margin:0;font-size:29px;line-height:1.24;font-weight:600;max-width:28ch}
+  h1 b{color:var(--green)}
+  .lead{margin:14px 0 0;color:var(--txt2);max-width:70ch}
+  h2{font-size:19px;font-weight:600;margin:0 0 4px}
+  .h2sub{color:var(--dim);font-size:13.5px;margin:0 0 18px}
+  section{margin-bottom:40px}
+  .riepilogo{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+    border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:36px}
+  .riepilogo div{background:var(--s1);padding:15px 16px}
+  .riepilogo .k{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+  .riepilogo .v{font-size:16px;font-weight:600;margin-top:5px}
+  .ok{color:var(--green)}.warn{color:var(--amber)}.ko{color:var(--red)}
+  @media(max-width:820px){.riepilogo{grid-template-columns:1fr 1fr}}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--dim);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    padding:8px 9px;border-bottom:1px solid var(--line);font-weight:600;vertical-align:bottom}
+  td{padding:9px;border-bottom:1px solid #141c2b;color:var(--txt2);vertical-align:top}
+  td.c{text-align:center}
+  .si{color:var(--green);font-weight:600}
+  .no{color:var(--amber);font-weight:600}
+  .carta{background:var(--s1);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;margin-bottom:14px}
+  .carta h3{margin:0 0 8px;font-size:15px;font-weight:600}
+  .carta p{margin:0 0 8px;font-size:14px;color:var(--txt2)}
+  .carta p:last-child{margin-bottom:0}
+  .nota{padding:15px 17px;border-radius:var(--r);background:var(--s1);border:1px solid var(--line);
+    border-left:3px solid var(--amber);font-size:13.5px;color:var(--txt2)}
+  code{background:#0d1727;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:.92em}
+  ol{color:var(--txt2);font-size:14px;padding-left:20px}
+  li{margin-bottom:7px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Propagazione dei miglioramenti · 30 ottobre 2026</p>
+  <h1>Tre tester allineati <b>senza perdere una riga</b> delle loro personalizzazioni</h1>
+  <p class="lead">I tester non erano alla stessa versione della dashboard principale: due hanno un blocco
+    «utente limitato», uno è su una base più vecchia. Ho quindi propagato una <b>patch mirata</b>, non
+    copiato i file, e ho verificato ogni istanza con il suo ambiente. Nel mezzo c'è stato un incidente
+    di riavvio, che qui è raccontato con gli orari.</p>
+</header>
+
+<div class="riepilogo">
+  <div><div class="k">Istanze allineate</div><div class="v ok">3 su 3</div></div>
+  <div><div class="k">Test unitari</div><div class="v ok">23 × 3, verdi</div></div>
+  <div><div class="k">Turni reali eseguiti</div><div class="v ok">3 su 3</div></div>
+  <div><div class="k">Ripristino</div><div class="v ok">backup verificato</div></div>
+</div>
+
+<section>
+  <h2>Punto di partenza: nessuno era uguale</h2>
+  <p class="h2sub">Stesso file, quattro versioni diverse. Per questo una copia sarebbe stata un danno.</p>
+  <table>
+    <thead><tr><th>Istanza</th><th>dashboard.mjs (prima)</th><th>Differenze vs pre-audit</th><th>Cosa ha di suo</th></tr></thead>
+    <tbody>
+      <tr><td>pi-harness</td><td class="mono">efc5cd60f9</td><td>—</td><td>la linea di riferimento</td></tr>
+      <tr><td>tester_01</td><td class="mono">2d53bbf7e2</td><td>997 righe</td><td>base più vecchia: niente spawnSync, memoria e Timestral ridotti</td></tr>
+      <tr><td>tester07</td><td class="mono">0f973d0f67</td><td>233 righe</td><td>blocco «utente limitato» (modello e thinking bloccati)</td></tr>
+      <tr><td>tester08</td><td class="mono">0f973d0f67</td><td>233 righe</td><td>identico a tester07, utente e disco propri</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>La propagazione, in pratica</h2>
+  <p class="h2sub">Patch dei 18 blocchi + modulo nuovo, con i permessi dell'utente che deve poterli leggere.</p>
+  <table>
+    <thead><tr><th>Istanza</th><th class="c">Blocchi applicati</th><th>Caso particolare</th><th class="c">Test unitari</th><th class="c">JS dell'HTML</th><th class="c">Turno reale</th><th class="c">Telemetria</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>tester_01</td><td class="c">17 / 18</td>
+        <td>import aggiunto a mano: la riga di contesto conteneva un simbolo che questa base non ha</td>
+        <td class="c si">23 ✓</td><td class="c si">1/1</td><td class="c si">✓</td><td class="c si">✓ root:root</td>
+      </tr>
+      <tr>
+        <td>tester07</td><td class="c">18 / 18</td>
+        <td>offset +86 righe per il blocco «utente limitato» preservato</td>
+        <td class="c si">23 ✓</td><td class="c si">1/1</td><td class="c si">✓</td><td class="c si">✓ tester07:tester07</td>
+      </tr>
+      <tr>
+        <td>tester08</td><td class="c">18 / 18</td>
+        <td>come tester07</td>
+        <td class="c si">23 ✓</td><td class="c si">1/1</td><td class="c si">✓</td><td class="c si">✓ tester08:tester08</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="nota" style="margin-top:16px">
+    <b>I 5 controlli statici che falliscono</b> su ogni tester (163 ok / 5 su tester_01, 208 ok / 5 sugli altri)
+    non c'entrano con l'audit: ho rimesso per pochi secondi i file originali di ciascuno e i 5 fallimenti
+    erano identici. Riguardano un report dei browser, il bridge di input, il badge della lista e l'esito delle
+    card: difetti che i tester avevano già.
+  </div>
+</section>
+
+<section>
+  <h2>Verifica funzionale: un turno vero su ognuno</h2>
+  <p class="h2sub">Non basta che il processo parta: il turno deve produrre ledger coerente e telemetria.</p>
+  <table>
+    <thead><tr><th>Istanza</th><th class="c">Contesto (ledger)</th><th class="c">Conteggio del provider</th><th class="c">Coerenti</th><th class="c">Cache</th></tr></thead>
+    <tbody>
+      <tr><td>tester_01</td><td class="c mono">67.167</td><td class="c mono">67.167</td><td class="c si">sì</td><td class="c">78% · <span class="warn">58.287 token sprecati</span> (storico della sessione)</td></tr>
+      <tr><td>tester07</td><td class="c mono">13.432</td><td class="c mono">13.432</td><td class="c si">sì</td><td class="c">0% (primo turno: niente da riusare)</td></tr>
+      <tr><td>tester08</td><td class="c mono">13.432</td><td class="c mono">13.432</td><td class="c si">sì</td><td class="c">1% (primo turno)</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:13px;color:var(--dim);margin-top:12px">Il dato di tester_01 è il primo caso reale di spreco misurato:
+    58.287 token già presenti nel turno precedente e ri-fatturati a prezzo pieno, su una sessione lunga con compaction.
+    Prima dell'audit questo numero non esisteva da nessuna parte.</p>
+</section>
+
+<section>
+  <h2>L'incidente delle 20:25, con gli orari</h2>
+  <div class="carta">
+    <h3>Un comando interrotto a metà ha lasciato indietro tester08</h3>
+    <p>Il riavvio dei tre servizi è partito alle <span class="mono">20:25:05</span> (tester_01) e <span class="mono">20:25:10</span>
+      (tester07, cioè <code>htester</code>); la dashboard principale si è riavviata alle <span class="mono">20:25:19</span>
+      come programmato. Il comando si è interrotto prima dell'ultimo: <b>tester08 è rimasto col processo del 24 ottobre</b>,
+      quindi con il codice vecchio in memoria — mentre i file su disco erano già aggiornati.</p>
+    <p>L'ho trovato durante la verifica dei link (il suo <code>/api/contesto</code> rispondeva 404) e riavviato alle
+      <span class="mono">20:33:05</span>. Da lì risponde e registra.</p>
+  </div>
+  <div class="carta">
+    <h3>Perché per qualche secondo i siti hanno dato 502</h3>
+    <p>Durante ognuno di quei riavvii Caddy non trovava il servizio a valle. Nel log:
+      <code>dial tcp 127.0.0.1:8420: connect: connection refused</code> alle 20:25:21 e
+      <code>unexpected EOF</code> alle 20:25:19 — la firma esatta di un riavvio, non di un guasto.</p>
+    <p>Verifica a posteriori: tutti e quattro i link rispondono adesso <b>401 senza autenticazione</b> (cioè la pagina di accesso)
+      e <b>200 con autenticazione</b>. Certificato di <code>htester</code> valido fino al 20 dicembre 2026.</p>
+  </div>
+  <div class="nota">
+    <b>Da sapere per il futuro:</b> <code>universalisproduzioni.it</code> ha un DNS wildcard verso un altro server
+    (<span class="mono">3.73.135.230</span>). Un nome sbagliato non dà «non trovato»: porta su quel server, e sembra
+    che tutto sia rotto. Il nome corretto è <code>htester.universalisproduzioni.it</code>.
+  </div>
+</section>
+
+<section>
+  <h2>Sicurezza, spazio, reversibilità</h2>
+  <ol>
+    <li><b>Backup prima di toccare</b>: <code>/root/harness-prop-backup-20261030-202425/</code> più un <code>.tar.gz</code>,
+      con manifest degli hash. Provato <b>estraendolo e confrontando</b>: 3 istanze su 3 ripristinabili.</li>
+    <li><b>Nessuna copia dei file</b>: patch mirata, quindi le personalizzazioni dei tester sono intatte (blocco «utente limitato», base vecchia di tester_01).</li>
+    <li><b>Permessi</b>: il modulo nuovo è di <code>tester07</code> e <code>tester08</code>, non di root — le loro dashboard devono poterlo leggere e scrivere la telemetria.</li>
+    <li><b>Spazio</b>: 160 GB liberi su 193 GB (18% usato). Non ho cancellato niente e non ho toccato <code>skills/</code>,
+      <code>sessions/</code>, <code>backups/</code>, <code>media/</code> degli utenti: l'unico file nuovo nella loro <code>media/</code>
+      è <code>turni.jsonl</code>, scritto dalla loro stessa dashboard. La politica di <code>scripts/spazio-tester.sh</code> resta rispettata.</li>
+    <li><b>Reversibilità</b>: per ogni istanza basta rimettere i due file dal backup e riavviare.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Se qualcosa non torna, un comando per istanza</h2>
+  <div class="carta">
+    <p class="mono" style="font-size:12.5px;color:var(--txt2)">cp /root/harness-prop-backup-20261030-202425/tester07/dashboard.mjs /home/tester07/ &amp;&amp; cp /root/harness-prop-backup-20261030-202425/tester07/dashboard.html /home/tester07/ &amp;&amp; chown tester07:tester07 /home/tester07/dashboard.* &amp;&amp; systemctl restart pi-tester07</p>
+    <p style="font-size:12.5px;color:var(--dim)">Per tester_01 e tester08 cambiano solo la cartella (<span class="mono">/root/tester_01</span>, <span class="mono">/home/tester08</span>) e il nome del servizio.</p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
