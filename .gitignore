@@ -234,3 +234,7 @@ media/checkup/
 # Temporanei della memoria (indici riscritti atomicamente: *.tmp-<pid>).
 # Non sono contenuto: sono lo stato intermedio di una scrittura, e vengono cancellati da soli.
 media/memoria/*.tmp-*
+
+# Telemetria per turno (una riga per turno, cresce senza limite).
+# Non è contenuto: contiene id di sessione e costi di questa istanza, e non serve a chi clona il repo.
+media/turni.jsonl
