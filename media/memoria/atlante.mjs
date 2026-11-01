@@ -53,6 +53,43 @@ const FONT = "12px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 
 const FONT_GRANDE = "13px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 /**
+ * Quali nodi sono «nuovi»: episodi e decisioni di OGGI e di IERI.
+ *
+ * PERCHÉ SERVE UN SEGNO. La mappa si adatta allo schermo: quando la memoria cresce di due nodi
+ * al giorno, il disegno non diventa più grande, diventa appena più fitto — e la differenza non
+ * si vede. Senza un segno esplicito l'atlante di una memoria che lavora e quello di una ferma
+ * sono la stessa immagine. Gli ARTEFATTI non hanno una data (`d` manca): non possono essere
+ * «nuovi», e non lo si finge.
+ *
+ * Il confronto è per giorno di calendario in ora LOCALE (due giorni: oggi e ieri), perché `d`
+ * è «YYYY-MM-DD» senza fuso. Con `Math.abs` un nodo datato domani — capita se l'orologio o il
+ * fuso di chi scrive non è questo — resta comunque visibile come nuovo invece di sparire.
+ *
+ * @param {Array<object>} nodi
+ * @param {Date|string|number} [oggi]  istante di riferimento (nei test si fissa: è l'unica cosa
+ *   del disegno che dipende dall'orologio)
+ * @returns {(nodo:object)=>boolean}
+ */
+export function nodoERecente(oggi = new Date()) {
+  const giorno = (iso) => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ""));
+    const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(iso);
+    if (isNaN(d)) return null;
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  };
+  const base = new Date(oggi);
+  if (isNaN(base)) return () => false;
+  base.setHours(0, 0, 0, 0);
+  const oggiMs = base.getTime();
+  const UN_GIORNO = 24 * 3600 * 1000;
+  return (n) => {
+    const g = giorno(n?.d);
+    return g !== null && Math.abs(oggiMs - g) <= UN_GIORNO;
+  };
+}
+
+/**
  * Crea l'atlante su un canvas.
  * @param {object} opzioni
  * @param {HTMLCanvasElement} opzioni.canvas
@@ -61,8 +98,10 @@ const FONT_GRANDE = "13px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', R
  * @param {(nodo:object|null)=>void} opzioni.onHover
  * @param {boolean} opzioni.rotante  rotazione automatica dell'orbita (spenta: si legge meglio)
  * @param {"mappa"|"orbita"} opzioni.modo
+ * @param {Date|string|number} [opzioni.oggi]  giorno di riferimento per il segno dei nodi nuovi
  */
-export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () => {}, rotante = false, modo = "mappa" }) {
+export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () => {}, rotante = false, modo = "mappa", oggi = new Date() }) {
+  const eRecente = nodoERecente(oggi);
   const ctx = canvas.getContext("2d");
 
   // ---- orbita (3D) ----
@@ -189,6 +228,8 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
       return {
         ...n,
         i,
+        // Segno della crescita: episodio o decisione di oggi/ieri (vedi `nodoERecente`).
+        nuovo: eRecente(n),
         // ORBITA: gli strati sono impilati con l'episodio IN ALTO, come nella mappa: la stessa
         // informazione non deve cambiare verso da una lettura all'altra (prima la catena
         // saliva dal basso e la si leggeva al contrario).
@@ -636,6 +677,15 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
         ctx.fillStyle = scelto ? "#fbbf24" : n.colore;
         ctx.globalAlpha = scelto ? 1 : attenuato ? 0.35 : 0.95;
         ctx.fill();
+        // Anello dei nodi NUOVI: è l'unico segno che dice «la memoria si è mossa» — senza,
+        // una memoria che cresce di due nodi al giorno è indistinguibile da una ferma.
+        if (n.nuovo && !scelto) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, r + 3.4, 0, Math.PI * 2);
+          ctx.strokeStyle = attenuato ? "rgba(226,232,240,0.3)" : "rgba(244,247,255,0.85)";
+          ctx.lineWidth = 1.3;
+          ctx.stroke();
+        }
         if (scelto || vicino) {
           ctx.lineWidth = scelto ? 2 : 1.2;
           ctx.strokeStyle = scelto ? "rgba(251,191,36,0.95)" : "rgba(226,232,240,0.5)";
@@ -826,6 +876,14 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
       ctx.fillStyle = scelto ? "#fbbf24" : n.colore;
       ctx.globalAlpha = scelto ? 1 : attenuato ? 0.28 : 0.92;
       ctx.fill();
+      // Anello dei nodi nuovi, come nella mappa (stessa informazione, stessa forma).
+      if (n.nuovo && !scelto) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(1.6, r) + 3.4, 0, Math.PI * 2);
+        ctx.strokeStyle = attenuato ? "rgba(226,232,240,0.3)" : "rgba(244,247,255,0.85)";
+        ctx.lineWidth = 1.3;
+        ctx.stroke();
+      }
       if (scelto) {
         ctx.lineWidth = 2;
         ctx.strokeStyle = "rgba(251,191,36,0.9)";
@@ -900,6 +958,10 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     const W = canvas.clientWidth;
     const visibili = nodi.filter(nodoVisibile).length;
     const totale = nodi.length;
+    // I nodi nuovi VISIBILI (i filtri possono nasconderli): il numero deve sempre descrivere
+    // quello che si sta guardando. `contaNuovi()` dice invece quanti sono nel grafo.
+    const nuovi = nodi.filter((n) => n.nuovo && nodoVisibile(n)).length;
+    const codaNuovi = nuovi ? ` · +${nuovi} nuov${nuovi === 1 ? "o" : "i"}` : "";
     const base = `rgba(148,163,184,0.62)`;
     const striscia = () => {
       ctx.fillStyle = "rgba(5,7,12,0.72)";
@@ -908,16 +970,16 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     striscia();
     if (vista.selezionato !== null) {
       const n = nodi[vista.selezionato];
-      testoConBordo(`${accorcia(n.n, W < 620 ? 30 : 60)} · ${stratoLabel(n.s)} · ${n.g || 0} collegamenti${vista.dentroLente ? " · lente attiva" : ""}`, 12, canvas.clientHeight - 8, "rgba(226,232,240,0.94)", "rgba(5,7,12,0.95)", 3.4);
+      testoConBordo(`${accorcia(n.n, W < 620 ? 30 : 60)} · ${stratoLabel(n.s)} · ${n.g || 0} collegamenti${n.nuovo ? " · nuovo" : ""}${vista.dentroLente ? " · lente attiva" : ""}`, 12, canvas.clientHeight - 8, "rgba(226,232,240,0.94)", "rgba(5,7,12,0.95)", 3.4);
       return;
     }
     const testo = vista.modo === "mappa"
       ? (W < 620
-        ? `${visibili}/${totale} nodi · trascina · pizzico · doppio tocco = adatta`
-        : `${visibili} di ${totale} nodi visibili · trascina o rotella per esplorare · doppio clic o «adatta» per rivedere tutto · L lente · ${Math.round(vista.k * 100)}%`)
+        ? `${visibili}/${totale} nodi${codaNuovi} · trascina · pizzico · doppio tocco = adatta`
+        : `${visibili} di ${totale} nodi visibili${codaNuovi} · trascina o rotella per esplorare · doppio clic o «adatta» per rivedere tutto · L lente · ${Math.round(vista.k * 100)}%`)
       : (W < 620
-        ? `${visibili}/${totale} nodi · trascina per ruotare · L lente`
-        : `${visibili} di ${totale} nodi visibili · trascina per ruotare · rotella per avvicinare · L lente a 2 passi · R rotazione`);
+        ? `${visibili}/${totale} nodi${codaNuovi} · trascina per ruotare · L lente`
+        : `${visibili} di ${totale} nodi visibili${codaNuovi} · trascina per ruotare · rotella per avvicinare · L lente a 2 passi · R rotazione`);
     testoConBordo(testo, 12, canvas.clientHeight - 8, base, "rgba(5,7,12,0.95)", 3.4);
   }
 
@@ -1279,6 +1341,10 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     /** Quanti nodi passano i filtri correnti (strati, aree, lente, ricerca). */
     contaVisibili() {
       return nodi.filter(nodoVisibile).length;
+    },
+    /** Quanti nodi del grafo sono «nuovi» (episodio o decisione di oggi o di ieri). */
+    contaNuovi() {
+      return nodi.filter((n) => n.nuovo).length;
     },
     /** Fotografia in PNG: la vista si può salvare e mostrare senza screenshot. */
     png() {

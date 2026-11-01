@@ -8412,6 +8412,18 @@ let memoriaDati = null;
 let memoriaLoaded = false;
 let memoriaNodoScelto = null;
 
+/**
+ * L'istante in cui il grafo è stato costruito, nel fuso di chi guarda.
+ * `generato` è ISO in UTC (`...T10:57:22.129Z`): tagliarlo a 16 caratteri mostrava «10:57» a
+ * chi ha l'orologio alle 11:57, e la memoria sembrava ferma un'ora indietro. La data non si
+ * inventa: se il valore non è una data valida si mostra com'è.
+ */
+function memQuando(iso) {
+  const d = new Date(iso);
+  if (!iso || isNaN(d)) return String(iso || "").slice(0, 16).replace("T", " ");
+  return d.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" });
+}
+
 async function caricaMemoria() {
   try {
     const r = await fetch("/api/memoria");
@@ -8443,8 +8455,12 @@ function renderMemoriaStato() {
       + (st.da_aggiornare ? '<div class="mem-cieca" style="margin-top:4px">ci sono file modificati dopo l\'ultima indicizzazione: ricostruisci</div>' : "")
     : '<div class="mem-vuoto" style="margin-top:8px">Il grafo non esiste ancora: premi «ricostruisci».</div>';
   $("memNumeri").innerHTML = pezzi.join("") + buchi;
+  // «+N nuovi»: la memoria cresce di pochi nodi al giorno e il disegno si adatta allo schermo,
+  // quindi senza un numero esplicito una memoria che lavora sembra ferma. Conta episodi e
+  // decisioni di oggi e di ieri (gli artefatti non hanno una data: non possono essere «nuovi»).
+  const nuovi = memoriaAtlante?.contaNuovi?.() ?? 0;
   $("memoriaHint").textContent = v.esiste
-    ? `${v.nodi.length} nodi · ${v.esiti ?? ""}${String(v.generato || "").slice(0, 16).replace("T", " ")}`
+    ? `${v.nodi.length} nodi${nuovi ? ` · +${nuovi} nuovi` : ""} · ${v.esiti ?? ""}${memQuando(v.generato)}`
     : "memoria non ancora costruita";
 }
 
@@ -8475,7 +8491,11 @@ async function disegnaAtlante() {
     riagganciaNodoMemoria();
   }
   aggiornaControlliMemoria();
-  $("memoriaHint").textContent = `${v.nodi.length} nodi · ${String(v.generato || "").slice(0, 16).replace("T", " ")}`;
+  const nuovi = memoriaAtlante.contaNuovi();
+  $("memoriaHint").textContent = `${v.nodi.length} nodi${nuovi ? ` · +${nuovi} nuovi` : ""} · ${memQuando(v.generato)}`;
+  $("memoriaHint").title = nuovi
+    ? `${nuovi} nod${nuovi === 1 ? "o" : "i"} nuov${nuovi === 1 ? "o" : "i"} (episodio o decisione di oggi o di ieri): nel disegno hanno un anello chiaro`
+    : "nessun episodio o decisione di oggi o di ieri: la memoria non si è mossa nelle ultime 48 ore";
 }
 
 /**

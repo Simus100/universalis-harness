@@ -727,6 +727,24 @@ await prova("i controlli del disegno sono nel markup e collegati", async () => {
   return "modo, adatta, −, ＋ e legenda cliccabile";
 });
 
+await prova("la barra della memoria dice cosa è nuovo e a che ora è stata costruita", async () => {
+  const html = readFileSync("dashboard.html", "utf8");
+  // Il numero «+N nuovi» è l'unico modo per vedere a colpo d'occhio che la memoria si è mossa:
+  // il disegno si adatta allo schermo e due nodi in più non cambiano la forma della mappa.
+  assert(/contaNuovi/.test(html), "la barra della memoria non legge il conteggio dei nodi nuovi");
+  assert(/\+\$\{nuovi\} nuovi/.test(html), "la barra non scrive «+N nuovi»");
+  assert(/memQuando\(/.test(html), "l'ora della memoria non passa da memQuando");
+  // `generato` è ISO UTC: mostrarlo tagliato a 16 caratteri dava un'ora indietro rispetto
+  // all'orologio di chi guarda («10:57» alle 11:57) e faceva sembrare la memoria ferma.
+  assert(!/String\(v\.generato \|\| ""\)\.slice/.test(html), "l'ora della memoria è ancora il taglio dell'ISO UTC");
+  const src = readFileSync("media/memoria/atlante.mjs", "utf8");
+  assert(/export function nodoERecente/.test(src), "manca la regola «recente» nel modulo del disegno");
+  assert(/contaNuovi\(\)/.test(src), "il disegno non espone il conteggio dei nodi nuovi");
+  const gen = readFileSync("media/memoria/memoria-atlante.mjs", "utf8");
+  assert(/import \{ nodoERecente \}/.test(gen), "l'atlante autonomo ricopia la regola invece di importarla");
+  return "contaNuovi + memQuando collegati in dashboard e atlante";
+});
+
 await prova("il modulo del disegno offre due letture e i loro controlli", async () => {
   const src = readFileSync("media/memoria/atlante.mjs", "utf8");
   for (const nome of ["geometriaMappa", "toggleModo", "impostaModo", "adatta", "zoom", "toggleRelazione", "contaVisibili"]) {
@@ -908,6 +926,52 @@ await prova("quando il grafo cambia, i nodi e i vicini esposti sono quelli nuovi
     at.aggiorna({});
     at.ridisegna();
     return `${v2.nodi.length} nodi aggiornati, nodo scelto e filtri conservati`;
+  } finally {
+    chiudi();
+  }
+});
+
+await prova("il segno dei nodi nuovi distingue una memoria che cresce da una memoria ferma", async () => {
+  const chiudi = apriAmbienteBrowser();
+  try {
+    const { createAtlante } = await import("./memoria/atlante.mjs");
+    const v = await datiVista();
+    // La data di riferimento si FISSA: il segno «nuovo» è l'unica cosa del disegno che dipende
+    // dall'orologio, e un test che cambia esito a mezzanotte non è un test.
+    const OGGI = "2026-11-01";
+    const canvas = canvasFinto(1440, 620);
+    const at = createAtlante({ canvas, dati: v, oggi: OGGI });
+
+    const attesi = v.nodi.filter((n) => n.d === "2026-11-01" || n.d === "2026-10-31").length;
+    assert(attesi > 0, "il grafo non ha nodi di oggi o di ieri: il test non proverebbe nulla");
+    assert(at.contaNuovi() === attesi, `nodi nuovi ${at.contaNuovi()} invece di ${attesi}`);
+    assert(
+      at.nodi.filter((n) => n.nuovo).every((n) => n.s === "episodio" || n.s === "decisione"),
+      "un nodo senza data (artefatto) risulta «nuovo»: si starebbe inventando una data",
+    );
+    assert(at.nodi.filter((n) => n.nuovo).every((n) => n.d === "2026-11-01" || n.d === "2026-10-31"), "un nodo vecchio è marcato nuovo");
+
+    // Il numero nel piede descrive quello che si vede, e c'è solo quando c'è qualcosa da dire.
+    at.ridisegna();
+    const piede = canvas.testi.map((t) => t.t).find((t) => /nodi visibili/.test(t)) || "";
+    assert(piede.includes(`+${attesi} nuov`), `il piede non annuncia i nodi nuovi: «${piede.slice(0, 90)}»`);
+
+    // Dieci giorni dopo la STESSA memoria non ha più niente di nuovo: nessun «+0» a schermo.
+    const canvasDopo = canvasFinto(1440, 620);
+    const dopo = createAtlante({ canvas: canvasDopo, dati: v, oggi: "2026-11-20" });
+    assert(dopo.contaNuovi() === 0, `a dieci giorni di distanza ${dopo.contaNuovi()} nodi risultano ancora nuovi`);
+    dopo.ridisegna();
+    const piedeDopo = canvasDopo.testi.map((t) => t.t);
+    assert(!piedeDopo.some((t) => /\+0 nuov/.test(t)), "il piede scrive «+0 nuovi»: rumore, non informazione");
+
+    // Un grafo senza date (o con date rotte) non deve rompere il disegno.
+    const senza = createAtlante({
+      canvas: canvasFinto(800, 500),
+      dati: { ...v, nodi: v.nodi.map((n) => ({ ...n, d: undefined })), archi: v.archi },
+      oggi: OGGI,
+    });
+    assert(senza.contaNuovi() === 0, "nodi senza data risultano nuovi");
+    return `${attesi} nodi nuovi al ${OGGI}, 0 dieci giorni dopo`;
   } finally {
     chiudi();
   }

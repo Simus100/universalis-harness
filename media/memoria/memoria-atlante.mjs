@@ -13,6 +13,8 @@ import { join } from "node:path";
 import { readFile, stat } from "node:fs/promises";
 import { MEM_DIR, scriviAtomico, ROOT, oggi } from "./memoria-core.mjs";
 import { caricaGrafo } from "./memoria-graph.mjs";
+// La regola del segno «nuovo» è quella del disegno: importata, non ricopiata.
+import { nodoERecente } from "./atlante.mjs";
 
 const ATLANTE_HTML = join(MEM_DIR, "atlante.html");
 
@@ -33,6 +35,8 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
   .sotto { color: #94a3b8; font-size: 13px; margin-top: 4px; }
   .numeri { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: #cbd5e1; }
   .numeri b { color: #fff; font-variant-numeric: tabular-nums; }
+  /* zero nuovi non è un errore, è un'informazione: si legge più piano, non in rosso */
+  .numeri .spento { opacity: .55; }
   .cieca { color: #fb7185; }
   .cieca.ok { color: #34d399; }
   /* Barra dei controlli del disegno: gli stessi comandi della vista nella dashboard, così le due
@@ -95,6 +99,7 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
     <span><b>${meta.archi}</b> relazioni</span>
     <span><b>${meta.aree}</b> aree</span>
     <span><b>${meta.episodi}</b> episodi</span>
+    <span class="${meta.nuovi ? "" : "spento"}"><b>+${meta.nuovi}</b> nuov${meta.nuovi === 1 ? "o" : "i"} (oggi e ieri)</span>
     <span class="${meta.cieca ? "cieca" : "cieca ok"}">${meta.cieca ? `${meta.senza_decisione} episodi senza decisione · ${meta.isolati} nodi isolati` : "nessun buco rilevato"}</span>
   </div>
 </header>
@@ -217,6 +222,13 @@ document.getElementById("cerca").addEventListener("input", (e) => {
 </html>
 `;
 
+/** ISO (UTC) → data e ora locali, brevi. Se il valore non è una data valida resta com'è. */
+function formattaQuando(iso) {
+  const d = new Date(iso);
+  if (!iso || isNaN(d)) return String(iso || "").slice(0, 16).replace("T", " ");
+  return d.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" });
+}
+
 /** Scrive `media/memoria/atlante.html`: dati incorporati, codice incorporato, zero rete. */
 export async function scriviAtlante({ silenzioso = true } = {}) {
   const grafo = await caricaGrafo();
@@ -224,13 +236,17 @@ export async function scriviAtlante({ silenzioso = true } = {}) {
   const codice = await readFile(join(MEM_DIR, "atlante.mjs"), "utf8");
   const st = grafo.statistica || {};
   const meta = {
-    generato: String(grafo.generato || "").slice(0, 16).replace("T", " "),
+    // L'ora nel fuso di chi legge: `generato` è ISO UTC, e tagliarlo a 16 caratteri mostrava
+    // un'ora indietro rispetto all'orologio (10:59 invece di 11:59 in Italia).
+    generato: formattaQuando(grafo.generato),
     nodi: grafo.nodi.length,
     archi: grafo.archi.length,
     aree: Object.keys(grafo.aree || {}).length,
     episodi: (st.per_strato || {}).episodio || 0,
     senza_decisione: st.episodi_senza_decisione ?? 0,
     isolati: st.isolati ?? 0,
+    // Episodi e decisioni di oggi e di ieri: la stessa regola del disegno (nodoERecente).
+    nuovi: (grafo.nodi || []).filter(nodoERecente()).length,
     cieca: (st.episodi_senza_decisione ?? 0) > 0 || (st.isolati ?? 0) > 0,
   };
   const html = PAGINA(grafo, codice.trim(), meta);
