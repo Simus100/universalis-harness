@@ -53,6 +53,10 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
           border-left: 1px solid rgba(148,163,184,.16); background: #0a0f18; }
   aside h2 { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #64748b; margin: 16px 0 8px; }
   aside h2:first-child { margin-top: 0; }
+  /* I due grafici che non sono il grafo: riga del tempo e matrice. Larghi quanto la colonna,
+   * alti quanto serve, cliccabili (una lettura che non porta a un nodo è decorazione). */
+  .tempo svg, .grafico-matrice { display: block; width: 100%; height: auto; }
+  .grafico-matrice rect, .grafico-matrice text { cursor: pointer; }
   input[type=search] { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(148,163,184,.28);
                        background: #0e1420; color: #e2e8f0; font-size: 13px; }
   input[type=search]:focus-visible { outline: 2px solid #5b9dff; outline-offset: 1px; }
@@ -114,6 +118,8 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
 <main>
   <canvas id="tela"></canvas>
   <aside>
+    <h2>Come cresce · 30 giorni</h2>
+    <div class="tempo" id="tempo"></div>
     <h2>Cerca un nodo</h2>
     <input id="cerca" type="search" placeholder="es. sync, browser, memoria…" autocomplete="off">
     <h2>Livelli</h2>
@@ -124,6 +130,9 @@ const PAGINA = (dati, codice, meta) => `<!doctype html>
     <div class="legenda" id="legenda"></div>
     <h2>Nodo selezionato</h2>
     <div id="dettaglio" class="vuoto">Nessun nodo selezionato. Clicca un punto: confronta il suo vicinato con L.</div>
+    <h2>Matrice · chi tocca cosa</h2>
+    <div class="vuoto">I ${meta.nodi > 24 ? 24 : meta.nodi} nodi più connessi: una cella è una relazione, senza linee incrociate. Clicca una riga per aprire quel nodo.</div>
+    <div id="matrice"></div>
   </aside>
 </main>
 <footer>
@@ -161,7 +170,7 @@ for (const [id, st] of Object.entries(D.strati)) {
   const b = document.createElement("button");
   b.className = "pill";
   b.type = "button";
-  b.setAttribute("aria-pressed", "true");
+  b.setAttribute("aria-pressed", atlante.vista.stratiAttivi.has(id) ? "true" : "false");
   b.innerHTML = '<span class="led"></span>' + esc(st.label);
   b.style.color = st.colore;
   b.onclick = () => {
@@ -175,7 +184,7 @@ for (const [id, ar] of Object.entries(D.aree)) {
   const b = document.createElement("button");
   b.className = "pill";
   b.type = "button";
-  b.setAttribute("aria-pressed", "true");
+  b.setAttribute("aria-pressed", atlante.vista.areeAttive.has(id) ? "true" : "false");
   b.innerHTML = '<span class="led"></span>' + esc(ar.label) + " <em>" + quante(id) + "</em>";
   b.style.color = ar.colore;
   b.onclick = () => {
@@ -188,14 +197,33 @@ document.getElementById("legenda").innerHTML = "";
 for (const [id, r] of Object.entries(D.colori)) {
   const b = document.createElement("button");
   b.type = "button";
-  b.setAttribute("aria-pressed", "true");
+  b.setAttribute("aria-pressed", atlante.vista.relazioniAttive.has(id) ? "true" : "false");
   b.innerHTML = '<i style="background:' + r.colore + '"></i>' + esc(r.label);
+  if (!atlante.vista.relazioniAttive.has(id)) b.title = "Spenta di default: " + (id === "ha-toccato" ? "425 archi episodio→file facevano ~165.000 incroci; un clic la riaccende" : "un clic la riaccende");
   b.onclick = () => {
     atlante.toggleRelazione(id);
     b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") === "true" ? "false" : "true");
   };
   document.getElementById("legenda").appendChild(b);
 }
+
+// Riga del tempo e matrice: le due letture che non sono il grafo.
+document.getElementById("tempo").innerHTML = timelineSVG(D.nodi, { giorni: 30, larghezza: 274, altezza: 52 });
+const matrice = matriceSVG(D.nodi.map((n, i) => ({ ...n, i })), D.archi, { limite: 24 });
+document.getElementById("matrice").innerHTML = matrice.svg;
+document.getElementById("matrice").addEventListener("click", (ev) => {
+  const r = ev.target?.getAttribute?.("data-r");
+  if (r === null || r === undefined) return;
+  const nodo = matrice.nodi[Number(r)];
+  if (!nodo) return;
+  const scelto = atlante.selezionaPerId(nodo.id);
+  if (scelto) {
+    const p = atlante.m2s(scelto.posM);
+    const tela = document.getElementById("tela");
+    if (p.x < 0 || p.y < 0 || p.x > tela.clientWidth || p.y > tela.clientHeight) atlante.adatta();
+    document.getElementById("dettaglio").innerHTML = '<div class="titolo">' + esc(scelto.n) + "</div><div class=dove>" + (scelto.g || 0) + " collegamenti · selezionato dalla matrice</div>";
+  }
+});
 
 // Controlli del disegno, gli stessi della vista integrata.
 const bModo = document.getElementById("bModo");

@@ -2031,6 +2031,25 @@ footer {
   #previsioniView .gtoolbar { flex-wrap: wrap; gap: 6px; }
 }
 
+/* Riga del tempo della crescita: la mappa si adatta allo schermo, quindi la crescita ha bisogno
+ * di una forma tutta sua (barre per giorno) e non di un altro numero accanto agli altri. */
+.mem-tempo svg { display: block; width: 100%; height: auto; }
+.mem-buchi { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.mem-buchi button { text-align: left; padding: 6px 9px; border-radius: 8px; font-size: var(--fs-sm);
+                    border: 1px solid rgba(148,163,184,.25); background: #0e1420; color: #cbd5e1; cursor: pointer; }
+.mem-buchi button:hover { border-color: rgba(148,163,184,.5); color: #fff; }
+.mem-buchi button .n { font-variant-numeric: tabular-nums; font-weight: 600; color: #fbbf24; }
+.mem-buchi button.ok .n { color: #34d399; }
+.mem-buchi .elenco { display: flex; flex-direction: column; gap: 2px; margin: 2px 0 6px; }
+.mem-buchi .elenco button { border: 0; background: transparent; padding: 3px 6px; color: #cbd5e1; font-size: var(--fs-sm); }
+.mem-buchi .elenco button:hover { background: #142033; }
+.mem-buchi .elenco .altro { color: #64748b; font-size: var(--fs-sm); padding: 2px 6px; }
+.mem-matricola { margin-top: 14px; }
+.mem-matricola summary { cursor: pointer; color: #94a3b8; font-size: var(--fs-sm); }
+.mem-matricola[open] summary { color: #e2e8f0; margin-bottom: 6px; }
+.grafico-matrice { width: 100%; height: auto; }
+.grafico-matrice rect, .grafico-matrice text { cursor: pointer; }
+
 #memoriaView .gtoolbar { gap: 6px; padding: 8px 10px; flex-wrap: wrap; }
 @media (max-width: 760px) {
   .lbl-largo { display: none; }
@@ -2469,6 +2488,9 @@ footer {
     <aside class="mem-aside">
       <h3>Stato della memoria</h3>
       <div class="mem-numeri" id="memNumeri">—</div>
+      <h3>Come cresce · ultimi 30 giorni</h3>
+      <div class="mem-tempo" id="memTimeline">—</div>
+      <div class="mem-buchi" id="memBuchi"></div>
       <h3>Cerca nel grafo</h3>
       <input class="select" id="memCerca" type="search" placeholder="es. sync, browser, memoria…" autocomplete="off" style="width:100%;min-width:0" />
       <div class="mem-risultati" id="memRisultati"></div>
@@ -2480,6 +2502,11 @@ footer {
       <div class="mem-legenda" id="memLegenda"></div>
       <h3>Nodo selezionato</h3>
       <div class="mem-dettaglio" id="memDettaglio"><span class="mem-vuoto">Clicca un punto del disegno: apre la sua scheda con i collegamenti in entrambi i versi. In mappa: trascina per spostarti, rotella o pizzico per lo zoom, doppio clic per rivedere tutto.</span></div>
+      <details class="mem-matricola">
+        <summary>Matrice · chi tocca cosa</summary>
+        <div class="mem-vuoto">I 24 nodi più connessi, righe e colonne: una cella colorata è una relazione, senza linee che si incrociano. Clicca una riga per aprire quel nodo.</div>
+        <div id="memMatrice">—</div>
+      </details>
     </aside>
   </div>
 </main>
@@ -8408,6 +8435,9 @@ $("skillsBack").onclick = () => showTab("chat");
 // La vista NON parla con il modello: legge lo stesso grafo che usano i tool (media/memoria/)
 // e lo disegna. Serve a te — per vedere cosa la memoria sa e dove è cieca — non all'agente.
 let memoriaAtlante = null;
+// Il modulo del disegno, tenuto da parte: contiene anche i due grafici che non sono il grafo
+// (la riga del tempo e la matrice). Importarlo una volta sola evita due copie dello stesso codice.
+let memoriaModulo = null;
 let memoriaDati = null;
 let memoriaLoaded = false;
 let memoriaNodoScelto = null;
@@ -8475,6 +8505,7 @@ async function disegnaAtlante() {
   if (!memoriaAtlante) {
     try {
       const mod = await import("/memoria/atlante.mjs");
+      memoriaModulo = mod;
       memoriaAtlante = mod.createAtlante({
         canvas,
         dati: v,
@@ -8491,6 +8522,7 @@ async function disegnaAtlante() {
     riagganciaNodoMemoria();
   }
   aggiornaControlliMemoria();
+  disegnaGraficiMemoria();
   const nuovi = memoriaAtlante.contaNuovi();
   $("memoriaHint").textContent = `${v.nodi.length} nodi${nuovi ? ` · +${nuovi} nuovi` : ""} · ${memQuando(v.generato)}`;
   $("memoriaHint").title = nuovi
@@ -8534,6 +8566,134 @@ function riagganciaNodoMemoria() {
   }
   memoriaNodoScelto = null;
   $("memDettaglio").innerHTML = '<div class="mem-vuoto">Il nodo che stavi leggendo non è più nel grafo (la memoria è stata ricostruita).</div>';
+}
+
+/**
+ * LA CRESCITA, LA MATRICE E I BUCHI: le tre letture che non sono il disegno.
+ *
+ * Perché accanto alla mappa e non dentro: la mappa risponde a «com'è fatta la memoria» (una
+ * domanda), e queste rispondono alle altre tre che una mappa sola non può servire insieme —
+ * «cosa è cambiato», «chi tocca cosa» e «dove sono i buchi». Ciascuna ha la sua forma: barre per
+ * il tempo, una matrice per le adiacenze (niente linee che si incrociano), un elenco per il
+ * lavoro da fare. Tutte cliccabili: una lettura che non porta a un nodo è decorazione.
+ */
+function disegnaGraficiMemoria() {
+  if (!memoriaModulo || !memoriaDati?.vista?.esiste) return;
+  const v = memoriaDati.vista;
+  try {
+    $("memTimeline").innerHTML = memoriaModulo.timelineSVG(v.nodi, { giorni: 30, larghezza: 264, altezza: 52 });
+  } catch (e) {
+    $("memTimeline").innerHTML = '<span class="mem-cieca">riga del tempo non disegnabile: ' + escHtml(String(e.message || e)) + "</span>";
+  }
+  try {
+    const m = memoriaModulo.matriceSVG(v.nodi, v.archi, { limite: 24 });
+    $("memMatrice").innerHTML = m.svg;
+    const box = $("memMatrice");
+    box.onclick = (ev) => {
+      const r = ev.target?.getAttribute?.("data-r");
+      if (r === null || r === undefined) return;
+      const nodo = m.nodi[Number(r)];
+      if (!nodo) return;
+      const fresco = memoriaAtlante?.nodi.find((n) => n.id === nodo.id);
+      if (!fresco) return;
+      memoriaAtlante.seleziona(fresco.i);
+      apriNodoMemoria(fresco);
+      // Dalla matrice al disegno: se il nodo è fuori dall'inquadratura, lo si porta in vista.
+      if (memoriaAtlante.vista.modo === "mappa") {
+        const p = memoriaAtlante.m2s(fresco.posM);
+        const c = $("memCanvas");
+        if (p.x < 0 || p.y < 0 || p.x > c.clientWidth || p.y > c.clientHeight) memoriaAtlante.adatta();
+      }
+    };
+  } catch (e) {
+    $("memMatrice").innerHTML = '<span class="mem-cieca">matrice non disegnabile: ' + escHtml(String(e.message || e)) + "</span>";
+  }
+  renderMemoriaBuchi();
+}
+
+/**
+ * I BUCHI DELLA MEMORIA, cliccabili.
+ *
+ * Il grafo mostra il lavoro fatto; i buchi (episodi senza decisione, nodi isolati, file che
+ * tirano dentro mezzo progetto) sono la parte più utile da guardare, ed erano una riga rossa in
+ * un angolo. Qui sono tre voci che si aprono in un elenco, e ogni nome porta al nodo nel disegno:
+ * «si giudica un grafo dall'azione successiva a cui porta».
+ */
+function renderMemoriaBuchi() {
+  const box = $("memBuchi");
+  if (!box || !memoriaAtlante) return;
+  const nodi = memoriaAtlante.nodi;
+  const archi = memoriaDati?.vista?.archi || [];
+  const conDecisione = new Set();
+  for (const a of archi) {
+    if (a.r !== "ha-deciso") continue;
+    for (const i of [a.a, a.b]) if (nodi[i]?.s === "episodio") conDecisione.add(i);
+  }
+  const senzaDecisione = nodi.filter((n) => n.s === "episodio" && !conDecisione.has(n.i));
+  const isolati = nodi.filter((n) => (n.g || 0) === 0);
+  const hub = nodi.filter((n) => (n.g || 0) >= 30).sort((a, b) => (b.g || 0) - (a.g || 0));
+  const voci = [
+    {
+      chiave: "decisione",
+      testo: "episodi senza decisione",
+      nota: "il «perché» non è registrato: la memoria ricorda cosa è successo, non cosa si è scelto",
+      elenco: senzaDecisione,
+    },
+    {
+      chiave: "hub",
+      testo: "file che tirano dentro mezzo progetto",
+      nota: "30 collegamenti o più: il grafo si legge intorno a loro",
+      elenco: hub,
+    },
+    {
+      chiave: "isolati",
+      testo: "nodi isolati",
+      nota: "nella memoria non hanno nessun collegamento",
+      elenco: isolati,
+    },
+  ];
+  box.innerHTML = "";
+  for (const v of voci) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = v.elenco.length ? "" : "ok";
+    b.innerHTML = `<span class="n">${v.elenco.length}</span> ${escHtml(v.testo)}`;
+    b.title = v.nota + (v.elenco.length ? " · clic per l'elenco" : " · niente da fare");
+    b.disabled = !v.elenco.length;
+    let aperto = null;
+    b.onclick = () => {
+      if (aperto) {
+        aperto.remove();
+        aperto = null;
+        return;
+      }
+      const d = document.createElement("div");
+      d.className = "elenco";
+      const massimo = 12;
+      v.elenco.slice(0, massimo).forEach((n) => {
+        const riga = document.createElement("button");
+        riga.type = "button";
+        riga.textContent = n.n.length > 46 ? n.n.slice(0, 45) + "…" : n.n;
+        riga.title = n.n;
+        riga.onclick = () => {
+          const fresco = memoriaAtlante.nodi.find((x) => x.id === n.id);
+          if (!fresco) return;
+          memoriaAtlante.seleziona(fresco.i);
+          apriNodoMemoria(fresco);
+        };
+        d.appendChild(riga);
+      });
+      if (v.elenco.length > massimo) {
+        const altro = document.createElement("div");
+        altro.className = "altro";
+        altro.textContent = `…e altri ${v.elenco.length - massimo}`;
+        d.appendChild(altro);
+      }
+      b.after(d);
+      aperto = d;
+    };
+    box.appendChild(b);
+  }
 }
 
 function costruisciFiltriMemoria(v) {

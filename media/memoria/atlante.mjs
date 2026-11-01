@@ -14,13 +14,24 @@
  *             «cosa è successo → cosa si è deciso → cosa si è prodotto» si legge dall'alto in
  *             basso, senza prospettiva che la deformi.
  *     COLONNE = aree (le cartelle del progetto), intestate e sempre visibili.
- *     NIENTE rotazione: la posizione di un nodo non cambia mai fra un'apertura e l'altra.
+ *     NIENTE rotazione e POSIZIONI ANCORATE: la posizione di un nodo non cambia né fra
+ *             un'apertura e l'altra né quando la memoria cresce — la forma del mondo si
+ *             congela al primo disegno, i nodi nuovi prendono le celle libere.
+ *     ZOOM SEMANTICO: sotto una certa soglia di zoom un'area grande diventa un cerchio con il
+ *             suo conteggio, e si apre con un clic: si riduce il dettaglio, non tutto insieme.
  *     PAN e ZOOM: ci si muove come in una mappa geografica (trascina, rotella, pizzico),
  *             con i pulsanti −/＋/adatta sempre a portata di dito.
  *     ETICHETTE: i nomi si vedono; quando due si sovrapporrebbero vince il più rilevante
  *             (selezionato, poi i suoi vicini, poi i risultati della ricerca, poi il grado).
  *     EVIDENZIAZIONE: selezioni un nodo e il resto si attenua — si legge il vicinato, non il
  *             rumore. La ricerca accende un alone sui nodi trovati.
+ *     ARCHI: «ha toccato» (episodio → file) è spenta all'apertura. Misurato: 425 archi di quel
+ *             tipo facevano ~165.000 incroci su 1019; senza, ~41.000 (−75%). Si riaccende con un
+ *             clic in legenda, e non si ri-spegne da sola al primo aggiornamento dei dati.
+ *
+ * LE TRE LETTURE CHE NON SONO IL GRAFO (funzioni pure, SVG, senza canvas): `timelineSVG` — come
+ * cresce, giorno per giorno; `matriceSVG` — chi tocca cosa, senza linee che si incrociano;
+ * e i buchi (episodi senza decisione, hub, isolati) che la dashboard rende come elenco.
  *
  *   ORBITA — il 3D prospettico di prima, migliorato (etichette con contorno, rotazione spenta
  *     all'apertura, etichette contate in base allo spazio): serve per la vista d'insieme e per
@@ -48,6 +59,36 @@ export function hash01(testo) {
   }
   return h / 0xffffffff;
 }
+
+/**
+ * Relazioni che nascono SPENTE.
+ *
+ * Misura sul grafo vero (1/11/2026): 1019 archi producono ~165.000 incroci nel layout a strati;
+ * togliendo «ha toccato» (425 archi, episodio → file) scendono a ~41.000 (−75%), e restando solo
+ * la struttura (ha deciso · segue · riguarda) a ~21.000 (−87%). Gli incroci sono il fattore che
+ * pesa di più sulla comprensione di un grafo (Purchase 1997), e «ha toccato» è la relazione con
+ * meno informazione per unità di inchiostro: la maggior parte delle volte dice «quella sessione
+ * ha letto quel file», che è già nel nodo episodio.
+ *
+ * Non si perde niente: l'arco si accende con un clic sulla legenda (o si vede al passaggio del
+ * mouse, che accende il vicinato). Una relazione spenta di default è una scelta di lettura, non
+ * una cancellazione: `acceso()` la conosce e i test la verificano.
+ */
+const RELAZIONI_SPENTE_DI_DEFAULT = new Set(["ha-toccato"]);
+
+/**
+ * ZOOM SEMANTICO — quando un'area diventa un nodo solo.
+ *
+ * PERCHÉ: con 433 nodi su 1400 px il fit porta k≈0,28: i nodi sono puntini e le etichette sono
+ * metà di quelle che servirebbero. Ridurre il *dettaglio* invece di ridurre tutto (è quello che
+ * fa il semantic zoom nei grafi di ontologie) tiene la mappa d'insieme leggibile: sotto la soglia
+ * di zoom, un'area con più di MIN_NODI_AGGREGATI nodi diventa un cerchio con il suo conteggio, e
+ * si apre con un clic (o zoomando). Non si perde niente: i nodi restano nel modello — ricerca,
+ * filtri, matricola e piede continuano a vederli — e non si aggrega mai mentre stai leggendo un
+ * nodo (selezione, lente o ricerca attive): lì il contesto è il vicinato, non l'insieme.
+ */
+const SOGLIA_ZOOM_APERTA = 0.55;
+const MIN_NODI_AGGREGATI = 50;
 
 const FONT = "12px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 const FONT_GRANDE = "13px ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
@@ -87,6 +128,156 @@ export function nodoERecente(oggi = new Date()) {
     const g = giorno(n?.d);
     return g !== null && Math.abs(oggiMs - g) <= UN_GIORNO;
   };
+}
+
+/**
+ * RIGA DEL TEMPO — quanti episodi e decisioni per giorno, ultimi `giorni`.
+ *
+ * PERCHÉ UNA FUNZIONE PURA CHE RESTITUISCE SVG: serve in due posti (la vista della dashboard e
+ * l'atlante autonomo), e un grafico di trenta barre non vale un secondo disegnatore. Così la
+ * forma è una sola, si prova senza browser e non c'è nessun canvas in più da dimensionare.
+ *
+ * Perché serve: la mappa si adatta allo schermo, quindi la crescita non ha una forma — e una
+ * memoria che lavora sembra ferma quanto una che dorme. Qui la crescita è una forma da leggere
+ * (e senza animazioni: non muove nulla mentre la guardi).
+ *
+ * @param {Array<object>} nodi
+ * @param {{giorni?:number, larghezza?:number, altezza?:number, oggi?:Date|string}} [opzioni]
+ * @returns {string} SVG autonomo
+ */
+export function timelineSVG(nodi, { giorni = 30, larghezza = 320, altezza = 52, oggi = new Date() } = {}) {
+  const perGiorno = new Map();
+  for (const n of nodi || []) {
+    if (n?.s !== "episodio" && n?.s !== "decisione") continue; // solo chi ha una data
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(n.d || ""));
+    if (!m) continue;
+    const chiave = `${m[1]}-${m[2]}-${m[3]}`;
+    const v = perGiorno.get(chiave) || { episodi: 0, decisioni: 0 };
+    if (n.s === "episodio") v.episodi++;
+    else v.decisioni++;
+    perGiorno.set(chiave, v);
+  }
+  const base = new Date(oggi);
+  const serie = [];
+  if (!isNaN(base)) {
+    base.setHours(0, 0, 0, 0);
+    for (let i = giorni - 1; i >= 0; i--) {
+      const d = new Date(base.getTime() - i * 86400000);
+      const chiave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const v = perGiorno.get(chiave) || { episodi: 0, decisioni: 0 };
+      serie.push({ chiave, d, ...v });
+    }
+  }
+  const massimo = Math.max(1, ...serie.map((g) => g.episodi + g.decisioni));
+  const passo = larghezza / Math.max(1, serie.length);
+  const largBarra = Math.max(1.4, passo - 1.4);
+  const hBarre = Math.max(6, altezza - 22);
+  const n = ++contatoreGrafici;
+  const totaleEp = serie.reduce((a, g) => a + g.episodi, 0);
+  const totaleDec = serie.reduce((a, g) => a + g.decisioni, 0);
+  const primo = serie[0], ultimo = serie[serie.length - 1];
+  const etichetta = (d) => `${d.getDate()}/${d.getMonth() + 1}`;
+  // Il plurale conta: «1 decisioni» è il genere di dettaglio che fa sembrare il grafico
+  // generato da una macchina che non ha guardato il risultato.
+  const pl = (n, uno, molti) => `${n} ${n === 1 ? uno : molti}`;
+  let barre = "";
+  serie.forEach((g, i) => {
+    const x = i * passo;
+    const tot = g.episodi + g.decisioni;
+    const hEp = (g.episodi / massimo) * hBarre;
+    const hDec = (g.decisioni / massimo) * hBarre;
+    const yBase = 4 + hBarre;
+    const quando = `${etichetta(g.d)}: ${pl(g.episodi, "episodio", "episodi")}, ${pl(g.decisioni, "decisione", "decisioni")}`;
+    if (g.episodi) barre += `<rect x="${x.toFixed(1)}" y="${(yBase - hEp).toFixed(1)}" width="${largBarra.toFixed(1)}" height="${hEp.toFixed(1)}" fill="#5b9dff" rx="1"><title>${quando}</title></rect>`;
+    if (g.decisioni) barre += `<rect x="${x.toFixed(1)}" y="${(yBase - hEp - hDec).toFixed(1)}" width="${largBarra.toFixed(1)}" height="${hDec.toFixed(1)}" fill="#8b5cff" rx="1"><title>${quando}</title></rect>`;
+    if (tot === 0) barre += `<rect x="${x.toFixed(1)}" y="${(yBase - 1).toFixed(1)}" width="${largBarra.toFixed(1)}" height="1" fill="#243043"><title>${quando}</title></rect>`;
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${larghezza} ${altezza}" role="img" aria-labelledby="tl${n}t tl${n}d" class="grafico-tempo">`
+    + `<title id="tl${n}t">Episodi e decisioni per giorno, ultimi ${giorni} giorni</title>`
+    + `<desc id="tl${n}d">${pl(totaleEp, "episodio", "episodi")} e ${pl(totaleDec, "decisione", "decisioni")} dal ${etichetta(primo.d)} al ${etichetta(ultimo.d)}. Le barre azzurre sono episodi, quelle viola decisioni, impilate giorno per giorno.</desc>`
+    + `<line x1="0" y1="${4 + hBarre}" x2="${larghezza}" y2="${4 + hBarre}" stroke="#243043" stroke-width="1"/>`
+    + barre
+    + `<text x="0" y="${altezza - 4}" fill="#64748b" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9">${etichetta(primo.d)}</text>`
+    + `<text x="${larghezza}" y="${altezza - 4}" fill="#64748b" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" text-anchor="end">${etichetta(ultimo.d)}</text>`
+    + `<text x="${larghezza}" y="10" fill="#94a3b8" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" text-anchor="end">${pl(totaleEp, "episodio", "episodi")} · ${pl(totaleDec, "decisione", "decisioni")}</text>`
+    + `</svg>`;
+}
+
+/** Contatore per gli id interni degli SVG generati (più grafici nella stessa pagina). */
+let contatoreGrafici = 0;
+
+/**
+ * MATRICE DI ADIACENZA dei nodi più connessi.
+ *
+ * PERCHÉ ESISTE, se la mappa è più bella: sono due risposte diverse. Il node-link serve a seguire
+ * un percorso; la matrice serve ai task topologici — «chi tocca cosa», «quale file è conteso» —
+ * dove il node-link diventa un gomitolo. Studio controllato (Ghoniem, Fekete & Castagliola 2004):
+ * i due metodi sono complementari, il node-link è adatto ai grafi piccoli, la matrice ai grafi
+ * grandi o densi; i task di percorso restano difficili in entrambi.
+ *
+ * La matrice non compete con la mappa: mostra i primi `limite` nodi per collegamenti, ordinati per
+ * area (i blocchi si vedono), e ogni cella dice nel titolo quale relazione c'è. Senza sovrapporre
+ * niente: una cella è un incrocio riga×colonna, non una linea che passa sopra le altre.
+ *
+ * @param {Array<object>} nodi
+ * @param {Array<object>} archi
+ * @param {{limite?:number, cella?:number, larghezzaEtichette?:number}} [opzioni]
+ * @returns {{svg:string, nodi:Array<object>}}
+ */
+export function matriceSVG(nodi, archi, { limite = 24, cella = 8, larghezzaEtichette = 92 } = {}) {
+  const ordinati = (nodi || [])
+    .filter((n) => (n.g || 0) > 0)
+    .slice()
+    .sort((a, b) => (a.a || "").localeCompare(b.a || "") || (b.g || 0) - (a.g || 0) || String(a.id).localeCompare(String(b.id)))
+    .slice(0, limite);
+  const posizione = new Map(ordinati.map((n, i) => [n.i ?? n.id, i]));
+  const chiave = (n) => (n.i ?? n.id);
+  const perCella = new Map();
+  for (const a of archi || []) {
+    const i = posizione.get(a.a), j = posizione.get(a.b);
+    if (i === undefined || j === undefined) continue;
+    for (const [r, c] of [[i, j], [j, i]]) {
+      const k = r * ordinati.length + c;
+      if (!perCella.has(k)) perCella.set(k, a.r);
+    }
+  }
+  const colori = {
+    "ha-deciso": "#8b5cff", "ha-toccato": "#2f6f5e", riguarda: "#5b9dff",
+    segue: "#fbbf24", cita: "#94a3b8", serve: "#fb7185",
+  };
+  const etichettaRel = { "ha-deciso": "ha deciso", "ha-toccato": "ha toccato", riguarda: "riguarda", segue: "segue", cita: "cita", serve: "serve" };
+  // I nomi dei nodi sono titoli di episodi: possono contenere `<`, `&`, virgolette. Dentro un
+  // SVG fanno saltare il parsing (o peggio), quindi si escapan sempre — anche nel <title>.
+  const esc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const n = ordinati.length;
+  const lato = n * cella;
+  const larghezza = larghezzaEtichette + lato + 2;
+  const altezza = lato + 12;
+  const id = ++contatoreGrafici;
+  let celle = "";
+  for (let r = 0; r < n; r++) {
+    for (let c = 0; c < n; c++) {
+      const rel = perCella.get(r * n + c);
+      if (!rel) continue;
+      const nomeR = esc(String(ordinati[r].n || "").slice(0, 18));
+      const nomeC = esc(String(ordinati[c].n || "").slice(0, 18));
+      const x = larghezzaEtichette + c * cella;
+      const y = r * cella;
+      celle += `<rect data-r="${r}" x="${x}" y="${y}" width="${cella - 0.5}" height="${cella - 0.5}" fill="${colori[rel] || "#64748b"}"><title>${nomeR} → ${nomeC}: ${etichettaRel[rel] || rel}</title></rect>`;
+    }
+  }
+  let nomi = "";
+  ordinati.forEach((nodo, i) => {
+    const y = i * cella + cella - 1.5;
+    nomi += `<text data-r="${i}" x="${larghezzaEtichette - 4}" y="${y}" text-anchor="end" fill="${nodo.s === "artefatto" ? "#6ee7b7" : nodo.s === "decisione" ? "#c4b5fd" : "#7dd3fc"}" font-family="ui-sans-serif, system-ui, sans-serif" font-size="7.5">${esc(String(nodo.n || "").slice(0, 24))}</text>`;
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${larghezza} ${altezza}" role="img" aria-labelledby="mx${id}t mx${id}d" class="grafico-matrice">`
+    + `<title id="mx${id}t">Matrice di adiacenza dei ${n} nodi più connessi</title>`
+    + `<desc id="mx${id}d">Righe e colonne sono gli stessi ${n} nodi, ordinati per area e poi per numero di collegamenti; una cella colorata dice che fra la riga e la colonna c'è una relazione, e il colore indica quale. Serve a rispondere a «chi tocca cosa» senza incroci di linee.</desc>`
+    + nomi + celle
+    + `<text x="${larghezzaEtichette}" y="${altezza - 2}" fill="#64748b" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8">colonne: gli stessi ${n} nodi</text>`
+    + `</svg>`;
+  return { svg, nodi: ordinati };
 }
 
 /**
@@ -134,6 +325,18 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
   const inquadratura = { bx: 0, by: 0, fit: 1 };
   // Mondo della mappa: dimensioni e intestazioni, calcolate da `geometriaMappa`.
   const mondo = { w: 0, h: 0, colonne: [], fasce: [] };
+  // Aree rese come un nodo solo (zoom semantico) e aree che l'utente ha aperto con un clic.
+  const aggregati = new Map();
+  // Aree rese a cerchio. La decisione NON si prende nel ciclo di disegno (k dipende
+  // dall'inquadratura, e l'inquadratura dal numero di cerchi: si morderebbe la coda). La prende
+  // `inquadraMappa`, che è l'unico punto che sa quanto spazio serve; poi resta ferma finché
+  // l'utente non apre un'area o non zooma dentro.
+  let areeChiuse = new Set();
+  // Forma congelata della mappa (`formaDaZero`) e cella di ogni nodo: sono la memoria che rende
+  // stabile il disegno fra un aggiornamento e l'altro. Vivono quanto la vista.
+  let schema = null;
+  const celle = new Map(); // id → {a, s, r, c, vivo}
+  const RIGHE_MAX = 80;
 
   const vista = {
     modo,
@@ -189,11 +392,21 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     const spenti = precedente?.spenti || {};
     vista.stratiAttivi = accesi(strati.map(([id]) => id), spenti.strati || new Set());
     vista.areeAttive = accesi(aree.slice(), spenti.aree || new Set());
-    vista.relazioniAttive = accesi(Object.keys(dati.colori || {}), spenti.relazioni || new Set());
+    // I default valgono alla PRIMA geometria di questa vista. Dopo, conta quello che l'utente ha
+    // scelto: se accende «ha toccato» e il grafo si aggiorna, resta accesa (i `spenti` sono quelli
+    // del grafo precedente). Applicare il default a ogni giro gliela rispegnerebbe sotto le mani.
+    const relazioniSpente = spenti.relazioni || new Set();
+    vista.relazioniAttive = new Set(
+      Object.keys(dati.colori || {}).filter((id) => !relazioniSpente.has(id) && !(precedente === null && RELAZIONI_SPENTE_DI_DEFAULT.has(id))),
+    );
     if (precedente) vista.lente = precedente.lente || 0;
     vista.selezionato = null;
     vista.hover = null;
     vista.dentroLente = null;
+    // Grafo nuovo, aree chiuse: l'insieme si rilegge dalle aree, altrimenti resterebbero aperte
+    // quelle aperte prima di un aggiornamento automatico dei dati.
+    areeChiuse = new Set();
+    aggregati.clear();
 
     // ---- ORBITA: distribuzione a spirale di Fermat dentro lo spicchio dell'area ----
     // Il primo tentativo (tutti i nodi sull'anello del proprio settore) produceva un grappolo
@@ -277,42 +490,177 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
       if (!perArea.has(n.a)) perArea.set(n.a, []);
       perArea.get(n.a).push(n);
     }
+
+    /**
+     * LA FORMA DEL MONDO SI SCEGLIE UNA VOLTA.
+     *
+     * Prima: a ogni aggiornamento la bisezione cercava le righe per colonna che danno l'aspetto
+     * voluto. Il risultato era una mappa corretta e *instabile*: misurato sul grafo vero, dopo
+     * 68 episodi in più si spostavano **tutti** i 362 nodi già presenti (spostamento medio 360 px).
+     * Una mappa che si ridisegna diversa non si impara, e ogni sessione la ridisegnava.
+     *
+     * Adesso la forma si decide al primo disegno e poi resta: stesse colonne per area, passo
+     * fisso, righe che crescono verso il basso, e ogni nodo che tiene la sua cella. I nuovi
+     * prendono le celle libere. Conseguenza accettata: nel tempo la mappa può diventare più alta
+     * che larga (per questo `RIGHE_MAX` la ricompatta quando esagera) e un nodo che guadagna
+     * collegamenti non sale più in alto — la posizione racconta la storia, non il grado di oggi.
+     */
+    if (!schema) schema = formaDaZero(perArea);
+    // Un'area mai vista (raro: le aree sono le cartelle del progetto) entra con le colonne che
+    // servono a stare nella stessa altezza media delle altre.
+    for (const a of aree) {
+      if (!schema.quanti.has(a)) schema.quanti.set(a, Math.max(1, Math.ceil((perArea.get(a) || []).length / Math.max(1, schema.L))));
+    }
+
+    const passo = M.passoX;
+    const quantiDi = (a) => Math.max(1, schema.quanti.get(a) || 1);
+
+    // 1) celle: chi ce l'ha la tiene, chi è nuovo prende la prima libera (riga per riga).
+    const occupate = new Map(); // "area|strato" -> Set("r,c")
+    const chiaveCella = (a, is) => a + "|" + is;
+    const libera = (a, is, r, c) => {
+      const set = occupate.get(chiaveCella(a, is));
+      return !set || !set.has(r + "," + c);
+    };
+    const occupa = (a, is, r, c) => {
+      const k = chiaveCella(a, is);
+      if (!occupate.has(k)) occupate.set(k, new Set());
+      occupate.get(k).add(r + "," + c);
+    };
+    // prima le celle già assegnate (in ordine di riga/colonna: due aperture danno lo stesso esito)
+    const ancorati = [...celle.entries()].sort((x, y) => x[1].r - y[1].r || x[1].c - y[1].c);
+    const idNodi = new Set(nodi.map((n) => n.id));
+    for (const [id, cella] of ancorati) {
+      if (!idNodi.has(id)) continue; // il nodo non c'è più: la cella torna libera
+      const n = nodi.find((x) => x.id === id);
+      const is = indiceStrato.get(n.s) ?? 0;
+      if (cella.a !== n.a || cella.s !== is) continue; // ha cambiato area o strato: si riassegna
+      if (!libera(n.a, is, cella.r, cella.c)) continue;
+      occupa(n.a, is, cella.r, cella.c);
+      cella.vivo = true;
+    }
+    const righeMax = new Map(); // indice strato -> righe
+    for (const a of aree) {
+      const quanti = quantiDi(a);
+      strati.forEach(([id], is) => {
+        const dentro = (perArea.get(a) || [])
+          .filter((n) => (indiceStrato.get(n.s) ?? 0) === is)
+          .sort((x, y2) => {
+            const cx = celle.get(x.id), cy = celle.get(y2.id);
+            // chi è ancorato viene prima (tiene la cella), poi i nuovi per grado
+            const ax = cx && cx.vivo ? 0 : 1, ay = cy && cy.vivo ? 0 : 1;
+            return ax - ay || (y2.g || 0) - (x.g || 0) || String(x.id).localeCompare(String(y2.id));
+          });
+        for (const n of dentro) {
+          const cella = celle.get(n.id);
+          if (cella && cella.vivo && cella.a === n.a && cella.s === is) continue;
+          // prima cella libera: riga per riga, così i nuovi stanno in basso e non spostano nessuno
+          let r = 0, c = 0, trovata = false;
+          for (; r < 5000 && !trovata; r++) {
+            for (c = 0; c < quanti; c++) {
+              if (libera(n.a, is, r, c)) {
+                trovata = true;
+                break;
+              }
+            }
+            if (trovata) {
+              r = r;
+              break;
+            }
+          }
+          const cellaN = { a: n.a, s: is, r, c, vivo: true };
+          celle.set(n.id, cellaN);
+          occupa(n.a, is, r, c);
+        }
+        // righe occupate in questa (area, strato)
+        const righe = dentro.reduce((m, n) => {
+          const cel = celle.get(n.id);
+          return cel && cel.a === n.a && cel.s === is ? Math.max(m, cel.r + 1) : m;
+        }, 1);
+        righeMax.set(is, Math.max(righeMax.get(is) || 1, righe));
+      });
+    }
+
+    // 2) fasce: alte quanto basta al massimo fra le aree (come prima, ma con le righe vere)
+    mondo.fasce = [];
+    let y = 0;
+    strati.forEach(([id], is) => {
+      const righe = righeMax.get(is) || 0;
+      const h = M.fascia + (righe ? righe * M.passoY + M.margine : 8);
+      mondo.fasce.push({ strato: id, y, h, vuota: !righe });
+      y += h;
+    });
+    mondo.h = y;
+
+    // 3) colonne: passo FISSO (le aree non si allargano né si stringono più)
+    const larghezze = aree.map((a) => quantiDi(a) * passo);
+    mondo.w = larghezze.reduce((a, b) => a + b, 0);
+    mondo.colonne = [];
+    let cursoreX = -mondo.w / 2;
+    aree.forEach((a, i) => {
+      mondo.colonne.push({ area: a, x: cursoreX, w: larghezze[i], colonne: quantiDi(a) });
+      cursoreX += larghezze[i];
+    });
+
+    // 4) posizione: cella → pixel. Il jitter è deterministico dall'id (non dal tempo).
+    for (const a of aree) {
+      const col = mondo.colonne.find((c) => c.area === a);
+      const quanti = Math.max(1, col.colonne);
+      const passoArea = col.w / quanti;
+      for (const n of perArea.get(a) || []) {
+        const is = indiceStrato.get(n.s) ?? 0;
+        const cel = celle.get(n.id);
+        const fascia = mondo.fasce[is];
+        if (!cel || cel.a !== a || cel.s !== is) {
+          // non dovrebbe capitare: nodo senza cella (area/strato cambiati durante il giro)
+          n.posM = [col.x + passoArea / 2, fascia.y + M.fascia + M.passoY / 2];
+          continue;
+        }
+        const jx = (hash01(n.id + "mx") - 0.5) * 12;
+        const jy = (hash01(n.id + "my") - 0.5) * 6;
+        n.posM = [col.x + (cel.c + 0.5) * passoArea + jx, fascia.y + M.fascia + (cel.r + 0.5) * M.passoY + jy];
+      }
+    }
+
+    // 5) Guardia: una mappa a torre non si legge. Se un'area ha troppe righe (nessuno spazio
+    //    laterale nel suo passato), si ricompatta da zero — un evento raro, non un'abitudine.
+    const righeTotali = Math.max(0, ...righeMax.values());
+    if (righeTotali > RIGHE_MAX) {
+      schema = null;
+      celle.clear();
+      geometriaMappa(indiceStrato, indiceArea);
+    }
+  }
+
+  /**
+   * La forma cercata con la bisezione (quella di prima), usata UNA VOLTA per fissare la griglia:
+   * righe per colonna che danno alla mappa l'aspetto voluto. Da qui in poi la forma è congelata.
+   */
+  function formaDaZero(perArea) {
     const elenchi = aree.map((a) => perArea.get(a) || []);
     const perStrato = elenchi.map((l) => {
       const conto = new Map();
       for (const n of l) {
-        const is = indiceStrato.get(n.s) ?? 0;
-        conto.set(is, (conto.get(is) || 0) + 1);
+        const is = strati.findIndex(([id]) => id === n.s);
+        conto.set(is < 0 ? 0 : is, (conto.get(is < 0 ? 0 : is) || 0) + 1);
       }
       return conto;
     });
-    // Il nodo più affollato dell'area in un singolo strato: è lui a decidere quante colonne
-    // servono, perché è la fascia più piena a determinare l'altezza.
     const massimoPerStrato = elenchi.map((l, i) => Math.max(1, ...perStrato[i].values()));
-
     const misura = (L) => {
       const colonne = massimoPerStrato.map((m) => Math.max(1, Math.ceil(m / L)));
       const larghezze = colonne.map((c) => c * M.passoX);
-      const fasce = [];
-      let y = 0;
+      let altezza = 0;
       strati.forEach(([id], is) => {
         let righe = 0;
-        let qualche = false;
         elenchi.forEach((l, i) => {
           const quanti = perStrato[i].get(is) || 0;
-          if (!quanti) return;
-          qualche = true;
-          righe = Math.max(righe, Math.ceil(quanti / colonne[i]));
+          if (quanti) righe = Math.max(righe, Math.ceil(quanti / colonne[i]));
         });
-        // Fascia senza nodi: resta la sola testata (il buco si vede, senza rubare schermata).
-        const h = M.fascia + (qualche ? Math.max(1, righe) * M.passoY + M.margine : 8);
-        fasce.push({ strato: id, y, h, vuota: !qualche });
-        y += h;
+        altezza += M.fascia + (righe ? righe * M.passoY + M.margine : 8);
       });
-      return { L, colonne, larghezze, fasce, altezza: y, larghezza: larghezze.reduce((a, b) => a + b, 0) };
+      return { L, colonne, larghezza: larghezze.reduce((a, b) => a + b, 0), altezza };
     };
-
-    // Bisezione su L: cresce L → meno colonne (mappa stretta) e più righe (mappa alta).
     let lo = 1;
     let hi = Math.max(4, nodi.length);
     let scelta = misura(hi);
@@ -328,41 +676,7 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
       if (aspetto > M.aspetto) lo = mid;
       else hi = mid;
     }
-
-    const x0 = -scelta.larghezza / 2;
-    mondo.colonne = [];
-    let cursoreX = x0;
-    aree.forEach((a, i) => {
-      mondo.colonne.push({ area: a, x: cursoreX, w: scelta.larghezze[i], colonne: scelta.colonne[i] });
-      cursoreX += scelta.larghezze[i];
-    });
-    mondo.fasce = scelta.fasce;
-    mondo.h = scelta.altezza;
-    mondo.w = scelta.larghezza;
-
-    // Posizione: dentro la cella (strato × area), in righe di `colonne` nodi, i più connessi
-    // per primi (in alto: la catena episodio → artefatto resta corta).
-    for (const a of aree) {
-      const col = mondo.colonne.find((c) => c.area === a);
-      const quanti = Math.max(1, col.colonne);
-      const passo = col.w / quanti;
-      strati.forEach(([id], is) => {
-        const fascia = mondo.fasce[is];
-        const dentro = (perArea.get(a) || [])
-          .filter((n) => (indiceStrato.get(n.s) ?? 0) === is)
-          .sort((x, y2) => (y2.g || 0) - (x.g || 0) || String(x.id).localeCompare(String(y2.id)) || x.i - y2.i);
-        dentro.forEach((n, k) => {
-          const c = k % quanti;
-          const r = Math.floor(k / quanti);
-          const jx = (hash01(n.id + "mx") - 0.5) * 12;
-          const jy = (hash01(n.id + "my") - 0.5) * 6;
-          n.posM = [
-            col.x + (c + 0.5) * passo + jx,
-            fascia.y + M.fascia + (r + 0.5) * M.passoY + jy,
-          ];
-        });
-      });
-    }
+    return { L: scelta.L, quanti: new Map(aree.map((a, i) => [a, Math.max(1, scelta.colonne[i])])) };
   }
 
   // ------------------------------------------------------------------ filtri e accessibilità
@@ -465,6 +779,46 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
    *  le posizioni dei nodi sono le stesse su desktop e su telefono. Su uno schermo stretto si
    *  vede quindi una struttura più fitta: i nomi arrivano con lo zoom, che è a un pizzico di
    *  distanza — ed è meglio di un ingrandimento forzato che mostrerebbe solo un angolo. */
+  /** Le aree che, in vista d'insieme, valgono un cerchio invece di qualche centinaio di punti. */
+  function areeAggregabili() {
+    const conta = new Map();
+    for (const n of nodi) {
+      if (!nodoVisibile(n)) continue;
+      conta.set(n.a, (conta.get(n.a) || 0) + 1);
+    }
+    return new Set([...conta.entries()].filter(([, q]) => q >= MIN_NODI_AGGREGATI).map(([a]) => a));
+  }
+
+  /**
+   * Il rettangolo da inquadrare: quello dei nodi visibili, tranne quelli delle aree chiuse il cui
+   * spazio è occupato dal cerchio (che sta al centro della colonna). Inquadrare il mondo intero
+   * lasciava mezzo schermo di vuoto: le colonne di un'area chiusa restano larghe anche quando i
+   * suoi nodi non si vedono.
+   */
+  function rettangoloVisibile(chiuse) {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    const aggiungi = (x, y) => {
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    };
+    for (const n of nodi) {
+      if (!nodoVisibile(n) || chiuse.has(n.a)) continue;
+      aggiungi(n.posM[0], n.posM[1]);
+    }
+    for (const area of chiuse) {
+      const dentro = nodi.filter((n) => n.a === area && nodoVisibile(n));
+      if (!dentro.length) continue;
+      const xs = dentro.map((n) => n.posM[0]);
+      const ys = dentro.map((n) => n.posM[1]);
+      aggiungi(Math.min(...xs) - 14, Math.min(...ys) - 12);
+      aggiungi(Math.max(...xs) + 14, Math.max(...ys) + 12);
+    }
+    if (!Number.isFinite(x0)) return null;
+    return { x0, x1, y0, y1 };
+  }
+
   function inquadraMappa() {
     // Riquadro non ancora disposto (vista appena mostrata, canvas a 0×0): non si inquadra un
     // mondo dentro zero pixel, si aspetta il primo fotogramma utile. Segnare «adattata» qui
@@ -474,11 +828,16 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     const altezza = canvas.clientHeight;
     if (!mondo.w || !mondo.h) return;
     vista.manuale = false;
-    const k = Math.max(0.12, Math.min(2.4, Math.min((larghezza * 0.94) / mondo.w, (altezza * 0.9) / mondo.h)));
+    // Decisione d'insieme: se ci sono aree grandi, si chiudono in un cerchio e ci si inquadra
+    // su ciò che resta. Poi resta ferma (la cambia solo «adatta», un clic o lo zoom dentro).
+    areeChiuse = areeAggregabili();
+    const r = rettangoloVisibile(areeChiuse) || { x0: -mondo.w / 2, x1: mondo.w / 2, y0: 0, y1: mondo.h };
+    const larg = Math.max(1, r.x1 - r.x0 + 240); // margine per le etichette a destra dei nodi
+    const alt = Math.max(1, r.y1 - r.y0 + 100);
+    const k = Math.max(0.12, Math.min(2.4, Math.min((larghezza * 0.94) / larg, (altezza * 0.9) / alt)));
     vista.k = k;
-    // Il grafo è centrato sul mondo: l'origine è il bordo sinistro, il centro in x è 0.
-    vista.tx = larghezza / 2 - 0 * k;
-    vista.ty = Math.max(28, altezza / 2 - (mondo.h / 2) * k);
+    vista.tx = larghezza / 2 - ((r.x0 + r.x1) / 2) * k;
+    vista.ty = Math.max(28, altezza / 2 - ((r.y0 + r.y1) / 2) * k);
     vista.adattata = true;
   }
 
@@ -568,6 +927,178 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
 
   // ------------------------------------------------------------------ disegno: MAPPA
 
+  /**
+   * Decide quali aree diventano un nodo solo. Dipende da tre cose: il dettaglio che lo zoom
+   * permette (k), quante schede si stanno leggendo (nessuna), e la volontà dell'utente
+   * (`areeAperte`, popolato dal clic sul cerchio).
+   */
+  function calcolaAggregazione() {
+    aggregati.clear();
+    if (vista.modo !== "mappa") return;
+    if (vista.filtro || vista.selezionato !== null || vista.dentroLente) return;
+    if (vista.k >= SOGLIA_ZOOM_APERTA) return;
+    const perArea = new Map();
+    for (const n of nodi) {
+      if (!nodoVisibile(n)) continue;
+      const c = perArea.get(n.a) || [];
+      c.push(n);
+      perArea.set(n.a, c);
+    }
+    for (const [area, lista] of perArea) {
+      if (lista.length < MIN_NODI_AGGREGATI || !areeChiuse.has(area)) continue;
+      const col = mondo.colonne.find((c) => c.area === area);
+      if (!col) continue;
+      const ys = lista.map((n) => n.posM[1]);
+      const y0 = Math.min(...ys);
+      const y1 = Math.max(...ys);
+      const xs = lista.map((n) => n.posM[0]);
+      const x0 = Math.min(...xs), x1 = Math.max(...xs);
+      aggregati.set(area, {
+        area,
+        quanti: lista.length,
+        x: (x0 + x1) / 2,
+        y: (y0 + y1) / 2,
+        // Il rettangolo che i nodi occupavano: disegnarlo (invece di un cerchio al centro di una
+        // colonna larga) fa sì che il vuoto non sembri vuoto — quella regione *è* l'area.
+        x0, x1, y0, y1,
+        r: Math.max(16, Math.min(col.w * 0.42, 12 + Math.sqrt(lista.length) * 5)),
+      });
+    }
+  }
+
+  /** Il cerchio di un'area sotto il puntatore (per aprirla con un clic). */
+  function aggregatoSotto(sx, sy) {
+    for (const a of aggregati.values()) {
+      const p0 = m2s([a.x0, a.y0]);
+      const p1 = m2s([a.x1, a.y1]);
+      if (sx >= p0.x - 14 && sx <= p1.x + 14 && sy >= p0.y - 12 && sy <= p1.y + 12) return a;
+    }
+    return null;
+  }
+
+  /**
+   * Apre un'area: la toglie dall'aggregazione e ci porta dentro l'inquadratura. Non spegne le
+   * altre aree (il contesto intorno serve a orientarsi) e non tocca le posizioni dei nodi.
+   */
+  function apriArea(area) {
+    const col = mondo.colonne.find((c) => c.area === area);
+    if (!col) return false;
+    areeChiuse.delete(area);
+    // Si inquadra il rettangolo dei NODI di quell'area, non l'intera altezza del mondo: un'area
+    // può stare tutta nello strato artefatti, e inquadrare «mondo.h» la lascerebbe minuscola
+    // (misurato: k=0,41 aprendo «media», cioè ancora illeggibile).
+    const dentro = nodi.filter((n) => n.a === area && nodoVisibile(n));
+    const W = Math.max(1, canvas.clientWidth);
+    const H = Math.max(1, canvas.clientHeight);
+    if (!dentro.length) return false;
+    const xs = dentro.map((n) => n.posM[0]);
+    const ys = dentro.map((n) => n.posM[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const larghezza = Math.max(1, x1 - x0 + 260); // margine per le etichette a destra dei nodi
+    const altezza = Math.max(1, y1 - y0 + 120);
+    const k = Math.max(0.12, Math.min(4, Math.min((W * 0.92) / larghezza, (H * 0.92) / altezza)));
+    vista.k = k;
+    vista.tx = W / 2 - ((x0 + x1) / 2) * k;
+    vista.ty = H / 2 - ((y0 + y1) / 2) * k;
+    vista.manuale = true;
+    vista.adattata = true;
+    sporca();
+    return true;
+  }
+
+  /**
+   * I collegamenti fra le regioni e fra regioni e nodi.
+   *
+   * Senza questo, la vista d'insieme mostra le aree e quasi nessun arco (i nodi interni non ci
+   * sono): si vede la *forma* della memoria ma non dove passa il lavoro. Qui gli archi che
+   * toccano un'area chiusa diventano un solo collegamento fra due zone, con lo spessore
+   * proporzionale a quanti sono: è la stessa informazione, alla scala della vista.
+   */
+  function archiTraRegioni() {
+    const per = new Map();
+    for (const ar of dati.archi || []) {
+      if (!vista.relazioniAttive.has(ar.r)) continue;
+      const na = nodi[ar.a], nb = nodi[ar.b];
+      if (!na || !nb || !nodoVisibile(na) || !nodoVisibile(nb)) continue;
+      const ca = aggregati.get(na.a);
+      const cb = aggregati.get(nb.a);
+      if (!ca && !cb) continue; // dentro una sola regione o fra nodi visibili: già disegnato
+      const da = ca ? { tipo: "regione", chiave: ca.area, area: ca.area } : { tipo: "nodo", chiave: na.id, i: na.i };
+      const a = cb ? { tipo: "regione", chiave: cb.area, area: cb.area } : { tipo: "nodo", chiave: nb.id, i: nb.i };
+      const chiave = [da.chiave, a.chiave].sort().join("→");
+      const voce = per.get(chiave) || { da, a, n: 0, rel: ar.r };
+      voce.n++;
+      per.set(chiave, voce);
+    }
+    return [...per.values()];
+  }
+
+  function disegnaArchiRegioni() {
+    if (!aggregati.size) return;
+    const posizione = (estremo) => {
+      if (estremo.tipo === "regione") {
+        const a = aggregati.get(estremo.area);
+        return a ? m2s([a.x, a.y]) : null;
+      }
+      const n = nodi[estremo.i];
+      return n ? m2s(n.posM) : null;
+    };
+    ctx.font = FONT;
+    for (const v of archiTraRegioni()) {
+      const p0 = posizione(v.da);
+      const p1 = posizione(v.a);
+      if (!p0 || !p1) continue;
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.quadraticCurveTo((p0.x + p1.x) / 2, (p0.y + p1.y) / 2 - 18, p1.x, p1.y);
+      ctx.strokeStyle = "rgba(139,151,172,0.35)";
+      ctx.lineWidth = Math.min(7, 1 + Math.log2(v.n + 1));
+      ctx.stroke();
+      if (v.n >= 8) {
+        // Il numero sul collegamento: quante relazioni passano di lì. Senza, lo spessore è un
+        // indizio; con, è un dato.
+        const mx = (p0.x + p1.x) / 2;
+        const my = (p0.y + p1.y) / 2 - 18;
+        testoConBordo(String(v.n), mx, my - 4, "rgba(203,213,225,0.95)", "rgba(5,7,12,0.95)", 3.2);
+      }
+    }
+  }
+
+  function disegnaAggregati() {
+    if (!aggregati.size) return;
+    ctx.font = FONT_GRANDE;
+    for (const a of aggregati.values()) {
+      const p0 = m2s([a.x0, a.y0]);
+      const p1 = m2s([a.x1, a.y1]);
+      const x = p0.x - 14, y = p0.y - 12, w = Math.max(30, p1.x - p0.x + 28), h = Math.max(26, p1.y - p0.y + 24);
+      const colore = (dati.aree?.[a.area] || {}).colore || "#8b97ac";
+      // La REGIONE, non un cerchio: lo spazio che i nodi occupavano resta occupato da una lastra
+      // colorata con il conteggio. Un cerchio al centro di una colonna larga lasciava mezzo
+      // schermo di vuoto e sembrava un errore di disegno.
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, w, h, 14);
+      else ctx.rect(x, y, w, h);
+      ctx.globalAlpha = 0.1;
+      ctx.fillStyle = colore;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = colore;
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.setLineDash([]);
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      ctx.textAlign = "center";
+      testoConBordo(`${areaLabel(a.area)} · ${a.quanti}`, cx, cy, "rgba(226,232,240,0.96)", "rgba(5,7,12,0.95)", 3.6);
+      if (h > 60) testoConBordo("clic per aprire", cx, cy + 18, "rgba(148,163,184,0.9)", "rgba(5,7,12,0.9)", 3);
+      ctx.textAlign = "left";
+    }
+  }
+
   function disegnaMappa() {
     const W = canvas.clientWidth;
     const H = canvas.clientHeight;
@@ -605,12 +1136,16 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     }
     ctx.setLineDash([]);
 
+    // Zoom semantico: si decide QUI perché prima degli archi servono le aree da saltare, e i
+    // nodi visibili devono essere gli stessi per archi, punti ed etichette.
+    calcolaAggregazione();
     // Archi: prima i non evidenziati, poi quelli del nodo scelto (sopra tutto).
     const archiOrdinati = [];
     for (let i = 0; i < (dati.archi || []).length; i++) {
       const a = dati.archi[i];
       const na = nodi[a.a], nb = nodi[a.b];
       if (!na || !nb || !acceso(na) || !acceso(nb)) continue;
+      if (aggregati.has(na.a) || aggregati.has(nb.a)) continue; // dentro un'area aggregata non si disegna
       const evidenziato = vista.selezionato !== null && (a.a === vista.selezionato || a.b === vista.selezionato);
       archiOrdinati.push({ a, na, nb, evidenziato });
     }
@@ -635,11 +1170,14 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
       ctx.globalAlpha = 1;
     }
 
+    // Zoom semantico: si decide QUI perché prima degli archi servono le aree da saltare, e i
+    // nodi visibili devono essere gli stessi per archi, punti ed etichette.
     // Nodi: prima quelli spenti (contesto, molto tenui), poi gli accesi, poi gli evidenziati.
     const visibili = nodi.filter(nodoVisibile);
     const spenti = nodi.filter((n) => acceso(n) && !nodoVisibile(n));
     const raggio = (n, scelto) => Math.max(2.6, raggioNodo(n.g)) * (scelto ? 1.45 : 1);
     for (const n of spenti) {
+      if (aggregati.has(n.a)) continue;
       const p = m2s(n.posM);
       if (p.x < -20 || p.x > W + 20 || p.y < -20 || p.y > H + 20) continue;
       ctx.beginPath();
@@ -656,6 +1194,7 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     };
     const candidatiEtichette = [];
     for (const n of visibili.slice().sort(ordinaPerPriorita)) {
+      if (aggregati.has(n.a)) continue;
       const p = m2s(n.posM);
       const fuori = p.x < -40 || p.x > W + 40 || p.y < -30 || p.y > H + 30;
       const scelto = n.i === vista.selezionato;
@@ -714,6 +1253,8 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     // Quante etichette entrano: stima per area disponibile, poi la collisione fa il resto.
     const massimoEtichette = Math.max(6, Math.min(150, Math.round((W * H) / 5200)));
     disegnaEtichette(candidatiEtichette, massimoEtichette);
+    disegnaArchiRegioni();
+    disegnaAggregati();
 
     intestazioniMappa();
     piede();
@@ -962,6 +1503,10 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     // quello che si sta guardando. `contaNuovi()` dice invece quanti sono nel grafo.
     const nuovi = nodi.filter((n) => n.nuovo && nodoVisibile(n)).length;
     const codaNuovi = nuovi ? ` · +${nuovi} nuov${nuovi === 1 ? "o" : "i"}` : "";
+    // Le aree chiuse si contano su quelle VISIBILI: dopo aver spento un livello il numero deve
+    // descrivere la mappa che si sta guardando.
+    const chiuse = aggregati.size;
+    const codaAggregati = chiuse ? ` · ${chiuse} are${chiuse === 1 ? "a" : "e"} chius${chiuse === 1 ? "a" : "e"} (clic per aprire)` : "";
     const base = `rgba(148,163,184,0.62)`;
     const striscia = () => {
       ctx.fillStyle = "rgba(5,7,12,0.72)";
@@ -975,8 +1520,8 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     }
     const testo = vista.modo === "mappa"
       ? (W < 620
-        ? `${visibili}/${totale} nodi${codaNuovi} · trascina · pizzico · doppio tocco = adatta`
-        : `${visibili} di ${totale} nodi visibili${codaNuovi} · trascina o rotella per esplorare · doppio clic o «adatta» per rivedere tutto · L lente · ${Math.round(vista.k * 100)}%`)
+        ? `${visibili}/${totale} nodi${codaNuovi}${codaAggregati} · trascina · pizzico · doppio tocco = adatta`
+        : `${visibili} di ${totale} nodi visibili${codaNuovi}${codaAggregati} · trascina o rotella per esplorare · doppio clic o «adatta» per rivedere tutto · L lente · ${Math.round(vista.k * 100)}%`)
       : (W < 620
         ? `${visibili}/${totale} nodi${codaNuovi} · trascina per ruotare · L lente`
         : `${visibili} di ${totale} nodi visibili${codaNuovi} · trascina per ruotare · rotella per avvicinare · L lente a 2 passi · R rotazione`);
@@ -1097,6 +1642,13 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     hoverSchermo = p;
     if (!puntatori.has(e.pointerId)) {
       // solo passaggio del mouse (nessun tasto premuto)
+      if (aggregatoSotto(p.x, p.y)) {
+        vista.hover = null;
+        canvas.style.cursor = "pointer";
+        onHover(null);
+        sporca();
+        return;
+      }
       const n = nodoSotto(p.x, p.y);
       vista.hover = n ? n.i : null;
       canvas.style.cursor = n ? "pointer" : "grab";
@@ -1145,6 +1697,13 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     const mosso = gesto?.mosso;
     if (puntatori.size === 0) gesto = null;
     if (mosso) return;
+    const area = aggregatoSotto(p.x, p.y);
+    if (area) {
+      // Clic su un'area chiusa: si apre. Il resto della mappa resta dov'è.
+      apriArea(area.area);
+      onSelect(null);
+      return;
+    }
     const n = nodoSotto(p.x, p.y);
     // DOPPIO TOCCO = adatta. Su un telefono `dblclick` non arriva, quindi il gesto si
     // riconosce qui: due tocchi a vuoto ravvicinati nel tempo e nello spazio.
@@ -1221,6 +1780,8 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
 
   /** Adatta la vista al contenuto (mappa: rivedere tutto; orbita: reinquadrare). */
   function adatta() {
+    // «Adatta» = l'insieme: inquadraMappa rimette le aree grandi a cerchio.
+    areeChiuse = new Set();
     vista.manuale = false;
     if (vista.modo === "mappa") inquadraMappa();
     else inquadraOrbita();
@@ -1258,12 +1819,39 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
       const cy = canvas.clientHeight / 2;
       const prima = s2m(cx, cy);
       vista.k = Math.max(0.12, Math.min(4, vista.k * fattore));
+      // Si sta entrando: i cerchi si aprono (l'aggregazione è una lettura d'insieme).
+      if (vista.k >= SOGLIA_ZOOM_APERTA) areeChiuse = new Set();
       vista.tx = cx - prima.x * vista.k;
       vista.ty = cy - prima.y * vista.k;
       vista.manuale = true;
     } else {
       vista.dist = Math.max(16, Math.min(70, vista.dist - (fattore - 1) * 14));
     }
+    sporca();
+  }
+
+  /**
+   * Sostituisce i dati conservando lo stato della vista (filtri spenti, nodo scelto, lente) e la
+   * forma del mondo (`schema`, `celle`): è quello che rende il disegno STABILE quando la memoria
+   * cresce. Usata da `aggiorna()` e da `ricompatta()` (che azzera prima la forma).
+   */
+  function applicaGrafo(d) {
+    const spenti = {
+      strati: new Set(strati.map(([id]) => id).filter((id) => !vista.stratiAttivi.has(id))),
+      aree: new Set(aree.filter((a) => !vista.areeAttive.has(a))),
+      relazioni: new Set(Object.keys(dati.colori || {}).filter((r) => !vista.relazioniAttive.has(r))),
+    };
+    const precedente = {
+      spenti,
+      selezionatoId: vista.selezionato === null ? null : nodi[vista.selezionato]?.id ?? null,
+      lente: vista.lente,
+    };
+    dati = d;
+    vista.adattata = false;
+    vista.manuale = false; // il grafo è cambiato: la vecchia inquadratura non vale più
+    geometria(precedente);
+    if (vista.modo === "mappa") inquadraMappa();
+    else inquadraOrbita();
     sporca();
   }
 
@@ -1279,25 +1867,7 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     proietta: proiettaOrbita,
     ridisegna: () => { sporca(); disegna(); sporco = false; },
     aggiorna(d) {
-      // Lo stato della vista si legge PRIMA di sostituire i dati: sono gli id dei filtri spenti
-      // e del nodo scelto che vanno portati nel grafo nuovo.
-      const spenti = {
-        strati: new Set(strati.map(([id]) => id).filter((id) => !vista.stratiAttivi.has(id))),
-        aree: new Set(aree.filter((a) => !vista.areeAttive.has(a))),
-        relazioni: new Set(Object.keys(dati.colori || {}).filter((r) => !vista.relazioniAttive.has(r))),
-      };
-      const precedente = {
-        spenti,
-        selezionatoId: vista.selezionato === null ? null : nodi[vista.selezionato]?.id ?? null,
-        lente: vista.lente,
-      };
-      dati = d;
-      vista.adattata = false;
-      vista.manuale = false; // il grafo è cambiato: la vecchia inquadratura non vale più
-      geometria(precedente);
-      if (vista.modo === "mappa") inquadraMappa();
-      else inquadraOrbita();
-      sporca();
+      applicaGrafo(d);
     },
     seleziona(indice) {
       vista.selezionato = indice;
@@ -1345,6 +1915,25 @@ export function createAtlante({ canvas, dati, onSelect = () => {}, onHover = () 
     /** Quanti nodi del grafo sono «nuovi» (episodio o decisione di oggi o di ieri). */
     contaNuovi() {
       return nodi.filter((n) => n.nuovo).length;
+    },
+    /** I collegamenti aggregati fra regioni e nodi (per i test e per il piede). */
+    contaArchiRegioni() {
+      return archiTraRegioni().length;
+    },
+    /** Quante aree sono chiuse in un cerchio solo (zoom semantico). */
+    contaAggregati() {
+      return aggregati.size;
+    },
+    /** Le aree chiuse, con il loro conteggio: `[{area, quanti}]`. */
+    areeAggregate() {
+      return [...aggregati.values()].map((a) => ({ area: a.area, quanti: a.quanti }));
+    },
+    apriArea,
+    /** Dimentica la forma congelata e ridispone la mappa da zero (le posizioni tornano «belle»). */
+    ricompatta() {
+      schema = null;
+      celle.clear();
+      applicaGrafo(dati);
     },
     /** Fotografia in PNG: la vista si può salvare e mostrare senza screenshot. */
     png() {

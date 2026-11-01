@@ -555,8 +555,12 @@ await prova("il file dell'atlante è autonomo (nessuna risorsa esterna)", async 
   const f = join("media", "memoria", "atlante.html");
   assert(existsSync(f), "atlante assente");
   const h = readFileSync(f, "utf8");
+  // Il namespace XML dell'SVG non è una risorsa: è un identificatore, non un indirizzo da
+  // caricare (nessun browser fa una richiesta per `http://www.w3.org/2000/svg`). Si toglie
+  // prima di cercare gli indirizzi veri, altrimenti il test vieterebbe anche gli SVG inline.
+  const senzaNamespace = h.split("http://www.w3.org/2000/svg").join("");
   for (const vietato of ["<script src=", "http://", "https://cdn", "unpkg", "jsdelivr"]) {
-    assert(!h.includes(vietato), `l'atlante carica qualcosa dall'esterno: ${vietato}`);
+    assert(!senzaNamespace.includes(vietato), `l'atlante carica qualcosa dall'esterno: ${vietato}`);
   }
   assert(h.includes("createAtlante"), "il codice del disegno non è incorporato");
   assert(h.includes('const D = {'), "i dati non sono incorporati");
@@ -727,6 +731,30 @@ await prova("i controlli del disegno sono nel markup e collegati", async () => {
   return "modo, adatta, −, ＋ e legenda cliccabile";
 });
 
+await prova("la riga del tempo e la matrice sono grafici puri: dati giusti e SVG che non si rompe", async () => {
+  const { timelineSVG, matriceSVG } = await import("./memoria/atlante.mjs");
+  const nodi = [
+    { id: "e1", i: 0, n: "episodio uno", s: "episodio", a: "r", g: 1, d: "2026-11-01" },
+    { id: "e2", i: 1, n: "episodio due", s: "episodio", a: "r", g: 1, d: "2026-11-01" },
+    { id: "d1", i: 2, n: "decisione con <b>html</b> & co", s: "decisione", a: "r", g: 3, d: "2026-10-31" },
+    { id: "a1", i: 3, n: "file.mjs", s: "artefatto", a: "m", g: 5, f: "file.mjs" },
+  ];
+
+  const t = timelineSVG(nodi, { giorni: 3, larghezza: 100, altezza: 40, oggi: "2026-11-01" });
+  assert(t.startsWith("<svg") && t.includes("</svg>"), "la riga del tempo non è un SVG autonomo");
+  assert(/<title[^>]*>/.test(t) && /<desc[^>]*>/.test(t), "manca il testo alternativo (title/desc)");
+  assert((t.match(/<rect/g) || []).length === 3, `attese 3 barre (2 giorni con nodi + 1 vuoto), trovate ${(t.match(/<rect/g) || []).length}`);
+  assert(/2 episodi · 1 decisione/.test(t), "i totali non sono quelli dei dati");
+
+  const m = matriceSVG(nodi, [{ a: 0, b: 3, r: "ha-deciso" }], { limite: 10 });
+  assert(m.nodi.length === 4, `la matrice mostra ${m.nodi.length} nodi invece di 4`);
+  assert(!m.svg.includes("<b>"), "un nome con HTML non è stato escapato: l'SVG si romperebbe");
+  // una relazione = due celle (la matrice è speculare): riga→colonna e colonna→riga
+  assert((m.svg.match(/<rect/g) || []).length === 2, "la matrice non disegna la coppia di celle");
+  assert(m.nodi[0].g >= m.nodi[m.nodi.length - 1].g, "i nodi non sono ordinati per collegamenti");
+  return `${(t.match(/<rect/g) || []).length} barre, ${m.nodi.length} nodi in matrice`;
+});
+
 await prova("la barra della memoria dice cosa è nuovo e a che ora è stata costruita", async () => {
   const html = readFileSync("dashboard.html", "utf8");
   // Il numero «+N nuovi» è l'unico modo per vedere a colpo d'occhio che la memoria si è mossa:
@@ -853,7 +881,9 @@ await prova("nella mappa nessun nodo si sovrappone e nessuna etichetta sta sopra
     assert(minima > 8, `due nodi a ${minima.toFixed(1)} px: si toccano`);
 
     // Etichette dei nodi: fuori restano le intestazioni (in alto, a sinistra) e il piede.
-    const etichette = canvas.testi.filter((t) => t.y > 30 && t.y < 590 && t.x > 80);
+    // I numeri puri sono i conteggi sui collegamenti fra regioni (annotazioni), non nomi di
+    // nodi: la promessa «nessuna etichetta sopra un'altra» riguarda i nomi.
+    const etichette = canvas.testi.filter((t) => t.y > 30 && t.y < 590 && t.x > 80 && !/^\d+$/.test(t.t));
     assert(etichette.length > 5, `solo ${etichette.length} etichette disegnate: la mappa è muta`);
     const box = (t) => ({ x: t.x - 2, y: t.y - 10, w: t.t.length * 6.2 + 8, h: 15 });
     for (let i = 0; i < etichette.length; i++) {
@@ -977,6 +1007,108 @@ await prova("il segno dei nodi nuovi distingue una memoria che cresce da una mem
   }
 });
 
+await prova("quando il grafo cresce i nodi esistenti restano dove sono (posizioni ancorate)", async () => {
+  const chiudi = apriAmbienteBrowser();
+  try {
+    const { createAtlante } = await import("./memoria/atlante.mjs");
+    const v = await datiVista();
+    const at = createAtlante({ canvas: canvasFinto(1400, 900), dati: v });
+    const prima = new Map(at.nodi.map((n) => [n.id, n.posM.slice()]));
+    const stratoDi = new Map(at.nodi.map((n) => [n.id, n.s]));
+
+    // Il grafo cresce come cresce davvero: nodi in mezzo (che spostano gli indici) e in coda.
+    const v2 = JSON.parse(JSON.stringify(v));
+    for (let k = 0; k < 6; k++) {
+      v2.nodi.splice(5 + k, 0, { id: "ep-nuovo-" + k, s: "episodio", n: "episodio nuovo " + k, a: v.nodi[0].a, g: 2, d: "2026-11-01" });
+      v2.nodi.push({ id: "dec-nuova-" + k, s: "decisione", n: "decisione nuova " + k, a: v.nodi[0].a, g: 1, d: "2026-11-01" });
+    }
+    for (let k = 0; k < 20; k++) v2.nodi.push({ id: "art-nuovo-" + k, s: "artefatto", n: "file nuovo " + k, a: "media", g: 1 });
+    at.aggiorna(v2);
+
+    const dopo = new Map(at.nodi.map((n) => [n.id, n.posM.slice()]));
+    let dxMax = 0;
+    const dyPerStrato = new Map();
+    let comuni = 0;
+    for (const [id, p] of prima) {
+      const q = dopo.get(id);
+      if (!q) continue;
+      comuni++;
+      dxMax = Math.max(dxMax, Math.abs(q[0] - p[0]));
+      const dy = q[1] - p[1];
+      const strato = stratoDi.get(id);
+      if (!dyPerStrato.has(strato)) dyPerStrato.set(strato, dy);
+      assert(Math.abs(dyPerStrato.get(strato) - dy) < 0.01, `nello strato «${strato}» i nodi si spostano in modo diverso (${dyPerStrato.get(strato).toFixed(1)} vs ${dy.toFixed(1)}): la mappa si è deformata`);
+    }
+    assert(comuni > 400, `pochi nodi comuni (${comuni}): il test non guarda niente`);
+    // Nessuno si sposta in orizzontale; in verticale solo la traslazione di chi sta sotto una
+    // fascia cresciuta, cioè al massimo qualche passo — non 360 px come prima.
+    assert(dxMax < 1, `un nodo si è spostato in orizzontale di ${dxMax.toFixed(1)} px`);
+    let dyMax = 0;
+    for (const dy of dyPerStrato.values()) dyMax = Math.max(dyMax, Math.abs(dy));
+    assert(dyMax <= 4 * 30, `un nodo si è spostato in verticale di ${dyMax.toFixed(0)} px (più di 4 passi)`);
+
+    // La forma congelata si può buttare: «ricompatta» ridispone da zero, senza rompersi.
+    at.ricompatta();
+    assert(at.nodi.every((n) => n.posM.every(Number.isFinite)), "dopo «ricompatta» ci sono posizioni non calcolate");
+    return `${comuni} nodi fermi (dx max ${dxMax.toFixed(0)} px, dy max ${dyMax.toFixed(0)} px) su +${v2.nodi.length - v.nodi.length} nodi`;
+  } finally {
+    chiudi();
+  }
+});
+
+await prova("lo zoom semantico chiude le aree grandi in un nodo solo, e un clic le apre", async () => {
+  const chiudi = apriAmbienteBrowser();
+  try {
+    const { createAtlante } = await import("./memoria/atlante.mjs");
+    const v = await datiVista();
+    const canvas = canvasFinto(1400, 900);
+    const at = createAtlante({ canvas, dati: v });
+
+    // Insieme: la mappa d'insieme non deve mostrare 433 puntini ma le aree, con il loro numero.
+    const chiuse = at.areeAggregate();
+    assert(chiuse.length > 0, "nessuna area aggregata al fit: il grafo resta un puntinato");
+    // Con le aree chiuse gli archi interni spariscono: senza collegamenti fra regioni la vista
+    // d'insieme mostrerebbe la forma della memoria ma non dove passa il lavoro.
+    assert(at.contaArchiRegioni() > 0, "nessun collegamento disegnato fra le regioni: la mappa d'insieme è muta");
+    assert(
+      chiuse.every((a) => a.quanti >= 50),
+      `aggregata un'area troppo piccola: ${JSON.stringify(chiuse)}`,
+    );
+    const somma = chiuse.reduce((a, c) => a + c.quanti, 0);
+    at.ridisegna();
+    const piede = canvas.testi.map((t) => t.t).find((t) => /nodi visibili/.test(t)) || "";
+    assert(new RegExp(`${chiuse.length} are`).test(piede), `il piede non dice quante aree sono chiuse: «${piede.slice(0, 80)}»`);
+    assert(somma > 200, "le aree aggregate contano troppo poco: l'aggregazione non serve a nulla");
+
+    // Mentre si legge un nodo il contesto è il vicinato: niente cerchi al posto dei nodi.
+    at.seleziona(0);
+    at.ridisegna();
+    assert(at.contaAggregati() === 0, "con un nodo scelto l'area resta aggregata: si perde il vicinato");
+    at.seleziona(null);
+
+    // Un clic su un'area la apre: si entra nel dettaglio e si vede il numero di nodi.
+    const area = chiuse[0].area;
+    const kPrima = at.vista.k;
+    assert(at.apriArea(area), `area ${area} non apribile`);
+    at.ridisegna();
+    assert(at.vista.k > kPrima, "aprire un'area non avvicina");
+    assert(!at.areeAggregate().some((a) => a.area === area), "l'area aperta resta chiusa");
+
+    // «Adatta» riporta all'insieme: le aree si richiudono (è la vista d'insieme, non il dettaglio).
+    at.adatta();
+    at.ridisegna();
+    assert(at.contaAggregati() === chiuse.length, "«adatta» non riporta alla mappa delle aree");
+
+    // Zoomando a mano oltre la soglia il dettaglio torna: nessun cerchio.
+    at.zoom(2);
+    at.ridisegna();
+    assert(at.contaAggregati() === 0, `a zoom alto restano ${at.contaAggregati()} aree chiuse`);
+    return `${chiuse.map((a) => a.area + "·" + a.quanti).join(", ")} → aperta ${area}`;
+  } finally {
+    chiudi();
+  }
+});
+
 await prova("il disegno si riadatta quando il riquadro cambia, senza strappare lo zoom manuale", async () => {
   const chiudi = apriAmbienteBrowser();
   try {
@@ -996,7 +1128,13 @@ await prova("il disegno si riadatta quando il riquadro cambia, senza strappare l
     canvas.clientWidth = 700;
     at.ridisegna();
     assert(canvas.width === 700, "il fondo scala del canvas non segue la larghezza");
-    assert(at.vista.tx !== txPrima && at.vista.tx === 350, "cambiando la larghezza il disegno non si ricentra");
+    // Il disegno si ricentra: il rettangolo che si vede sta al centro della nuova larghezza.
+    // (Non si confronta `vista.tx` con W/2: da quando l'inquadratura segue i nodi visibili e le
+    // aree chiuse, il centro del disegno non è più l'origine del mondo.)
+    const px = at.nodi.map((n) => at.m2s(n.posM).x);
+    const centro = (Math.min(...px) + Math.max(...px)) / 2;
+    assert(at.vista.tx !== txPrima, "cambiando la larghezza il disegno non si ricentra");
+    assert(Math.abs(centro - 350) < 100, `il disegno sta a ${centro.toFixed(0)} px invece che al centro (350)`);
 
     // Chi ha zoomato con le mani non se lo vede strappare da un ridimensionamento.
     at.zoom(2.5);
