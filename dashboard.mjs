@@ -49,6 +49,7 @@ import { createDecisionMService } from "./media/decision-m-service.mjs";
 import { analizza as analizzaTimestral, createTimestralClient, GRANULARITA as TIMESTRAL_GRANULARITA, parseCsv as parseTimestralCsv, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
 import { createTimestralExtension } from "./media/timestral-tool.mjs";
 import { bilancioContesto, sprecoCache, classeErrore, impronta } from "./media/contesto.mjs";
+import { createControlloTurnoExtension } from "./media/controllo-turno.mjs";
 import {
   VOCI as TTS_VOCI,
   elencoCache as ttsElencoCache,
@@ -1428,12 +1429,62 @@ const browserLive = createBrowserLive({
   },
 });
 
+/*
+ * CONTROLLO DEL TURNO (audit 2026-11-01, C2 e C4).
+ * - limite ai risultati dei tool: taglia ALL'INGRESSO quello che supera i 25.000 caratteri, così
+ *   i token nuovi (input non in cache, 0,3 $/Mtok) non arrivano nemmeno a essere contati;
+ * - guardia anti-loop: se il turno ripete le stesse azioni senza scrivere niente, si ferma e lo
+ *   dichiara. Non è un tetto secco di passi: un audit di sola lettura non viene toccato.
+ * Le soglie sono tarate sul turno reale del 30/10 (20 tool call, 770 s). Si spengono con
+ * DASH_CONTROLLO=off, senza toccare il codice.
+ */
+const CONTROLLO_OFF = String(process.env.DASH_CONTROLLO ?? "on").trim().toLowerCase() === "off";
+const CONTROLLO_TURNO = createControlloTurnoExtension({
+  log: (m) => console.log(m),
+  guardia: {
+    maxPassiSenzaProgresso: Number(process.env.DASH_GUARDIA_PASSI || 15),
+    maxRipetizioni: Number(process.env.DASH_GUARDIA_RIPETIZIONI || 3),
+    maxPassiAssoluti: Number(process.env.DASH_GUARDIA_MAX || 120),
+  },
+  limite: { maxChar: Number(process.env.DASH_LIMITE_RISULTATO || 25000) },
+  onFerma: ({ motivo, stato }) => {
+    /*
+     * Il turno è fermato per una ragione che l'utente deve LEGGERE: non si esce in silenzio e non
+     * si finge che sia finito bene. `abort()` è differito perché siamo dentro l'hook del tool.
+     */
+    console.warn(`[controllo-turno] ${motivo}`);
+    try {
+      turnoCtx?.errori?.push(`guardia: ${motivo}`);
+    } catch {
+      /* la telemetria non deve mai impedire la fermata */
+    }
+    try {
+      broadcast("error", {
+        message:
+          `Turno fermato dalla guardia: ${motivo}. ` +
+          `Contesto: ${stato?.passi ?? "?"} chiamate a tool in questo turno. ` +
+          `Se il lavoro era legittimo, riprendilo in un turno nuovo (o alza la soglia con DASH_GUARDIA_PASSI).`,
+        guardia: true,
+      });
+    } catch {
+      /* client scollegati: il messaggio resta nel log */
+    }
+    setTimeout(() => {
+      try {
+        Promise.resolve(session?.abort?.()).catch(() => {});
+      } catch {
+        /* già fermo */
+      }
+    }, 60);
+  },
+});
+
 const resourceLoader = new DefaultResourceLoader({
   cwd: cwd(),
   agentDir: getAgentDir(),
   additionalExtensionPaths,
   additionalSkillPaths: [SKILLS_DIR],
-  extensionFactories: [MEDIA_GUARD_EXT, BROWSER_EXT, MEMORIA_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(DECISION_M_EXT ? [DECISION_M_EXT] : []), ...(TIMESTRAL_EXT ? [TIMESTRAL_EXT] : [])],
+  extensionFactories: [...(CONTROLLO_OFF ? [] : [CONTROLLO_TURNO]), MEDIA_GUARD_EXT, BROWSER_EXT, MEMORIA_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(DECISION_M_EXT ? [DECISION_M_EXT] : []), ...(TIMESTRAL_EXT ? [TIMESTRAL_EXT] : [])],
   systemPromptOverride: (base) => {
     // NIENTE contenuto dinamico qui: la stabilità del prefisso è ciò che tiene viva la cache.
     const testo = `${base ?? ""}${SYSTEM_MEDIA_NOTE}`;

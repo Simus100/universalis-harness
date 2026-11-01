@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit harness — simulatore del ciclo · 2026-11-01</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --line:#2a3240;
+    --tx:#e6edf3; --muted:#93a0b0; --dim:#6e7b8c;
+    --att:#e3a04a; --att-bg:#33280f;
+    --opt:#4fbf7f; --opt-bg:#0f2a1c;
+    --bad:#f0645a; --ok:#4fbf7f; --warn:#e3a04a;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px 80px}
+  header.top{padding:34px 0 16px;border-bottom:1px solid var(--line)}
+  header.top .wrap{padding-bottom:0}
+  nav .wrap{padding-bottom:0}
+  h1{font-size:26px;line-height:1.2;margin:0 0 8px;letter-spacing:-.01em}
+  .sub{color:var(--muted);max-width:78ch;margin:0 0 16px}
+  .badge{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.03em;
+    text-transform:uppercase;padding:3px 8px;border-radius:999px;border:1px solid var(--line);
+    color:var(--muted);background:#11161d;margin-right:6px}
+  .badge.warn{color:var(--att);border-color:#3d2f14;background:var(--att-bg)}
+  nav{position:sticky;top:0;z-index:20;background:rgba(13,17,23,.94);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);margin-bottom:26px}
+  nav .wrap{display:flex;gap:4px;overflow:auto;padding:0 20px}
+  nav a{padding:11px 12px;font-size:13.5px;color:var(--muted);text-decoration:none;white-space:nowrap;
+    border-bottom:2px solid transparent}
+  nav a:hover{color:var(--tx)}
+  section{margin:34px 0 10px;scroll-margin-top:52px}
+  h2{font-size:19px;margin:0 0 4px;letter-spacing:-.01em}
+  h2 .n{color:var(--dim);font-variant-numeric:tabular-nums;margin-right:8px}
+  .lead{color:var(--muted);margin:0 0 18px;max-width:82ch}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+  .card h3{margin:0 0 10px;font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+  .kpi{display:flex;flex-direction:column;gap:2px}
+  .kpi .v{font-size:24px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .kpi .l{font-size:12px;color:var(--muted)}
+  .kpi .w{font-size:11.5px;color:var(--dim)}
+  .rowbtns{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 14px}
+  button{font:inherit;font-size:13.5px;padding:7px 13px;border-radius:8px;cursor:pointer;
+    background:var(--panel2);color:var(--tx);border:1px solid var(--line)}
+  button:hover{border-color:#3a4557;background:#202836}
+  button.primary{background:#1f6feb;border-color:#1f6feb;color:#fff}
+  button.primary:hover{background:#2a7bf5}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  select,textarea{font:inherit;background:#0f141a;color:var(--tx);border:1px solid var(--line);
+    border-radius:8px;padding:7px 9px}
+  select{font-size:13.5px}
+  textarea{width:100%;min-height:210px;font-family:var(--mono);font-size:12.5px;line-height:1.5;resize:vertical}
+  label.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  label.seg input{display:none}
+  label.seg span{padding:7px 13px;font-size:13.5px;color:var(--muted);cursor:pointer;display:block}
+  label.seg input:checked+span{background:#22304a;color:var(--tx)}
+  label.seg input#p-opt:checked+span{background:var(--opt-bg);color:var(--opt)}
+  label.seg input#p-att:checked+span{background:var(--att-bg);color:var(--att)}
+  .bar{height:10px;border-radius:6px;background:#0b1016;border:1px solid var(--line);overflow:hidden;position:relative}
+  .bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--opt),#2f9e63);transition:width .25s}
+  .bar.att>i{background:linear-gradient(90deg,var(--att),#b87a2a)}
+  .bar .thr{position:absolute;top:-2px;bottom:-2px;width:2px;background:#5a6b80}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  @media(max-width:760px){.metrics{grid-template-columns:repeat(2,1fr)}}
+  .m{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+  .m .v{font-size:18px;font-variant-numeric:tabular-nums}
+  .m .l{font-size:11.5px;color:var(--muted)}
+  ol.steps{list-style:none;margin:0;padding:0;max-height:430px;overflow:auto}
+  ol.steps li{display:grid;grid-template-columns:26px 86px 1fr auto;gap:8px;align-items:baseline;
+    padding:7px 4px;border-bottom:1px solid #1f2732;font-size:13px}
+  ol.steps li .t{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  ol.steps li .d{color:var(--muted)}
+  ol.steps li .c{font-variant-numeric:tabular-nums;color:var(--dim);font-size:12px;white-space:nowrap}
+  .t-model{color:#7aa7e8}
+  .t-tool{color:#c79bf0}
+  .t-guard{color:#5fb8c9}
+  .t-retry{color:var(--bad)}
+  .t-compact{color:var(--warn)}
+  .t-verify{color:var(--ok)}
+  .t-user{color:var(--muted)}
+  .log{font-family:var(--mono);font-size:12px;line-height:1.65;background:#0b1016;border:1px solid var(--line);
+    border-radius:8px;padding:12px;height:230px;overflow:auto;color:#b6c2d1;white-space:pre-wrap}
+  .log b{color:var(--tx);font-weight:600}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid #1f2732;vertical-align:top}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+  td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+  .sev{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;border:1px solid}
+  .s1{color:#ff9d95;border-color:#5a2521;background:#2a1210}
+  .s2{color:#f0c274;border-color:#4a3714;background:#26200f}
+  .s3{color:#9fb8c8;border-color:#2c3b46;background:#141c22}
+  .note{font-size:12.5px;color:var(--dim);border-left:2px solid var(--line);padding-left:12px;margin:12px 0}
+  .foot{margin-top:46px;border-top:1px solid var(--line);padding-top:18px;color:var(--dim);font-size:12.5px}
+  code{font-family:var(--mono);font-size:12.5px;background:#11161d;border:1px solid var(--line);
+    padding:1px 5px;border-radius:5px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .delta{font-variant-numeric:tabular-nums}
+  .up{color:var(--bad)}
+  .down{color:var(--opt)}
+  svg{display:block;width:100%;height:auto}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <h1>Il ciclo dell'harness, passo per passo</h1>
+    <p class="sub">Audit del <strong>2026-11-01</strong> su <code>/root/pi-harness</code>: come una richiesta diventa
+      contesto, come il contesto costa, e cosa cambierebbe con nove interventi a diff minimo.
+      I numeri del profilo <em>Attuale</em> vengono dalle misure del 13 ottobre (13.184 token di pedaggio, dal provider)
+      e da <code>media/turni.jsonl</code> (turno reale del 30 ottobre: 20 tool call, 0,10816 $).
+      Tutto ciò che muovi in questa pagina è una <strong>simulazione con quelle assunzioni</strong>, non una nuova misura.</p>
+    <div>
+      <span class="badge">audit read-only</span>
+      <span class="badge">deepseek-flash · 1M finestra</span>
+      <span class="badge warn">valori simulati, non misurati</span>
+    </div>
+  </div>
+</header>
+
+<nav><div class="wrap">
+  <a href="#mappa">1 · Il ciclo</a>
+  <a href="#sim">2 · Simulatore</a>
+  <a href="#conf">3 · Attuale vs ottimizzato</a>
+  <a href="#crit">4 · Criticità</a>
+  <a href="#param">5 · Parametri</a>
+  <a href="#fonti">6 · Fonti</a>
+</div></nav>
+
+<div class="wrap">
+
+<!-- ===================== 1 MAPPA ===================== -->
+<section id="mappa">
+  <h2><span class="n">1</span>Il ciclo in tre livelli</h2>
+  <p class="lead">Il confine è il test, non lo slogan: se cambia <em>cosa il modello deve fare</em> è prompt; se cambia
+    <em>cosa vede</em> a parità di istruzione è contesto; se cambia <em>come il sistema reagisce</em> a parità di prompt e
+    contesto è harness. I riquadri tratteggiati sono i punti dove l'audit ha trovato il difetto.</p>
+
+  <div class="card">
+  <svg viewBox="0 0 1080 430" role="img" aria-labelledby="mt md">
+    <title id="mt">Ciclo di una richiesta nei tre livelli</title>
+    <desc id="md">La richiesta entra nel prefisso stabile di 13.184 token, si unisce al contesto append-only che cresce di circa 10.400 token per passo, e attraversa il loop dell'harness con gate dei tool, retry e verifica finale.</desc>
+    <defs>
+      <g id="arr"><polygon points="0,0 9,4 0,8" fill="#5a6b80"/></g>
+    </defs>
+
+    <!-- fasce -->
+    <rect x="0" y="0" width="1080" height="112" rx="8" fill="#141a22" stroke="#232c39"/>
+    <rect x="0" y="126" width="1080" height="150" rx="8" fill="#141a22" stroke="#232c39"/>
+    <rect x="0" y="292" width="1080" height="138" rx="8" fill="#141a22" stroke="#232c39"/>
+    <text x="16" y="24" fill="#93a0b0" font-size="11.5" font-family="ui-monospace,monospace" letter-spacing="1">PROMPT ENGINEERING</text>
+    <text x="16" y="150" fill="#93a0b0" font-size="11.5" font-family="ui-monospace,monospace" letter-spacing="1">CONTEXT ENGINEERING</text>
+    <text x="16" y="316" fill="#93a0b0" font-size="11.5" font-family="ui-monospace,monospace" letter-spacing="1">HARNESS ENGINEERING</text>
+
+    <!-- livello 1 -->
+    <rect x="16" y="36" width="246" height="62" rx="7" fill="#1b2230" stroke="#334052"/>
+    <text x="30" y="58" fill="#e6edf3" font-size="13">Istruzioni + nota d'istanza</text>
+    <text x="30" y="76" fill="#93a0b0" font-size="11" font-family="ui-monospace,monospace">8.013 char ≈ 2.226 tok</text>
+    <text x="30" y="91" fill="#8a6f3e" font-size="11" font-family="ui-monospace,monospace">+32% in 19 giorni</text>
+    <rect x="278" y="36" width="230" height="62" rx="7" fill="#1b2230" stroke="#334052"/>
+    <text x="292" y="58" fill="#e6edf3" font-size="13">Schemi dei tool</text>
+    <text x="292" y="76" fill="#93a0b0" font-size="11" font-family="ui-monospace,monospace">6.383 tok · 14 tool attivi</text>
+    <text x="292" y="91" fill="#7f8ea3" font-size="11" font-family="ui-monospace,monospace">il pedaggio più grosso</text>
+    <rect x="524" y="36" width="250" height="62" rx="7" fill="#1b2230" stroke="#334052"/>
+    <text x="538" y="58" fill="#e6edf3" font-size="13">Indice delle skill</text>
+    <text x="538" y="76" fill="#93a0b0" font-size="11" font-family="ui-monospace,monospace">29 skill · 10.872 char</text>
+    <text x="538" y="91" fill="#8a6f3e" font-size="11" font-family="ui-monospace,monospace">≈ 3.020 tok di indice</text>
+    <rect x="790" y="32" width="274" height="70" rx="7" fill="#2a2410" stroke="#4a3a16" stroke-dasharray="4 3"/>
+    <text x="804" y="52" fill="#e3a04a" font-size="13">Duplicazione prompt ↔ skill</text>
+    <text x="804" y="78" fill="#b08a4a" font-size="11" font-family="ui-monospace,monospace">2 sezioni = 2.655 char nel prefisso</text>
+    <text x="804" y="93" fill="#8a6f3e" font-size="11" font-family="ui-monospace,monospace">le skill dicono già la stessa cosa</text>
+    <use href="#arr" x="262" y="63"/><use href="#arr" x="508" y="63"/><use href="#arr" x="774" y="63"/>
+
+    <!-- livello 2 -->
+    <rect x="16" y="164" width="300" height="96" rx="7" fill="#1b2230" stroke="#334052"/>
+    <text x="30" y="186" fill="#e6edf3" font-size="13">Prefisso stabile (13.184 tok)</text>
+    <text x="30" y="206" fill="#7f8ea3" font-size="11.5">in cache: non cambia fra un turno e l'altro</text>
+    <text x="30" y="226" fill="#4fbf7f" font-size="11.5" font-family="ui-monospace,monospace">hit rate misurato 98,5%</text>
+    <text x="30" y="246" fill="#7f8ea3" font-size="11.5">c costo: 0,00008 $ per chiamata</text>
+
+    <rect x="332" y="164" width="330" height="96" rx="7" fill="#2a2410" stroke="#4a3a16" stroke-dasharray="4 3"/>
+    <text x="346" y="186" fill="#e3a04a" font-size="13">Nota progetto, in coda al messaggio</text>
+    <text x="346" y="206" fill="#b08a4a" font-size="11.5">fuori dal prefisso: non rompe la cache</text>
+    <text x="346" y="226" fill="#b08a4a" font-size="11.5" font-family="ui-monospace,monospace">conNotaProgetto() · dashboard.mjs:1384</text>
+    <text x="346" y="246" fill="#7f8ea3" font-size="11.5">il sistema lo fa già bene</text>
+
+    <rect x="678" y="164" width="386" height="96" rx="7" fill="#2a1614" stroke="#5a2521" stroke-dasharray="4 3"/>
+    <text x="692" y="186" fill="#f0645a" font-size="13">Contesto append-only: +10.400 tok/passo</text>
+    <text x="692" y="206" fill="#c97a74" font-size="11.5">nessun clearing dei risultati dei tool</text>
+    <text x="692" y="226" fill="#c97a74" font-size="11.5" font-family="ui-monospace,monospace">207.339 tok input / 20 passi</text>
+    <text x="692" y="246" fill="#7f8ea3" font-size="11.5">57% del costo del turno</text>
+    <use href="#arr" x="316" y="205"/><use href="#arr" x="662" y="205"/>
+
+    <!-- livello 3 -->
+    <rect x="16" y="330" width="196" height="88" rx="7" fill="#1b2230" stroke="#334052"/>
+    <text x="30" y="352" fill="#e6edf3" font-size="13">Gate dei tool</text>
+    <text x="30" y="372" fill="#7f8ea3" font-size="11.5">congelato per turno</text>
+    <text x="30" y="392" fill="#4fbf7f" font-size="11.5" font-family="ui-monospace,monospace">giusto: non tocca</text>
+    <text x="30" y="408" fill="#7f8ea3" font-size="11.5">la cache mid-turno</text>
+
+    <rect x="228" y="330" width="196" height="88" rx="7" fill="#1b2230" stroke="#334052"/>
+    <text x="242" y="352" fill="#e6edf3" font-size="13">Guardrail sui path</text>
+    <text x="242" y="372" fill="#7f8ea3" font-size="11.5">media-guard riscrive</text>
+    <text x="242" y="392" fill="#7f8ea3" font-size="11.5">write e bash &gt; fuori root</text>
+    <text x="242" y="408" fill="#4fbf7f" font-size="11.5" font-family="ui-monospace,monospace">symlink rifiutati</text>
+
+    <rect x="440" y="330" width="196" height="88" rx="7" fill="#1b2230" stroke="#334052"/>
+    <text x="454" y="352" fill="#e6edf3" font-size="13">Retry provider</text>
+    <text x="454" y="372" fill="#7f8ea3" font-size="11.5">3 tentativi · 2 s base</text>
+    <text x="454" y="392" fill="#4fbf7f" font-size="11.5" font-family="ui-monospace,monospace">auto_retry_*</text>
+    <text x="454" y="408" fill="#7f8ea3" font-size="11.5">nessun fallback modello</text>
+
+    <rect x="652" y="330" width="200" height="88" rx="7" fill="#2a1614" stroke="#5a2521" stroke-dasharray="4 3"/>
+    <text x="666" y="352" fill="#f0645a" font-size="13">Nessun turn cap</text>
+    <text x="666" y="372" fill="#c97a74" font-size="11.5">770 s · 20 tool call</text>
+    <text x="666" y="392" fill="#c97a74" font-size="11.5">nessun budget in denaro</text>
+    <text x="666" y="408" fill="#7f8ea3" font-size="11.5">il turno non ha freno</text>
+
+    <rect x="868" y="330" width="196" height="88" rx="7" fill="#2a1614" stroke="#5a2521" stroke-dasharray="4 3"/>
+    <text x="882" y="352" fill="#f0645a" font-size="13">Nessun gate finale</text>
+    <text x="882" y="372" fill="#c97a74" font-size="11.5">«fatto» = il modello</text>
+    <text x="882" y="392" fill="#c97a74" font-size="11.5">smette di chiamare tool</text>
+    <text x="882" y="408" fill="#7f8ea3" font-size="11.5">stato non verificato</text>
+  </svg>
+  </div>
+
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><h3>Prompt</h3><p style="margin:0;color:var(--muted);font-size:13.5px">
+      Cresce a ogni feature: 2.226 token oggi, +32% in 19 giorni, con due sezioni che ripetono skill già esistenti.</p></div>
+    <div class="card"><h3>Contesto</h3><p style="margin:0;color:var(--muted);font-size:13.5px">
+      Il prefisso è stabile (bene), ma la storia è append-only e la compaction, tarata su finestre piccole, su 1M non scatta mai.</p></div>
+    <div class="card"><h3>Harness</h3><p style="margin:0;color:var(--muted);font-size:13.5px">
+      Retry e guardrail ci sono; mancano il tetto al turno, il budget in denaro e un gate che provi il risultato.</p></div>
+  </div>
+</section>
+
+<!-- ===================== 2 SIMULATORE ===================== -->
+<section id="sim">
+  <h2><span class="n">2</span>Simulatore del ciclo</h2>
+  <p class="lead">Scegli uno scenario e un profilo, poi avanza. Ogni passo mostra cosa entra nel contesto, quanto costa
+    quella chiamata e dove il contesto è arrivato. I due profili usano lo stesso modello di costo
+    (<code>input 0,3 · output 1,2 · cacheRead 0,006 $/Mtok</code>): cambiano solo i parametri.</p>
+
+  <div class="card">
+    <div class="rowbtns">
+      <label class="seg">
+        <input type="radio" name="prof" id="p-att" value="attuale" checked><span>Attuale</span>
+      </label>
+      <label class="seg">
+        <input type="radio" name="prof" id="p-opt" value="ottimizzato"><span>Ottimizzato</span>
+      </label>
+      <select id="scenario" aria-label="Scenario"></select>
+      <button id="btnReset">Reset</button>
+      <button id="btnStep">Passo ▸</button>
+      <button id="btnPlay" class="primary">Play ▶</button>
+      <span id="pace" style="color:var(--dim);font-size:12.5px"></span>
+    </div>
+
+    <div class="metrics" id="kpis">
+      <div class="m"><div class="v" id="k-cont">13.184</div><div class="l">token nel contesto</div></div>
+      <div class="m"><div class="v" id="k-cost">0,000000 $</div><div class="l">costo del turno</div></div>
+      <div class="m"><div class="v" id="k-call">0</div><div class="l">chiamate al modello</div></div>
+      <div class="m"><div class="v" id="k-new">0</div><div class="l">token nuovi (non in cache)</div></div>
+    </div>
+
+    <div style="margin:16px 0 6px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+      <span>Contesto sulla finestra del modello (1.000.000 tok)</span>
+      <span id="k-pct">1,3%</span>
+    </div>
+    <div class="bar" id="barwrap"><i id="barfill"></i><div class="thr" id="bar-thr" style="left:20%"></div></div>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--att)"></span>attuale</span>
+      <span><span class="sw" style="background:var(--opt)"></span>ottimizzato</span>
+      <span>᛫ tacca: soglia operativa di lavoro (200.000 tok, scelta di progetto, non un limite del modello)</span>
+    </div>
+
+    <div class="grid g2" style="margin-top:18px">
+      <div>
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Passi</h3>
+        <ol class="steps" id="steps"></ol>
+      </div>
+      <div>
+        <h3 style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Log del turno</h3>
+        <div class="log" id="log">pronto. scegli scenario e profilo, poi «Passo».</div>
+        <div id="esito" style="margin-top:10px;font-size:13px;color:var(--muted)"></div>
+      </div>
+    </div>
+    <p class="note">Modello della simulazione, dichiarato: ogni chiamata ri-fattura il contesto esistente a prezzo cache
+      read e i token nuovi a prezzo pieno; i risultati dei tool aggiungono token nuovi; le compatte sostituiscono la storia
+      con un riassunto (costo di una chiamata in più); il clearing toglie dal contesto i risultati dei tool più vecchi di
+      sei passi lasciando un segnaposto rileggibile. Non c'è nessun numero estratto da una distribuzione: a parità di
+      parametri e scenario, il risultato è lo stesso.</p>
+  </div>
+</section>
+
+<!-- ===================== 3 CONFRONTO ===================== -->
+<section id="conf">
+  <h2><span class="n">3</span>Attuale vs ottimizzato, sullo scenario scelto</h2>
+  <p class="lead">Le due simulazioni girano con gli stessi passi e gli stessi prezzi. Le righe in verde sono le metriche
+    che il To-Be vuole spostare.</p>
+  <div class="card"><div id="confronto"></div></div>
+</section>
+
+<!-- ===================== 4 CRITICITÀ ===================== -->
+<section id="crit">
+  <h2><span class="n">4</span>Le criticità che la simulazione mette in scena</h2>
+  <p class="lead">Ognuna è ancorata a una riga di codice o a un file di telemetria (report completo in
+    <code>media/harness-audit-2026-11-01.md</code>).</p>
+  <div class="card" style="overflow:auto">
+  <table>
+    <thead><tr><th>ID</th><th>Sev.</th><th>Criticità</th><th>Evidenza</th><th>Soluzione SOTA</th><th>Impatto atteso</th></tr></thead>
+    <tbody id="tbody-crit"></tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ===================== 5 PARAMETRI ===================== -->
+<section id="param">
+  <h2><span class="n">5</span>Parametri dei due profili</h2>
+  <p class="lead">Sono il contratto del confronto: se non ti convincono, cambiali e riesegui. «Attuale» è la
+    configurazione letta dal codice e dalla telemetria; «ottimizzato» è la proposta del To-Be.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Parametri (JSON)</h3>
+      <textarea id="json-param" spellcheck="false"></textarea>
+      <div class="rowbtns" style="margin:10px 0 0">
+        <button id="btnApply" class="primary">Applica e ricalcola</button>
+        <button id="btnRestore">Ripristina</button>
+        <span id="json-msg" style="font-size:12.5px;color:var(--dim)"></span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Cosa significa ogni parametro</h3>
+      <table>
+        <tbody>
+          <tr><td><code>prefisso</code></td><td>token di istruzioni + schemi tool + indice skill, pagati a ogni chiamata</td></tr>
+          <tr><td><code>outputPasso</code></td><td>token generati dal modello per passo</td></tr>
+          <tr><td><code>clearingDopo</code></td><td>dopo quanti passi si svuotano i risultati dei tool più vecchi (0 = mai)</td></tr>
+          <tr><td><code>clearingRisparmio</code></td><td>quanta parte di quei token esce dal contesto (0-1)</td></tr>
+          <tr><td><code>compactionSoglia</code></td><td>token oltre i quali scatta il riassunto della storia</td></tr>
+          <tr><td><code>compactionKeep</code></td><td>token di storia recente che il riassunto conserva</td></tr>
+          <tr><td><code>missOgni</code></td><td>un cache miss ogni N chiamate (0 = mai). Il dato reale del 30/10 è 1 su 20</td></tr>
+          <tr><td><code>turnCap</code></td><td>passi massimi: oltre, il turno si chiude dichiarandolo (0 = nessun tetto)</td></tr>
+          <tr><td><code>budgetUsd</code></td><td>tetto di spesa per turno (0 = nessuno)</td></tr>
+          <tr><td><code>missToken</code></td><td>tetto dei token ri-fatturati da un miss (misura osservata: 199.989)</td></tr>
+          <tr><td><code>verificaFinale</code></td><td>un gate prova il risultato prima di dire «fatto»</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 6 FONTI ===================== -->
+<section id="fonti">
+  <h2><span class="n">6</span>Fonti della ricerca</h2>
+  <p class="lead">Consultate il 2026-11-01. Le tre leve che il To-Be usa vengono da qui, non da un'opinione.</p>
+  <div class="card">
+    <table><tbody>
+      <tr><td>Compaction: quando aiuta e quando no</td><td><a href="https://www.anthropic.com/research/effective-context-engineering-for-ai-agents">anthropic.com/research/effective-context-engineering-for-ai-agents</a></td></tr>
+      <tr><td>Compaction ≠ tool-result clearing ≠ memoria</td><td><a href="https://platform.claude.com/cookbook/tool-use-context-engineering-context-engineering-tools">platform.claude.com/cookbook/tool-use-context-engineering…</a></td></tr>
+      <tr><td>Prefisso stabile, suffisso dinamico, cache breakpoint</td><td><a href="https://agentpatternscatalog.github.io/patterns/patterns/prompt-caching.html">agentpatternscatalog.github.io/patterns/patterns/prompt-caching.html</a></td></tr>
+      <tr><td>Compressione vs continuità della cache (trade-off)</td><td><a href="https://arxiv.org/html/2606.17016">arxiv.org/html/2606.17016</a></td></tr>
+      <tr><td>Contratto di stop: turn limit + budget in denaro</td><td><a href="https://ghdaru.github.io/harness_engineering/en/pdf/02-agent-loop.pdf">ghdaru.github.io/harness_engineering · 02 — The Agent Loop</a></td></tr>
+      <tr><td>Gate di completamento dedotti dallo stato</td><td><a href="https://arize.com/resources/harness-engineering/">arize.com/resources/harness-engineering/</a></td></tr>
+      <tr><td>Eval mirate e soglie che rompono la build</td><td><a href="https://fullsend-ai.github.io/agent-eval-harness/guides/ci/">fullsend-ai.github.io/agent-eval-harness/guides/ci/</a></td></tr>
+      <tr><td>Span <code>gen_ai.*</code> per agenti e tool</td><td><a href="https://github.com/open-telemetry/semantic-conventions-genai">github.com/open-telemetry/semantic-conventions-genai</a></td></tr>
+      <tr><td>Isolamento del contesto con subagent</td><td><a href="https://code.claude.com/docs/en/sub-agents">code.claude.com/docs/en/sub-agents</a></td></tr>
+    </tbody></table>
+  </div>
+  <p class="foot">
+    File: <code>media/harness-audit-dashboard.html</code> · prodotto dall'audit del 2026-11-01 ·
+    nessuna risorsa esterna, nessun dato personale. I valori mostrati sono simulazioni dichiarate; le uniche
+    cifre misurate sono quelle citate in testa (13.184 tok dal provider il 13/10, 0,10816 $ da
+    <code>media/turni.jsonl</code> il 30/10).
+  </p>
+</section>
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   PREZZI E COSTANTI (da /root/.pi/agent/models-store.json, deepseek-flash)
+   ============================================================ */
+const PREZZI = { input: 0.3, output: 1.2, cacheRead: 0.006 }; // $ per milione di token
+const FINESTRA = 1000000;
+const SOGLIA_OPERATIVA = 200000;
+const MISS_TOKEN_DEFAULT = 199989; // miss misurato il 30/10 (media/turni.jsonl)
+
+const PARAM_DEFAULT = {
+  attuale: {
+    prefisso: 13184,
+    outputPasso: 1050,
+    clearingDopo: 0,
+    clearingRisparmio: 0,
+    compactionSoglia: 983616,   // 1.000.000 − 16.384 (reserveTokens di default)
+    compactionKeep: 20000,
+    missOgni: 20,
+    missToken: MISS_TOKEN_DEFAULT,
+    turnCap: 0,
+    budgetUsd: 0,
+    verificaFinale: false
+  },
+  ottimizzato: {
+    prefisso: 12400,             // nota feature → skill, descrizioni accorciate
+    outputPasso: 1050,
+    clearingDopo: 6,
+    clearingRisparmio: 0.55,
+    compactionSoglia: 200000,    // soglia operativa, non il limite del modello
+    compactionKeep: 12000,
+    missOgni: 0,                 // prefisso immutabile per costruzione
+    missToken: MISS_TOKEN_DEFAULT,
+    turnCap: 25,
+    budgetUsd: 0.25,
+    verificaFinale: true
+  }
+};
+let PARAM = JSON.parse(JSON.stringify(PARAM_DEFAULT));
+
+/* ============================================================
+   SCENARI — deterministici. `aggiunto` sono i token che il passo
+   mette nel contesto (messaggio utente o risultato di un tool).
+   ============================================================ */
+const SCENARI = {
+  semplice: {
+    nome: "Richiesta semplice (senza tool)",
+    passi: [
+      { tipo: "user",   azione: "messaggio dell'utente + nota progetto", aggiunto: 520,  output: 0 },
+      { tipo: "model",  azione: "chiamata al modello", aggiunto: 0, output: 700 },
+      { tipo: "model",  azione: "risposta consegnata", aggiunto: 0, output: 380 }
+    ]
+  },
+  tool: {
+    nome: "Tool call (5 chiamate, come il turno reale)",
+    passi: [
+      { tipo: "user",   azione: "messaggio dell'utente + nota progetto", aggiunto: 520,  output: 0 },
+      { tipo: "model",  azione: "chiamata al modello (decide read)", aggiunto: 0, output: 620 },
+      { tipo: "tool",   azione: "read dashboard.mjs (1.400 righe)", aggiunto: 12400, output: 0 },
+      { tipo: "model",  azione: "chiamata al modello", aggiunto: 0, output: 980 },
+      { tipo: "tool",   azione: "bash grep (80 righe)", aggiunto: 3400, output: 0 },
+      { tipo: "model",  azione: "chiamata al modello", aggiunto: 0, output: 1200 },
+      { tipo: "tool",   azione: "read blocco scelto", aggiunto: 8600, output: 0 },
+      { tipo: "model",  azione: "chiamata al modello", aggiunto: 0, output: 1500 },
+      { tipo: "tool",   azione: "write del file richiesto", aggiunto: 900, output: 0 },
+      { tipo: "model",  azione: "risposta finale", aggiunto: 0, output: 1100 }
+    ]
+  },
+  errore: {
+    nome: "Errore, retry e auto-correzione",
+    passi: [
+      { tipo: "user",   azione: "messaggio dell'utente + nota progetto", aggiunto: 520,  output: 0 },
+      { tipo: "model",  azione: "chiamata al modello", aggiunto: 0, output: 700 },
+      { tipo: "tool",   azione: "bash: script di prova", aggiunto: 6400, output: 0 },
+      { tipo: "tool",   azione: "bash: esce con errore (path sbagliato)", aggiunto: 620, output: 0, errore: "exit 2" },
+      { tipo: "model",  azione: "chiamata al modello: legge l'errore", aggiunto: 0, output: 1150 },
+      { tipo: "retry",  azione: "429 dal provider: retry con backoff", aggiunto: 0, output: 0, errore: "429" },
+      { tipo: "model",  azione: "chiamata al modello (tentativo 2)", aggiunto: 0, output: 900 },
+      { tipo: "tool",   azione: "bash: comando corretto, esce 0", aggiunto: 1800, output: 0 },
+      { tipo: "model",  azione: "chiamata al modello", aggiunto: 0, output: 1000 },
+      { tipo: "model",  azione: "risposta finale", aggiunto: 0, output: 800 }
+    ]
+  },
+  rotto: {
+    nome: "Prefisso rotto (il caso del 30/10, 0,054 $ in un colpo)",
+    forzaMiss: 17,
+    passi: (() => {
+      const out = [{ tipo: "user", azione: "messaggio dell'utente + nota progetto", aggiunto: 520, output: 0 }];
+      const quote = [12400, 8600, 3400, 15200, 5200, 9800, 6100, 11000, 4700, 13400];
+      for (let i = 0; i < 10; i++) {
+        out.push({ tipo: "model", azione: "chiamata al modello", aggiunto: 0, output: 1000 });
+        out.push({ tipo: "tool", azione: "lettura/esecuzione " + (i + 1) + " (" + Math.round(quote[i] / 100) / 10 + "k tok)", aggiunto: quote[i], output: 0 });
+      }
+      out.push({ tipo: "model", azione: "risposta finale", aggiunto: 0, output: 1400 });
+      return out;
+    })()
+  },
+  lungo: {
+    nome: "Sessione lunga (60 passi, 30 tool call)",
+    passi: (() => {
+      const out = [{ tipo: "user", azione: "messaggio dell'utente + nota progetto", aggiunto: 520, output: 0 }];
+      const quote = [12400, 8600, 3400, 15200, 5200, 9800, 6100, 11000, 4700, 13400];
+      for (let i = 0; i < 30; i++) {
+        out.push({ tipo: "model", azione: "chiamata al modello", aggiunto: 0, output: 950 });
+        out.push({ tipo: "tool", azione: "lettura/esecuzione " + (i + 1) + " (" + Math.round(quote[i % 10] / 100) / 10 + "k tok)", aggiunto: quote[i % 10], output: 0 });
+      }
+      out.push({ tipo: "model", azione: "risposta finale", aggiunto: 0, output: 1400 });
+      return out;
+    })()
+  }
+};
+
+/* ============================================================
+   MOTORE — funzione pura: (parametri, scenario) → passi risolti
+   ============================================================ */
+function simula(prof, scen) {
+  const P = PARAM[prof];
+  const S = SCENARI[scen];
+  const ctxIniziale = P.prefisso;
+
+  let contesto = ctxIniziale;
+  let costo = 0, chiamate = 0, nuovi = 0, cacheRead = 0, cose = 0;
+  let passoTool = 0;
+  const risultati = [];        // { passo, tok }
+  const eventi = [];
+  const passi = [];
+  let missUsati = 0;
+  let stop = null;
+
+  for (let i = 0; i < S.passi.length; i++) {
+    const s = S.passi[i];
+    let nota = "";
+    let aggiunto = s.aggiunto || 0;
+    let costoPasso = 0;
+
+    if (s.tipo === "tool") {
+      passoTool++;
+      // clearing: i risultati vecchi escono dal contesto (resta un segnaposto)
+      if (P.clearingDopo > 0 && risultati.length > P.clearingDopo) {
+        const vecchio = risultati.shift();
+        const tolti = Math.round(vecchio.tok * P.clearingRisparmio);
+        contesto = Math.max(P.prefisso, contesto - tolti + 60);
+        aggiunto = Math.round(aggiunto * (1 - P.clearingRisparmio * 0.35));
+        nota = "clearing: −" + fmtK(tolti) + " tok di un risultato vecchio";
+        eventi.push("clearing: liberati " + fmtK(tolti) + " token (risultato del passo " + vecchio.passo + ", resta il segnaposto)");
+      }
+      risultati.push({ passo: i + 1, tok: aggiunto });
+    }
+
+    // ingresso nel contesto
+    if (aggiunto > 0) {
+      contesto += aggiunto;
+      nuovi += aggiunto;
+    }
+
+    if (s.tipo === "model" || s.tipo === "verify") {
+      // chiamata al modello: il contesto esistente va in cache read, i nuovi a prezzo pieno
+      const out = s.output || P.outputPasso;
+      let inputNonCache = 0;
+      let cachePart = contesto - aggiunto;
+
+      // rottura del prefisso: si ri-fattura il contesto esistente a prezzo pieno
+      const missOra = (S.forzaMiss != null) ? (i === S.forzaMiss)
+        : (P.missOgni > 0 && chiamate > 0 && chiamate % P.missOgni === 0);
+      if (missOra && P.missOgni > 0) {
+        const rifatt = Math.min(P.missToken, Math.round(cachePart));
+        missUsati++;
+        inputNonCache += rifatt;
+        const costoMiss = rifatt * (PREZZI.input - PREZZI.cacheRead) / 1e6;
+        nota = (nota ? nota + " · " : "") + "cache miss: " + fmtK(rifatt) + " tok ri-fatturati (" + usd(costoMiss) + ")";
+        eventi.push("cache miss: prefisso ricostruito, " + fmtK(rifatt) + " token ri-fatturati a prezzo pieno (" + usd(costoMiss) + ")");
+      }
+
+      costoPasso += inputNonCache * PREZZI.input / 1e6;
+      costoPasso += cachePart * PREZZI.cacheRead / 1e6;
+      costoPasso += out * PREZZI.output / 1e6;
+
+      nuovi += inputNonCache;
+      cacheRead += cachePart;
+      contesto += out;
+      chiamate++;
+      costo += costoPasso;
+      cose++;
+
+      // compaction dopo la chiamata
+      if (contesto > P.compactionSoglia) {
+        const prima = contesto;
+        const dopo = P.compactionKeep + 1200;
+        const costoComp = prima * PREZZI.input / 1e6 + 1200 * PREZZI.output / 1e6;
+        costo += costoComp;
+        chiamate++;
+        eventi.push("compaction: " + fmtK(prima) + " → " + fmtK(dopo) + " token (riassunto, +1 chiamata, +" + usd(costoComp) + ")");
+        nota = (nota ? nota + " · " : "") + "compaction: " + fmtK(prima) + " → " + fmtK(dopo);
+        contesto = dopo;
+        risultati.length = 0;
+      }
+    }
+
+    if (s.tipo === "retry") {
+      nota = "retry: errore " + (s.errore || "provider") + " · 3 tentativi, backoff 2 s";
+      eventi.push("retry: " + (s.errore || "provider") + " dal provider → tentativo successivo dopo 2 s");
+    }
+    if (s.tipo === "tool" && s.errore) {
+      nota = (nota ? nota + " · " : "") + "il tool fallisce (" + s.errore + "): il modello non ha un gate, deve accorgersene";
+      eventi.push("tool fallito: " + s.azione + " → " + s.errore);
+    }
+
+    // tetti
+    if (P.turnCap > 0 && (i + 1) > P.turnCap) {
+      stop = { motivo: "turn_cap", testo: "turno chiuso dal tetto di " + P.turnCap + " passi" };
+      eventi.push("turn cap: chiuso a " + P.turnCap + " passi (esito dichiarato all'utente)");
+      passi.push({ ...s, tipo: "verify", azione: "STOP: tetto dei passi", contesto, costoPasso: 0, nota: stop.testo, chiamata: false });
+      break;
+    }
+    if (P.budgetUsd > 0 && costo > P.budgetUsd) {
+      stop = { motivo: "budget", testo: "turno chiuso dal budget di " + P.budgetUsd.toFixed(2) + " $" };
+      eventi.push("budget ceiling: speso " + usd(costo) + " > " + P.budgetUsd.toFixed(2) + " $ → turno chiuso");
+      passi.push({ ...s, tipo: "verify", azione: "STOP: budget in denaro", contesto, costoPasso: 0, nota: stop.testo, chiamata: false });
+      break;
+    }
+
+    passi.push({ ...s, contesto, costoPasso, nota, chiamata: s.tipo === "model" });
+  }
+
+  // gate finale
+  let esito = "consegnato senza verifica";
+  if (P.verificaFinale && !stop) {
+    const costoGate = 1500 * PREZZI.input / 1e6 + 300 * PREZZI.output / 1e6 + contesto * PREZZI.cacheRead / 1e6;
+    costo += costoGate;
+    chiamate++;
+    eventi.push("verifica finale: il gate esegue il controllo e prova lo stato del sistema (+" + usd(costoGate) + ")");
+    passi.push({ tipo: "verify", azione: "gate di verifica: esegue il controllo", aggiunto: 0, output: 0,
+      contesto, costoPasso: costoGate, nota: "esito «verificato»: il controllo è passato, non è una dichiarazione del modello", chiamata: true });
+    esito = "verificato dal gate";
+  } else if (stop) {
+    esito = stop.testo;
+  }
+
+  return {
+    passi, costo, chiamate, nuovi, cacheRead,
+    contestoFinale: contesto,
+    contestoMax: Math.max(...passi.map(p => p.contesto)),
+    compattazioni: eventi.filter(e => e.startsWith("compaction")).length,
+    miss: missUsati, eventi, esito,
+    passiTotali: passi.length,
+    spazzatura: eventi.filter(e => e.startsWith("tool fallito") || e.startsWith("cache miss")).length
+  };
+}
+
+/* ============================================================
+   FORMATTAZIONE
+   ============================================================ */
+const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(2) + "M" : n >= 1000 ? (n / 1000).toFixed(1) + "k" : String(Math.round(n));
+const numIT = (n) => Math.round(n).toLocaleString("it-IT");
+const usd = (n) => n.toFixed(6).replace(".", ",") + " $";
+const pct = (n) => (n / FINESTRA * 100).toFixed(n / FINESTRA < 0.1 ? 2 : 1).replace(".", ",") + "%";
+
+/* ============================================================
+   UI
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+const selScenario = $("scenario");
+Object.entries(SCENARI).forEach(([k, v]) => {
+  const o = document.createElement("option");
+  o.value = k; o.textContent = v.nome;
+  selScenario.appendChild(o);
+});
+selScenario.value = "tool";
+
+let stato = null;
+let timer = null;
+
+function profiloScelto() {
+  return document.querySelector('input[name="prof"]:checked').value;
+}
+
+function reset() {
+  clearInterval(timer); timer = null;
+  $("btnPlay").textContent = "Play ▶"; $("btnPlay").disabled = false;
+  const prof = profiloScelto();
+  const scen = selScenario.value;
+  const risultato = simula(prof, scen);
+  stato = { prof, scen, risultato, idx: 0 };
+  $("steps").innerHTML = "";
+  $("log").textContent = "turno inizializzato · profilo " + prof + " · " + SCENARI[scen].nome +
+    "\nprefisso: " + numIT(PARAM[prof].prefisso) + " token (dichiarato, non ancora speso in questo turno)\n";
+  $("esito").textContent = "";
+  $("barwrap").className = "bar" + (prof === "attuale" ? " att" : "");
+  $("bar-thr").style.left = (SOGLIA_OPERATIVA / FINESTRA * 100) + "%";
+  aggiornaKpi(0, 0, 0, PARAM[prof].prefisso);
+  $("btnStep").disabled = false;
+  renderConfronto();
+}
+
+function aggiornaKpi(costo, chiamate, nuovi, contesto) {
+  $("k-cont").textContent = numIT(contesto);
+  $("k-cost").textContent = usd(costo);
+  $("k-call").textContent = String(chiamate);
+  $("k-new").textContent = numIT(nuovi);
+  const p = Math.min(100, contesto / FINESTRA * 100);
+  $("barfill").style.width = p + "%";
+  $("k-pct").textContent = pct(contesto);
+}
+
+function passo() {
+  if (!stato) return;
+  const { risultato } = stato;
+  if (stato.idx >= risultato.passi.length) { ferma(); return; }
+  const p = risultato.passi[stato.idx];
+  stato.idx++;
+
+  // KPI progressivi
+  let costo = 0, chiamate = 0, nuovi = 0;
+  for (let i = 0; i < stato.idx; i++) {
+    costo += risultato.passi[i].costoPasso || 0;
+    if (risultato.passi[i].chiamata) chiamate++;
+  }
+  nuovi = risultato.passi.slice(0, stato.idx)
+    .reduce((a, x) => a + (x.aggiunto || 0), 0);
+  aggiornaKpi(costo, chiamate, nuovi, p.contesto);
+
+  // riga del passo
+  const li = document.createElement("li");
+  li.innerHTML =
+    '<span class="c">' + stato.idx + "</span>" +
+    '<span class="t t-' + p.tipo + '">' + p.tipo + "</span>" +
+    '<span class="d">' + esc(p.azione) + (p.nota ? '<br><span style="color:#6e7b8c;font-size:12px">' + esc(p.nota) + "</span>" : "") + "</span>" +
+    '<span class="c">' + fmtK(p.contesto) + " tok · " + (p.costoPasso ? usd(p.costoPasso) : "—") + "</span>";
+  $("steps").appendChild(li);
+  $("steps").scrollTop = $("steps").scrollHeight;
+
+  // log
+  const log = $("log");
+  let riga = "";
+  if (p.tipo === "model") riga = "model  → chiamata #" + chiamate + " · contesto " + numIT(p.contesto) + " tok · " + usd(p.costoPasso);
+  else if (p.tipo === "user") riga = "utente → +" + numIT(p.aggiunto) + " tok (messaggio + nota progetto, in coda)";
+  else if (p.tipo === "tool") riga = "tool   → +" + numIT(p.aggiunto) + " tok nel contesto" + (p.errore ? " · ERRORE " + p.errore : "");
+  else if (p.tipo === "retry") riga = "retry  → " + p.nota;
+  else if (p.tipo === "verify") riga = "gate   → " + p.nota + (p.costoPasso ? " · " + usd(p.costoPasso) : "");
+  else riga = p.tipo + " → " + p.azione;
+  log.textContent += riga + "\n";
+  log.scrollTop = log.scrollHeight;
+
+  // eventi
+  if (p.nota && p.tipo === "model") { log.textContent += "         " + p.nota + "\n"; log.scrollTop = log.scrollHeight; }
+
+  if (stato.idx >= risultato.passi.length) {
+    ferma();
+    $("esito").innerHTML = "<strong>Esito:</strong> " + esc(risultato.esito) +
+      " · costo del turno <strong>" + usd(risultato.costo) + "</strong> · chiamate " + risultato.chiamate +
+      " · contesto massimo " + numIT(risultato.contestoMax) + " tok" +
+      (risultato.compattazioni ? " · " + risultato.compattazioni + " compattazioni" : " · nessuna compattazione") +
+      (risultato.miss ? " · " + risultato.miss + " cache miss" : " · nessun cache miss");
+    $("btnStep").disabled = true;
+  }
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function ferma() {
+  clearInterval(timer); timer = null;
+  $("btnPlay").textContent = "Play ▶";
+  $("btnPlay").disabled = false;
+}
+
+function play() {
+  if (timer) { ferma(); return; }
+  $("btnPlay").textContent = "Pausa ⏸";
+  timer = setInterval(() => {
+    if (!stato || stato.idx >= stato.risultato.passi.length) { ferma(); return; }
+    passo();
+  }, 620);
+}
+
+/* ---------- confronto ---------- */
+function renderConfronto() {
+  const scen = selScenario.value;
+  const a = simula("attuale", scen);
+  const o = simula("ottimizzato", scen);
+
+  const righe = [
+    ["Costo del turno", a.costo, o.costo, usd, "meno"],
+    ["Chiamate al modello", a.chiamate, o.chiamate, (n) => String(n), "meno"],
+    ["Contesto massimo", a.contestoMax, o.contestoMax, numIT, "meno"],
+    ["Token nuovi (non in cache)", a.nuovi, o.nuovi, numIT, "meno"],
+    ["Token in cache read", a.cacheRead, o.cacheRead, numIT, "meno"],
+    ["Cache miss (eventi)", a.miss, o.miss, String, "meno"],
+    ["Compattazioni", a.compattazioni, o.compattazioni, String, "meno"],
+    ["Passi eseguiti", a.passiTotali, o.passiTotali, String, "meno"],
+    ["Esito dichiarato", a.esito, o.esito, String, null]
+  ];
+
+  let html = '<table><thead><tr><th>Metrica</th><th>Attuale</th><th>Ottimizzato</th><th>Differenza</th></tr></thead><tbody>';
+  for (const [nome, va, vo, f, dir] of righe) {
+    let delta = "";
+    if (typeof va === "number" && typeof vo === "number") {
+      if (va === 0 && vo === 0) delta = "—";
+      else {
+        const d = vo - va;
+        if (Math.abs(d) < 1e-9) {
+          delta = '<span class="delta">—</span>';
+        } else {
+          const segno = d > 0 ? "+" : "−";
+          const cls = d < 0 ? "down" : "up";
+          delta = '<span class="delta ' + cls + '">' + segno + f(Math.abs(d)) + "</span>";
+        }
+      }
+    } else delta = "—";
+    html += "<tr><td>" + nome + "</td><td class=\"num\">" + f(va) + "</td><td class=\"num\">" + f(vo) + "</td><td class=\"num\">" + delta + "</td></tr>";
+  }
+  html += "</tbody></table>";
+  const tagliati = [a, o].filter((x) => /tetto|budget/.test(x.esito));
+  if (tagliati.length) html += '<p class="note" style="border-color:#5a2521;color:#c97a74">Attenzione: uno dei due turni è stato <strong>troncato</strong> (turn cap o budget ceiling). Meno passi non è un guadagno: è un lavoro non finito, e l\'esito lo dichiara.</p>';
+  if (a.miss || o.miss) html += '<p class="note">Il cache miss è il caso in cui il prefisso si rompe: si ri-fattura il contesto <em>esistente</em> a prezzo pieno. È per questo che il turno del 30/10 ha speso 0,054 $ in un colpo solo, metà del suo costo.</p>';
+  html += '<p class="note">Simulazione dello scenario <strong>' + esc(SCENARI[scen].nome) +
+    "</strong> con i parametri del pannello 5. Il profilo ottimizzato costa di meno in denaro solo dove il clearing o l'assenza di cache miss" +
+    " tolgono token <em>nuovi</em>; se aggiunge chiamate (verifica finale) il costo può salire — e in quel caso il guadagno è nell'esito, non nel prezzo.</p>";
+  $("confronto").innerHTML = html;
+}
+
+/* ---------- criticità ---------- */
+const CRIT = [
+  ["C1", "S1", "44 test, nessun runner, nessuna CI", "media/test-*.mjs (44 file) · package.json senza «test»",
+    "Eval mirate con soglie che fanno fallire la build", "ogni modifica a prompt o contesto smette di essere una scommessa"],
+  ["C2", "S1", "Nessun tetto ai passi, nessun budget in denaro", "turni.jsonl: 770 s, 20 tool call, 0,108 $",
+    "Turn limit + budget ceiling + sottotipo di terminazione", "il loop non può più «sembrare che funzioni» per ore"],
+  ["C3", "S1", "«Fatto» è un'affermazione del modello", "fine turno = nessuna tool call",
+    "Gate di completamento dedotto dallo stato del sistema", "i risultati dichiarati sono verificati, non creduti"],
+  ["C4", "S1", "Contesto append-only, +10.400 tok/passo", "dashboard.mjs (nessun clearing); turni.jsonl: 207.339 input/20 passi",
+    "Tool-result clearing con segnaposto rileggibile", "−35/55% di token nuovi nella coda del turno, attenzione meno diluita"],
+  ["C5", "S2", "Compaction di fatto inerte su finestra 1M", "compaction.js:163 + settings-manager.js:560 (soglia 983.616)",
+    "Soglie adattive (percentuale della finestra) + istruzioni di riassunto", "sessioni lunghe con riassunto, e memoria aggiornata prima del taglio"],
+  ["C6", "S2", "Nota d'istanza 2.226 tok, +32% in 19 giorni", "dashboard.mjs:895-1000; report del 13/10: 1.681 tok",
+    "Le sezioni di feature escono dal prefisso e restano nelle skill", "prefisso −780 tok e nessuna duplicazione da mantenere"],
+  ["C7", "S2", "Indice skill 3.020 tok con descrizioni-abstract", "22 su 29 SKILL.md oltre 250 char, max 892",
+    "Descrizione = trigger («quando…»), massimo 180 char", "indice dimezzato, skill scelte meglio"],
+  ["C8", "S1", "bash gira come root, senza sandbox", "pi-dashboard.service: User=root; browser ha utente dedicato (dashboard.mjs:1415)",
+    "Utente dedicato o sandbox (bwrap/nsjail) sulla sola shell", "un comando sbagliato non ha più i permessi dell'host"],
+  ["C9", "S3", "Due telemetrie non correlate, nessuno span", "media/turni.jsonl + ~/.pi/agent/observability/history.jsonl",
+    "Span gen_ai.* (agent, execute_tool, load_skill) con trace per sessione", "ricostruire un turno diventa una query, non un'indagine"],
+  ["C10", "S2", "Cache miss da 199.989 tok in un colpo", "turni.jsonl (missedTokens), 0,054 $ = 50% del costo del turno",
+    "Prefisso immutabile + test di regressione sull'impronta", "il miss non torna senza che un test lo dica"],
+  ["C11", "S3", "L'episodio di memoria nasce a fine chat o alla compaction", "memoria-tool.mjs:281 (session_compact)",
+    "Dipende da C5: compaction che scatta davvero", "la memoria si aggiorna durante il lavoro, non solo alla fine"]
+];
+$("tbody-crit").innerHTML = CRIT.map(([id, sev, tit, ev, sol, imp]) =>
+  "<tr><td><strong>" + id + "</strong></td><td><span class=\"sev " + sev.toLowerCase() + "\">" + sev + "</span></td>" +
+  "<td>" + tit + "</td><td style=\"font-family:var(--mono);font-size:12px;color:var(--muted)\">" + ev + "</td>" +
+  "<td>" + sol + "</td><td>" + imp + "</td></tr>").join("");
+
+/* ---------- parametri ---------- */
+function mostraParam() {
+  $("json-param").value = JSON.stringify(PARAM, null, 2);
+}
+$("btnApply").addEventListener("click", () => {
+  try {
+    const p = JSON.parse($("json-param").value);
+    if (!p.attuale || !p.ottimizzato) throw new Error("servono le chiavi «attuale» e «ottimizzato»");
+    for (const k of ["attuale", "ottimizzato"]) {
+      for (const campo of ["prefisso", "outputPasso", "clearingDopo", "clearingRisparmio", "compactionSoglia", "compactionKeep", "missOgni", "missToken", "turnCap", "budgetUsd", "verificaFinale"]) {
+        if (p[k][campo] === undefined) throw new Error("manca " + k + "." + campo);
+      }
+    }
+    PARAM = p;
+    $("json-msg").textContent = "applicati · ricalcolo";
+    $("json-msg").style.color = "var(--opt)";
+    reset();
+  } catch (e) {
+    $("json-msg").textContent = "JSON non valido: " + e.message;
+    $("json-msg").style.color = "var(--bad)";
+  }
+});
+$("btnRestore").addEventListener("click", () => {
+  PARAM = JSON.parse(JSON.stringify(PARAM_DEFAULT));
+  mostraParam();
+  $("json-msg").textContent = "valori di default ripristinati";
+  $("json-msg").style.color = "var(--dim)";
+  reset();
+});
+
+/* ---------- eventi ---------- */
+$("btnStep").addEventListener("click", () => { ferma(); passo(); });
+$("btnPlay").addEventListener("click", play);
+$("btnReset").addEventListener("click", reset);
+selScenario.addEventListener("change", reset);
+document.querySelectorAll('input[name="prof"]').forEach((r) => r.addEventListener("change", reset));
+
+/* ---------- avvio ---------- */
+mostraParam();
+reset();
+$("pace").textContent = "griglia: 620 ms per passo";
+</script>
+</body>
+</html>
