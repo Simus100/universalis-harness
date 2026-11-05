@@ -133,8 +133,8 @@ fuori tema presi dalle skill, con «confidenza media» — i termini c'erano, il
 non valgono più. Senza questo confronto il riuso per `mtime` li avrebbe tenuti per sempre — è
 successo, con le schede degli episodi che non comparivano perché il file non era cambiato.
 
-**Archivio escluso**: `sessions/` (26 MB di JSONL: rumore e dati personali), `backups/`,
-`backup_export/`, `node_modules/`, `media/memoria/wiki` (derivata: indicizzarla sarebbe
+**Archivio escluso**: `sessions/` (26 MB di JSONL: rumore e dati personali), `backups/` (tutte le sue
+sottocartelle), `node_modules/`, `media/memoria/wiki` (derivata: indicizzarla sarebbe
 duplicazione). E nessun file che corrisponda a `.env`, `secret`, `password`, `token`, `*.key`:
 escluso per costruzione, e c'è un test che lo verifica.
 

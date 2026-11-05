@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# backup-export.sh — genera il pacchetto di export/ripristino in /root/pi-harness/backup_export
+# backup-export.sh — genera il pacchetto di export/ripristino in /root/pi-harness/backups/export
 #
 # Cosa fa:
 #   1. fotografia le tre istanze presenti sul server (principale, tester_01, tester_07);
@@ -14,7 +14,7 @@
 #   scripts/backup-export.sh --dest /percorso   # destinazione alternativa
 set -euo pipefail
 
-DEST="/root/pi-harness/backup_export"
+DEST="/root/pi-harness/backups/export"
 RISERVATI=1
 SRC_MAIN="/root/pi-harness"
 SRC_T01="/root/tester_01"
@@ -43,11 +43,13 @@ copia() { # copia <sorgente> <destinazione> [esclusioni extra...]
     --exclude 'backups/' \
     --exclude 'node_modules/' \
     --exclude 'lost+found/' \
+    --exclude '.cache/' \
+    --exclude '.npm/' \
+    --exclude '.hyperframes/' \
     --exclude 'download/' \
     --exclude '*.log' \
     --exclude '*.tmp' \
     --exclude 'uploads/' \
-    --exclude 'backup_export/' \
     --exclude '.git/' \
     --exclude '.env' \
     --exclude '.session-secret' \
@@ -67,7 +69,9 @@ copia_riservati() { # copia <file...> <destinazione>
 }
 
 title "Pacchetto di export dell'harness → $DEST"
-rm -rf "$DEST"
+mkdir -p "$DEST"
+# svuota il pacchetto precedente ma conserva export/storico/ (gli archivi .tar.gz delle versioni passate)
+find "$DEST" -mindepth 1 -maxdepth 1 ! -name storico -exec rm -rf {} +
 mkdir -p "$DEST"/{dashboard/{principale,utente-limitato},infra/systemd,infra/caddy,scripts,docs}
 
 # ---------------------------------------------------------------- dashboard
@@ -144,7 +148,7 @@ log "unit: $(ls "$DEST/infra/systemd" | tr '\n' ' ')"
 title "6/6  inventario, guida del pacchetto e checksum"
 
 cat > "$DEST/LEGGIMI.md" <<'GUIDA'
-# Pacchetto di esportazione dell'harness (backup_export)
+# Pacchetto di esportazione dell'harness (backups/export)
 
 Copia completa e ricostruibile delle tre istanze dell'harness pi presenti sul server, più le
 istruzioni per rimetterle in piedi. Generato da `scripts/backup-export.sh`: non modificare a mano,
@@ -168,13 +172,14 @@ rigeneralo con quello script.
 | `MANIFEST.sha256` | impronta di ogni file, per verificare l'integrità |
 
 Esclusi di proposito: `sessions/` (conversazioni), `backups/`, `node_modules/`,
-`media/uploads/`, i log e i file temporanei.
+`media/uploads/`, le cache ricostruibili (`.cache/`, `.npm/`, `.hyperframes/`), i log e i file
+temporanei.
 
 ## Verificare l'integrità
 
 ```bash
-tar -tzf backup_export.tar.gz >/dev/null && echo archivio leggibile
-cd backup_export && sha256sum -c MANIFEST.sha256 --quiet && echo OK
+tar -tzf backups/export.tar.gz >/dev/null && echo archivio leggibile
+cd /root/pi-harness/backups/export && sha256sum -c MANIFEST.sha256 --quiet && echo OK
 ```
 
 ## Ricostruire un'istanza su un server nuovo

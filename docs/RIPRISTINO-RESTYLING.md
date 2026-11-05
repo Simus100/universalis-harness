@@ -6,15 +6,15 @@ pagina di accesso).
 
 ## Dove sta la copia di sicurezza
 
-La copia **non** è nel repository (sta in `/root/pi-harness/backups/`, cartella esclusa dal
+La copia **non** è nel repository (sta in `/root/pi-harness/backups/per-funzione/`, cartella esclusa dal
 versionamento perché contiene anche archivi pesanti). Questo documento è la versione versionata della
-guida: se la cartella `backups/restyling-pre-20261004-184319/` non esistesse più, il tag git qui sotto
+guida: se la cartella `backups/per-funzione/restyling-pre-20261004-184319/` non esistesse più, il tag git qui sotto
 resta comunque valido.
 
 Sul server:
 
 ```
-/root/pi-harness/backups/restyling-pre-20261004-184319/
+/root/pi-harness/backups/per-funzione/restyling-pre-20261004-184319/
 ├── dashboard.html          copia esatta di prima dell'intervento
 ├── dashboard.mjs           copia esatta (solo i colori della pagina di accesso cambiano)
 ├── manifest.webmanifest    copia esatta
@@ -26,16 +26,16 @@ Sul server:
 Verifica dell'integrità della copia:
 
 ```bash
-cd /root/pi-harness/backups/restyling-pre-20261004-184319 && sha256sum -c IMPRONTE.sha256
+cd /root/pi-harness/backups/per-funzione/restyling-pre-20261004-184319 && sha256sum -c IMPRONTE.sha256
 ```
 
 ## Ripristino completo (tornare esattamente a prima)
 
 ```bash
 cd /root/pi-harness
-cp -p backups/restyling-pre-20261004-184319/dashboard.html       dashboard.html
-cp -p backups/restyling-pre-20261004-184319/dashboard.mjs        dashboard.mjs
-cp -p backups/restyling-pre-20261004-184319/manifest.webmanifest manifest.webmanifest
+cp -p backups/per-funzione/restyling-pre-20261004-184319/dashboard.html       dashboard.html
+cp -p backups/per-funzione/restyling-pre-20261004-184319/dashboard.mjs        dashboard.mjs
+cp -p backups/per-funzione/restyling-pre-20261004-184319/manifest.webmanifest manifest.webmanifest
 bash scripts/restart-dashboard.sh
 ```
 

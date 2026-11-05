@@ -92,7 +92,7 @@ for f in .env .session-secret .github-access .github-remote; do
     errore "$f è $modo: leggibile o scrivibile da utenti che non sono il tuo (chmod 600 $f)"
   fi
 done
-for d in sessions backups social backup_export media/memoria; do
+for d in sessions backups social backups/export media/memoria; do
   [ -d "$d" ] || continue
   modo=$(stat -c '%a' "$d")
   if (( (8#$modo & 8#077) != 0 )); then

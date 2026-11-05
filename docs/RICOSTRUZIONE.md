@@ -5,7 +5,7 @@ Guida operativa per ricostruire da zero (server nuovo, o dopo un guasto) le tre 
 Lo stato corrente delle istanze è in `docs/ISTANZE.md`.
 
 Tutti i comandi vanno eseguiti da root sul server, salvo dove indicato.
-Percorsi alternativi per gli stessi dati sono nell'archivio `backup_export/` (vedi `LEGGIMI.md`).
+Percorsi alternativi per gli stessi dati sono nell'archivio `backups/export/` (vedi `LEGGIMI.md`).
 
 ---
 
@@ -454,7 +454,7 @@ ricopiati anche quelli. Il riavvio è sempre necessario: il codice è letto all'
 | istanza principale | `pi-backup.timer` (04:15) → `node backup.mjs`, destinazione `DASH_BACKUP_DIR` |
 | tester_01 | `node /root/tester_01/backup.mjs` |
 | tester_07 | `sudo -u tester07 node /home/tester07/backup.mjs` |
-| pacchetto di ricostruzione | `scripts/backup-export.sh` → `/root/pi-harness/backup_export/` |
+| pacchetto di ricostruzione | `scripts/backup-export.sh` → `/root/pi-harness/backups/export/` |
 
 Ripristino di un'istanza guasta: fermare l'unit, sostituire `sessions/` e `media/` con l'ultimo
 archivio, riavviare l'unit. Il codice si ripristina dal repository git, non dagli archivi di

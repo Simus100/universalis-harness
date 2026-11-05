@@ -16,7 +16,9 @@ istanze: ognuna ha la sua cartella, la sua `.env` e la sua unit systemd (vedi
 | `docs/ISTANZE.md` | le tre istanze in funzione (principale, `tester_01`, sottocliente limitato `tester_07`): porte, utenti, unit, host, limiti |
 | `docs/RICOSTRUZIONE.md` | come reinstallare o ripristinare da zero l'harness: prerequisiti, unit systemd, Caddy, disco dedicato e quota, sandbox, variabili d'ambiente, smoke test |
 | `docs/SYNC-GITHUB.md` | cosa finisce nel repository pubblico, cosa resta fuori, come pubblicare gli aggiornamenti |
-| `scripts/backup-export.sh` | genera il pacchetto di esportazione completo in `backup_export/` (istanze, configurazioni, guide, checksum) |
+| `backups/LEGGIMI.md` | regole della cartella unica dei backup: una sottocartella per tipo, nomi con la data, retention, ripristino |
+| `scripts/backup-export.sh` | genera il pacchetto di esportazione completo in `backups/export/` (istanze, configurazioni, guide, checksum) |
+| `scripts/backup-inventario.sh` | rigenera `backups/INVENTARIO.md`: cosa c'è nella cartella unica, con dimensione, numero di file e data |
 | `scripts/github-sync.sh` | crea/aggiorna il repository GitHub (`--stato`, `--crea-repo`, `--dry-run`, `--messaggio`) |
 | `scripts/sync-fine-lavoro.sh` | **sync in coda alla sessione**: controllo dei file riservati (aborta prima del commit), anteprima, pubblicazione con verifica locale↔remoto |
 
@@ -265,7 +267,7 @@ cartella con un file `SKILL.md` che ha frontmatter YAML con **`name`** e **`desc
 (entrambi obbligatori) seguito dalle istruzioni in Markdown.
 
 - le skill vivono in **`skills/`** (fuori da `media/`): ogni skill è `skills/<nome>/SKILL.md` (oppure un
-  file `.md` “piatto” direttamente in `skills/`); i backup stanno in `backups/`;
+  file `.md` “piatto” direttamente in `skills/`); i backup stanno in `backups/`, una sottocartella per tipo (vedi `backups/LEGGIMI.md`);
 - all'avvio vengono **caricate nel system prompt** (progressive disclosure: il modello vede nome,
   descrizione e percorso, e legge il file con `read` solo quando il compito corrisponde);
 - si possono invocare esplicitamente da chat con **`/skill:nome [istruzioni]`** (il comando nativo
@@ -867,7 +869,7 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
 
 ### Backup automatico
 
-`backup.mjs` archivia `sessions/` e `media/` in `backups/` (tar.gz verificato) con retention.
+`backup.mjs` archivia `sessions/` e `media/` in `backups/automatici/` (tar.gz verificato) con retention.
 
 ```bash
 node backup.mjs                 # crea l'archivio e applica la retention
@@ -884,7 +886,7 @@ systemctl list-timers pi-backup.timer
 - ogni archivio viene **verificato** (`tar -tzf`) prima di considerarlo buono; se il backup
   fallisce, i file parziali (< 1 KB) vengono rimossi.
 - contenuto: `sessions` e `media` con percorsi relativi, quindi ripristinabile con
-  `tar -xzf backups/pi-harness-<data>.tar.gz -C /root/pi-harness`.
+  `tar -xzf backups/automatici/pi-harness-<data>.tar.gz -C /root/pi-harness`.
 - backup su un altro disco: `DASH_BACKUP_MIRROR=/mnt/backup node backup.mjs`.
 
 ### Servizio systemd
@@ -1165,9 +1167,9 @@ Da qui un rischio reale, già capitato una volta:
   e lascia intatti descrizione, passi e checklist (una chiave **assente** significa «non toccare»,
   una chiave presente — anche vuota — significa «sostituisci»). Prima un payload parziale
   azzerava tutto il resto.
-- **se un goal sparisce**, i backup automatici (`backups/pi-harness-<data>.tar.gz`, ogni giorno alle
+- **se un goal sparisce**, i backup automatici (`backups/automatici/pi-harness-<data>.tar.gz`, ogni giorno alle
   04:15) contengono `media/goals.json`: si estrae il goal con
-  `tar -xzOf backups/<archivio>.tar.gz media/goals.json` e lo si ricrea via `POST /api/goals`
+  `tar -xzOf backups/automatici/<archivio>.tar.gz media/goals.json` e lo si ricrea via `POST /api/goals`
   (l'id cambia, i contenuti no).
 - per creare un goal da script, seguire `media/create-goal-opt.mjs`: legge le credenziali da `.env`
   e usa l'API, senza toccare il file.
@@ -1239,4 +1241,4 @@ API: `POST /api/subagents { "enabled": true|false, "maxSpawns": 1..64 }`.
   dell'agente resta ampio: valuta `DASH_ROOT` più stretto (es. una cartella di progetto) e
   promuovi i comandi distruttivi a un gate di approvazione prima di usarla con altri utenti.
 - Backup: `pi-backup.timer` gira ogni giorno alle 04:15; verifica ogni tanto con
-  `systemctl list-timers pi-backup.timer` e `ls -la backups/`.
+  `systemctl list-timers pi-backup.timer` e `ls -la backups/automatici/`.

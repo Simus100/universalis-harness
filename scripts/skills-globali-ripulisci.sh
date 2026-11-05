@@ -33,7 +33,7 @@ set -euo pipefail
 HARNESS_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SKILLS_DIR="$HARNESS_DIR/skills"
 GLOBAL_DIRS=("/root/.agents/skills" "/root/.pi/agent/skills")
-BACKUP_DIR="/root/skills-globali-backup-$(date +%Y%m%d-%H%M%S)"
+BACKUP_DIR="$HARNESS_DIR/backups/per-funzione/skills-globali-backup-$(date +%Y%m%d-%H%M%S)"
 MODE="anteprima"
 [[ "${1:-}" == "--allinea" ]] && MODE="allinea"
 

@@ -185,7 +185,10 @@ tutti i `media/*.mjs` (servono anche `media/svg-sanitize.mjs`, servito al browse
 skill in `skills/` (aggiornata `bookforge`, che ora dice anche *quando* usarla).
 
 **Metodo.** Backup datato in `backups/propagazione-<timestamp>/` di ciascuna istanza (dashboard,
-manifest, sw, `.env`, skills) con `IMPRONTE.sha256`.
+manifest, sw, `.env`, skills) con `IMPRONTE.sha256`. Dal 2026-11-05 i backup hanno un'unica sede,
+`/root/pi-harness/backups/` (una sottocartella per tipo, vedi `backups/LEGGIMI.md`): gli storici
+delle istanze dei tester stanno in `backups/tester/<utente>/storico-istanza/`, quelli
+pre-intervento dell'istanza principale in `backups/per-funzione/`.
 - `tester_01`: **copia diretta** — ha una sola riga propria, che è la versione precedente del
   codice, non una personalizzazione.
 - `tester_07`: **fusione a tre vie** (`git merge-file` con base `093cd59`, i file nuovi della
@@ -247,7 +250,8 @@ istanze.
 nuovo (ambito dichiarato per frammento); `locked.model = true`, `quota 300 MB / 15,6 MB usati` e
 `thinking.max disabilitato` sono ancora attivi sull'ospite; vista Memoria aperta a schermo su
 entrambe (screenshot: gli episodi mostrati sono i LORO).
-Backup pre-intervento: `backups/propagazione-20261005-201614/` con `IMPRONTE.sha256` (148 file).
+Backup pre-intervento: `backups/propagazione-20261005-201614/` con `IMPRONTE.sha256` (148 file);
+dal 2026-11-05 il percorso è `backups/per-funzione/propagazione-20261005-201614/`.
 
 ## 2026-10-05 (secondo) — nuova istanza `tester_08`
 
@@ -333,7 +337,8 @@ feature spenta (`DASH_DECISION_M=off`).
 
 **Backup.** `/root/updates/20261014-133707-tester07/` e `…-tester08/` (22 MB ciascuno, 665 e 654
 file, con `IMPRONTE.sha256`) più una copia essenziale in `backups/propagazione-20261014-133707/`
-dentro ogni istanza.
+dentro ogni istanza (dal 2026-11-05 gli storici stanno in
+`backups/tester/tester07/storico-istanza/` e `backups/tester/tester08/storico-istanza/`).
 
 | file | prima (entrambe) | dopo (entrambe) |
 |---|---|---|

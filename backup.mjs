@@ -9,7 +9,7 @@
  * Env:
  *   DASH_SESSION_DIR    (default: <script>/sessions)
  *   DASH_MEDIA_DIR      (default: /root/pi-harness/media)
- *   DASH_BACKUP_DIR     (default: <script>/backups)
+ *   DASH_BACKUP_DIR     (default: <script>/backups)  · l'archivio va in automatici/
  *   DASH_BACKUP_KEEP_DAYS  (default: 14)  giorni di retention
  *   DASH_BACKUP_KEEP_MIN   (default: 5)   archivi minimi mai cancellati
  *   DASH_BACKUP_MIRROR     (opzionale) copia l'archivio anche qui (es. disco/disco esterno)
@@ -33,6 +33,10 @@ const DRY = argv.includes("--dry-run") || argv.includes("-n");
 const SESSION_DIR = resolve(process.env.DASH_SESSION_DIR || join(__dirname, "sessions"));
 const MEDIA_DIR = resolve(process.env.DASH_MEDIA_DIR || join(__dirname, "media"));
 const BACKUP_DIR = resolve(process.env.DASH_BACKUP_DIR || join(__dirname, "backups"));
+// Gli archivi quotidiani vivono in una sottocartella propria: la radice di backups/ tiene le
+// categorie (automatici/, per-funzione/, istanza/, configurazione/, export/, tester/, scarti/)
+// e la retention lavora SOLO dentro automatici/, senza toccare i backup manuali.
+const OUT_DIR = join(BACKUP_DIR, "automatici");
 const KEEP_DAYS = Number(flag("keep-days", process.env.DASH_BACKUP_KEEP_DAYS || 14));
 const KEEP_MIN = Number(process.env.DASH_BACKUP_KEEP_MIN || 5);
 const MIRROR = process.env.DASH_BACKUP_MIRROR ? resolve(process.env.DASH_BACKUP_MIRROR) : null;
@@ -91,12 +95,12 @@ async function main() {
   const now = new Date();
   const stamp = `${now.toISOString().slice(0, 10)}_${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}`;
   const name = `pi-harness-${stamp}.tar.gz`;
-  const out = join(BACKUP_DIR, name);
+  const out = join(OUT_DIR, name);
 
   if (DRY) {
     log(`--dry-run: avrei creato ${out}`);
   } else {
-    await fs.mkdir(BACKUP_DIR, { recursive: true });
+    await fs.mkdir(OUT_DIR, { recursive: true });
     // archivio: percorsi relativi alla cartella del progetto, così è ripristinabile
     // con `tar -xzf ... -C /root/pi-harness`
     const args = ["-czf", out, "-C", __dirname, ...present];
@@ -132,14 +136,14 @@ async function main() {
   const cutoff = Date.now() - KEEP_DAYS * 24 * 60 * 60 * 1000;
   let files;
   try {
-    files = (await fs.readdir(BACKUP_DIR)).filter((f) => /^pi-harness-.*\.tar\.gz$/.test(f)).sort();
+    files = (await fs.readdir(OUT_DIR)).filter((f) => /^pi-harness-.*\.tar\.gz$/.test(f)).sort();
   } catch {
     files = [];
   }
   const withStat = [];
   for (const f of files) {
     try {
-      withStat.push({ f, path: join(BACKUP_DIR, f), st: await fs.stat(join(BACKUP_DIR, f)) });
+      withStat.push({ f, path: join(OUT_DIR, f), st: await fs.stat(join(OUT_DIR, f)) });
     } catch {
       /* ignore */
     }
@@ -157,17 +161,17 @@ async function main() {
       log(`cancellato ${x.path}`);
     }
   }
-  log(`fine: ${withStat.length - toDelete.length} archivi in ${BACKUP_DIR}`);
+  log(`fine: ${withStat.length - toDelete.length} archivi in ${OUT_DIR}`);
 }
 
 main().catch(async (err) => {
   console.error(`[${new Date().toISOString()}] BACKUP FALLITO:`, err?.stack ?? err);
   // ultima spiaggia: se un archivio parziale è rimasto, non lasciarlo lì a finta di essere valido
   try {
-    const files = (await fs.readdir(BACKUP_DIR)).filter((f) => f.endsWith(".tar.gz"));
+    const files = (await fs.readdir(OUT_DIR)).filter((f) => f.endsWith(".tar.gz"));
     for (const f of files) {
-      const st = await fs.stat(join(BACKUP_DIR, f));
-      if (st.size < 1024) await fs.unlink(join(BACKUP_DIR, f)).catch(() => {});
+      const st = await fs.stat(join(OUT_DIR, f));
+      if (st.size < 1024) await fs.unlink(join(OUT_DIR, f)).catch(() => {});
     }
   } catch {
     /* ignore */

@@ -2,12 +2,12 @@
 # Backup RIPRISTINABILE di Universalis Harness:
 #   istanza principale + clone tester_01 + configurazione di sistema (systemd, Caddy, config di pi).
 # Uso:  bash media/backup-completo.sh
-# Esito: backups/pi-dashboard-backup-<timestamp>.tar.gz (+ .sha256 e la guida RESTORE.md sciolta)
+# Esito: backups/istanza/pi-dashboard-backup-<timestamp>.tar.gz (+ .sha256 e la guida RESTORE.md sciolta)
 set -euo pipefail
 
 SRC=/root/pi-harness
 CLONE=/root/tester_01
-DEST=$SRC/backups
+DEST=$SRC/backups/istanza
 GUIDA=$SRC/media/ripristino-dashboard.md
 TS=$(date +%Y%m%d-%H%M%S)
 OUT=$DEST/pi-dashboard-backup-$TS.tar.gz

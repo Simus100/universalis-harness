@@ -17,7 +17,7 @@ aggiornare il repository.
 | verifica rapida | `scripts/github-sync.sh --stato` · `curl -sH "Authorization: Bearer $TOKEN" https://api.github.com/repos/Simus100/universalis-harness/commits/main` |
 
 Nel repository **non** sono presenti `.env`, `.session-secret`, `sessions/`, `backups/`,
-`node_modules/`, upload, log né il pacchetto `backup_export/` (verificato via API: tutti `404`).
+`node_modules/`, upload, log né il pacchetto `backups/export/` (verificato via API: tutti `404`).
 Anche con il repository pubblico questi file restano esclusi: sono in `.gitignore`.
 Dal 2026-09-27 sono esclusi anche, per scelta esplicita, i **documenti con dati personali di
 terzi** (nel `media/` di questa istanza: un estratto di Certificazione Unica con codice fiscale,
@@ -169,10 +169,10 @@ Versionati:
 |---|---|
 | `.env`, `.session-secret`, `.github-access`, `.github-remote` | dati riservati |
 | `sessions/` | conversazioni con l'agente |
-| `backups/` | archivi di `backup.mjs` |
+| `backups/` | tutti i backup, una sottocartella per tipo (`automatici/`, `per-funzione/`, `istanza/`, `configurazione/`, `export/`, `tester/`, `scarti/`) |
 | `media/uploads/`, `media/schedule-logs/`, `*.log` | file caricati e log |
 | `node_modules/` | dipendenze reinstallabili con `npm install` |
-| `backup_export/` | pacchetto di esportazione locale, contiene copie e `.env` |
+| `backups/export/` | pacchetto di esportazione locale, contiene copie e `.env` |
 | `download/`, `*.tmp`, file di prova | temporanei |
 
 Prima di ogni push il pacchetto di esportazione viene **rigenerato a parte** con

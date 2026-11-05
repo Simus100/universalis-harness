@@ -27,7 +27,11 @@ media/schedule-logs/
 *.log
 
 # ---- pacchetto di export locale (contiene copie e .env) ----
-backup_export/
+# dal 2026-11-05 vive in backups/export/, quindi lo copre gia' `backups/` qui sopra
+backups/export/
+
+# ---- registri delle riorganizzazioni di backup (elencano percorsi di file sensibili) ----
+media/riorg-backup-*/
 
 # ---- stato dell'istanza (cambia a ogni uso, non e' codice) ----
 media/ask-log.jsonl
