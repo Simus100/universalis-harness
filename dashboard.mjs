@@ -935,10 +935,15 @@ const SYSTEM_MEDIA_NOTE =
   `etichettati \`[skill]\` o \`[harness]\` sono documentazione, non fatti registrati, e «confidenza bassa» ` +
   `significa che la memoria non lo sa — dillo, non dedurlo.\n\n` +
   `## Goal della dashboard\n` +
-  `La scheda "Goal" della dashboard salva i goal in ${GOALS_FILE}. ` +
+  `La scheda "Goal" della dashboard salva i goal in ${GOALS_FILE} e li tiene in memoria nel processo: ` +
+  `riscrivere quel file a mano con la dashboard accesa NON è sicuro (la prima azione dalla UI lo ` +
+  `sovrascrive con lo stato in memoria). Per crearli o aggiornarli usa l'API: POST /api/goals ` +
+  `({title, description, steps, checklist}: senza id crea, con id aggiorna e i campi assenti restano ` +
+  `com'erano), GET /api/goals per l'elenco, POST /api/goals/delete {id}, POST /api/goals/execute ` +
+  `{id, mode:"all"|"next"} per eseguire i passi. ` +
   `Struttura: { id, title, description, status, steps:[{id,title,done}], checklist:[{id,text,done}], createdAt, updatedAt }. ` +
-  `Se in chat ti viene chiesto di vedere, aggiornare o completare i goal, leggi (e se serve riscrivi) quel file, ` +
-  `mettendo "done": true sui passi e sui controlli completati.` +
+  `Leggi il file solo per consultazione; per aggiornare metti "done": true via API. ` +
+  `Come si scrive un goal eseguibile: skill \`obiettivi\`.` +
   `\n\n## Rappresentazioni visive (skill \`visual-representation\`)\n` +
   `Quando un disegno aiuta davvero a capire (flusso di processo, timeline, mappa concettuale, ` +
   `schema illustrato, piantina, figura geometrica), disegnalo in SVG dentro un blocco Markdown ` +

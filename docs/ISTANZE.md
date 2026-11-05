@@ -362,3 +362,56 @@ ricostruita (07: 432 file/3390 frammenti, 08: 430/3376).
 della principale, le istanze limitate restano indietro, mentre `scripts/skills-sync-istanze.sh`
 continua ad allineare le *skill*. È così che skill e codice possono divergere, ed è un difetto che
 si nota solo quando il cliente chiede la funzione promessa dalla skill.
+
+## 2026-11-05 — tre skill nuove (documenti, obiettivi, creare-skill) e il prompt dei goal corretto
+
+**Cosa è stato aggiunto** alla principale e — dove possibile — alle istanze limitate:
+
+| Skill | A cosa serve | Dipendenze |
+|---|---|---|
+| `documenti` | crea, modifica ed estrae Word/Excel/PowerPoint/PDF | `python-docx`, `openpyxl`, `python-pptx`, `pypdf`, `reportlab`, `pdfplumber` + LibreOffice |
+| `obiettivi` | scrive ed esegue i goal della scheda Goal via API (`scripts/goal.sh`) | nessuna (usa l'API della dashboard) |
+| `creare-skill` | come si scrive e si verifica una skill in questo harness | nessuna |
+
+Le dipendenze Python sono state installate **a livello di sistema** (`/usr/local/lib/python3.12`,
+77 MB) e LibreOffice in `/usr/lib/libreoffice` (313 MB): occupano **zero** nelle home dei tester e
+sono leggibili da tutti e quattro le istanze. Le librerie e `soffice` sono state provate **dentro
+il sandbox** dei servizi limitati (`ProtectSystem=strict`, `ProtectHome=read-only`, `PrivateTmp`):
+la conversione `.docx`/`.pptx` → PDF funziona (resta un warning su Java, irrilevante per l'export).
+
+**Perché non le skill documenti di Anthropic.** `docx`, `pptx`, `xlsx` e `pdf` di
+`anthropics/skills` sono «all rights reserved» con divieto di estrazione: `skills/` finisce in un
+repository pubblico, quindi non si copiano. `skill-creator` (Apache 2.0) non è stato importato
+così com'è perché metà dei suoi script invoca `claude -p`, che qui non esiste: il metodo è stato
+riscritto in `creare-skill`.
+
+**Il difetto corretto.** Il prompt di sistema diceva all'agente di «leggere (e se serve riscrivere)»
+`media/goals.json`, ma la dashboard tiene i goal in RAM e `saveGoals()` riscrive il file intero:
+una scrittura a mano veniva sovrascritta in silenzio alla prima azione dalla UI. Ora il prompt
+manda all'API (`POST /api/goals`, con creazione/aggiornamento, `delete` ed `execute`), e lascia il
+file alla sola consultazione.
+
+**Propagazione.** `scripts/skills-sync-istanze.sh` ha una nuova opzione `--solo nome[,nome]`:
+serve a copiare **una** skill senza allineare per forza le altre divergenze (che possono essere
+varianti volute). Con `--solo obiettivi,documenti,creare-skill` le tre skill sono arrivate a
+`tester_07` e `tester_08` (proprietario `testerXX:testerXX`, symlink delle globali rifatti, zero
+collisioni). A `tester_01`, che condivide la `HOME` di root, sono arrivati i tre symlink in
+`/root/.agents/skills`. Il prompt corretto è stato applicato con la stessa patch ai quattro
+`dashboard.mjs` (il blocco era identico, `md5 c871cfdbb7b32761e939358e3c4dba9f`): niente fusione a
+tre vie.
+
+**Lasciato di proposito com'era**: `social-connect` e `social-publish` mancano ancora sui tester
+(non hanno credenziali Meta, sarebbero due voci di menu in più) e `timestral` resta la loro
+variante. Non è una dimenticanza: si allineano quando servirà.
+
+**Verifiche eseguite.** `check-skills` 96 ok / 0 falliti (32 skill); `test-skill-collisioni` senza
+problemi introdotti (restano i 7 preesistenti nelle globali di root); `test-functions` 76 ok;
+`test-hardening` 35 ok; `goal.sh` provato end-to-end (creato, completato, archiviato, eliminato, e
+`goals.json` tornato `[]`); i quattro formati generati e riaperti con `verifica.py`; conversioni
+`soffice` da `.docx` e `.pptx`; `goal.sh`, `verifica.py` e la generazione dei documenti provati
+**come utente `tester07`** nella sua `media/`; `codeHash` di `/api/health` uguale alla sha256 del
+file in esecuzione su entrambe le istanze limitate.
+
+**Resta da fare**: `pi-dashboard` non è stata riavviata (avrebbe interrotto la sessione che stava
+facendo il lavoro): il prompt nuovo è su disco ma entra in vigore al
+`bash scripts/restart-dashboard.sh`.

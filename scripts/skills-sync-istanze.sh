@@ -28,8 +28,13 @@
 # via symlink, e una copia reale produrrebbe una collisione di nome. Lo script se
 # ne accorge e si astiene.
 #
-# Uso:  bash scripts/skills-sync-istanze.sh [--applica] [/home/tester07 ...]
+# Uso:  bash scripts/skills-sync-istanze.sh [--applica] [--solo nome1,nome2] [/home/tester07 ...]
 #       (senza percorsi usa: /home/tester07 /home/tester08)
+#
+# --solo limita l'azione alle skill elencate (separate da virgola): serve quando si è
+# aggiunta UNA skill e non si vogliono toccare le altre divergenze dell'istanza (che
+# possono essere varianti volute, per esempio `timestral` con i limiti dell'ospite).
+# Senza --solo il comportamento è quello di sempre: tutto.
 
 set -euo pipefail
 
@@ -37,10 +42,29 @@ HARNESS_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SORGENTE="$HARNESS_DIR/skills"
 BACKUP_ROOT="/root/harness-skills-backup-$(date +%Y%m%d-%H%M%S)"
 MODE="anteprima"
+SOLO=()
 args=()
-for a in "$@"; do
-  if [[ "$a" == "--applica" ]]; then MODE="applica"; else args+=("$a"); fi
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --applica) MODE="applica" ;;
+    --solo) SOLO_STR="${2:-}"; shift; IFS=',' read -r -a SOLO <<< "$SOLO_STR" ;;
+    --solo=*) SOLO_STR="${1#--solo=}"; IFS=',' read -r -a SOLO <<< "$SOLO_STR" ;;
+    *) args+=("$1") ;;
+  esac
+  shift
 done
+# Tiene solo le skill richieste, se --solo è stato usato.
+if [[ ${#SOLO[@]} -gt 0 ]]; then
+  for n in "${SOLO[@]}"; do
+    [[ -d "$SORGENTE/$n" ]] || { echo "skill inesistente: $n" >&2; exit 1; }
+  done
+fi
+selezionata() { # selezionata <nome> → 0 se va trattata
+  [[ ${#SOLO[@]} -eq 0 ]] && return 0
+  local n
+  for n in "${SOLO[@]}"; do [[ "$n" == "$1" ]] && return 0; done
+  return 1
+}
 if [[ ${#args[@]} -gt 0 ]]; then
   ISTANZE=("${args[@]}")
 else
@@ -60,6 +84,7 @@ env_di_istanza() {
 
 echo "modalità: $MODE"
 echo "sorgente: $SORGENTE"
+[[ ${#SOLO[@]} -gt 0 ]] && echo "solo: ${SOLO[*]}"
 echo
 
 tot_mancanti=0
@@ -84,6 +109,7 @@ for istanza in "${ISTANZE[@]}"; do
   mancanti=(); diverse=()
   for s in "$SORGENTE"/*/; do
     nome="$(basename "$s")"
+    selezionata "$nome" || continue
     if [[ ! -d "$dest/$nome" ]]; then
       mancanti+=("$nome")
     elif ! diff -rq "$s" "$dest/$nome" >/dev/null 2>&1; then
@@ -116,6 +142,7 @@ for istanza in "${istanze_ok[@]}"; do
 
   for s in "$SORGENTE"/*/; do
     nome="$(basename "$s")"
+    selezionata "$nome" || continue
     if [[ -d "$dest/$nome" ]]; then
       diff -rq "$s" "$dest/$nome" >/dev/null 2>&1 && continue
       cp -a "$dest/$nome" "$BACKUP_ROOT/$(basename "$istanza")/"
