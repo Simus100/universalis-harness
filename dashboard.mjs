@@ -584,11 +584,20 @@ function handleLogout(req, res) {
 function sameOrigin(req) {
   const origin = req.headers.origin;
   if (!origin) return true; // curl, script, app native: nessun Origin dichiarato
-  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "")
-    .split(",")[0]
-    .trim();
+  // L'host a cui il client ha parlato. `x-forwarded-host` lo imposta il proxy (Caddy lo
+  // sovrascrive), ma resta un header che chi chiama può forgiare: si considera solo se
+  // l'installazione dichiara di stare dietro un proxy fidato (DASH_TRUST_PROXY=1).
+  // Audit 2026-11-05: prima era preferito a `host`, quindi su una porta raggiunta senza proxy
+  // bastava mandare `X-Forwarded-Host` uguale all'`Origin` per far passare una scrittura
+  // cross-origin (verificato: 200 invece di 403).
+  const host = String(req.headers.host || "").split(",")[0].trim();
+  const ammessi = host ? [host] : [];
+  if (process.env.DASH_TRUST_PROXY === "1") {
+    const fwd = String(req.headers["x-forwarded-host"] || "").split(",")[0].trim();
+    if (fwd && fwd !== host) ammessi.unshift(fwd);
+  }
   try {
-    return new URL(origin).host === host;
+    return ammessi.includes(new URL(origin).host);
   } catch {
     return false;
   }
@@ -4387,12 +4396,33 @@ function json(res, code, obj) {
   res.end(JSON.stringify(obj));
 }
 
+/* Errori del filesystem che dipendono dalla RICHIESTA, non dal server: rispondere 500 faceva
+ * sembrare un guasto quello che è un input sbagliato (audit 2026-11-05: un path di 8 KB su
+ * /api/file produceva ENAMETOOLONG → 500 e uno stack nel log, con il percorso intero dentro il
+ * messaggio). Il messaggio diventa sintetico: non rimanda al client il percorso che ha mandato. */
+const ERRNO_HTTP = {
+  ENAMETOOLONG: 400, ENOENT: 404, EACCES: 403, EPERM: 403, EISDIR: 400, ENOTDIR: 400, ELOOP: 400,
+};
+const MESSAGGI_ERRNO = {
+  ENAMETOOLONG: "percorso troppo lungo",
+  ENOENT: "file o cartella non trovati",
+  EACCES: "accesso negato",
+  EPERM: "operazione non permessa",
+  EISDIR: "il percorso è una cartella",
+  ENOTDIR: "il percorso non è una cartella",
+  ELOOP: "troppi link simbolici",
+};
+
 function errorResponse(res, err) {
-  const code = err instanceof HttpError ? err.code : 500;
+  const daHttp = err instanceof HttpError;
+  const code = daHttp ? err.code : (ERRNO_HTTP[err?.code] ?? 500);
   if (code === 500) console.error("[dashboard]", err);
   // L'errore si registra SEMPRE; se la risposta è già partita (stream aperto) `json` chiude
   // senza riscrivere gli header, invece di far morire il processo.
-  json(res, code, { error: err?.message ?? String(err) });
+  const messaggio = daHttp || code === 500
+    ? (err?.message ?? String(err))
+    : (MESSAGGI_ERRNO[err?.code] || "richiesta non valida");
+  json(res, code, { error: messaggio });
 }
 
 /**
