@@ -750,6 +750,33 @@ class HttpError extends Error {
   }
 }
 
+/* ── Spazio su disco (audit 2026-11-05) ────────────────────────────────────────────────────
+ * Perché esiste: sulla principale non c'era alcun tetto. Se il disco si riempie si fermano
+ * TUTTE le istanze insieme (condividono il filesystem), non solo quella che ha scritto troppo.
+ * Qui si guarda lo spazio LIBERO prima di accettare un file: sotto DASH_MIN_FREE_MB (default
+ * 1024 MB) la scrittura si rifiuta con 507 e un messaggio che dice cosa fare. In condizioni
+ * normali la soglia non viene mai raggiunta e nulla cambia; se `statfs` non risponde si
+ * prosegue — un controllo di sicurezza che fallisce non deve fermare il servizio.
+ * Il valore è esposto da /api/health per poterlo guardare senza aprire una shell. */
+const MIN_FREE_MB = Number(process.env.DASH_MIN_FREE_MB || 1024);
+let spazioCache = { t: 0, mb: null };
+async function spazioLiberoMB() {
+  if (Date.now() - spazioCache.t < 10000) return spazioCache.mb;
+  try {
+    const st = await fs.statfs(ROOT);
+    spazioCache = { t: Date.now(), mb: Math.floor((st.bavail * st.bsize) / (1024 * 1024)) };
+  } catch {
+    spazioCache = { t: Date.now(), mb: null };
+  }
+  return spazioCache.mb;
+}
+async function assicuraSpazio() {
+  const mb = await spazioLiberoMB();
+  if (mb != null && mb < MIN_FREE_MB) {
+    throw new HttpError(507, `spazio su disco quasi esaurito (${mb} MB liberi, minimo ${MIN_FREE_MB} MB): libera spazio prima di caricare altri file`);
+  }
+}
+
 function withinRoot(abs) {
   return abs === ROOT || abs.startsWith(ROOT + sep);
 }
@@ -4629,6 +4656,7 @@ const server = http.createServer(async (req, res) => {
     // Carica un file .md (raw body). ?name=SKILL.md con frontmatter name -> cartella;
     // ?name=foo.md -> skill piatta in skills/foo.md
     if (req.method === "POST" && url.pathname === "/api/skills/upload") {
+      await assicuraSpazio();
       const rawName = basename(url.searchParams.get("name") || "SKILL.md");
       const explicitDir = String(url.searchParams.get("dir") || "").trim();
       if (session?.isStreaming) return json(res, 409, { error: "attendi che l'agente finisca prima di modificare le skill" });
@@ -4682,6 +4710,7 @@ const server = http.createServer(async (req, res) => {
     // Importa una SKILL COMPLETA da un archivio .zip: cartella con SKILL.md più file di
     // supporto (references/, scripts/, esempi), che l'upload di un singolo .md non consente.
     if (req.method === "POST" && url.pathname === "/api/skills/upload-zip") {
+      await assicuraSpazio();
       const requested = String(url.searchParams.get("name") || "").trim();
       if (session?.isStreaming) return json(res, 409, { error: "attendi che l'agente finisca prima di modificare le skill" });
       const chunks = [];
@@ -4730,6 +4759,7 @@ const server = http.createServer(async (req, res) => {
         // distinguere "il servizio ha il codice nuovo" da "la costante nel file è la stessa"
         ...CODE_FINGERPRINT,
         pid: process.pid,
+        spazioLiberoMB: await spazioLiberoMB(),
         node: process.version,
         startedAt,
         startedAtISO: new Date(startedAt).toISOString(),
@@ -5346,6 +5376,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/chat/upload") {
+      await assicuraSpazio();
       const rawName = basename(url.searchParams.get("name") || "file.bin");
       const name = rawName.replace(/[^\w.\-]+/g, "_").slice(0, 120) || "file.bin";
       const target = join(UPLOADS, `${Date.now().toString(36)}-${name}`);
@@ -5947,6 +5978,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/file") {
+      await assicuraSpazio();
       const body = await readBody(req, 8 * 1024 * 1024);
       const p = String(body.path || "");
       if (!p) return json(res, 400, { error: "path mancante" });
@@ -6559,6 +6591,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/upload") {
+      await assicuraSpazio();
       const dir = url.searchParams.get("dir") || "";
       const name = basename(url.searchParams.get("name") || "upload.bin");
       const absDir = await safeResolve(dir);

@@ -415,3 +415,49 @@ file in esecuzione su entrambe le istanze limitate.
 **Resta da fare**: `pi-dashboard` non è stata riavviata (avrebbe interrotto la sessione che stava
 facendo il lavoro): il prompt nuovo è su disco ma entra in vigore al
 `bash scripts/restart-dashboard.sh`.
+
+## 2026-11-05 (secondo) — intestazioni di sicurezza, collisioni allineate, `media/` riordinata, guardia sullo spazio
+
+Chiusura delle quattro raccomandazioni dell'audit dello stesso giorno (`media/audit-2026-11-05.md`).
+
+**1. Intestazioni di sicurezza su Caddy** — applicate con uno snippet `(sicurezza_harness)` importato
+nei sei blocchi dell'agente (non in `cpa`, che ha le sue). Presenti e verificate dal dominio
+pubblico: `Strict-Transport-Security` (6 mesi, senza preload), `X-Content-Type-Options: nosniff`,
+`X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`,
+`Permissions-Policy` (camera/microfono/geolocalizzazione/USB/pagamenti, nessuna usata dalla pagina),
+via `Server`, `Content-Security-Policy` tarata sulle risorse che la pagina usa davvero: script e
+stili inline (la dashboard ne ha), `img-src 'self' data: blob:` (le anteprime passano da Blob URL e
+da `/api/image`), `media-src` idem, `connect-src 'self'` (tutti i `fetch` sono relativi, l'unico
+`EventSource` è `/events`), `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'`,
+`form-action 'self'`. Applicate in **due fasi** (prima le intestazioni innocue, poi la CSP) con
+`caddy validate` e reload graduale prima di ogni passaggio; dopo ognuna provate dal dominio
+pubblico: `/`, `/api/health`, `/api/state`, `/api/image`, `/api/download` (36 KB), `/svg-sanitize.mjs`,
+`/sw.js`, `/manifest.webmanifest`, SSE `/events`. Backup: `/etc/caddy/Caddyfile.bak-audit-<data>`,
+per tornare indietro basta ripristinarlo e ricaricare.
+**Limite dichiarato**: la verifica è statica (inventario delle risorse) più test degli endpoint, non
+con un browser reale — l'agente di questa sessione non ha il tool `browser`.
+
+**2. Collisioni fra globali e `skills/`** — erano 7. Le copie globali erano **più nuove** (13–14 ott
+contro 11–12) e contenevano correzioni reali (nuove opzioni `snapshot --frames/--range`, il carve
+della voiceover in `product-launch-video`, percorsi e test aggiornati): `scripts/skills-globali-ripulisci.sh --allinea`
+le ha portate in `skills/` (backup in `/root/skills-globali-backup-<data>`) e ha sostituito ogni
+copia reale con un symlink. Le 6 skill aggiornate sono state propagate a `tester_07` e `tester_08`
+con `skills-sync-istanze.sh --applica --solo …`. `test-skill-collisioni` ora dice *nessuna
+collisione*.
+
+**3. `media/` riordinata** — 22 script una-tantum (`apply-*`, `spike-*`, `probe-*`,
+`update-goal-*`, `create-goal-*`, `build-goal`, `fix-progress`) spostati in `media/archivio/` con
+`git mv` e un `LEGGIMI.md` che spiega cosa sono. **Non** sono stati toccati i file usati davvero:
+`ui-proxy-test.mjs` (lo lancia `checkup-live-view`), `make-test-pdf.mjs`, `svg-demo-*` e
+`create-goal-opt`/`probe-stream` (citati in `docs/MANUALE.md`). Gate verde dopo lo spostamento.
+
+**4. Spazio su disco** — sulla principale non esisteva alcun tetto (la quota è una funzione
+dell'ospite). Aggiunta una guardia che, **prima** di accettare un file (`/api/upload`,
+`/api/chat/upload`, `/api/skills/upload`, `/api/skills/upload-zip`, `POST /api/file`), controlla lo
+spazio libero e risponde `507` sotto `DASH_MIN_FREE_MB` (default 1024 MB); il valore è esposto da
+`/api/health` come `spazioLiberoMB`. Verificata nei due versi: con la soglia normale gli upload
+restano `200`, con una soglia artificialmente alta diventano `507` e il file non viene creato.
+**Test di durata**: invece di aggiungere carico sintetico, `media/sorveglia-risorse.mjs` legge ogni
+minuto RSS/CPU/file descriptor delle quattro istanze, lo spazio libero, la dimensione di `media/` e
+l'impronta del codice, e rileva i riavvii inattesi (PID o `codeHash` cambiati). Avviato come unità
+transitoria per 24 ore (`sorveglia-risorse`, `RuntimeMaxSec=1d`), CSV in `/root/risorse-<data>.csv`.
