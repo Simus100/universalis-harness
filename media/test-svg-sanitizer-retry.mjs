@@ -14,9 +14,14 @@
  * Uso: node --experimental-vm-modules media/test-svg-sanitizer-retry.mjs
  */
 import fs from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
-const HTML = "/root/pi-harness/dashboard.html";
+// Radice dell'istanza (non un percorso assoluto): lo stesso test gira sulla principale e
+// sulle istanze dei tester, che vivono in cartelle diverse (allineamento 2026-11-01).
+const RADICE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const HTML = join(RADICE, "dashboard.html");
 const html = fs.readFileSync(HTML, "utf8");
 
 /* --- estrazione del blocco vero dal file (fallisce se il codice cambia forma) --- */

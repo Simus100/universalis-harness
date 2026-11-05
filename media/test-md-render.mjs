@@ -10,9 +10,14 @@
  * Uso: node media/test-md-render.mjs
  */
 import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
-const html = readFileSync("/root/pi-harness/dashboard.html", "utf8");
+// Radice dell'istanza (non un percorso assoluto): gli stessi test girano sulla principale
+// e sulle istanze dei tester, che vivono in cartelle diverse (allineamento 2026-11-01).
+const RADICE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const html = readFileSync(join(RADICE, "dashboard.html"), "utf8");
 const estrai = (nome) => {
   const i = html.indexOf(`function ${nome}(`);
   if (i < 0) throw new Error("non trovata: " + nome);

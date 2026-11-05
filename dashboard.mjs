@@ -1063,7 +1063,10 @@ function decisionMChanged() {
 // il gate dei tool; rete e lettura delle serie stanno in media/timestral-client.mjs.
 const timestralClient = createTimestralClient({ mediaDir: MEDIA_DIR, rootDir: ROOT, log: (m) => console.log(m) });
 const TIMESTRAL_AVAILABLE = timestralClient.available;
-const TIMESTRAL_TOOL_NAMES = new Set(["timestral_forecast", "timestral_series"]);
+/* Anche `timestral_importa` è un tool della feature: senza, con la feature spenta restava
+   attivo e scriveva in media/previsioni/dati — su un'istanza senza Timestral è una porta
+   aperta a metà (corretto il 2026-11-01 durante l'allineamento dei tester). */
+const TIMESTRAL_TOOL_NAMES = new Set(["timestral_forecast", "timestral_series", "timestral_importa"]);
 /* Le taglie con la RAM misurata su questa VPS (TIMESTRAL_TAGLIE, da media/timestral-client.mjs):
    la UI le mostra con il costo reale invece di inventarlo. */
 const TIMESTRAL_EXT = TIMESTRAL_AVAILABLE
