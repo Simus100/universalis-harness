@@ -1,6 +1,12 @@
 ---
 name: visual-representation
-description: "Crea rappresentazioni visive nella chat usando SVG scritto come testo (diagrammi di flusso, mappe concettuali, timeline, schemi illustrati, piantine, piccole illustrazioni geometriche); usa ASCII solo per casi minimi o quando il disegno non è disponibile. Serve a scegliere la forma giusta e a produrre un blocco ```svg conforme al contratto; quando basta una spiegazione breve, resta sul testo."
+description: >-
+  Disegna nella chat una rappresentazione visiva in SVG scritto come testo: diagrammi di flusso, mappe
+  concettuali, timeline, schemi illustrati, piantine, piccole illustrazioni geometriche. Usala quando
+  l'utente dice «disegnami», «fammi uno schema», «fammi vedere», «mostrami come», o quando un disegno
+  aiuta davvero a capire; usa ASCII solo per i casi minimi o quando il disegno non è disponibile. Serve a
+  scegliere la forma giusta e a produrre un blocco `svg` conforme al contratto; quando basta una
+  spiegazione breve, resta sul testo. Non serve per grafici e report di dati (`report-dataviz`).
 ---
 
 # Rappresentazioni visive

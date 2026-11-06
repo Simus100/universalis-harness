@@ -1,6 +1,12 @@
 ---
 name: memoria
-description: "Usa la memoria a lungo termine dell'harness: episodi passati, decisioni, artefatti e obiettivi, con grafo (struttura), ricerca (frammenti) e wiki (una pagina per nodo). Serve quando devi sapere «cosa è già stato fatto o deciso su X», ricostruire la storia di un file o di una feature, orientarti prima di lavorare su qualcosa di già toccato, o registrare una decisione perché resti. Non serve per leggere un file che conosci già (lì basta `read`) né per riassumere la conversazione corrente."
+description: >-
+  Usa la memoria a lungo termine dell'harness: episodi passati, decisioni, artefatti e obiettivi, con
+  grafo (struttura), ricerca (frammenti) e wiki (una pagina per nodo). Usala quando l'utente dice
+  «ricordati che», «ti ricordi di», «cosa avevamo deciso su X», quando devi ricostruire la storia di un
+  file o di una feature, quando ti orienti prima di lavorare su qualcosa di già toccato, o quando registri
+  una decisione perché resti. Non serve per leggere un file che conosci già (lì basta `read`) né per
+  riassumere la conversazione corrente.
 ---
 
 # Memoria a lungo termine

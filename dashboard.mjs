@@ -995,7 +995,7 @@ const SYSTEM_MEDIA_NOTE =
   `spiegazione testuale: non aggiungere immagini decorative e non inventare dati, proporzioni ` +
   `o relazioni (se lo schema non è in scala, dichiaralo). \`ascii\` a parte, i blocchi di codice ` +
   `di altro linguaggio restano invariati.` +
-  `\n\n## Decisore tipizzato locale (feature «Decision_M», skill \`rizzo-flow\`)\n` +
+  `\n\n## Decisore tipizzato locale (feature «Decision_M», skill \`decision-m\`)\n` +
   `L'harness può accendere un decisore locale Decision_M (motore: Rizzo Flow) che risponde a domande tipizzate ` +
   `(sì/no, scelta, punteggio) con **probabilità**, senza generare un solo token: serve per i ` +
   `giudizi ripetibili — instradare, scegliere fra azioni, dare un punteggio su una rubrica — ` +
@@ -1003,7 +1003,7 @@ const SYSTEM_MEDIA_NOTE =
   `\`rizzo\`) e occupa ~5,7 GB di RAM e la CPU per ~12 s a richiesta su uno stato breve: per ` +
   `questo non è sempre accesa.\n` +
   `Quando è accesa hai i tool \`decision_m\` (la decisione) e \`decision_m_service\` (accendi, ` +
-  `spegni, ispeziona): leggi la skill \`rizzo-flow\` prima di usarli. Quando è spenta i due ` +
+  `spegni, ispeziona): leggi la skill \`decision-m\` prima di usarli. Quando è spenta i due ` +
   `tool NON sono nella tua lista, e non è un guasto: la risorsa la accende l'utente. Se una ` +
   `decisione tipizzata servirebbe davvero, proponi l'attivazione con \`ask_user\` (una riga ` +
   `sul costo in RAM) e, se rifiuta, procedi con il tuo giudizio dichiarando che è stato senza ` +

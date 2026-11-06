@@ -1,6 +1,12 @@
 ---
 name: browser
-description: "Naviga siti web reali con il tool `browser` (Chrome headless): apri pagine, leggi il contenuto, clicca, compila moduli, estrai dati, fai screenshot o PDF. Usala quando serve interagire con un sito, compilare un form, estrarre dati da una pagina o provare una web app. Per i casi avanzati (form complessi, attesa dei contenuti, login, più sessioni, errori ricorrenti) leggi la guida aggiornata con `agent-browser skills get core`."
+description: >-
+  Naviga siti web reali con il tool `browser` (Chrome headless): apri pagine, leggi il contenuto, clicca,
+  compila moduli, estrai dati, fai screenshot o PDF. Usala quando serve raggiungere e guidare una pagina:
+  interagire con un sito, compilare un form, estrarre dati da una pagina, provare una web app. Non serve
+  per un file che l'utente ha già caricato — immagine o PDF: `immagini` e `documenti` — né per produrre un
+  documento d'ufficio. Per i casi avanzati (form complessi, attesa dei contenuti, login, più sessioni,
+  errori ricorrenti) leggi la guida aggiornata con `agent-browser skills get core`.
 ---
 
 # Navigare con il tool `browser`

@@ -1,6 +1,13 @@
 ---
 name: immagini
-description: Legge e mostra immagini e documenti PDF — foto dell'utente, screenshot, scansioni, grafici in immagine, fatture, contratti, estratti conto — e immagini trovate sul web. Usala quando l'utente chiede di guardare o descrivere una foto, di leggere il testo dentro un'immagine, di mostrare un'immagine in chat, di leggere un PDF o di cercarci dentro qualcosa, o quando trovi un'immagine navigando il web e vuoi farla vedere. Copre i blocchi ```img, ```pdf e ```video per l'anteprima in chat, i limiti di formato e dimensione, e come si produce un video con HyperFrames.
+description: >-
+  Guarda e mostra immagini e documenti PDF — foto dell'utente, screenshot, scansioni, grafici in immagine,
+  fatture, contratti, estratti conto — e immagini trovate sul web. Usala quando l'utente chiede di
+  guardare o descrivere una foto, di leggere il testo dentro un'immagine o dentro una scansione, di
+  mostrare un'immagine in chat, di dare un'occhiata a un PDF o di cercarci dentro qualcosa, o quando trovi
+  un'immagine navigando il web e vuoi farla vedere. Copre i blocchi `img`, `pdf` e `video` per l'anteprima
+  in chat, i limiti di formato e dimensione. Non serve per creare o modificare un documento d'ufficio
+  (`documenti`) né per decidere o produrre un video (`video`).
 ---
 
 # Immagini e documenti: guardarli e mostrarli

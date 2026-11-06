@@ -94,7 +94,10 @@ check("le icone PWA sono servite dal server", /iconMatch/.test(mjs));
 
 // --- 5. tool browser: aggancio e vincoli di sicurezza --------------------
 check("dashboard.mjs importa l'estensione del tool browser", /from "\.\/media\/browser-tool\.mjs"/.test(mjs));
-check("BROWSER_EXT è registrata in extensionFactories", /extensionFactories: \[[^\]]*BROWSER_EXT[^\]]*\]/.test(mjs));
+// La regex non può fermarsi alla prima `]`: la riga contiene spread con array inline
+// (`[...(CONTROLLO_OFF ? [] : [CONTROLLO_TURNO]), …`). Si guarda la riga che dichiara le estensioni.
+const rigaEstensioni = mjs.split("\n").find((l) => /extensionFactories:/.test(l)) || "";
+check("BROWSER_EXT è registrata in extensionFactories", /BROWSER_EXT/.test(rigaEstensioni));
 check("il tool browser è OFF di default", /let browserEnabled = false;/.test(mjs));
 check(
   "applyToolGate rimuove il tool browser quando è OFF",
@@ -486,7 +489,7 @@ check(
 // --- 12. domande interattive all'utente (tool `ask_user`) ----------------
 check("dashboard.mjs importa l'estensione delle domande", /from "\.\/media\/ask-tool\.mjs"/.test(mjs));
 check("dashboard.mjs importa il broker delle domande", /from "\.\/media\/ask-broker\.mjs"/.test(mjs));
-check("ASK_EXT è registrata in extensionFactories", /extensionFactories: \[[^\]]*ASK_EXT[^\]]*\]/.test(mjs));
+check("ASK_EXT è registrata in extensionFactories", /ASK_EXT/.test(rigaEstensioni));
 check("il tool si chiama ask_user ed è registrato", /toolName = "ask_user"/.test(askTool) && /pi\.registerTool\(TOOL\)/.test(askTool));
 check(
   "la descrizione del tool dice quando chiedere e quando no",

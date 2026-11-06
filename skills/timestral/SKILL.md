@@ -1,6 +1,14 @@
 ---
 name: timestral
-description: "Previsioni probabilistiche su serie temporali con Timestral (time-series foundation model di Mistral, locale su CPU): dato il passato di una serie (cambi, prezzi, incassi, consumi, carichi orari) ottieni mediana e quantili dei prossimi passi, con l'incertezza dichiarata. Usala quando la risposta dipende da «cosa succederà» e i dati sono numeri ordinati nel tempo; non quando il futuro dipende da un evento noto e datato (il modello non conosce notizie) né per dare consigli finanziari. Motore: servizio locale condiviso (servizio «Timestral» nel menu «servizi», taglia 28M, 471 MB, si scarica da solo)."
+description: >-
+  Previsioni probabilistiche su serie temporali con Timestral (time-series foundation model di Mistral, in
+  locale su CPU): dato il passato di una serie — cambi, prezzi, incassi, vendite, fatturato, consumi,
+  carichi orari, traffico — ottieni mediana e quantili dei prossimi passi, con l'incertezza dichiarata.
+  Usala quando l'utente chiede di prevedere, stimare o fare una previsione di che valori avrà una serie
+  nei prossimi giorni o periodi: «quanto venderò», «dove arriva», «come continua», «quanto incasserò». Non
+  serve quando il futuro dipende da un evento noto e datato (il modello non conosce notizie) né per dare
+  consigli finanziari. Il servizio è condiviso e locale: se i tool `timestral_*` non ci sono è
+  l'interruttore spento, non un guasto.
 ---
 
 # Previsioni su serie temporali (Timestral)

@@ -1,6 +1,14 @@
 ---
 name: social-connect
-description: "Guida una persona — titolare dell'istanza o utente tester — a collegare i PROPRI account social all'harness, così che l'agente possa pubblicare per suo conto con le API ufficiali, senza mai vedere la password e senza login automatico. Copre la creazione dell'app Meta, i permessi minimi, la generazione del token, il salvataggio nel proprio profilo (`social/<nome>.env`, escluso da git) e la verifica con `publish.mjs`. Usala quando qualcuno chiede «come faccio a far pubblicare i miei post dall'harness?», quando un token è scaduto o un post viene rifiutato con codice 190/200, e quando va collegata una persona nuova. Non serve per pubblicare un post (quella è `social-publish`) né per creare una Pagina Facebook (non esiste API pubblica: si fa dall'interfaccia, a mano)."
+description: >-
+  Guida una persona — titolare dell'istanza o utente tester — a collegare i PROPRI account social
+  all'harness, così che l'agente possa pubblicare per suo conto con le API ufficiali, senza mai vedere la
+  password e senza login automatico. Copre la creazione dell'app Meta, i permessi minimi, la generazione
+  del token, il salvataggio nel proprio profilo (social/NOME.env, escluso da git) e la verifica con
+  `publish.mjs`. Usala quando qualcuno chiede «come faccio a far pubblicare i miei post dall'harness?»,
+  quando un token è scaduto o un post viene rifiutato con codice 190 o 200, e quando va collegata una
+  persona nuova. Non serve per pubblicare un post (quella è `social-publish`) né per creare una Pagina
+  Facebook (non esiste API pubblica: si fa dall'interfaccia, a mano).
 ---
 
 # Collegare i propri social all'harness

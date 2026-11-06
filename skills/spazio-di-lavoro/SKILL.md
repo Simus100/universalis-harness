@@ -1,6 +1,9 @@
 ---
 name: spazio-di-lavoro
-description: Regola dello spazio di lavoro di questa istanza. Usala prima di produrre file grandi o quando una scrittura fallisce per spazio esaurito. Dice dove si mettono i risultati, quando avvisare l'utente che lo spazio è finito e perché non si cancella mai nulla da soli.
+description: >-
+  Regola dello spazio di lavoro di questa istanza. Usala quando stai per produrre file grandi, o quando
+  una scrittura fallisce per spazio esaurito: dice dove si mettono i risultati, quando avvisare l'utente
+  che lo spazio è finito e perché non si cancella mai nulla da soli.
 ---
 
 # Dove lavorare, e cosa fare quando lo spazio finisce

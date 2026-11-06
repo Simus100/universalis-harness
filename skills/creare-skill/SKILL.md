@@ -53,7 +53,7 @@ E cosa produce solo un avviso (da non ignorare: sono i difetti che si vedono in 
   `quando`, `use when`): è l'avviso numero uno di questo harness
 - il corpo supera 400 righe non vuote
 - manca un titolo `# …` all'inizio del corpo
-- un link markdown relativo punta a un file che non esiste (`[scripts/x.py](scripts/x.py)`) — il
+- un link markdown relativo punta a un file che non esiste (esempio: `scripts/x.py`) — il
   controllo è reale, quindi crea il file o non linkarlo
 
 ## La description: la sola cosa che decide se la skill vive

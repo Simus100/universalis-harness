@@ -1,6 +1,12 @@
 ---
 name: rea-cli
-description: Usa REA in questo harness dalla riga di comando. Serve per il reverse engineering di artefatti spediti — binari nativi ELF/PE, app JavaScript/Electron, assembly .NET, WASM, bytecode EVM, firmware, pacchetti Android — quando una risposta dipende dal binario e non dal sorgente. Leggila prima di invocare `rea`.
+description: >-
+  Usa REA in questo harness dalla riga di comando. Usala quando una risposta dipende dal binario e non dal
+  sorgente — «smonta questo binario», «cosa fa davvero», «confronta queste due versioni», «decompila» — su
+  artefatti spediti: binari nativi ELF/PE, app JavaScript o Electron, assembly .NET, WASM, bytecode EVM,
+  firmware, pacchetti Android. È la porta operativa: leggila prima di invocare `rea`, e da qui si passa
+  alla metodologia completa in `reverse-engineer-anything`. Non serve per l'analisi ordinaria
+  dell'architettura di un repository di cui hai i sorgenti.
 ---
 
 # REA via CLI in questo harness

@@ -341,6 +341,28 @@ riconosce dal **prefisso** del nome (`hyperframes…`, così una skill aggiunta 
 (`media-use`, `general-video`, `motion-graphics`, `faceless-explainer`, `product-launch-video`). I
 gruppi si dichiarano in `SKILL_GRUPPI` (`dashboard.mjs`).
 
+**Il formato non basta: conta il routing.** `check-skills.mjs` verifica che una descrizione sia
+*ben formata*; non che faccia **scattare la skill giusta**. La descrizione è l'unica cosa che il
+modello vede di tutte le skill a ogni turno, quindi una descrizione formalmente perfetta ma senza
+le parole che l'utente pronuncia non attiva niente — e nessun test se ne accorgeva. Ci pensa
+`node media/test-skill-routing.mjs` (deterministico, nessun modello, nessun token): una batteria di
+richieste realistiche in italiano con la skill attesa e i termini obbligatori, i **confini** fra
+skill vicine (ognuna deve nominare la sorella: senza confine la scelta la decide il punteggio), il
+contratto delle descrizioni visibili (formula di attivazione, italiano, niente tag `<…>`, budget di
+17.500 caratteri) e i **riferimenti del system prompt**: ogni `skill \`nome\`` scritto in
+`dashboard.mjs` deve esistere davvero (un caso vero: il prompt mandava a `rizzo-flow`, che non
+esiste). Se una skill di terzi non è installata, il caso viene **saltato**, non fallito.
+
+Due cose da sapere se si toccano le descrizioni:
+
+- le skill di terzi (`hyperframes*`, `media-use`, `general-video`, `motion-graphics`,
+  `faceless-explainer`, `product-launch-video`) sono **in inglese a monte**: qui sono state
+  riscritte in italiano con gli alias tecnici, e `npx hyperframes skills update` le riporta
+  com'erano — se succede questo test lo dice (il rimedio è rifare le descrizioni, non zittirlo);
+- una descrizione lunga, spezzata a mano su più righe, può spezzare **un nome di skill** a metà
+  (`general-` / `video`): nel YAML `>-` diventa `general- video` e il riferimento non si risolve
+  più. Il test lo intercetta; scrivendo, non spezzare sui trattini.
+
 ### Rappresentazioni visive (SVG scritto come testo)
 
 Il modello scrive i disegni **come testo** (non serve alcun servizio di generazione immagini):

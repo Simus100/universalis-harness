@@ -1,6 +1,12 @@
 ---
 name: documenti
-description: "Crea, modifica ed estrae contenuti da documenti d'ufficio: Word (.docx), Excel (.xlsx), PowerPoint (.pptx) e PDF. Usa quando l'utente chiede una relazione, un preventivo, un foglio di calcolo con formule, una presentazione, un PDF impaginato o da compilare, oppure di leggere e modificare un documento che ha caricato. Per guardare un PDF o un'immagine basta la skill immagini; per un video servono le skill HyperFrames."
+description: >-
+  Crea, modifica ed estrae contenuti da documenti d'ufficio: Word (.docx), Excel (.xlsx), PowerPoint
+  (.pptx) e PDF. Usa quando l'utente chiede una relazione, un preventivo, un foglio di calcolo con
+  formule, una presentazione, un PDF impaginato o da compilare, oppure di leggere, estrarre o sistemare un
+  file che ha caricato — una fattura, un contratto, un estratto conto, una tabella. Per guardare un PDF o
+  un'immagine, o per una scansione senza testo estraibile, basta la skill `immagini`; per un video servono
+  le skill HyperFrames.
 ---
 
 # Documenti d'ufficio

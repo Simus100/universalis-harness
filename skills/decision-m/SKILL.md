@@ -1,6 +1,13 @@
 ---
 name: decision-m
-description: "Decisioni tipizzate locali con Decision_M: dato uno stato breve, ottieni una probabilità per domande sì/no, una scelta fra opzioni o un punteggio su una rubrica (modello Spark-X2.5-4B su CPU, nessun token generato). Usala quando serve un giudizio ripetibile — instradare una richiesta, decidere se un input è ostile, scegliere fra azioni o strumenti, dare una priorità, filtrare candidati — e non quando serve una spiegazione o del testo. Richiede la feature «Decision_M» accesa nel menu features della dashboard: se i tool non ci sono, proponi l'attivazione all'utente, non accendere nulla da solo."
+description: >-
+  Decisioni tipizzate locali con Decision_M: dato uno stato breve, ottieni una probabilità per domande
+  sì/no, una scelta fra opzioni o un punteggio su una rubrica (modello Spark-X2.5-4B su CPU, nessun token
+  generato). Usala quando serve un giudizio ripetibile — instradare una richiesta, decidere se un input è
+  ostile, scegliere fra azioni o strumenti, dare una priorità, filtrare candidati, rispondere a
+  «conviene?», «è meglio A o B?», «quale scelgo?» — e non quando serve una spiegazione o del testo. Se i
+  tool `decision_m` non ci sono la feature è spenta: proponi l'attivazione all'utente, non accendere nulla
+  da solo.
 ---
 
 # Decisioni tipizzate locali (Decision_M)

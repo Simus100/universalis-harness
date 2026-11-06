@@ -165,3 +165,60 @@ Proposta: `media/test-skill-routing.mjs` con una batteria di ~30 richieste in it
 descrizione della skill attesa contenga i termini dell'utente. Non prova che il modello scelga
 giusto, ma blocca la regressione che si è già verificata (descrizione riscritta, parola
 dell'utente sparita) e costa zero token di runtime.
+
+---
+
+## 6. Applicato (2026-11-06)
+
+Tutte le correzioni A–G sono state applicate e verificate.
+
+| # | intervento | esito |
+|---|---|---|
+| A | `rizzo-flow` → `decision-m` nel system prompt (`dashboard.mjs`, 2 punti) | ✔ il test di routing ora fallisce se il prompt cita una skill inesistente |
+| B | `video` = porta dell'utente, `hyperframes` = contratto tecnico («oppure subito dopo `video`») | ✔ nessuna delle due si dichiara più entry point unico |
+| C | esclusioni esplicite in `browser`, `immagini`, `documenti`, `video`, `media-use`, `motion-graphics`, `general-video`, `faceless-explainer`, `product-launch-video` | ✔ 10 coppie di confine verificate dal test |
+| D | verbi dell'utente in `timestral` («vendite», «prevedere»), `visual-representation` («disegnami»), `decision-m` («conviene»), `memoria` («ricordati»), `documenti` («fattura»), `media-use` («è scuro») | ✔ 35 richieste realistiche verificate |
+| E | le 15 descrizioni inglesi riscritte in italiano, con i termini tecnici come alias | ✔ nessuna descrizione non italiana |
+| F | `hyperframes-*` sfoltite a ruolo + quando (le nove `hyperframes-*`: da 5.458 a 3.697 caratteri), elenchi lasciati ai corpi e a `references/` | ✔ blocco invariato nonostante 8 esclusioni in più |
+| G | `rea-cli` = porta operativa; `reverse-engineer-anything` = metodologia, `disable-model-invocation: true` (non è più una seconda voce da cui scegliere) | ✔ 32 skill visibili al modello, 33 caricate |
+
+Numeri prima → dopo:
+
+| | prima | dopo |
+|---|---|---|
+| skill visibili al modello | 33 | **32** (metodologia REA nascosta, raggiungibile da `rea-cli`) |
+| somma caratteri delle descrizioni | 16.653 | **16.950** (+1,8%) |
+| descrizioni in inglese | 15 | **0** |
+| descrizioni con esclusione esplicita | 18 | **32** |
+| avvisi `check-skills` | 4 | **0** |
+| cluster video sul budget descrizioni | 8.360 | **7.900** |
+
+Il costo fisso è cresciuto di 297 caratteri (~80 token a turno) perché ogni descrizione ora dice
+anche **cosa non è**: è lo scambio che rende possibile il routing. Lo spazio è stato recuperato
+sfoltendo le `hyperframes-*`, che non dovevano fare routing verso l'utente.
+
+**Nuovo test.** `node media/test-skill-routing.mjs` — 56 verifiche, deterministiche, zero token:
+35 richieste → skill attesa → termini che l'utente pronuncia; 10 confini fra skill vicine; il
+contratto delle descrizioni (formula di attivazione, italiano, niente tag, budget 17.500 caratteri);
+i `skill \`nome\`` citati in `dashboard.mjs` devono esistere; nessun nome di skill abbreviato o
+inesistente dentro una descrizione. Documentato in `docs/MANUALE.md` (sezione Skill).
+
+**Due difetti trovati applicando, che nessun test esistente vedeva:**
+
+1. il wrapping a 104 colonne spezzava **i nomi delle skill sui trattini**: nel YAML `>-` un
+   `general-` / `video` diventa `general- video`, e il riferimento non si risolve più. Corretto con
+   `break_on_hyphens=False`; ora il test lo intercetta;
+2. in `media/test-static.mjs` due controlli su `extensionFactories` erano **rossi da prima** di
+   questo lavoro: la regex si fermava alla prima `]`, che nella riga appartiene agli spread
+   (`[...(CONTROLLO_OFF ? [] : [CONTROLLO_TURNO]), …`). Non era un guasto del codice ma un test
+   sbagliato che gridava al lupo a ogni run. Corretto: suite a 223 ok, 0 falliti.
+
+**Resta aperto (dichiarato, non risolto):**
+
+- le 15 skill di terzi sono in `.gitignore`: le modifiche alle loro descrizioni vivono **solo su
+  questa macchina** e `npx hyperframes skills update` le riporta in inglese. Il test di routing le
+  segnala subito, ma non c'è modo di imporre il testo a monte;
+- `reverse-engineer-anything` vive ancora **fuori dal repo** (`~/.agents/skills`, copia reale, non
+  symlink): è installata da un pacchetto esterno e la sua licenza non è dichiarata qui. Il routing
+  ora funziona (una sola porta visibile) ma la copia resta non versionata e non sincronizzata alle
+  istanze dei tester.

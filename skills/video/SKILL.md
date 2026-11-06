@@ -1,6 +1,13 @@
 ---
 name: video
-description: "Usala quando l'utente chiede un video, un filmato, una presentazione animata, uno slideshow, un'animazione o una motion graphic — e anche quando in una pagina, in una dashboard o in un report serve una parte in movimento (un grafico che si anima, un titolo che entra, una sequenza di schermate). Decide se serve un file video da renderizzare con HyperFrames o solo un'animazione da scrivere nel file, dice quanto tempo di macchina costa il render e come si mostra il risultato in chat."
+description: >-
+  Usala quando l'utente chiede un video, un filmato, una clip, una presentazione animata, uno slideshow,
+  un'animazione o una motion graphic — e anche quando in una pagina, in una dashboard o in un report serve
+  una parte in movimento (un grafico che si anima, un titolo che entra). È la PORTA per le richieste in
+  linguaggio naturale: da qui si prosegue con `hyperframes` (serve un file video), `motion-graphics`
+  (pezzo breve senza voce), `general-video` (più scene) o `faceless-explainer` (nato da un testo). Decide
+  se serve davvero un render o basta un'animazione scritta nel file, e dice quanto costa in tempo di
+  macchina. Non serve per guardare o descrivere un video che esiste già: quella è `immagini`.
 ---
 
 # Video e animazioni: prima scegliere la strada
