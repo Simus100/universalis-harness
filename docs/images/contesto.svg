@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 496" width="1000" height="496" role="img" aria-labelledby="tg dg">
+  <title id="tg">Contesto consumato prima del primo messaggio dell'utente</title>
+  <desc id="dg">Confronto dell'overhead fisso di contesto — system prompt più definizioni dei tool — fra questo harness e altri agenti a riga di comando: Claude Code 29.061 token, questo harness 13.184, GitHub Copilot CLI 12.956, Cline 12.465, Codex CLI 8.497, OpenCode 7.000, il motore pi nudo 1.000. Le cifre per questo harness sono misure reali dell'usage del provider; quelle degli altri provengono da misure pubblicate, citate in docs. Valori in token, scala lineare da zero a 30.000.</desc>
+
+  <rect x="4" y="4" width="992" height="488" rx="18" fill="#0d1420" stroke="#1e2a3d" stroke-width="2"/>
+
+  <text x="32" y="44" font-family="system-ui,Segoe UI,sans-serif" font-size="17" fill="#eef2f9" font-weight="700">Quanto contesto si paga prima di scrivere la prima parola</text>
+  <text x="32" y="66" font-family="system-ui,sans-serif" font-size="12" fill="#8b97ac">token inviati al modello a inizio sessione: system prompt + definizioni dei tool</text>
+
+  <!-- griglia -->
+  <line x1="330" y1="88" x2="330" y2="392" stroke="#243149" stroke-width="1.5"/>
+  <line x1="478" y1="88" x2="478" y2="392" stroke="#1e2a3d" stroke-width="1"/>
+  <line x1="626" y1="88" x2="626" y2="392" stroke="#1e2a3d" stroke-width="1"/>
+  <line x1="774" y1="88" x2="774" y2="392" stroke="#1e2a3d" stroke-width="1"/>
+  <line x1="922" y1="88" x2="922" y2="392" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="330" y="410" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">0</text>
+  <text x="478" y="410" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">7.000</text>
+  <text x="626" y="410" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">14.000</text>
+  <text x="774" y="410" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">21.000</text>
+  <text x="922" y="410" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">28.000</text>
+
+  <!-- 1 Claude Code 29061 -->
+  <text x="32" y="118" font-family="system-ui,sans-serif" font-size="12" fill="#c6cfdd">Claude Code</text>
+  <rect x="330" y="102" width="601" height="26" rx="4" fill="#2a3345"/>
+  <text x="940" y="120" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8b97ac" text-anchor="end">29.061</text>
+
+  <!-- 2 noi 13184 -->
+  <text x="32" y="162" font-family="system-ui,sans-serif" font-size="12" fill="#eef2f9" font-weight="600">Universalis Harness</text>
+  <rect x="330" y="146" width="272" height="26" rx="4" fill="#5b9dff"/>
+  <text x="612" y="164" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#9dc4ff" font-weight="600">13.184</text>
+
+  <!-- 3 Copilot CLI 12956 -->
+  <text x="32" y="206" font-family="system-ui,sans-serif" font-size="12" fill="#c6cfdd">GitHub Copilot CLI</text>
+  <rect x="330" y="190" width="268" height="26" rx="4" fill="#2a3345"/>
+  <text x="608" y="208" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8b97ac">12.956</text>
+
+  <!-- 4 Cline 12465 -->
+  <text x="32" y="250" font-family="system-ui,sans-serif" font-size="12" fill="#c6cfdd">Cline</text>
+  <rect x="330" y="234" width="258" height="26" rx="4" fill="#2a3345"/>
+  <text x="598" y="252" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8b97ac">12.465</text>
+
+  <!-- 5 Codex CLI 8497 -->
+  <text x="32" y="294" font-family="system-ui,sans-serif" font-size="12" fill="#c6cfdd">Codex CLI</text>
+  <rect x="330" y="278" width="176" height="26" rx="4" fill="#2a3345"/>
+  <text x="516" y="296" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8b97ac">8.497</text>
+
+  <!-- 6 OpenCode 7000 -->
+  <text x="32" y="338" font-family="system-ui,sans-serif" font-size="12" fill="#c6cfdd">OpenCode</text>
+  <rect x="330" y="322" width="145" height="26" rx="4" fill="#2a3345"/>
+  <text x="485" y="340" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8b97ac">7.000</text>
+
+  <!-- 7 pi nudo 1000 -->
+  <text x="32" y="382" font-family="system-ui,sans-serif" font-size="12" fill="#c6cfdd">pi (motore nudo)</text>
+  <rect x="330" y="366" width="21" height="26" rx="3" fill="#34d399"/>
+  <text x="361" y="384" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#8b97ac">1.000</text>
+
+  <line x1="32" y1="428" x2="968" y2="428" stroke="#243149" stroke-width="1"/>
+  <text x="32" y="456" font-family="system-ui,sans-serif" font-size="10.5" fill="#8b97ac">Misura del 13/10/2026 su questa istanza (usage del provider). Gli altri valori sono misure pubblicate, citate in docs/ e in media/overhead-contesto-harness.json.</text>
+  <text x="32" y="476" font-family="system-ui,sans-serif" font-size="10.5" fill="#8b97ac">Mediana storica dello stesso harness su 41 sessioni: 6.367 token — il costo a riposo è cresciuto insieme al numero di skill nell'indice.</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="165" height="22" viewBox="0 0 165 22" role="img" aria-label="licenza: proprietaria">
+  <title>licenza: proprietaria</title>
+  <rect width="165" height="22" rx="5" fill="#121a28"/>
+  <rect x="65" width="100" height="22" rx="5" fill="#fbbf24"/>
+  <rect x="61" width="8" height="22" fill="#fbbf24"/>
+  <text x="32.5" y="15" text-anchor="middle" font-family="Verdana,DejaVu Sans,sans-serif" font-size="11" fill="#c6cfdd">licenza</text>
+  <text x="115.0" y="15" text-anchor="middle" font-family="Verdana,DejaVu Sans,sans-serif" font-size="11" fill="#08111f" font-weight="700">proprietaria</text>
+</svg>

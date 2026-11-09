@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 640" width="1000" height="640" role="img" aria-labelledby="t d">
+  <title id="t">Che cosa succede dentro un turno</title>
+  <desc id="d">Diagramma di sequenza di un turno: il browser invia il prompt alla dashboard; la dashboard lo consegna all'agente insieme alla nota del progetto; l'agente chiama il modello con system prompt e definizioni dei tool; il modello risponde con pensiero e tool call; il tool viene eseguito e l'esito torna all'agente; il ciclo si ripete finché il modello non chiude; ogni passo viaggia verso il browser come evento SSE con identificatore per il replay, e lo stato finale porta token, cache e costo. Le misure di consumo arrivano dall'usage del provider a ogni giro.</desc>
+
+  <rect x="4" y="4" width="992" height="632" rx="18" fill="#0d1420" stroke="#1e2a3d" stroke-width="2"/>
+
+  <!-- intestazioni corsie -->
+  <rect x="30" y="26" width="150" height="44" rx="10" fill="#172033" stroke="#5b9dff" stroke-width="2"/>
+  <text x="105" y="53" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#eef2f9" font-weight="600">Browser</text>
+
+  <rect x="248" y="26" width="150" height="44" rx="10" fill="#172033" stroke="#5b9dff" stroke-width="2"/>
+  <text x="323" y="53" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#eef2f9" font-weight="600">Dashboard</text>
+
+  <rect x="466" y="26" width="150" height="44" rx="10" fill="#172033" stroke="#8b5cff" stroke-width="2"/>
+  <text x="541" y="53" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#eef2f9" font-weight="600">Agente pi</text>
+
+  <rect x="684" y="26" width="150" height="44" rx="10" fill="#172033" stroke="#34d399" stroke-width="2"/>
+  <text x="759" y="53" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#eef2f9" font-weight="600">Modello</text>
+
+  <rect x="880" y="26" width="90" height="44" rx="10" fill="#172033" stroke="#fbbf24" stroke-width="2"/>
+  <text x="925" y="53" text-anchor="middle" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#eef2f9" font-weight="600">Tool</text>
+
+  <!-- linee di vita -->
+  <line x1="105" y1="70" x2="105" y2="600" stroke="#243149" stroke-width="1.5" stroke-dasharray="4 6"/>
+  <line x1="323" y1="70" x2="323" y2="600" stroke="#243149" stroke-width="1.5" stroke-dasharray="4 6"/>
+  <line x1="541" y1="70" x2="541" y2="600" stroke="#243149" stroke-width="1.5" stroke-dasharray="4 6"/>
+  <line x1="759" y1="70" x2="759" y2="600" stroke="#243149" stroke-width="1.5" stroke-dasharray="4 6"/>
+  <line x1="925" y1="70" x2="925" y2="600" stroke="#243149" stroke-width="1.5" stroke-dasharray="4 6"/>
+
+  <!-- 1 utente -> dashboard -->
+  <line x1="111" y1="106" x2="315" y2="106" stroke="#5b9dff" stroke-width="2"/>
+  <polygon points="319,106 303,98 303,114" fill="#5b9dff"/>
+  <text x="215" y="98" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">prompt · allegati</text>
+
+  <!-- 2 dashboard -> agente -->
+  <line x1="329" y1="150" x2="533" y2="150" stroke="#5b9dff" stroke-width="2"/>
+  <polygon points="537,150 521,142 521,158" fill="#5b9dff"/>
+  <text x="433" y="142" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">testo + nota del progetto</text>
+
+  <!-- 3 agente -> modello -->
+  <line x1="547" y1="194" x2="751" y2="194" stroke="#8b5cff" stroke-width="2"/>
+  <polygon points="755,194 739,186 739,202" fill="#8b5cff"/>
+  <text x="651" y="186" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">system prompt · 14 tool · storia</text>
+
+  <!-- 4 modello -> agente -->
+  <line x1="753" y1="238" x2="549" y2="238" stroke="#34d399" stroke-width="2"/>
+  <polygon points="545,238 561,230 561,246" fill="#34d399"/>
+  <text x="651" y="230" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">pensiero + tool call</text>
+
+  <!-- 5 agente -> tool -->
+  <line x1="547" y1="282" x2="917" y2="282" stroke="#fbbf24" stroke-width="2"/>
+  <polygon points="921,282 905,274 905,290" fill="#fbbf24"/>
+  <text x="735" y="274" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">esegue (bash, read, browser, …)</text>
+
+  <!-- 6 tool -> agente -->
+  <line x1="919" y1="326" x2="549" y2="326" stroke="#fbbf24" stroke-width="2"/>
+  <polygon points="545,326 561,318 561,334" fill="#fbbf24"/>
+  <text x="735" y="318" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">esito, troncato oltre il limite</text>
+
+  <!-- ciclo ripetuto -->
+  <path d="M 500 350 C 470 350 470 194 500 194" fill="none" stroke="#8b97ac" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <text x="430" y="366" font-family="system-ui,sans-serif" font-size="10" fill="#8b97ac">il giro si ripete finché il modello non chiude</text>
+
+  <!-- 7 agente -> dashboard eventi -->
+  <line x1="535" y1="400" x2="331" y2="400" stroke="#8b5cff" stroke-width="2"/>
+  <polygon points="327,400 343,392 343,408" fill="#8b5cff"/>
+  <text x="433" y="392" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">eventi: delta · tool · usage</text>
+
+  <!-- 8 dashboard -> browser SSE -->
+  <line x1="317" y1="444" x2="113" y2="444" stroke="#5b9dff" stroke-width="2"/>
+  <polygon points="109,444 125,436 125,452" fill="#5b9dff"/>
+  <text x="215" y="436" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">SSE /events · id per il replay</text>
+
+  <!-- 9 chiusura: modello -> agente -->
+  <line x1="753" y1="488" x2="549" y2="488" stroke="#34d399" stroke-width="2"/>
+  <polygon points="545,488 561,480 561,496" fill="#34d399"/>
+  <text x="640" y="480" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">risposta finale + usage</text>
+
+  <!-- 10 stato finale -->
+  <line x1="535" y1="536" x2="331" y2="536" stroke="#8b5cff" stroke-width="2"/>
+  <polygon points="327,536 343,528 343,544" fill="#8b5cff"/>
+  <text x="433" y="528" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">token · cache · costo · durata</text>
+
+  <line x1="317" y1="580" x2="113" y2="580" stroke="#5b9dff" stroke-width="2"/>
+  <polygon points="109,580 125,572 125,588" fill="#5b9dff"/>
+  <text x="215" y="572" text-anchor="middle" font-family="system-ui,sans-serif" font-size="11" fill="#c6cfdd">barra aggiornata, card dei file</text>
+
+  <!-- nota a destra -->
+  <rect x="686" y="500" width="284" height="108" rx="10" fill="#172033" stroke="#243149" stroke-width="1.5"/>
+  <text x="702" y="524" font-family="system-ui,sans-serif" font-size="11" fill="#eef2f9" font-weight="600">Nessuna scatola nera</text>
+  <text x="702" y="544" font-family="system-ui,sans-serif" font-size="10.5" fill="#8b97ac">ogni passo è un evento con un id: se la</text>
+  <text x="702" y="562" font-family="system-ui,sans-serif" font-size="10.5" fill="#8b97ac">connessione cade, il client riprende da</text>
+  <text x="702" y="580" font-family="system-ui,sans-serif" font-size="10.5" fill="#8b97ac">Last-Event-ID senza ripetere il turno</text>
+  <text x="702" y="598" font-family="system-ui,sans-serif" font-size="10.5" fill="#8b97ac">(né ripagarlo).</text>
+</svg>
