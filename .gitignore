@@ -242,3 +242,9 @@ media/memoria/*.tmp-*
 # Telemetria per turno (una riga per turno, cresce senza limite).
 # Non è contenuto: contiene id di sessione e costi di questa istanza, e non serve a chi clona il repo.
 media/turni.jsonl
+
+# Copie di sicurezza locali di impostazioni di servizi (es. media/n8n-instanceai-settings.bak.json):
+# sono lo stato di QUESTA istanza, non appartengono al prodotto, e non c'entrano con le sessioni
+# di lavoro. Stanno fuori dal repo come i backups/ veri e propri.
+media/*.bak.json
+media/*.bak

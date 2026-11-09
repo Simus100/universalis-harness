@@ -20,6 +20,10 @@ decisione. Un design brutto è quasi sempre un design **indeciso**.
 Grafici, dashboard e report di dati → `report-dataviz`. Schemi, diagrammi, mappe concettuali →
 `visual-representation`.
 
+Quando serve il mestiere completo — revisione critica con punteggio, rifinitura di tipografia e
+spazi, animazioni e gesture, icone vere da libreria, scene 3D, copy che non sappia di AI — la porta
+è `design-pack`: qui resta il metodo breve, là stanno le schede operative.
+
 ## L'ordine delle decisioni
 
 Saltare l'ordine è la causa numero uno dei design confusi.
@@ -212,6 +216,10 @@ Sette-otto voci forti = lavoro solido. Tre-quattro = mediocre, va ripreso dalla 
 - [ ] Se il design deve reggere dati, il testo usa cifre tabellari e gli assi sono allineati.
 
 ## 10. Fonti
+
+Se vuoi il mestiere integrale invece dei principi: `design-pack` (Impeccable, Emil Kowalski, Jakub
+Krehel, genjutsu, GreenSock, CloudAI-X, blader, Peter Yang) è la stessa materia con i dettagli
+operativi, scheda per scheda.
 
 - **Taste-Skills** (Dragoon0x) — la raccolta più organica di "giudizio visivo" per agenti:
   `hierarchy-principles`, `spatial-rhythm`, `type-systems`, `type-selection`, `color-systems`,
