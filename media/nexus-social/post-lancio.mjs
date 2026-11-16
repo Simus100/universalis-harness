@@ -25,7 +25,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "../..");
 const LLMS_URL = "https://nexus.universalis.it/llms.txt";
 const SITE_URL = "https://nexus.universalis.it/site/";
-const PAGINA_URL = "https://www.facebook.com/122097481977518432";
+// L'ID deve essere quello della Pagina su cui si pubblica (Aion): si verifica con
+// GET /{page-id}?fields=link. Il vecchio valore 122097481977518432 non è una Pagina
+// raggiungibile: il CTA «segui la Pagina» portava a un vicolo cieco.
+const PAGINA_URL = "https://www.facebook.com/1444686848724804";
 const STATO_FILE = path.join(HERE, "lancio.json");
 const LOG_FILE = path.join(HERE, "log.jsonl");
 const CARD_DIR = path.join(HERE, "card");
