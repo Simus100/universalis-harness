@@ -1210,15 +1210,19 @@ Oltre ai pacchetti, la dashboard registra **estensioni inline** dal codice (`ext
 
 ## Interruttore dei tool opzionali (controllo costi)
 
-In alto nella dashboard c'è un interruttore per i subagent, **acceso di default dal 2026-11-22**:
-**🤖 subagent** (con campo **max**).
+In alto nella dashboard c'è un interruttore per i subagent, **in modalità «auto» di default dal
+2026-11-22**: 🤖 subagent (con campo **max**).
 
-| Interruttore | OFF | ON |
-|--------------|-----|-----|
-| 🤖 subagent | tool `subagent`/`bg_wait` rimossi → niente delega | abilita i subagent (max 3 per richiesta, regolabile 1–64) |
+| modalità | comportamento |
+|----------|---------------|
+| **auto** (default) | i tool ci sono **solo nel turno in cui servono**: se la richiesta annuncia una ricognizione («esplora», «mappa», «audit», «analizza»…) oppure se il turno precedente ha fatto almeno **5 letture** o **20.000 caratteri** di risultati. Quando si accende lo **dice in chat**, in un blocco azzurro con motivo e numeri; quando non serve non costa niente |
+| **on** | disponibili sempre (max 3 agenti per richiesta, regolabile 1–64): +5.685 token di prefisso a ogni richiesta |
+| **off** | tool `subagent`/`bg_wait` rimossi: niente delega, nessun costo di schemi |
 
-Al riavvio torna al valore di `DASH_SUBAGENT` (default `on`; `DASH_SUBAGENT=off` in `.env` per
-lasciarlo spento). API: `POST /api/subagents`, oppure `/subagent off` a runtime.
+Al riavvio torna al valore di `DASH_SUBAGENT` (default `auto`; `DASH_SUBAGENT=on|off` in `.env` per
+fissarlo). API: `POST /api/subagents { "mode": "auto"|"on"|"off" }`, oppure `/subagent auto|on|off`.
+La decisione automatica si legge come il pensiero: blocco `.nota` nella chat («subagent attivato
+automaticamente», con il motivo e le soglie) più la riga `[subagent auto]` nel log del servizio.
 
 Nel menu **features** c'è anche l'interruttore **Decision_M** (decisore tipizzato locale): a differenza
 del subagent la scelta è **persistita** (`media/decision-m-prefs.json`), perché è un servizio che si
@@ -1243,9 +1247,12 @@ ma solo dalla dashboard, via `additionalExtensionPaths` (`DASH_SUBAGENT_EXT`).
 
 In alto nella dashboard c'è il tasto **🤖 subagent: OFF/ON** e il campo **max**:
 
-- **ON (default dal 2026-11-22)** → i tool `subagent` e `bg_wait` sono disponibili: il modello può
-  delegare una ricognizione (5+ letture) e riceve solo la sintesi, quindi il contesto del padre
-  resta corto. Costa gli schemi dei due tool nel prefisso (in cache, quindi poco);
+- **auto (default dal 2026-11-22)** → i tool `subagent` e `bg_wait` entrano nella lista SOLO nei
+  turni di ricognizione (soglie: 5 letture o 20.000 caratteri di risultati nel turno precedente,
+  oppure una richiesta che annuncia un'esplorazione). Il modello delega e riceve solo la sintesi,
+  quindi il contesto del padre resta corto; la decisione è annunciata in chat (blocco `.nota`).
+- **on** → sempre disponibili: gli schemi dei due tool costano 5.685 token (misurati) in ogni
+  richiesta, in cache quindi poco in denaro ma spazio di contesto reale;
 - **OFF** (spento a runtime, o `DASH_SUBAGENT=off` in `.env`) → i tool vengono **rimossi** dalla
   sessione: non vengono inviati all'API, quindi il modello **non può** delegare;
 - **ON** → i tool vengono aggiunti; il modello può usare subagent (⚠️ aumenta i token).

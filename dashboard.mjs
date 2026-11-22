@@ -1744,13 +1744,102 @@ let turnActive = false;
 let DEFAULT_TOOL_NAMES = [];
 let hasSubagentExt = false;
 /**
- * Sub-agent ACCESI di default (2026-11-22). Motivo misurato: una ricognizione da 5+ letture
- * costa 15-20k token che restano nella storia e si ripagano a ogni turno successivo; lo stesso
- * lavoro dentro un sub-agent torna come sintesi da poche centinaia di token. Non è una spesa in
- * più, è la leva che tiene corto il contesto del padre (che è quello che si paga).
- * Si spengono con DASH_SUBAGENT=off in .env, o a runtime con `/subagent off`.
+ * SUB-AGENT: modalità a tre valori (2026-11-22).
+ *  - "off"  → i tool sono rimossi dalla lista: costo zero di schemi;
+ *  - "on"   → sempre disponibili: costano 5.685 token di prefisso a OGNI richiesta (misurati);
+ *  - "auto" (DEFAULT) → disponibili solo nel turno in cui servono, deciso PRIMA di partire:
+ *    la richiesta annuncia una ricognizione («esplora», «mappa», «audit»…) oppure il turno
+ *    precedente ha fatto molte letture. Quando si accende lo DICE in chat con il motivo e i
+ *    numeri: una decisione del gate che l'utente non può leggere è indistinguibile da un
+ *    capriccio. Si cambia con DASH_SUBAGENT=auto|on|off, o a runtime con `/subagent auto`.
  */
-let subagentsEnabled = String(process.env.DASH_SUBAGENT ?? "on").trim().toLowerCase() !== "off";
+const SUBAGENT_MODE_FILE = process.env.DASH_SUBAGENT_MODE_FILE || join(MEDIA_DIR, "subagent-mode.json");
+/** Soglie della modalità "auto": letture e caratteri di risultati nel turno PRECEDENTE. */
+const SUBAGENT_AUTO = { letture: 5, caratteri: 20000 };
+const TOOL_LETTURA = new Set(["read", "grep", "find", "ls", "bash"]);
+/** Verbi che annunciano una ricognizione: bastano da soli ad accendere i subagent per il turno. */
+const VERBI_RICOGNIZIONE =
+  /(esplor\w*|ricognizion\w*|mapp\w*|audit\w*|analizz\w*|censisc\w*|sfogli\w*|leggi (?:tutti|tutto|il codice|i file|la cartella)|trova (?:dove|tutti)|fai il punto)/i;
+let subagentsMode = ["auto", "on", "off"].includes(String(process.env.DASH_SUBAGENT ?? "auto").trim().toLowerCase())
+  ? String(process.env.DASH_SUBAGENT ?? "auto").trim().toLowerCase()
+  : "auto";
+/** Stato EFFETTIVO del turno: lo decide il gate, non l'interruttore. */
+let subagentsEnabled = false;
+/** Statistiche del turno precedente: { letture, caratteri, passi }. */
+let ultimoTurnoStat = null;
+/** Ultima decisione automatica (per la UI e per il log). */
+let ultimaAuto = null;
+
+/** Caratteri di un risultato di tool, qualunque forma abbia. Non deve mai lanciare. */
+function lunghezzaTesto(v) {
+  try {
+    if (typeof v === "string") return v.length;
+    if (!v) return 0;
+    if (Array.isArray(v)) return v.reduce((a, p) => a + lunghezzaTesto(p?.text ?? p), 0);
+    if (typeof v === "object" && typeof v.text === "string") return v.text.length;
+    return JSON.stringify(v).length;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * I subagent servono in questo turno? Ritorna una decisione MOTIVATA, che poi finisce in chat.
+ * `testo` è il messaggio dell'utente che sta per partire (in modalità on/off non conta).
+ */
+function subagentAutoDecisione(testo = "") {
+  if (subagentsMode === "off") return { on: false, auto: false, motivo: "modalità off: subagent spenti" };
+  if (subagentsMode === "on") return { on: true, auto: false, motivo: "modalità on: sempre disponibili" };
+  const s = ultimoTurnoStat;
+  const m = String(testo || "").match(VERBI_RICOGNIZIONE);
+  if (m) {
+    return {
+      on: true,
+      auto: true,
+      letture: s?.letture ?? 0,
+      caratteri: s?.caratteri ?? 0,
+      motivo: `la richiesta è una ricognizione («${m[1]}»)`,
+    };
+  }
+  if (s && (s.letture >= SUBAGENT_AUTO.letture || s.caratteri >= SUBAGENT_AUTO.caratteri)) {
+    return {
+      on: true,
+      auto: true,
+      letture: s.letture,
+      caratteri: s.caratteri,
+      motivo: `il turno precedente ha fatto ${s.letture} letture e ${s.caratteri} caratteri di risultati (soglie: ${SUBAGENT_AUTO.letture} letture o ${SUBAGENT_AUTO.caratteri} caratteri)`,
+    };
+  }
+  return {
+    on: false,
+    auto: true,
+    letture: s?.letture ?? 0,
+    caratteri: s?.caratteri ?? 0,
+    motivo: s
+      ? `turno precedente leggero (${s.letture} letture, ${s.caratteri} caratteri): si può fare a meno di delegare`
+      : "nessun turno precedente da valutare",
+  };
+}
+
+/** Annuncia in chat la decisione automatica (in on/off fissi non si annuncia niente). */
+function annunciaSubagentAuto(dec) {
+  if (!dec || dec.auto !== true) return;
+  const ev = {
+    on: !!dec.on,
+    motivo: dec.motivo || "",
+    letture: dec.letture ?? 0,
+    caratteri: dec.caratteri ?? 0,
+    soglie: { ...SUBAGENT_AUTO },
+    ts: Date.now(),
+  };
+  ultimaAuto = ev;
+  broadcast("subagent_auto", ev);
+  try {
+    console.log(`[subagent auto] ${ev.on ? "ON" : "off"} — ${ev.motivo}`);
+  } catch {
+    /* il log non conta */
+  }
+}
 // Tool browser: spento di default (naviga il web e consuma ~1,7 GB di RAM per sessione).
 // Si accende con /browser on o POST /api/browser; quando è OFF i tool vengono rimossi
 // dalla lista inviata al modello, quindi il modello non può nemmeno tentare di usarli.
@@ -2811,7 +2900,7 @@ let turnoCtx = null;
 function turnoInizio() {
   try {
     const st = sessionStatsSafe();
-    turnoCtx = { t0: Date.now(), tokens: { ...st.tokens }, cost: st.cost, tools: [], errori: [], passi: 0 };
+    turnoCtx = { t0: Date.now(), tokens: { ...st.tokens }, cost: st.cost, tools: [], errori: [], passi: 0, letture: 0, caratteri: 0 };
   } catch {
     turnoCtx = null;
   }
@@ -2822,6 +2911,9 @@ function turnoFine() {
   if (!turnoCtx) return;
   const t = turnoCtx;
   turnoCtx = null;
+  // statistiche per la modalità "auto" dei subagent: quante letture ha fatto questo turno e
+  // quanti caratteri di risultati ha prodotto. Si valutano all'INIZIO del turno successivo.
+  ultimoTurnoStat = { letture: t.letture || 0, caratteri: t.caratteri || 0, passi: t.passi || 0 };
   try {
     const st = sessionStatsSafe();
     const riga = {
@@ -3014,6 +3106,8 @@ function getState({ withMessages = false } = {}) {
     subagents: {
       available: hasSubagentExt,
       enabled: hasSubagentExt && subagentsEnabled,
+      mode: subagentsMode,
+      ultimaAuto,
       maxSpawns: maxSubagentSpawns,
       activeTools: (session?.agent?.state?.tools || [])
         .map((t) => t.name)
@@ -3135,6 +3229,8 @@ function handleSessionEvent(event) {
     // visibile su cosa si perde tempo: prima era solo una stringa rossa in chat.
     if (turnoCtx) {
       turnoCtx.passi++;
+      if (TOOL_LETTURA.has(event.toolName)) turnoCtx.letture++;
+      turnoCtx.caratteri += lunghezzaTesto(event.result);
       if (event.toolName && !turnoCtx.tools.includes(event.toolName)) turnoCtx.tools.push(event.toolName);
       if (event.isError) {
         const testo =
@@ -3356,9 +3452,11 @@ const COMMAND_HANDLERS = {
   subagents: async ({ arg, tokens }) => {
     if (!hasSubagentExt) throw new HttpError(400, "estensione subagent non disponibile");
     const val = String(arg || "").trim().toLowerCase();
-    if (!val) return { message: `subagent: ${subagentsEnabled ? "ON" : "off"} · max ${maxSubagentSpawns} per richiesta${subagentsEnabled ? " (consumano token)" : ""}` };
-    if (!["on", "off"].includes(val)) throw new HttpError(400, "usa /subagents on oppure /subagents off");
+    if (!val) return { message: `subagent: ${subagentsMode} (effettivo ${subagentsEnabled ? "ON" : "off"}) · max ${maxSubagentSpawns} per richiesta` };
+    if (!["on", "off", "auto"].includes(val)) throw new HttpError(400, "usa /subagents on|off|auto");
+    subagentsMode = val;
     subagentsEnabled = val === "on";
+    ultimaAuto = null;
     applyToolGate();
     return { message: `subagent -> ${subagentsEnabled ? `ON (max ${maxSubagentSpawns})` : "off"}`, state: true, refresh: true };
   },
@@ -5688,6 +5786,15 @@ const server = http.createServer(async (req, res) => {
       // all'utente, attività recente del browser). Va rivalutato QUI, prima di partire: senza
       // questo, se la live view era già attiva nessuno ricalcolava il gate e il modello
       // riceveva una lista di tool vecchia (il tool browser non arrivava mai).
+      // Sub-agent in modalità "auto": la decisione si prende QUI, sul testo che sta per partire
+      // e sulle statistiche del turno precedente, e si annuncia in chat con il motivo.
+      try {
+        const dec = subagentAutoDecisione(text);
+        subagentsEnabled = !!dec.on;
+        annunciaSubagentAuto(dec);
+      } catch {
+        /* la decisione non deve impedire l'invio */
+      }
       try {
         applyToolGate();
       } catch {
@@ -6137,6 +6244,12 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req);
       if (!hasSubagentExt) return json(res, 400, { error: "estensione subagent non disponibile" });
       if (typeof body.enabled === "boolean") subagentsEnabled = body.enabled;
+      // modalità a tre valori: "auto" (default), "on", "off". `enabled` resta per compatibilità.
+      if (typeof body.mode === "string" && ["auto", "on", "off"].includes(body.mode)) {
+        subagentsMode = body.mode;
+        subagentsEnabled = body.mode === "on";
+        if (body.mode !== "auto") ultimaAuto = null;
+      }
       if (body.maxSpawns !== undefined) {
         const n = Number(body.maxSpawns);
         if (!Number.isInteger(n) || n < 1 || n > 64)
@@ -7038,7 +7151,7 @@ server.listen(PORT, HOST, () => {
   console.log(`sessioni: ${SESSION_DIR}`);
   console.log(`fuso orario (pianificazioni): ${TZ_NAME} — ora locale: ${new Date().toLocaleString("it-IT")}`);
   console.log(
-    `subagent: ${hasSubagentExt ? `disponibile (ON di default dal 2026-11-22, max ${maxSubagentSpawns} per richiesta; DASH_SUBAGENT=off per spegnerlo)` : "non disponibile"}`,
+    `subagent: ${hasSubagentExt ? `disponibile (modalità ${subagentsMode} — auto = solo nei turni di ricognizione; DASH_SUBAGENT=auto|on|off, max ${maxSubagentSpawns} per richiesta)` : "non disponibile"}`,
   );
   console.log(`auth -> utente: ${AUTH_USER}  password: ${AUTH_PASS ? "***" : "(assente!)"}`);
   console.log(

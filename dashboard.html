@@ -361,6 +361,22 @@ main {
   color: var(--purple); opacity: .96; font-size: var(--fs-md); max-height: 40vh; overflow-y: auto;
 }
 .thinking.aperto .tbody { display: block; }
+/* Traccia del gate automatico dei subagent (2026-11-22): si legge come il pensiero, con il
+   motivo e i numeri della decisione. Non è decorazione: spiega una scelta che il sistema ha
+   preso al posto dell'utente, quindi deve essere leggibile senza aprire niente. */
+.nota {
+  border-left: 3px solid #38bdf8; background: rgba(56,189,248,.08);
+  margin: var(--sp-1) 0 var(--sp-2); border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  padding: var(--sp-2) var(--sp-3);
+}
+.nota .nhead {
+  font-size: var(--fs-xs); font-weight: 700; letter-spacing: .7px; text-transform: uppercase;
+  color: #38bdf8;
+}
+.nota .nbody { color: #cfe8ff; font-size: var(--fs-md); white-space: pre-wrap; margin-top: 2px; }
+.nota.off { border-left-color: var(--dim); background: rgba(143,160,184,.07); }
+.nota.off .nhead { color: var(--dim); }
+.nota.off .nbody { color: var(--dim); }
 .tool {
   color: var(--yellow); font-size: var(--fs-md); margin: var(--sp-1) 0; word-break: break-word;
   display: inline-flex; align-items: center; gap: var(--sp-2); flex-wrap: wrap; max-width: 100%;
@@ -4928,6 +4944,32 @@ function ensureThinkingBlock() {
 }
 
 /**
+ * Nota del gate automatico (es. «subagent attivato per questo turno»). Sta qui e non in una card
+ * del tool perché non è una chiamata al tool: è una decisione del SISTEMA, e va letta come si
+ * legge il pensiero — con il motivo e con i numeri su cui è stata presa.
+ */
+function notaBlock(n = {}) {
+  const box = document.createElement("div");
+  box.className = "nota" + (n.on === false ? " off" : "");
+  const head = document.createElement("div");
+  head.className = "nhead";
+  head.textContent = n.on === false ? "🔎 subagent non attivato" : "🔎 subagent attivato automaticamente";
+  const corpo = document.createElement("div");
+  corpo.className = "nbody";
+  const righe = [];
+  if (n.motivo) righe.push("motivo: " + n.motivo);
+  if (n.on !== false) {
+    righe.push(
+      "misura: " + fmt(n.letture ?? 0) + " letture e " + fmt(n.caratteri ?? 0) + " caratteri di risultati nel turno precedente",
+    );
+    righe.push("prezzo: due schemi in più nel prefisso (in cache, ≈5,7k token) · resa: una sintesi al posto delle letture");
+  }
+  corpo.textContent = righe.join("\n");
+  box.append(head, corpo);
+  return box;
+}
+
+/**
  * Card di una chiamata al tool: nome in monospaziato, sintesi, esito con **parola** (non solo
  * un simbolo) e durata misurata dal client, che è l'unico a sapere quanto è durata davvero.
  */
@@ -5682,6 +5724,16 @@ esOn("sessions", (e) => {
 });
 esOn("text_delta", (e) => appendText(JSON.parse(e.data).delta));
 esOn("thinking_delta", (e) => appendThinking(JSON.parse(e.data).delta));
+// Traccia del gate automatico dei subagent: appare PRIMA del pensiero e della risposta (l'evento
+// parte quando il turno viene inviato), così si legge il perché della scelta insieme al lavoro.
+esOn("subagent_auto", (e) => {
+  let d; try { d = JSON.parse(e.data); } catch { d = {}; }
+  if (!cur.wrap) newAssistantBubble();
+  cur.wrap.appendChild(notaBlock(d));
+  cur.thinking = null;
+  cur.assistant = null;
+  scheduleAutoscroll();
+});
 // La card del tool entra DENTRO il messaggio in corso, nell'ordine reale: prima veniva
 // appesa in fondo alla chat, fuori dal messaggio. Con un turno pieno di `bash` l'utente
 // vedeva solo una colonna di «🔧 bash …» e il testo/pensiero restava sopra, fuori vista
