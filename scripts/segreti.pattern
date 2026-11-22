@@ -25,5 +25,6 @@ OpenAI/Anthropic	(^|[^A-Za-z0-9])sk-[A-Za-z0-9_-]{20,}
 GitHub	(ghp_|gho_|ghs_|github_pat_)[A-Za-z0-9_]{20,}
 Slack	xox[abp]-[A-Za-z0-9-]{10,}
 Google API	AIza[0-9A-Za-z_-]{30,}
+Google API (AI Studio, formato AQ.)	(^|[^A-Za-z0-9])AQ\.[A-Za-z0-9_-]{20,}
 HuggingFace	hf_[A-Za-z0-9]{20,}
 AWS access key	AKIA[0-9A-Z]{16}

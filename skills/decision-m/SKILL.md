@@ -1,13 +1,13 @@
 ---
 name: decision-m
 description: >-
-  Decisioni tipizzate locali con Decision_M: dato uno stato breve, ottieni una probabilità per domande
-  sì/no, una scelta fra opzioni o un punteggio su una rubrica (modello Spark-X2.5-4B su CPU, nessun token
-  generato). Usala quando serve un giudizio ripetibile — instradare una richiesta, decidere se un input è
-  ostile, scegliere fra azioni o strumenti, dare una priorità, filtrare candidati, rispondere a
+  Decisioni tipizzate: dato uno stato, ottieni una probabilità per domande sì/no, una scelta fra opzioni
+  o un punteggio su una rubrica — con il decisore LOCALE Decision_M (Spark-X2.5-4B su CPU, nessun token
+  generato) oppure con il classificatore REMOTO di Google `gemini_decision` (Gemini Decision 1, 0 token di
+  uscita, nessuna RAM). Usala quando serve un giudizio ripetibile — instradare una richiesta, decidere se
+  un input è ostile, scegliere fra azioni o strumenti, dare una priorità, filtrare candidati, rispondere a
   «conviene?», «è meglio A o B?», «quale scelgo?» — e non quando serve una spiegazione o del testo. Se i
-  tool `decision_m` non ci sono la feature è spenta: proponi l'attivazione all'utente, non accendere nulla
-  da solo.
+  tool non ci sono la feature è spenta (o manca la chiave Google): dillo, non aggirare.
 ---
 
 # Decisioni tipizzate locali (Decision_M)
@@ -24,8 +24,23 @@ con un interruttore: **occupa risorse solo quando è acceso**.
 
 | Tool | A cosa serve |
 |---|---|
-| `decision_m` | La decisione: `{ state, questions }` → probabilità per ogni domanda |
+| `decision_m` | La decisione LOCALE: `{ state, questions }` → probabilità per ogni domanda |
 | `decision_m_service` | Le risorse: `action: "status" \| "start" \| "stop"` |
+| `gemini_decision` | La stessa forma di decisione, ma REMOTA (Google Gemini Decision 1): nessun processo, ~0,3 s, 0 token di uscita |
+
+### Locale o remoto? La differenza che conta
+
+|  | `decision_m` (locale) | `gemini_decision` (Google) |
+|---|---|---|
+| Costo in denaro | zero | i token dell'input (uno stato breve ≈ 200 token) |
+| Costo in risorse | ~5,7 GB di RAM quando acceso | nessuna |
+| Latenza | ~12 s su uno stato breve | ~0,3 s |
+| Accensione | serve l'interruttore e l'attesa del caricamento | nessuna: se c'è la chiave, c'è |
+| Quando sceglierlo | lavoro locale, dati che non devono uscire, molte decisioni | una decisione ogni tanto, stato breve, fretta |
+
+Se `gemini_decision` non è nella lista, manca la chiave Google o l'interruttore «classificatore»
+è spento: **non** è un guasto. Il tool risponde con un errore istruttivo, e la chiave si mette
+dal pannello «🔑 chiavi» della dashboard.
 
 Se questi due tool **non sono nella tua lista**, la feature è spenta. Non è un guasto e non
 puoi accenderla da solo: chiedi all'utente con `ask_user` — una riga sul costo (~5,7 GB di

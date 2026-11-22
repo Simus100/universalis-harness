@@ -742,6 +742,15 @@ body[data-tab="memoria"] #chatView { display: none !important; }
 body[data-tab="previsioni"] #stats,
 body[data-tab="previsioni"] #chatFooter,
 body[data-tab="previsioni"] #chatView { display: none !important; }
+/* Immagini e chiavi: stessa regola delle altre viste a sé. Senza, la chat con il suo composer
+   restava visibile SOPRA la vista e il generatore finiva schiacciato in fondo (visto nello
+   screenshot 17-immagini.png del checkup, non dedotto). */
+body[data-tab="immagini"] #stats,
+body[data-tab="immagini"] #chatFooter,
+body[data-tab="immagini"] #chatView,
+body[data-tab="chiavi"] #stats,
+body[data-tab="chiavi"] #chatFooter,
+body[data-tab="chiavi"] #chatView { display: none !important; }
 
 /* live view del browser */
 /* Flex (non grid): il riquadro del browser prende TUTTO lo spazio rimanente e le cromature
@@ -1757,7 +1766,8 @@ footer {
    * tutta la riga. Qui si annulla SOLO dentro la riga 2 dell'header, senza toccare il resto. */
   .hrow-2 .tools { flex: 0 1 auto; width: auto; overflow: visible; gap: 6px; min-width: 0; flex-wrap: nowrap; }
   /* Ordine di lettura: prima «con che modello parlo», poi il menu delle funzioni. */
-  #modelSel { order: 1; max-width: 132px; font-size: var(--fs-sm); padding-left: 8px; padding-right: 4px; }
+  #modelSel { order: 1; max-width: 190px; font-size: var(--fs-sm); padding-left: 8px; padding-right: 4px; }
+  @media (max-width: 760px) { #modelSel { max-width: 132px; } }
   .tools .feat { order: 2; }
   .feat-btn { padding: 7px 11px; min-height: 40px; }
   .feat-btn .feat-count { display: none; }
@@ -1846,6 +1856,64 @@ footer {
 .prev-ricalcola { display: block; margin-top: 5px; color: #d9a13b; font-size: var(--fs-xs); line-height: 1.45; }/* Nei pannelli della barra la descrizione di stato va a capo su una riga sua: stretta fra
    bottone e tendina diventava una colonnina di tre righe illeggibile. */
 .feat-row > .feat-lbl[style], .feat-row > #decisionMInfo, .feat-row > #timestralInfo { flex: 1 1 100%; }
+.feat-row > #googleInfo, .feat-row > #immaginiInfo, .feat-row > #chiaviInfo { flex: 1 1 100%; }
+
+/* ---------- vista «immagini» ----------
+   Tre cose in colonna: il generatore, l'esito, la galleria. Le card usano le stesse
+   superfici delle altre viste (`--panel`, `--border`), così la vista non sembra un'altra app. */
+.img-scroll { display: flex; flex-direction: column; gap: var(--sp-3); padding-bottom: 24px; }
+.img-gen { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-3); }
+.img-gen textarea {
+  width: 100%; min-height: 84px; resize: vertical; line-height: 1.55; font: inherit; color: var(--text);
+  background: var(--panel-2, var(--panel)); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px;
+}
+.img-gen textarea:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+.img-riga { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.img-riga .select { min-width: 0; }
+.img-riga .cresce { flex: 1 1 220px; max-width: none; }
+.img-input {
+  flex: 1 1 260px; max-width: none; min-width: 0; font: inherit; font-size: var(--fs-sm);
+  color: var(--text); background: var(--panel-2, var(--panel)); border: 1px solid var(--border);
+  border-radius: 999px; padding: 8px 13px; min-height: 36px;
+}
+.img-input::placeholder { color: var(--faint); }
+.img-input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+.img-nota { margin-top: 8px; color: var(--faint); font-size: var(--fs-xs); line-height: 1.5; }
+.img-nota b { color: var(--text-soft); font-weight: 600; }
+.img-esito { display: flex; flex-direction: column; gap: 10px; }
+.img-esito .riga { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; color: var(--dim); font-size: var(--fs-sm); }
+.img-esito img, .img-card img {
+  display: block; width: 100%; height: auto; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: #0b0f16;
+}
+.img-esito img { max-height: 62vh; object-fit: contain; }
+.img-errore { border: 1px solid color-mix(in srgb, #e5534b 45%, var(--border)); background: color-mix(in srgb, #e5534b 8%, transparent); color: var(--text); border-radius: var(--radius-sm); padding: 10px 12px; font-size: var(--fs-sm); line-height: 1.55; }
+.img-galleria { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+/* il messaggio «ancora nessuna immagine» è uno, non una card da 170 px incastrata a sinistra */
+.img-galleria > .img-vuoto { grid-column: 1 / -1; }
+.img-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; }
+.img-card button { all: unset; cursor: zoom-in; display: block; line-height: 0; }
+.img-card .piede { padding: 6px 8px; font-size: var(--fs-xs); color: var(--faint); line-height: 1.4; display: flex; gap: 6px; justify-content: space-between; }
+.img-card .piede b { color: var(--text-soft); font-weight: 500; }
+.img-vuoto { color: var(--dim); font-size: var(--fs-sm); line-height: 1.6; padding: 10px 2px; }
+
+/* ---------- vista «chiavi» ---------- */
+.chiave-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: var(--sp-3); margin-bottom: var(--sp-3); }
+.chiave-card h3 { margin: 0 0 4px; font-size: var(--fs-md); color: var(--text); }
+.chiave-card .stato { font-size: var(--fs-sm); color: var(--dim); line-height: 1.55; margin-bottom: 10px; }
+.chiave-card .stato .si { color: #3fb950; font-weight: 600; }
+.chiave-card .stato .no { color: #d29922; font-weight: 600; }
+.chiave-card .riga { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chiave-card input[type=password], .chiave-card input[type=text] {
+  flex: 1 1 260px; font: inherit; color: var(--text); background: var(--panel-2, var(--panel));
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px;
+}
+.chiave-card input:focus { outline: none; border-color: var(--accent); box-shadow: var(--ring); }
+.chiave-card .aiuto { margin-top: 8px; font-size: var(--fs-xs); color: var(--faint); line-height: 1.5; }
+.chiave-card .aiuto code { color: var(--text-soft); }
+.chiave-esito { font-size: var(--fs-sm); margin-top: 8px; line-height: 1.5; }
+.chiave-esito.ok { color: #3fb950; }
+.chiave-esito.ko { color: #e5534b; }
 .prev-ctrl { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px 2px 8px; }
 .prev-ctrl-lbl { color: var(--dim); font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .5px; }
 .select.mini { padding: 3px 6px; font-size: var(--fs-sm); }
@@ -2178,6 +2246,10 @@ footer {
           <button id="featLive" class="pill" type="button" style="flex:1;justify-content:center" title="Live view del browser: guarda cosa fa e, se serve, prendi il controllo"><span class="led"></span>🖥 live</button>
           <button id="featPrevisioni" class="pill" type="button" style="flex:1;justify-content:center" title="Previsioni: cosa succederà, secondo Timestral — con la banda di incertezza e la verifica storica"><span class="led"></span>📈 previsioni</button>
         </div>
+        <div class="feat-row">
+          <button id="featImmagini" class="pill" type="button" style="flex:1;justify-content:center" title="Genera un'immagine con Google (Nano Banana) e guarda la galleria di quelle fatte"><span class="led"></span>🎨 immagini</button>
+          <button id="featChiavi" class="pill" type="button" style="flex:1;justify-content:center" title="Chiavi dei provider: Google e DeepSeek. Si salvano fuori dal repository (~/.pi/agent/auth.json)"><span class="led"></span>🔑 chiavi</button>
+        </div>
       </div>
       <!-- Secondo pannello: i servizi locali, separati dalle risorse dell'agente. Stesso
            comportamento del primo (un tasto, un pannello), così non si confondono due cose
@@ -2197,6 +2269,15 @@ footer {
           <button id="timestralToggle" class="pill" type="button" title="Timestral (previsioni su serie temporali): quando è acceso l'agente ha i tool timestral_forecast e timestral_series. Il modello gira in un servizio condiviso, leggero (471 MB con il 28M) e si scarica da solo dopo 15 minuti di inattività."><span class="led"></span>Timestral</button>
           <select id="timestralSize" class="select" title="Taglia del modello: più grande è più precisa ma costa più RAM e più tempo di caricamento (misure su questa macchina)"></select>
           <span class="feat-lbl" id="timestralInfo">—</span>
+        </div>
+        <div class="feat-row">
+          <button id="googleDecisioneToggle" class="pill" type="button" title="Classificatore Google (Gemini Decision 1): probabilità calibrate per domande sì/no, scelta e punteggio. Nessun processo da accendere, ~0,3 s per risposta, zero token di output; si pagano solo i token dell'input."><span class="led"></span>classificatore</button>
+          <span class="feat-lbl" id="googleInfo">—</span>
+        </div>
+        <div class="feat-row">
+          <button id="immaginiToggle" class="pill" type="button" title="Generazione immagini (Google Nano Banana): accesa, l'agente ha il tool genera_immagine e la vista «immagini» funziona. Default il modello economico (~$0,034 per immagine)."><span class="led"></span>immagini</button>
+          <button id="chiaviBtn" class="pill" type="button" title="Chiavi API dei provider (Google, DeepSeek): stato, inserimento e verifica. Le chiavi stanno fuori dal repository."><span class="led"></span>🔑 chiavi</button>
+          <span class="feat-lbl" id="immaginiInfo">—</span>
         </div>
       </div>
     </div>
@@ -2465,6 +2546,60 @@ footer {
       </details>
     </div>
     <section class="prev-card prev-bt" id="prevBacktestCard" hidden></section>
+  </div>
+</main>
+
+<main id="immaginiView" hidden>
+  <div class="gtoolbar">
+    <button class="ghost" id="immaginiBack" type="button" title="Torna alla chat">← chat</button>
+    <span class="gcount" id="immaginiStato">—</span>
+    <span style="flex:1"></span>
+    <button class="ghost" id="immaginiAggiorna" type="button" title="Rilegge la galleria dal disco">⟳ aggiorna</button>
+    <button class="ghost" id="immaginiChiavi" type="button" title="Chiave Google: inserimento, verifica, stato">🔑 chiave Google</button>
+  </div>
+  <div class="goals-scroll img-scroll">
+    <div class="img-gen">
+      <textarea id="imgPrompt" placeholder="Cosa generare: soggetto, stile, luce, inquadratura… (per il testo dentro l'immagine: mettilo tra virgolette)"></textarea>
+      <div class="img-riga">
+        <select id="imgModello" class="select cresce" title="Modello: il primo è il più economico ed è il default"></select>
+        <select id="imgFormato" class="select" title="Proporzioni"></select>
+        <select id="imgDimensione" class="select" title="Risoluzione: 1K è il default, 2K/4K solo dove il modello li offre"></select>
+        <button id="imgGenera" class="ghost forte" type="button">genera</button>
+      </div>
+      <div class="img-riga">
+        <input id="imgRiferimento" class="img-input" type="text" placeholder="(facoltativo) immagine di riferimento o da modificare: media/foto.png" autocomplete="off" />
+      </div>
+      <div class="img-nota" id="imgNota">—</div>
+    </div>
+    <div class="img-esito" id="imgEsito"></div>
+    <div>
+      <div class="gtoolbar" style="border:0;padding-left:0;padding-right:0">
+        <span class="gcount" id="imgGalleriaTitolo">galleria</span>
+      </div>
+      <div class="img-galleria" id="imgGalleria"></div>
+    </div>
+  </div>
+</main>
+
+<main id="chiaviView" hidden>
+  <div class="gtoolbar">
+    <button class="ghost" id="chiaviBack" type="button" title="Torna alla chat">← chat</button>
+    <span class="gcount" id="chiaviStato">—</span>
+    <span style="flex:1"></span>
+    <button class="ghost" id="chiaviAggiorna" type="button">⟳ aggiorna</button>
+  </div>
+  <div class="goals-scroll">
+    <div class="chiave-card" style="background:transparent;border-style:dashed">
+      <h3>Come funziona</h3>
+      <div class="stato">
+        La chiave si salva in <code>~/.pi/agent/auth.json</code> (permessi 600), <b>fuori dal repository</b>:
+        non finisce mai su GitHub. Per Google questa dashboard usa la stessa chiave per tre cose — modelli di chat,
+        classificatore (Gemini Decision 1) e immagini (Nano Banana) — e ogni chiave viene <b>verificata</b> prima di
+        essere salvata, così un errore di copia si vede subito.
+      </div>
+      <div class="aiuto">Chi scarica l'harness da GitHub trova questa stessa pagina vuota: è qui che si mettono le proprie chiavi.</div>
+    </div>
+    <div id="chiaviLista"></div>
   </div>
 </main>
 
@@ -2841,14 +2976,18 @@ function renderStats(st) {
   const ms = $("modelSel");
   if (ms) {
     const list = Array.isArray(st.models) ? st.models : [];
-    const ids = list.map((m) => m.id).join(",");
+    // L'etichetta è il NOME commerciale (arriva dallo stato), il valore resta l'id: così il
+    // selettore dice «Gemini 3.8 Flash» invece di `gemini-3.8-flash`, e la scelta continua a
+    // funzionare con le sessioni salvate e con /model.
+    const ids = list.map((m) => `${m.id}|${m.label || ""}`).join(",");
     if (list.length && ms.dataset.opts !== ids) {
       ms.dataset.opts = ids;
       ms.replaceChildren(
         ...list.map((m) => {
           const o = document.createElement("option");
           o.value = m.id;
-          o.textContent = m.id;
+          o.textContent = m.label || m.id;
+          o.title = `${m.id} · ${m.provider}`;
           return o;
         }),
       );
@@ -2865,6 +3004,7 @@ function renderStats(st) {
   renderAskToggle(st);
   renderDecisionM(st);
   renderTimestral(st);
+  renderGoogle(st);
   renderFeatCount();
 }
 
@@ -3017,6 +3157,57 @@ async function cambiaTagliaTimestral(size) {
   const j = await postJSON("/api/timestral", { size });
   if (j.error && info) info.textContent = "taglia non cambiata";
   void fetch("/api/timestral").then((x) => x.json()).then((s) => renderTimestral({ timestral: Object.assign({}, s, { size: s.size }) })).catch(() => {});
+}
+
+/**
+ * Google: una chiave, due capacità. La UI deve dire SUBITO perché un interruttore è spento:
+ * «manca la chiave» e «l'utente l'ha spento» sono due cose diverse, e la prima si risolve da
+ * «🔑 chiavi» in un clic. Per questo la riga resta visibile anche senza chiave.
+ */
+function renderGoogle(st) {
+  const g = (st && st.google) || {};
+  const chiave = !!g.chiave;
+  const bd = $("googleDecisioneToggle");
+  const bi = $("immaginiToggle");
+  const inD = $("googleInfo");
+  const inI = $("immaginiInfo");
+  if (bd) {
+    bd.dataset.avail = chiave ? "1" : "0";
+    setPill(bd, !!(chiave && g.decisione && g.decisione.attivo), "classificatore");
+    bd.title =
+      "Classificatore Google (Gemini Decision 1): probabilità calibrate per domande sì/no, scelta e punteggio. " +
+      "Nessun processo da accendere, ~0,3 s per risposta, zero token di output; si pagano solo i token dell'input.";
+  }
+  if (inD) {
+    inD.textContent = !chiave
+      ? "manca la chiave Google → inseriscila in 🔑 chiavi"
+      : g.decisione && g.decisione.attivo
+        ? "Gemini Decision 1 acceso · 0 token di uscita"
+        : "spento: l'agente non ha il tool gemini_decision";
+  }
+  if (bi) {
+    bi.dataset.avail = chiave ? "1" : "0";
+    setPill(bi, !!(chiave && g.immagini && g.immagini.attivo), "immagini");
+  }
+  if (inI) {
+    const im = (g.immagini || {});
+    const cat = Array.isArray(im.catalogo) ? im.catalogo : [];
+    const def = cat.find((m) => m.id === (im.modello || im.default));
+    inI.textContent = !chiave
+      ? "manca la chiave Google → inseriscila in 🔑 chiavi"
+      : im.attivo
+        ? `default: ${def ? def.nome : im.modello}${def && def.costo_usd != null ? ` · ~$${def.costo_usd.toFixed(3)}/immagine` : ""}`
+        : "spento: l'agente non ha il tool genera_immagine";
+  }
+}
+
+async function toggleGoogleDecisione() {
+  const g = (lastState || {}).google || {};
+  await postJSON("/api/providers", { decisione: !(g.decisione && g.decisione.attivo) });
+}
+async function toggleImmagini() {
+  const g = (lastState || {}).google || {};
+  await postJSON("/api/immagini", { attivo: !(g.immagini && g.immagini.attivo) });
 }
 
 async function toggleAsk() {
@@ -8386,6 +8577,8 @@ function showTab(name) {
   $("liveView").hidden = name !== "live";
   $("memoriaView").hidden = name !== "memoria";
   $("previsioniView").hidden = name !== "previsioni";
+  $("immaginiView").hidden = name !== "immagini";
+  $("chiaviView").hidden = name !== "chiavi";
   // la live view consuma banda: il flusso si ferma quando si lascia la vista
   if (name !== "live" && liveWatching) stopWatch();
   // e il browser torna al viewport che aveva prima (è anche quello dell'agente)
@@ -8403,8 +8596,15 @@ function showTab(name) {
   if (fs) fs.classList.toggle("on", name === "skills");
   const fp = $("featProgetto"), fa = $("featAgenda"), fl = $("featLive");
   const fprev = $("featPrevisioni");
+  const fimg = $("featImmagini"), fchiavi = $("featChiavi");
+  if (fimg) fimg.classList.toggle("on", name === "immagini");
+  if (fchiavi) fchiavi.classList.toggle("on", name === "chiavi");
   if (fprev) fprev.classList.toggle("on", name === "previsioni");
   if (name === "previsioni") { if (!prevCaricata) caricaPrevisioni(); else prevBloccata(); }
+  // la vista immagini si rilegge a ogni apertura (il registro e la galleria cambiano da fuori,
+  // per esempio quando è l'agente a generare)
+  if (name === "immagini") void caricaImmagini();
+  if (name === "chiavi") void caricaChiavi();
   if (fp) fp.classList.toggle("on", name === "progetto");
   if (fa) fa.classList.toggle("on", name === "agenda");
   if (fl) fl.classList.toggle("on", name === "live");
@@ -10810,7 +11010,336 @@ $("featProgetto").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); s
 $("featAgenda").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("agenda"); };
 $("featLive").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("live"); };
 $("featPrevisioni").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); applicaPannello($("servPanel"), $("servBtn"), false); showTab("previsioni"); };
+$("featImmagini").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("immagini"); };
+$("featChiavi").onclick = (e) => { e.stopPropagation(); setFeatPanel(false); showTab("chiavi"); };
+$("googleDecisioneToggle")?.addEventListener("click", () => toggleGoogleDecisione());
+$("immaginiToggle")?.addEventListener("click", () => toggleImmagini());
+$("chiaviBtn")?.addEventListener("click", (e) => { e.stopPropagation(); setFeatPanel(false); showTab("chiavi"); });
+/* ==================== vista «immagini» (Google Nano Banana) ====================
+   La regola che tiene insieme questa vista: il DEFAULT è il modello economico. Il prezzo è
+   scritto accanto a ogni voce dell'elenco, così la scelta «più qualità» è una scelta
+   consapevole e non una sorpresa in fattura. */
+let imgStato = null;
+let imgGalleria = [];
+let imgInCorso = false;
+
+const imgUrl = (rel) => `/api/image?path=${encodeURIComponent(rel)}`;
+const imgPeso = (n) => (n < 1048576 ? `${Math.round(n / 1024)} KB` : `${(n / 1048576).toFixed(1)} MB`);
+
+function imgCosto(m) {
+  return m && m.costo_usd != null ? `~$${m.costo_usd.toFixed(4).replace("0.0", "0.0")}/immagine` : "prezzo n.d.";
+}
+
+function popolaModelliImg(st) {
+  const sel = $("imgModello");
+  const cat = Array.isArray(st.catalogo) ? st.catalogo : [];
+  const firma = cat.map((m) => `${m.id}|${m.costo_usd}`).join(",");
+  if (sel && sel.dataset.firma !== firma) {
+    sel.dataset.firma = firma;
+    sel.replaceChildren(
+      ...cat.map((m) => {
+        const o = document.createElement("option");
+        o.value = m.id;
+        o.textContent = `${m.nome}${m.costo_usd != null ? ` · ~$${m.costo_usd.toFixed(3)}` : ""}`;
+        o.title = `${m.id} — ${m.nota}`;
+        return o;
+      }),
+    );
+  }
+  if (sel && st.modello) sel.value = st.modello;
+  const f = $("imgFormato");
+  if (f && f.options.length === 0) {
+    for (const x of st.formati || []) {
+      const o = document.createElement("option");
+      o.value = x;
+      o.textContent = x;
+      f.appendChild(o);
+    }
+  }
+  if (f && st.formato) f.value = st.formato;
+  aggiornaDimensioniImg(st);
+  aggiornaNotaImg(st);
+}
+
+/** Le dimensioni dipendono dal modello: il Lite fa solo 1K, e proporre 4K sarebbe una bugia. */
+function aggiornaDimensioniImg(st = imgStato) {
+  const d = $("imgDimensione");
+  if (!d || !st) return;
+  const modello = ($("imgModello") && $("imgModello").value) || st.modello;
+  const meta = (st.catalogo || []).find((m) => m.id === modello);
+  const dims = (meta && meta.dimensioni) || ["1K"];
+  const firma = dims.join(",");
+  if (d.dataset.firma !== firma) {
+    d.dataset.firma = firma;
+    d.replaceChildren(
+      ...dims.map((x) => {
+        const o = document.createElement("option");
+        o.value = x;
+        o.textContent = x;
+        return o;
+      }),
+    );
+  }
+  if (st.dimensione && dims.includes(st.dimensione)) d.value = st.dimensione;
+}
+
+function aggiornaNotaImg(st = imgStato) {
+  const n = $("imgNota");
+  if (!n || !st) return;
+  const modello = ($("imgModello") && $("imgModello").value) || st.modello;
+  const meta = (st.catalogo || []).find((m) => m.id === modello);
+  if (!st.chiave) {
+    n.innerHTML =
+      "Manca la chiave Google: senza, il modello non è raggiungibile. " +
+      '<button class="ghost mini" type="button" onclick="showTab(\'chiavi\')">inseriscila qui</button>';
+    return;
+  }
+  n.innerHTML = `${meta ? `<b>${escHtml(meta.nome)}</b> — ${escHtml(meta.nota)}. ` : ""}Prezzo indicativo: <b>${meta ? imgCosto(meta) : "n.d."}</b> (listino Google, stima a 1K). Le immagini contengono il watermark SynthID.`;
+}
+
+function renderGalleriaImg(lista) {
+  const g = $("imgGalleria");
+  if (!g) return;
+  imgGalleria = Array.isArray(lista) ? lista : imgGalleria;
+  if (!imgGalleria.length) {
+    g.innerHTML = '<div class="img-vuoto">Ancora nessuna immagine. Le immagini generate finiscono in <code>media/immagini/</code> e compaiono qui.</div>';
+    return;
+  }
+  g.replaceChildren(
+    ...imgGalleria.map((f) => {
+      const card = document.createElement("div");
+      card.className = "img-card";
+      const a = document.createElement("a");
+      a.href = imgUrl(f.file);
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.title = `${f.file} — ${imgPeso(f.byte)}`;
+      const img = document.createElement("img");
+      img.loading = "lazy";
+      img.src = imgUrl(f.file);
+      img.alt = f.file;
+      a.appendChild(img);
+      const piede = document.createElement("div");
+      piede.className = "piede";
+      const nome = String(f.file || "").split("/").pop();
+      piede.innerHTML = `<b>${escHtml(nome)}</b><span>${imgPeso(f.byte || 0)}</span>`;
+      card.append(a, piede);
+      return card;
+    }),
+  );
+}
+
+function renderImmagini(st) {
+  imgStato = st;
+  popolaModelliImg(st);
+  const stato = $("immaginiStato");
+  if (stato) {
+    const n = (st.galleria || []).length;
+    stato.textContent = !st.chiave
+      ? "chiave Google mancante"
+      : `${n} immagin${n === 1 ? "e" : "i"} in galleria`;
+  }
+  renderGalleriaImg(st.galleria || []);
+  const b = $("imgGenera");
+  if (b) b.disabled = !st.chiave || !st.attivo || imgInCorso;
+}
+
+async function caricaImmagini() {
+  try {
+    const r = await fetch("/api/immagini");
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    renderImmagini(j);
+  } catch (e) {
+    const g = $("imgGalleria");
+    if (g) g.innerHTML = `<div class="img-vuoto">Non riesco a leggere lo stato delle immagini: ${escHtml(String(e.message || e))}</div>`;
+  }
+}
+
+async function generaImmagineUI() {
+  if (imgInCorso) return;
+  const prompt = $("imgPrompt").value.trim();
+  const esito = $("imgEsito");
+  if (!prompt) {
+    $("imgPrompt").focus();
+    return;
+  }
+  imgInCorso = true;
+  const b = $("imgGenera");
+  if (b) {
+    b.disabled = true;
+    b.textContent = "genero…";
+  }
+  if (esito) esito.innerHTML = '<div class="img-vuoto">Sto generando… (di solito 2–20 s; a 4K può volerci più tempo)</div>';
+  const t0 = Date.now();
+  try {
+    const r = await fetch("/api/immagini/genera", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+        modello: $("imgModello").value,
+        formato: $("imgFormato").value,
+        dimensione: $("imgDimensione").value,
+        riferimento: $("imgRiferimento").value.trim() ? [$("imgRiferimento").value.trim()] : [],
+      }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    if (esito) {
+      esito.innerHTML =
+        `<a href="${imgUrl(j.file)}" target="_blank" rel="noopener"><img src="${imgUrl(j.file)}" alt="${escAttr(prompt.slice(0, 120))}" /></a>` +
+        `<div class="riga"><span><b>${escHtml(j.file)}</b></span>` +
+        `<span>${imgPeso(j.byte)}</span><span>${j.formato} · ${j.dimensione}</span>` +
+        `<span>${(j.ms / 1000).toFixed(1)} s</span>` +
+        `<span>${j.costo_usd != null ? `~$${j.costo_usd.toFixed(4)}` : "costo n.d."}</span></div>` +
+        (j.testo ? `<div class="img-nota">Nota del modello: ${escHtml(j.testo.slice(0, 400))}</div>` : "");
+    }
+    if (Array.isArray(j.galleria)) renderGalleriaImg(j.galleria);
+    if (imgStato) renderImmagini(imgStato);
+  } catch (e) {
+    if (esito) esito.innerHTML = `<div class="img-errore">${escHtml(String(e.message || e))}</div>`;
+  } finally {
+    imgInCorso = false;
+    if (b) {
+      b.disabled = false;
+      b.textContent = "genera";
+    }
+  }
+}
+
+/* ==================== vista «chiavi» ====================
+   Le chiavi non si mostrano MAI: si mostra se ci sono, da dove arrivano (ambiente o file) e
+   le ultime 4 cifre, quanto basta a riconoscere quale chiave è in uso. */
+async function caricaChiavi() {
+  const lista = $("chiaviLista");
+  const stato = $("chiaviStato");
+  try {
+    const r = await fetch("/api/providers");
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    const ps = j.providers || [];
+    if (stato) {
+      const conf = ps.filter((p) => p.configured).length;
+      stato.textContent = `${conf}/${ps.length} provider configurati`;
+    }
+    if (lista) {
+      lista.replaceChildren(
+        ...ps.map((p) => {
+          const card = document.createElement("div");
+          card.className = "chiave-card";
+          card.innerHTML =
+            `<h3>${escHtml(p.label)}</h3>` +
+            `<div class="stato">${p.configured ? `<span class="si">chiave presente</span>${p.fonte ? ` · da ${escHtml(p.fonte)}` : ""}${p.impronta ? ` · <code>${escHtml(p.impronta)}</code>` : ""} · ${p.modelli} modell${p.modelli === 1 ? "o" : "i"} nel selettore` : '<span class="no">chiave assente</span> — i suoi modelli non compaiono nel selettore'}</div>` +
+            `<div class="riga">` +
+            `<input id="chiave-${escAttr(p.id)}" type="password" autocomplete="off" spellcheck="false" placeholder="${escAttr(p.envVar)} (incolla qui la chiave)" />` +
+            `<button class="ghost forte" type="button" data-salva="${escAttr(p.id)}">verifica e salva</button>` +
+            (p.configured ? `<button class="ghost" type="button" data-rimuovi="${escAttr(p.id)}">rimuovi dal file</button>` : "") +
+            `</div>` +
+            `<div class="aiuto">Variabile accettata: <code>${escHtml(p.envVar)}</code> · chiave da: <a href="${escAttr(p.dove)}" target="_blank" rel="noopener">${escHtml(p.dove)}</a>. ` +
+            `La chiave viene verificata con una chiamata di sola lettura e salvata in <code>~/.pi/agent/auth.json</code> (0600), fuori dal repository.</div>` +
+            `<div class="chiave-esito" id="esito-${escAttr(p.id)}"></div>`;
+          return card;
+        }),
+      );
+      for (const b of lista.querySelectorAll("[data-salva]")) {
+        b.onclick = () => salvaChiaveUI(b.dataset.salva, b);
+      }
+      for (const b of lista.querySelectorAll("[data-rimuovi]")) {
+        b.onclick = () => rimuoviChiaveUI(b.dataset.rimuovi, b);
+      }
+    }
+  } catch (e) {
+    if (lista) lista.innerHTML = `<div class="chiave-card"><div class="stato">Non riesco a leggere lo stato dei provider: ${escHtml(String(e.message || e))}</div></div>`;
+  }
+}
+
+async function salvaChiaveUI(id, btn) {
+  const input = document.getElementById(`chiave-${id}`);
+  const esito = document.getElementById(`esito-${id}`);
+  const key = input ? input.value.trim() : "";
+  if (!key) {
+    if (esito) {
+      esito.className = "chiave-esito ko";
+      esito.textContent = "Incolla prima la chiave.";
+    }
+    return;
+  }
+  const testoPrima = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "verifico…";
+  }
+  try {
+    const r = await fetch("/api/providers/key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: id, key }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    if (input) input.value = "";
+    if (esito) {
+      esito.className = "chiave-esito ok";
+      esito.textContent = `Chiave verificata e salvata. Ora il provider offre ${j.modelli ?? "?"} modell${j.modelli === 1 ? "o" : "i"} nel selettore.`;
+    }
+    await caricaChiavi();
+  } catch (e) {
+    if (esito) {
+      esito.className = "chiave-esito ko";
+      esito.textContent = String(e.message || e);
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = testoPrima || "verifica e salva";
+    }
+  }
+}
+
+async function rimuoviChiaveUI(id, btn) {
+  if (!confirm("Rimuovere la chiave salvata in auth.json?\n\nSe la chiave arriva dall'ambiente (.env), quella resta: l'ambiente non è della dashboard.")) return;
+  const esito = document.getElementById(`esito-${id}`);
+  try {
+    const r = await fetch("/api/providers/key", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: id, rimuovi: true }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+    await caricaChiavi();
+  } catch (e) {
+    if (esito) {
+      esito.className = "chiave-esito ko";
+      esito.textContent = String(e.message || e);
+    }
+  }
+}
+
 $("prevBack").onclick = () => showTab("chat");
+$("immaginiBack").onclick = () => showTab("chat");
+$("chiaviBack").onclick = () => showTab("chat");
+$("immaginiChiavi").onclick = () => showTab("chiavi");
+$("immaginiAggiorna").onclick = () => void caricaImmagini();
+$("chiaviAggiorna").onclick = () => void caricaChiavi();
+$("imgGenera").onclick = () => void generaImmagineUI();
+$("imgModello").onchange = () => {
+  aggiornaDimensioniImg();
+  aggiornaNotaImg();
+  // la scelta del modello è una preferenza dell'istanza: si salva, così la prossima volta
+  // parte da quella (e la vista non torna al default a ogni ricarica)
+  void postJSON("/api/immagini", { modello: $("imgModello").value });
+};
+$("imgFormato").onchange = () => void postJSON("/api/immagini", { formato: $("imgFormato").value });
+$("imgDimensione").onchange = () => void postJSON("/api/immagini", { dimensione: $("imgDimensione").value });
+$("imgPrompt").addEventListener("keydown", (e) => {
+  // Invio con Ctrl/Cmd genera: è il gesto che si aspetta chi scrive un prompt
+  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    void generaImmagineUI();
+  }
+});
 $("prevPrevedi").onclick = () => prevEsegui();
 $("prevBacktest").onclick = () => prevVerifica();
 // il verdetto rimanda all'affidabilità: il rimando deve essere cliccabile, non solo scritto

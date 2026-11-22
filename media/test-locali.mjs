@@ -43,7 +43,8 @@ const VERDI = [
   { file: "test-md-render.mjs", cosa: "markdown della chat: escape e tabelle" },
   { file: "test-svg-sanitize.mjs", cosa: "sanitizzatore SVG: accetta il disegno, rifiuta il codice" },
   { file: "test-svg-sanitizer-retry.mjs", cosa: "sanitizzatore SVG: il fallimento non resta in cache", flag: "--experimental-vm-modules" },
-  { file: "test-ui.mjs", cosa: "frontend: notifiche e storico prompt, senza browser" }
+  { file: "test-ui.mjs", cosa: "frontend: notifiche e storico prompt, senza browser" },
+  { file: "test-provider-google.mjs", cosa: "Google: filtro del selettore, default immagine, forme delle decisioni" }
 ];
 
 /** Rossi oggi, con il motivo. Restano fuori dal gate finché non si riparano. */

@@ -155,7 +155,7 @@ export function normalizeQuestions(questions) {
 }
 
 /** Una riga leggibile per domanda: è quello che il modello legge davvero. */
-function formatAnswers(body) {
+export function formatAnswers(body) {
   const lines = [];
   const answers = body?.answers || {};
   for (const [id, a] of Object.entries(answers)) {

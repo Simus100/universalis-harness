@@ -121,6 +121,8 @@ for (const [nome, p] of [
   ["progetto", "/api/progetto"],
   ["memoria", "/api/memoria"],
   ["sessioni", "/api/sessions"],
+  ["provider", "/api/providers"],
+  ["immagini", "/api/immagini"],
 ]) {
   const r = await apiJson(p);
   check(`GET ${p} risponde 200`, r.status === 200, `status ${r.status}`);
@@ -139,6 +141,7 @@ const ID_VISTA = {
   chat: "tabChat", files: "tabFiles", memoria: "tabMemoria",
   goals: "featGoals", cron: "featCron", skills: "featSkills", progetto: "featProgetto",
   agenda: "featAgenda", live: "featLive", previsioni: "featPrevisioni",
+  immagini: "featImmagini", chiavi: "featChiavi",
 };
 const apri = async (tab) => {
   const id = ID_VISTA[tab];
@@ -232,6 +235,26 @@ const prev = await ui(`const v = document.getElementById("previsioniView"); cons
   return { visibile: !v.hidden, serie: s ? s.options.length : 0, stato: (document.getElementById("prevStato")||{}).textContent?.slice(0, 120) || "" };`);
 check("la vista previsioni elenca delle serie", prev.visibile && prev.serie > 0, JSON.stringify(prev).slice(0, 240));
 scatta("16-previsioni.png");
+
+console.log("\n== 9b. immagini e chiavi ==");
+await apri("immagini");
+for (let i = 0; i < 12; i++) {
+  const n = await ui(`const s = document.getElementById("imgModello"); return s ? s.options.length : 0;`);
+  if (n > 0) break;
+  await wait(600);
+}
+const img = await ui(`const v = document.getElementById("immaginiView"); const m = document.getElementById("imgModello");
+  return { visibile: !v.hidden, modelli: m ? m.options.length : 0, formati: document.getElementById("imgFormato").options.length,
+           dimensioni: document.getElementById("imgDimensione").options.length,
+           galleria: document.getElementById("imgGalleria").children.length };`);
+check("la vista immagini ha modello, formato, dimensioni", img.visibile && img.modelli > 0 && img.formati > 0 && img.dimensioni > 0, JSON.stringify(img).slice(0, 240));
+scatta("17-immagini.png");
+
+await apri("chiavi");
+const chiavi = await ui(`const v = document.getElementById("chiaviView"); return { visibile: !v.hidden, card: document.querySelectorAll("#chiaviLista .chiave-card").length,
+  campi: document.querySelectorAll("#chiaviLista input[type=password]").length };`);
+check("la vista chiavi elenca i provider con il campo chiave", chiavi.visibile && chiavi.card >= 2 && chiavi.campi >= 2, JSON.stringify(chiavi).slice(0, 240));
+scatta("18-chiavi.png");
 
 console.log("\n== 10. pannelli risorse/servizi ==");
 await apri("chat");

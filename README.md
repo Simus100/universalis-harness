@@ -128,6 +128,11 @@ lavorando, quindi «lavora sul progetto» ha un significato senza rispiegarlo og
 - **Disegni**: se il modello spiega con uno schema, il blocco SVG diventa un disegno vero, con vista
   ingrandita, copia e download, dopo il passaggio in un sanitizzatore che rifiuta script, risorse
   esterne, `foreignObject` e riferimenti di rete.
+- **Generazione**: con una chiave Google l'agente ha il tool `genera_immagine` (Nano Banana) e la
+  dashboard ha la vista **🎨 immagini** — prompt, formato, risoluzione, riferimento per le modifiche
+  e galleria. Il modello predefinito è il **più economico** (~$0,034 per immagine); quelli cari si
+  scelgono, non si indovinano. Ogni generazione lascia una riga in `media/immagini/registro.jsonl`
+  con costo stimato ed esito. Dettagli: [`docs/PROVIDER-GOOGLE.md`](docs/PROVIDER-GOOGLE.md).
 
 ### Ascoltare invece di leggere
 
@@ -198,6 +203,9 @@ pubblicano mai: il repository è pubblico, la memoria no ([docs/MEMORIA.md](docs
   restituisce mediana e quantili. È una **stima probabilistica** di un modello pre-addestrato: non
   conosce notizie né eventi annunciati, e l'output lo dichiara.
 - **piper** — sintesi vocale neurale offline per l'ascolto.
+- **Classificatore Google** (Gemini Decision 1) — le stesse domande tipizzate di Decision_M, ma
+  **remote**: nessun processo, nessuna RAM, ~0,3 s e **zero token di output** (si paga solo l'input).
+  Locale e remoto convivono: si sceglie in base a dove stanno i dati e a quante decisioni servono.
 
 Il criterio è lo stesso dei tool: **quello che pesa in RAM o in contesto lo paga solo il turno che lo
 usa.**
@@ -446,6 +454,21 @@ Dettagli su porte, utenti e limiti per più istanze sullo stesso server in
 | [`docs/SICUREZZA.md`](docs/SICUREZZA.md) | controlli contro i segreti e che cosa un esito verde **non** dice |
 | [`docs/SYNC-GITHUB.md`](docs/SYNC-GITHUB.md) | cosa viene pubblicato in questo repository e cosa resta fuori |
 | [`docs/INTERFACCIA.md`](docs/INTERFACCIA.md) | sistema visivo: token, contrasti, misure su telefono |
+
+### Provider e chiavi (onboarding di una copia nuova)
+
+L'harness parla con **DeepSeek** e **Google** (chat, classificatore, immagini) e funziona anche con
+uno solo dei due. Le chiavi stanno in `.env` — ignorato da git — oppure si inseriscono dal pannello
+**🔑 chiavi** della dashboard, che le verifica e le salva in `~/.pi/agent/auth.json` (0600, fuori dal
+repository). Chi clona questo repository mette **le proprie**:
+
+```bash
+node scripts/onboarding-provider.mjs            # cosa manca e cosa fare
+node scripts/onboarding-provider.mjs --google   # scrive il provider in models.json (nessun segreto)
+node scripts/onboarding-provider.mjs --verifica # la chiave risponde?
+```
+
+Nel codice e in `models.json` non c'è nessuna chiave: solo il *riferimento* `$GEMINI_API_KEY`.
 
 ### Che cosa c'è in questo repository
 

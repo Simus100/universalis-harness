@@ -1,5 +1,8 @@
 # ---- dati riservati: mai nel repository ----
 .env
+# copie di sicurezza del .env (contengono le stesse chiavi)
+.env.*
+!.env.example
 .session-secret
 .github-access
 .github-remote
@@ -248,3 +251,9 @@ media/turni.jsonl
 # di lavoro. Stanno fuori dal repo come i backups/ veri e propri.
 media/*.bak.json
 media/*.bak
+
+# Immagini generate dai modelli e loro stato locale: sono contenuti dell'utente (possono
+# contenere volti, loghi, documenti) e un registro di consumo. Mai nel repository pubblico.
+media/immagini/
+media/immagini-prefs.json
+media/google-prefs.json

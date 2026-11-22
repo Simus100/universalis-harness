@@ -48,6 +48,29 @@ import { pacchetto as memoriaPacchetto, statoMemoria as memoriaStato, indiceDaAg
 import { createDecisionMService } from "./media/decision-m-service.mjs";
 import { analizza as analizzaTimestral, createTimestralClient, GRANULARITA as TIMESTRAL_GRANULARITA, parseCsv as parseTimestralCsv, SIZES as TIMESTRAL_TAGLIE } from "./media/timestral-client.mjs";
 import { createTimestralExtension } from "./media/timestral-tool.mjs";
+import { createImmaginiExtension } from "./media/immagini-tool.mjs";
+import { createGeminiDecisionExtension, leggiPrefsGoogle, salvaPrefsGoogle } from "./media/gemini-decision-tool.mjs";
+import {
+  elencoImmagini,
+  leggiPrefs as leggiPrefsImmagini,
+  leggiRiferimento,
+  registra as registraImmagine,
+  salvaImmagine,
+  salvaPrefs as salvaPrefsImmagini,
+  ultimeGenerazioni,
+} from "./media/immagini.mjs";
+import { disponibile as googleDisponibile, generaImmagine, improntaChiave, verificaChiave } from "./media/gemini-client.mjs";
+import {
+  FORMATI_IMMAGINE,
+  MODELLI_IMMAGINE,
+  MODELLO_IMMAGINE_DEFAULT,
+  PROVIDER_GESTITI,
+  etichettaModello,
+  isChatModel,
+  modelloImmagine,
+  ordinaModelli,
+  stimaCostoImmagine,
+} from "./media/providers.mjs";
 import { bilancioContesto, sprecoCache, classeErrore, impronta } from "./media/contesto.mjs";
 import { createControlloTurnoExtension } from "./media/controllo-turno.mjs";
 import {
@@ -1120,6 +1143,131 @@ function timestralToolEnabled() {
   return TIMESTRAL_AVAILABLE && !!timestralClient.prefs.enabled;
 }
 
+// ---- Google AI Studio: classificatore e immagini ---------------------------
+// Due cose DIVERSE dallo stesso fornitore, unite solo dalla chiave:
+//   gemini_decision  → probabilità calibrate (nessun processo, nessuna RAM, ~0,3 s)
+//   genera_immagine  → un'immagine, salvata in media/immagini/ (si paga a immagine)
+// L'estensione si registra sempre (è il gate dei tool a decidere se il modello li vede):
+// se la chiave manca i tool spariscono dalla lista, invece di restare lì a fallire.
+const GOOGLE_TOOL_NAMES = new Set(["gemini_decision"]);
+const IMMAGINI_TOOL_NAMES = new Set(["genera_immagine"]);
+
+/** La chiave Google c'è? Lettura memoizzata: `disponibile()` tocca l'auth.json. */
+let cacheChiaveGoogle = { quando: 0, presente: false, impronta: "" };
+function googlePronta() {
+  if (Date.now() - cacheChiaveGoogle.quando < 5000) return cacheChiaveGoogle.presente;
+  let presente = false;
+  let impronta = "";
+  try {
+    // Una lettura sola per 5 secondi: `getState` viene chiamato a ogni broadcast e leggere
+    // l'auth.json ogni volta sarebbe lavoro inutile (l'impronta serve solo alla UI).
+    presente = googleDisponibile();
+    if (presente) impronta = improntaChiave();
+  } catch {
+    presente = false;
+  }
+  cacheChiaveGoogle = { quando: Date.now(), presente, impronta };
+  return presente;
+}
+/** Ultime 4 cifre della chiave in uso, dalla stessa cache: mai il valore intero. */
+function googleImpronta() {
+  googlePronta();
+  return cacheChiaveGoogle.impronta;
+}
+
+const GEMINI_DECISION_EXT = createGeminiDecisionExtension({
+  mediaDir: MEDIA_DIR,
+  rootDir: () => ROOT,
+  prefs: () => leggiPrefsGoogle(MEDIA_DIR),
+  log: (m) => console.log(m),
+});
+const IMMAGINI_EXT = createImmaginiExtension({
+  mediaDir: MEDIA_DIR,
+  rootDir: () => ROOT,
+  prefs: () => leggiPrefsImmagini(MEDIA_DIR),
+  log: (m) => console.log(m),
+});
+
+/** Vero se i tool Google vanno nella lista inviata al modello. */
+function googleToolEnabled() {
+  return googlePronta() && !!leggiPrefsGoogle(MEDIA_DIR).decisione;
+}
+function immaginiToolEnabled() {
+  return googlePronta() && !!leggiPrefsImmagini(MEDIA_DIR).attivo;
+}
+
+/**
+ * Verifica una chiave PRIMA di salvarla. È una chiamata di sola lettura: se fallisce la chiave
+ * non viene scritta e l'utente legge il motivo vero (chiave sbagliata, quota, rete), invece di
+ * scoprirlo al primo messaggio in chat.
+ */
+async function verificaProviderKey(providerId, key) {
+  if (providerId === "google") return verificaChiave(key);
+  const p = PROVIDER_GESTITI.find((x) => x.id === providerId);
+  if (!p?.baseUrl) throw new Error(`provider ${providerId}: nessuna verifica disponibile`);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20_000);
+  try {
+    let res = await fetch(`${p.baseUrl.replace(/\/$/, "")}/models`, {
+      headers: { Authorization: `Bearer ${key}` },
+      signal: ctrl.signal,
+    });
+    if (res.status === 404) {
+      res = await fetch(`${p.baseUrl.replace(/\/$/, "")}/v1/models`, {
+        headers: { Authorization: `Bearer ${key}` },
+        signal: ctrl.signal,
+      });
+    }
+    if (res.status === 401 || res.status === 403) throw new Error(`${p.label} rifiuta la chiave (HTTP ${res.status})`);
+    if (!res.ok) throw new Error(`${p.label} ha risposto HTTP ${res.status}`);
+    return { ok: true };
+  } catch (e) {
+    if (e?.name === "AbortError") throw new Error(`${p.label} non ha risposto entro 20 s`);
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Scrive una chiave in `~/.pi/agent/auth.json` (0600, FUORI dal repository) e la rende attiva
+ * subito nel runtime. Scrittura atomica: un file auth.json troncato a metà vorrebbe dire
+ * perdere anche le altre chiavi. La chiave non viene mai restituita né loggata.
+ */
+async function salvaChiaveProvider(providerId, key) {
+  const dir = getAgentDir();
+  const file = join(dir, "auth.json");
+  await fs.mkdir(dir, { recursive: true });
+  let dati = {};
+  try {
+    dati = JSON.parse(await fs.readFile(file, "utf8"));
+  } catch {
+    dati = {};
+  }
+  if (key) dati[providerId] = { type: "api_key", key };
+  else delete dati[providerId];
+  const tmp = `${file}.tmp-${process.pid}-${Date.now()}`;
+  await fs.writeFile(tmp, `${JSON.stringify(dati, null, 2)}\n`, { mode: 0o600 });
+  await fs.rename(tmp, file);
+  await fs.chmod(file, 0o600).catch(() => {});
+  cacheChiaveGoogle = { quando: 0, presente: false };
+  // Il runtime tiene le credenziali in memoria: senza questo il modello nuovo comparirebbe
+  // solo dopo un riavvio del servizio.
+  try {
+    await modelRuntime.setRuntimeApiKey(providerId, key || "");
+  } catch {
+    /* se il runtime non accetta il cambio, il file è comunque scritto: si applica al riavvio */
+  }
+  try {
+    await modelRuntime.refresh({ allowNetwork: false });
+  } catch {
+    /* la disponibilità si riallinea alla prossima lettura */
+  }
+  applyToolGate();
+  broadcast("state", getState());
+  return { ok: true };
+}
+
 /** Ultima firma dello stato vista dal ciclo: evita broadcast inutili ogni pochi secondi. */
 let decisionMSignature = "";
 /**
@@ -1507,7 +1655,8 @@ const CONTROLLO_TURNO = createControlloTurnoExtension({
         message:
           `Turno fermato dalla guardia: ${motivo}. ` +
           `Contesto: ${stato?.passi ?? "?"} chiamate a tool in questo turno. ` +
-          `Se il lavoro era legittimo, riprendilo in un turno nuovo (o alza la soglia con DASH_GUARDIA_PASSI).`,
+          `Se il lavoro era legittimo, riprendilo in un turno nuovo (o alza il tetto con DASH_GUARDIA_MAX, ` +
+          `i passi ripetuti con DASH_GUARDIA_PASSI).`,
         guardia: true,
       });
     } catch {
@@ -1528,7 +1677,17 @@ const resourceLoader = new DefaultResourceLoader({
   agentDir: getAgentDir(),
   additionalExtensionPaths,
   additionalSkillPaths: [SKILLS_DIR],
-  extensionFactories: [...(CONTROLLO_OFF ? [] : [CONTROLLO_TURNO]), MEDIA_GUARD_EXT, BROWSER_EXT, MEMORIA_EXT, ...(ASK_EXT ? [ASK_EXT] : []), ...(DECISION_M_EXT ? [DECISION_M_EXT] : []), ...(TIMESTRAL_EXT ? [TIMESTRAL_EXT] : [])],
+  extensionFactories: [
+    ...(CONTROLLO_OFF ? [] : [CONTROLLO_TURNO]),
+    MEDIA_GUARD_EXT,
+    BROWSER_EXT,
+    MEMORIA_EXT,
+    ...(ASK_EXT ? [ASK_EXT] : []),
+    ...(DECISION_M_EXT ? [DECISION_M_EXT] : []),
+    ...(TIMESTRAL_EXT ? [TIMESTRAL_EXT] : []),
+    GEMINI_DECISION_EXT,
+    IMMAGINI_EXT,
+  ],
   systemPromptOverride: (base) => {
     // NIENTE contenuto dinamico qui: la stabilità del prefisso è ciò che tiene viva la cache.
     const testo = `${base ?? ""}${SYSTEM_MEDIA_NOTE}`;
@@ -1674,6 +1833,8 @@ function applyToolGate({ forza = false } = {}) {
   for (const n of ASK_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
   for (const n of DECISION_M_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
   for (const n of TIMESTRAL_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
+  for (const n of GOOGLE_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
+  for (const n of IMMAGINI_TOOL_NAMES) if (registered.has(n) && !names.includes(n)) names.push(n);
   if (!subagentsEnabled) names = names.filter((n) => !SUBAGENT_TOOL_NAMES.has(n));
   if (!browserEnabled) names = names.filter((n) => !BROWSER_TOOL_NAMES.has(n));
   if (!askToolEnabled()) names = names.filter((n) => !ASK_TOOL_NAMES.has(n));
@@ -1682,6 +1843,10 @@ function applyToolGate({ forza = false } = {}) {
   if (!decisionMToolEnabled()) names = names.filter((n) => !DECISION_M_TOOL_NAMES.has(n));
   // spenta la feature, il modello non vede i tool di Timestral e non li chiama a vuoto
   if (!timestralToolEnabled()) names = names.filter((n) => !TIMESTRAL_TOOL_NAMES.has(n));
+  // senza chiave Google (o con l'interruttore spento) i tool non vengono mostrati: il modello
+  // non deve nemmeno provare a chiamare qualcosa che non può funzionare
+  if (!googleToolEnabled()) names = names.filter((n) => !GOOGLE_TOOL_NAMES.has(n));
+  if (!immaginiToolEnabled()) names = names.filter((n) => !IMMAGINI_TOOL_NAMES.has(n));
   // percorso ufficiale: abilita per nome dal registry e ricostruisce il system prompt
   if (typeof session.setActiveToolsByName === "function") session.setActiveToolsByName(names);
   else session.agent.state.tools = allToolsOf(session).filter((t) => names.includes(t.name));
@@ -2833,6 +2998,22 @@ function getState({ withMessages = false } = {}) {
         .map((t) => t.name)
         .filter((n) => SUBAGENT_TOOL_NAMES.has(n)),
     },
+    // Google: una chiave, due capacità. La UI mostra gli interruttori solo se la chiave c'è;
+    // senza chiave i tool non vengono nemmeno inviati al modello (vedi applyToolGate).
+    google: {
+      chiave: googlePronta(),
+      impronta: googlePronta() ? googleImpronta() : "",
+      decisione: { attivo: googlePronta() && !!leggiPrefsGoogle(MEDIA_DIR).decisione },
+      immagini: {
+        attivo: googlePronta() && !!leggiPrefsImmagini(MEDIA_DIR).attivo,
+        modello: leggiPrefsImmagini(MEDIA_DIR).modello || MODELLO_IMMAGINE_DEFAULT,
+        formato: leggiPrefsImmagini(MEDIA_DIR).formato || "1:1",
+        dimensione: leggiPrefsImmagini(MEDIA_DIR).dimensione || "1K",
+        catalogo: MODELLI_IMMAGINE,
+        default: MODELLO_IMMAGINE_DEFAULT,
+        formati: FORMATI_IMMAGINE,
+      },
+    },
     browser: {
       available: ALL_TOOLS.some((t) => BROWSER_TOOL_NAMES.has(t.name)),
       enabled: browserEnabled,
@@ -3016,13 +3197,18 @@ function handleSessionEvent(event) {
 
 /** Elenco modelli utilizzabili adesso (credenziali configurate). */
 function availableModels() {
+  let list = [];
   try {
     const snap = modelRuntime.getAvailableSnapshot?.() || [];
-    if (snap.length) return snap.map((m) => ({ id: m.id, provider: m.provider, label: `${m.id} · ${m.provider}` }));
+    // SOLO modelli da chat: il catalogo mescola immagini, TTS, live e embedding, e scegliere
+    // uno di quelli in barra romperebbe la sessione in modo difficile da capire.
+    list = snap.filter(isChatModel).map((m) => ({ id: m.id, provider: m.provider, label: etichettaModello(m) }));
   } catch {
     /* fallback sotto */
   }
-  return [{ id: model.id, provider: model.provider, label: `${model.id} · ${model.provider}` }];
+  if (!list.length) list = [{ id: model.id, provider: model.provider, label: etichettaModello(model) }];
+  // il provider che sta lavorando per primo: chi è in conversazione non deve cercarsi il modello
+  return ordinaModelli(list, model?.provider);
 }
 
 /**
@@ -3111,11 +3297,11 @@ const COMMAND_HANDLERS = {
       const list = availableModels();
       return { message: `modello attuale: ${model.id} (${model.provider})\nmodelli usabili:\n${list.map((m) => `• ${m.id} · ${m.provider}`).join("\n")}` };
     }
-    const match = availableModels().find((x) => x.id === id);
+    const match = availableModels().find((x) => x.id === id || `${x.provider}/${x.id}` === id);
     const found =
-      (match ? modelRuntime.getModel(match.provider, id) : undefined) ||
-      modelRuntime.getModel("deepseek", id) ||
-      modelRuntime.getModel(id.split("/")[0], id.split("/").slice(1).join("/"));
+      (match ? modelRuntime.getModel(match.provider, match.id) : undefined) ||
+      modelRuntime.getModel(id.split("/")[0], id.split("/").slice(1).join("/")) ||
+      modelRuntime.getModel("deepseek", id);
     if (!found) throw new HttpError(404, `modello non trovato: ${id}`);
     model = found;
     await session.setModel(found);
@@ -5240,6 +5426,190 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // ---------------- Google AI Studio: chiavi, classificatore, immagini --------
+    // GET  /api/providers         stato delle chiavi (impronta, mai il valore)
+    // POST /api/providers/key     { provider, key } verifica e salva · { provider, rimuovi: true }
+    // GET  /api/immagini          stato + galleria + registro delle generazioni
+    // POST /api/immagini/genera   { prompt, modello?, formato?, dimensione?, riferimento? }
+    // POST /api/immagini          { attivo?, modello?, formato?, dimensione? }
+    if (req.method === "GET" && url.pathname === "/api/providers") {
+      const elenco = PROVIDER_GESTITI.map((p) => {
+        const daEnv = String(process.env[p.envVar] || "").trim().length > 0;
+        // «configurato» lo sa il runtime (env O auth.json O --api-key): chiederlo a lui evita
+        // di dichiarare assente una chiave che invece sta funzionando (era il caso di DeepSeek,
+        // salvato in auth.json e non in .env).
+        let presente = false;
+        try {
+          presente = !!modelRuntime.hasConfiguredAuth?.(p.id) || daEnv;
+        } catch {
+          presente = daEnv;
+        }
+        if (p.id === "google") presente = googlePronta() || presente;
+        let fonte = daEnv ? "env" : "";
+        if (!fonte && presente) fonte = "auth.json";
+        return {
+          id: p.id,
+          label: p.label,
+          envVar: p.envVar,
+          dove: p.dove,
+          nota: p.nota,
+          configured: presente,
+          fonte,
+          impronta: !presente
+            ? ""
+            : p.id === "google"
+              ? googleImpronta()
+              : // per gli altri provider: ultime 4 cifre da dove la chiave sta davvero
+                (() => {
+                  try {
+                    const k = daEnv
+                      ? String(process.env[p.envVar] || "")
+                      : String(JSON.parse(readFileSync(join(getAgentDir(), "auth.json"), "utf8"))?.[p.id]?.key || "");
+                    return k && !k.startsWith("$") && !k.startsWith("!") ? `…${k.slice(-4)}` : "";
+                  } catch {
+                    return "";
+                  }
+                })(),
+          // quante voci di questo provider il selettore in alto può offrire adesso
+          modelli: availableModels().filter((m) => m.provider === p.id).length,
+        };
+      });
+      return json(res, 200, { providers: elenco });
+    }
+
+    // Interruttore della feature (come /api/timestral): il classificatore remoto si può
+    // spegnere senza togliere la chiave, e spegnerlo toglie il tool dalla lista del modello.
+    if (req.method === "POST" && url.pathname === "/api/providers") {
+      const body = await readBody(req, 8 * 1024);
+      const patch = {};
+      if (typeof body.decisione === "boolean") patch.decisione = body.decisione;
+      if (!Object.keys(patch).length) return json(res, 400, { error: "serve { decisione: true|false }" });
+      const nuove = salvaPrefsGoogle(MEDIA_DIR, patch);
+      applyToolGate();
+      broadcast("state", getState());
+      return json(res, 200, { ok: true, ...nuove, attivo: googleToolEnabled() });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/providers/key") {
+      const body = await readBody(req, 16 * 1024);
+      const providerId = String(body.provider || "").trim();
+      const p = PROVIDER_GESTITI.find((x) => x.id === providerId);
+      if (!p) return json(res, 400, { error: `provider non gestito: ${providerId || "(vuoto)"}` });
+      if (body.rimuovi === true) {
+        // Rimuove SOLO da auth.json: se la chiave arriva dall'ambiente (.env + systemd) quella
+        // resta, ed è giusto così — l'ambiente non è della dashboard.
+        await salvaChiaveProvider(providerId, "");
+        return json(res, 200, { ok: true, provider: providerId, configured: providerId === "google" ? googlePronta() : false });
+      }
+      const key = String(body.key || "").trim();
+      if (key.length < 20) return json(res, 400, { error: "la chiave sembra troppo corta: incollala per intero" });
+      if (/\s/.test(key)) return json(res, 400, { error: "la chiave contiene spazi o a capo: ricontrolla il copia-incolla" });
+      try {
+        await verificaProviderKey(providerId, key);
+      } catch (e) {
+        return json(res, 400, { error: `chiave non valida: ${String(e?.message || e)}` });
+      }
+      await salvaChiaveProvider(providerId, key);
+      return json(res, 200, { ok: true, provider: providerId, configured: true, modelli: availableModels().filter((m) => m.provider === providerId).length });
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/immagini") {
+      const p = leggiPrefsImmagini(MEDIA_DIR);
+      const galleria = await elencoImmagini({ mediaDir: MEDIA_DIR, rootDir: ROOT, max: 60 }).catch(() => []);
+      return json(res, 200, {
+        chiave: googlePronta(),
+        attivo: googlePronta() && !!p.attivo,
+        modello: p.modello || MODELLO_IMMAGINE_DEFAULT,
+        formato: p.formato || "1:1",
+        dimensione: p.dimensione || "1K",
+        default: MODELLO_IMMAGINE_DEFAULT,
+        catalogo: MODELLI_IMMAGINE,
+        formati: FORMATI_IMMAGINE,
+        galleria,
+        registro: await ultimeGenerazioni(MEDIA_DIR, 40).catch(() => []),
+      });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/immagini") {
+      const body = await readBody(req, 8 * 1024);
+      const patch = {};
+      if (typeof body.attivo === "boolean") patch.attivo = body.attivo;
+      if (body.modello != null) {
+        if (!modelloImmagine(body.modello)) return json(res, 400, { error: `modello immagine non gestito: ${body.modello}` });
+        patch.modello = String(body.modello);
+      }
+      if (body.formato != null) {
+        if (!FORMATI_IMMAGINE.includes(String(body.formato))) return json(res, 400, { error: `formato non ammesso: ${body.formato}` });
+        patch.formato = String(body.formato);
+      }
+      if (body.dimensione != null) patch.dimensione = String(body.dimensione).toUpperCase();
+      if (!Object.keys(patch).length) return json(res, 400, { error: "niente da cambiare" });
+      const nuove = await salvaPrefsImmagini(MEDIA_DIR, patch);
+      applyToolGate();
+      broadcast("state", getState());
+      return json(res, 200, { ok: true, ...nuove });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/immagini/genera") {
+      if (!googlePronta()) return json(res, 400, { error: "nessuna chiave Google configurata: inseriscila dal pannello «chiavi»" });
+      const p = leggiPrefsImmagini(MEDIA_DIR);
+      if (!p.attivo) return json(res, 403, { error: "generazione immagini disattivata su questa istanza" });
+      const body = await readBody(req, 32 * 1024);
+      const prompt = String(body.prompt || "").trim();
+      if (!prompt) return json(res, 400, { error: "serve un prompt" });
+      const meta = modelloImmagine(body.modello) || modelloImmagine(p.modello) || modelloImmagine(MODELLO_IMMAGINE_DEFAULT);
+      const formato = FORMATI_IMMAGINE.includes(String(body.formato)) ? String(body.formato) : p.formato || "1:1";
+      const dim = meta.dimensioni.includes(String(body.dimensione || "").toUpperCase())
+        ? String(body.dimensione).toUpperCase()
+        : meta.dimensioni[0];
+      const t0 = Date.now();
+      try {
+        const rif = Array.isArray(body.riferimento)
+          ? body.riferimento.filter(Boolean).slice(0, 4).map((x) => leggiRiferimento(ROOT, x))
+          : [];
+        // Il modulo immagini è quello del tool: stessa generazione, stesso salvataggio, stesso
+        // registro. Due implementazioni parallele divergono, e quella usata meno si rompe prima.
+        const out = await generaImmagine({ prompt, model: meta.id, formato, dimensione: dim, riferimenti: rif });
+        const file = await salvaImmagine({ dati: out.dati, mime: out.mime, prompt, mediaDir: MEDIA_DIR, rootDir: ROOT });
+        const costo = stimaCostoImmagine(meta.id);
+        await registraImmagine(MEDIA_DIR, {
+          esito: "ok",
+          modello: meta.id,
+          formato,
+          dimensione: dim,
+          file: file.relativo,
+          byte: file.byte,
+          ms: Date.now() - t0,
+          costo_usd: costo,
+          riferimento: rif.length,
+          prompt: prompt.slice(0, 240),
+          origine: "dashboard",
+        });
+        const galleria = await elencoImmagini({ mediaDir: MEDIA_DIR, rootDir: ROOT, max: 60 }).catch(() => []);
+        return json(res, 200, {
+          ok: true,
+          file: file.relativo,
+          byte: file.byte,
+          mime: file.mime,
+          modello: meta.id,
+          formato,
+          dimensione: dim,
+          ms: Date.now() - t0,
+          costo_usd: costo,
+          testo: out.testo || "",
+          galleria,
+        });
+      } catch (e) {
+        const msg = String(e?.message || e);
+        try {
+          await registraImmagine(MEDIA_DIR, { esito: "errore", modello: meta.id, formato, dimensione: dim, errore: msg.slice(0, 300), prompt: prompt.slice(0, 240), origine: "dashboard" });
+        } catch {
+          /* il registro non deve nascondere l'errore */
+        }
+        return json(res, e?.code === 429 ? 429 : e?.code === 401 ? 401 : 400, { error: msg });
+      }
+    }
+
     if (req.method === "GET" && url.pathname === "/api/ask") {
       return json(res, 200, askBroker.snapshot({ withResolved: true }));
     }
@@ -5958,12 +6328,21 @@ const server = http.createServer(async (req, res) => {
     if (req.method === "POST" && url.pathname === "/api/model") {
       const body = await readBody(req);
       const id = String(body.id || "");
+      // Si risolve sull'elenco USABILE adesso (che conosce il provider), non con un fallback
+      // cablato su deepseek: con due provider configurati quel fallback rendeva invisibili i
+      // modelli dell'altro e rispondeva «non trovato» a un modello che esiste.
+      const disponibile = availableModels().find((x) => x.id === id || `${x.provider}/${x.id}` === id);
       const m =
-        modelRuntime.getModel("deepseek", id) ??
-        modelRuntime.getModel(id.split("/")[0], id.split("/").slice(1).join("/"));
+        (disponibile ? modelRuntime.getModel(disponibile.provider, disponibile.id) : undefined) ??
+        modelRuntime.getModel(id.split("/")[0], id.split("/").slice(1).join("/")) ??
+        modelRuntime.getModel("deepseek", id);
       if (!m) return json(res, 404, { error: `modello non trovato: ${id}` });
       model = m;
       await session.setModel(m);
+      // Un modello può non supportare il livello di thinking corrente: si riporta dentro il
+      // primo livello ammesso, altrimenti la sessione resta con un livello che il modello ignora.
+      const sup = supportedLevels(m);
+      if (sup.length && !sup.includes(session.thinkingLevel)) session.setThinkingLevel(sup[0]);
       broadcast("state", getState());
       return json(res, 200, getState());
     }
