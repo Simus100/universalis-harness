@@ -264,3 +264,20 @@ media/google-prefs.json
 # costi e misure dell'istanza, che non servono nel repository pubblico. Il perché della scelta
 # sta nella memoria della sessione; il documento è in media/ottimizzazione-token/report.md.
 media/ottimizzazione-token/
+
+# Materiale di lavoro dei progetti (2026-11-22). Nel repository pubblico entrano il prodotto, le
+# skill, la documentazione e le figure; questi sono contenuti di progetti reali (Aion, Nexus, brand,
+# demo, giochi, archivi di lavoro) e a chi clona non servono: restano sul disco dell'istanza, fuori
+# dal repository. NOTA: sono già nella storia git fino a questo commit — per toglierli anche da lì
+# serve una riscrittura della storia (git filter-repo). Motivo: prodotto vergine per chi clona.
+media/aion-*/
+media/nexus-*/
+media/universalis-brand/
+media/promo-harness/
+media/demo-harness/
+media/giochi/
+media/archivio/
+media/meteo/
+media/ricerca-web/
+media/harness-audit/
+media/domain-switch/
