@@ -5,7 +5,9 @@
   "scripts": {
     "harness": "node harness.mjs",
     "dashboard": "node dashboard.mjs",
-    "test": "node media/test-locali.mjs"
+    "test": "node media/test-locali.mjs",
+    "start": "node dashboard.mjs --port 8420",
+    "check-clone": "bash media/test-clone.sh"
   },
   "version": "1.0.0",
   "description": "Agente AI con dashboard web: chat con tracciamento dei costi, file manager, obiettivi, pianificazioni, skill e browser pilotato.",
@@ -19,5 +21,15 @@
     "dashboard",
     "self-hosted",
     "automation"
-  ]
+  ],
+  "dependencies": {
+    "@earendil-works/pi-coding-agent": "^1.6.0"
+  },
+  "optionalDependencies": {
+    "pi-subagents": "^0.89.2",
+    "pi-web-access": "^0.48.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
 }

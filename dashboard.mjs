@@ -668,8 +668,11 @@ const MAX_ZIP_FILES = 3000;
 const MAX_ZIP_BYTES = 128 * 1024 * 1024; // 128 MB non compressi
 const MAX_ATTACH = 32 * 1024 * 1024; // 32 MB per allegato in chat
 
-// cartella predefinita di TUTTI i file generati
-const MEDIA_DIR = resolve(process.env.DASH_MEDIA_DIR || "/root/pi-harness/media");
+// cartella predefinita di TUTTI i file generati.
+// Portabile (2026-11-22): senza DASH_MEDIA_DIR si usa `media/` DENTRO il progetto. Prima il default
+// era il percorso assoluto `/root/pi-harness/media`, che su un clone esiste solo se l'utente si
+// chiama come l'autore e ha quella cartella: i file generati finivano fuori dal progetto.
+const MEDIA_DIR = resolve(process.env.DASH_MEDIA_DIR || join(__dirname, "media"));
 await fs.mkdir(MEDIA_DIR, { recursive: true }).catch(() => {});
 
 // cartella delle skill (standard Agent Skills: una sottocartella con SKILL.md
@@ -946,11 +949,39 @@ if (!model) {
   process.exit(1);
 }
 
-// I subagent sono caricati SOLO qui (non nelle sessioni CLI globali),
-// via `additionalExtensionPaths`, così non partono mai per conto loro altrove.
+/**
+ * Estensioni del motore (2026-11-22). Si cerca PRIMA dentro il progetto (`node_modules/`): un clone
+ * che ha fatto `npm install` è autonomo e non dipende da pacchetti globali della macchina. Se la
+ * copia locale non c'è si ricade sul percorso globale storico, che è quello che usa l'istanza di
+ * produzione: per lei il comportamento resta identico.
+ */
+function primaEsistente(...percorsi) {
+  for (const p of percorsi) if (p && existsSync(p)) return p;
+  return null;
+}
 const SUBAGENT_EXT =
-  process.env.DASH_SUBAGENT_EXT || "/root/.pi/agent/npm/node_modules/pi-subagents/index.ts";
-const additionalExtensionPaths = existsSync(SUBAGENT_EXT) ? [SUBAGENT_EXT] : [];
+  process.env.DASH_SUBAGENT_EXT ||
+  primaEsistente(
+    // il pacchetto npm mette il bundle in ./bundle/index.js, la copia storica in ./index.ts:
+    // si provano entrambi, prima nel progetto e poi nell'installazione globale.
+    join(__dirname, "node_modules/pi-subagents/index.ts"),
+    join(__dirname, "node_modules/pi-subagents/bundle/index.js"),
+    join(__dirname, "node_modules/pi-subagents/index.js"),
+    "/root/.pi/agent/npm/node_modules/pi-subagents/index.ts",
+    join(getAgentDir(), "npm", "node_modules", "pi-subagents", "index.ts"),
+  ) ||
+  "";
+// Tool web (web_search, fetch_content, source_check, get_search_content): l'SDK carica da sé i
+// pacchetti presenti nel suo agentDir. Se però il progetto ha la sua copia in `node_modules` e
+// quella globale NON c'è (clone su una macchina nuova), la si passa esplicitamente. La condizione
+// «globale assente» evita di registrare gli stessi tool due volte sulla macchina dell'autore.
+const WEB_ACCESS_LOCALE = join(__dirname, "node_modules/pi-web-access/index.ts");
+const WEB_ACCESS_GLOBALE = join(getAgentDir(), "npm", "node_modules", "pi-web-access", "index.ts");
+const additionalExtensionPaths = [];
+if (SUBAGENT_EXT) additionalExtensionPaths.push(SUBAGENT_EXT);
+if (!existsSync(WEB_ACCESS_GLOBALE) && existsSync(WEB_ACCESS_LOCALE)) {
+  additionalExtensionPaths.push(WEB_ACCESS_LOCALE);
+}
 const GOALS_FILE = process.env.DASH_GOALS_FILE || join(MEDIA_DIR, "goals.json");
 const SYSTEM_MEDIA_NOTE =
   `\n\n## Domande all'utente (tool \`ask_user\`)\n` +

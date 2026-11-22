@@ -20,10 +20,36 @@ locali che si accendono a richiesta — un solo processo Node, nessun database, 
 salva un riepilogo. In alto, sempre visibili: modello, livello di ragionamento, contesto occupato,
 token in ingresso e uscita, cache, **costo della sessione**, branch git, cartella di lavoro, durata.*
 
+## Installazione in 5 minuti
+
+```bash
+git clone https://github.com/Simus100/universalis-harness.git
+cd universalis-harness
+npm install                      # SDK dell'agente + estensioni (web, subagent)
+cp .env.example .env             # utente, password, percorsi — dentro non c'è nessun segreto
+node dashboard.mjs --port 8420   # oppure: npm start
+```
+
+Apri `http://127.0.0.1:8420`, fai login e incolla **la tua** chiave dal pannello **🔑 chiavi**: la
+dashboard la verifica e la salva in `~/.pi/agent/auth.json` (permessi `0600`, fuori dal repository).
+In alternativa la chiave sta in `.env` (`GEMINI_API_KEY=…`). Senza chiave la dashboard funziona: dice
+quali provider sono pronti e quali mancano (`node scripts/onboarding-provider.mjs` elenca cosa serve).
+
+| verifica | comando | cosa deve dire |
+|---|---|---|
+| il server è su | `curl -u utente:password http://127.0.0.1:8420/api/health` | `{"ok":true,…}` con l'elenco delle capacità |
+| il repository basta a se stesso | `npm run check-clone` | `clone autosufficiente: 0 problemi` — copia i file versionati in `/tmp`, fa `npm install`, avvia con **ambiente vuoto** e controlla percorsi, tool e endpoint delle chiavi |
+| il contesto che stai pagando | `curl -u … /api/contesto` | prefisso per sezione, cache, costo del turno |
+
+Serve **Node ≥ 22** e nient'altro: il resto è facoltativo e si accende quando serve (Chrome per il
+tool browser, `ffmpeg` per i video, un modello locale per Decision_M e Timestral). Se qualcosa
+manca, la dashboard lo dice nella vista *Servizi* invece di fallire in silenzio.
+
 ---
 
 ## Indice
 
+- [Installazione in 5 minuti](#installazione-in-5-minuti)
 - [Che cosa risolve](#che-cosa-risolve)
 - [Perché questo harness (e non un altro)](#perché-questo-harness-e-non-un-altro)
 - [Un turno dall'interno](#un-turno-dallinterno)
@@ -525,6 +551,7 @@ Dettagli su porte, utenti e limiti per più istanze sullo stesso server in
 | Componente | Obbligatorio | Note |
 |---|---|---|
 | Linux con systemd | sì | testato su Node 24, richiede Node ≥ 22 |
+| `npm install` | sì | installa l'SDK dell'agente e le due estensioni (`pi-web-access`, `pi-subagents`), dichiarate in `package.json` |
 | Node.js | sì | nessuna build, nessun transpiler |
 | Caddy (o altro reverse proxy) | per HTTPS | non deve comprimere lo stream SSE |
 | Chrome headless | no | solo per il tool `browser`, con un utente di sistema dedicato |
