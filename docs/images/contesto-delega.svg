@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 340" width="1000" height="340" role="img" aria-label="La stessa ricognizione costa 2.549 token di contesto o 570 con il subagent">
+  <title>La stessa ricognizione costa 2.549 token di contesto o 570 con il subagent</title>
+  <desc>Confronto del contesto permanente che resta al padre: 2.549 token leggendo 88 righe di grep in casa, 570 token ricevendo la sintesi del subagent. Misura reale del 22/11/2026: 9.178 caratteri contro 2.048. Il turno del subagent costa 0,0051 dollari e 13,4 secondi, in un contesto separato.</desc>
+
+  <rect x="4" y="4" width="992" height="332" rx="18" fill="#0d1420" stroke="#1e2a3d" stroke-width="2"/>
+  <text x="32" y="46" font-family="system-ui,Segoe UI,sans-serif" font-size="19" fill="#eef2f9" font-weight="700">2.549 token di contesto, o 570 delegando</text>
+  <text x="32" y="70" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#8b97ac">la stessa ricognizione (88 righe su 13 file), misurata: quello che resta nel contesto e si ripaga a ogni turno</text>
+  <text x="32" y="132" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#c6cfdd">fai da te</text>
+  <rect x="330" y="104" width="509.8" height="44" rx="4" fill="#fbbf24"/>
+  <text x="850" y="132" font-family="ui-monospace.Menlo.monospace" font-size="14" fill="#eef2f9" font-weight="700">2.549</text>
+  <text x="32" y="214" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#c6cfdd">con subagent</text>
+  <rect x="330" y="186" width="114.0" height="44" rx="4" fill="#34d399"/>
+  <text x="454" y="214" font-family="ui-monospace.Menlo.monospace" font-size="14" fill="#eef2f9" font-weight="700">570</text>
+  <text x="32" y="268" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#34d399" font-weight="700">−78% di contesto permanente</text>
+  <text x="32" y="292" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#8b97ac">Il prezzo non è il contesto ma il denaro: il turno del figlio costa 0,0051 dollari e 13,4 secondi. Conviene quando</text>
+  <text x="32" y="310" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#8b97ac">la ricognizione è grande e rumorosa: la sintesi non si rilegge a ogni turno successivo come farebbero 88 righe di grep.</text>
+</svg>

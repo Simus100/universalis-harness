@@ -25,6 +25,7 @@ token in ingresso e uscita, cache, **costo della sessione**, branch git, cartell
 ## Indice
 
 - [Che cosa risolve](#che-cosa-risolve)
+- [Perché questo harness (e non un altro)](#perché-questo-harness-e-non-un-altro)
 - [Un turno dall'interno](#un-turno-dallinterno)
 - [Le capacità, una per una](#le-capacità-una-per-una)
 - [Architettura](#architettura)
@@ -62,6 +63,40 @@ Questo progetto è la parte noiosa e difficile di quel salto, fatta in modo veri
 Non è un prototipo: nasce come strumento di lavoro quotidiano, con istanze in uso e un
 sottocliente servito dalla stessa base di codice. La sezione [Limiti dichiarati](#limiti-dichiarati)
 dice con la stessa chiarezza che cosa **non** è.
+
+---
+
+## Perché questo harness (e non un altro)
+
+La maggior parte degli harness per agenti ottimizza una cosa sola: far girare il modello sui file.
+Qui il punto di partenza è un fatto misurato — **il contesto è la voce che cresce da sola** — e ogni
+scelta di progetto discende da lì. Un agente che non amministra il contesto diventa insieme più caro
+e più distratto: sono lo stesso problema.
+
+| Dove si distingue | Come si vede | Perché conta |
+|---|---|---|
+| **Il contesto è amministrato, non subito** | prefisso stabile per la cache (97,5% di hit misurato), gate dei tool ricalcolato a ogni turno, esiti troncati con la nota per rileggere, indice delle skill invece dei corpi | una sessione lunga resta leggibile, e il costo del turno è in barra invece che a fine mese |
+| **Ogni decisione automatica è leggibile** | la nota «subagent attivato automaticamente» dichiara motivo, soglie e prezzo; la barra mostra token, cache, costo e durata del turno | un agente che decide da solo senza dirlo è indistinguibile da un agente che sbaglia |
+| **Telemetria per turno, non per fattura** | `media/turni.jsonl`, bilancio del contesto per sezione, spreco di cache, classi di errore | si interviene sul turno che costa, non sul totale del mese |
+| **Servizi locali accesi a richiesta** | Decision_M (probabilità senza generare un token), Timestral (previsioni su serie), browser: spenti di default, RAM dichiarata | la macchina resta sobria e si accende solo ciò che serve, quando serve |
+| **Nessuna infrastruttura da mantenere** | un processo Node, stato in file leggibili, `git diff` utile, backup `tar`, ripristino documentato | si legge il codice in produzione e si ripristina senza un DBA |
+| **Test che collaudano anche i gate** | 50 file di verifica, istanze isolate, browser vero, un gate di sicurezza che si prova a far scattare | le garanzie sono verificate, non dichiarate |
+| **Le misure hanno un metodo** | ogni numero in questo README si rifà con un comando; i grafici dichiarano la scala e le fonti | chi legge può contestare un dato invece di doverci credere |
+
+**Rispetto agli approcci vicini** (senza sminuirli: fanno bene un'altra cosa):
+
+| Famiglia | Che cosa offre | Che cosa non trovi lì |
+|---|---|---|
+| Agenti da terminale (Claude Code, Codex CLI) | motori eccellenti, velocissimi da usare | dashboard persistente con telemetria per turno, obiettivi, pianificazioni, memoria come prodotto |
+| Agenti dentro l'IDE (Cursor, Copilot) | integrazione perfetta con l'editor | self-hosting dei tuoi dati, costo trasparente per turno, servizi locali |
+| Framework per agenti (LangGraph, CrewAI, AutoGen) | libertà di costruire qualsiasi grafo | il prodotto finito: auth, backup, cron, gate dei costi, suite di test |
+| Piattaforme agentiche in sandbox (OpenHands e simili) | autonomia e isolamento | leggerezza su una singola macchina personale, senza container né orchestrazione |
+| Assistenti al diff (Aider) | il miglior ciclo di patch su git | interfaccia web, memoria a lungo termine, servizi on-demand |
+
+**Onestà sui limiti di questo progetto:** è pensato per **una persona per istanza** (niente ruoli
+multi-utente), non è un'estensione dell'IDE, non ha un marketplace di plugin, ed è scritto e
+documentato in italiano. Sono scelte, non dimenticanze: il perimetro è «un agente che vive sulla tua
+macchina e che puoi leggere».
 
 ---
 
@@ -264,15 +299,19 @@ L'harness la misura e la tiene sotto controllo:
 ![Scomposizione dei 12.495 token di contesto a riposo](docs/images/contesto-dettaglio.svg)
 
 Misure reali, non stime: `usage` del provider al primo turno, meno i token del primo messaggio
-dell'utente. Mediana storica su 41 sessioni: **6.367 token**; misura del 13/10/2026: **13.184**,
-cresciuta insieme all'indice delle skill. Il confronto con gli altri harness usa misure pubblicate e
+dell'utente. Mediana storica su 41 sessioni: **6.367 token**; misura del 13/10/2026 (quella della
+figura, per confronto con le fonti pubbliche): **13.184**; misura del 22/11/2026 con lo stesso
+protocollo su istanza isolata: **17.773** di base e **23.458** quando i subagent entrano nel turno
+(vedi sotto: le due cifre sono più alte perché sono cresciute le istruzioni e gli schemi). Il confronto con gli altri harness usa misure pubblicate e
 citate ([`media/overhead-contesto-harness.json`](media/overhead-contesto-harness.json)); non è una
 gara: è il numero che decide quanto costa una conversazione lunga.
 
 Le leve che l'harness usa per non gonfiare quel numero:
 
-1. **Gate dei tool.** Subagent e `bg_wait` (5.543 token di definizioni) non entrano nel prompt se non
-   sono accesi; lo stesso vale per browser live e servizi locali.
+1. **Gate dei tool, per turno.** `subagent` e `bg_wait` (5.685 token di definizioni, misurati) entrano
+   nella lista **solo nei turni di ricognizione**, decisi da soglie dichiarate; lo stesso vale per
+   browser live e servizi locali. Il set è congelato per tutto il turno: nessun cambio a metà strada,
+   nessuna cache buttata.
 2. **Indice delle skill, non corpo.** In contesto c'è solo la descrizione; il `SKILL.md` si legge
    quando il compito corrisponde.
 3. **Cache stabile.** Il prefisso (system prompt + tool + indice) resta identico tra i turni, così il
@@ -281,6 +320,59 @@ Le leve che l'harness usa per non gonfiare quel numero:
 5. **Memoria a tre costi.** Si sceglie *quanto* contesto pagare per rispondere (vedi sopra).
 6. **Compattazione con riassunto.** Quando la sessione si allunga, il riassunto non sparisce: diventa
    un episodio.
+
+### Misure del 22 novembre 2026: dove sono finiti i token
+
+Tre leve applicate e misurate lo stesso giorno, con un protocollo ripetibile: **un turno minimo**
+(«rispondi solo OK, non usare tool») su un'**istanza isolata** (porta dedicata, cartelle temporanee,
+servizi pesanti spenti) e il conteggio del **provider**, non una stima.
+
+![Composizione del prefisso: 17.773 token di base, 23.458 nei turni di ricognizione](docs/images/contesto-prefisso.svg)
+
+| voce | token | come è stata ottenuta |
+|---|---:|---|
+| istruzioni dell'harness (11 sezioni) | 2.394 | testo misurato: 8.620 caratteri |
+| indice delle 35 skill (nome + descrizione + percorso) | 2.780 | 9.686 caratteri, formato Agent Skills |
+| schemi dei 15 tool di base | 12.599 | per differenza, dal conteggio del provider |
+| schemi di `subagent` + `bg_wait` | 5.685 | differenza fra la misura a 15 e a 17 tool |
+| **prefisso di base** | **17.773** | turno minimo su istanza pulita |
+| **prefisso in un turno di ricognizione** | **23.458** | idem, con i subagent accesi |
+
+**Il gate automatico dei tool.** I due tool dei subagent costano 5.685 token — il 24% del prefisso —
+e servono solo nei turni in cui c'è davvero qualcosa da esplorare. Non stanno accesi sempre: il gate
+li fa entrare **solo in quel turno**, con soglie dichiarate nel codice (`SUBAGENT_AUTO`) e nel manuale.
+
+![Schema del gate automatico: ricognizione annunciata oppure turno precedente pesante](docs/images/gate-auto.svg)
+
+La decisione non resta nascosta in un log: **compare in chat**, prima del pensiero, con motivo,
+numeri e prezzo.
+
+![La nota del gate automatico nella chat, sopra i blocchi del pensiero](docs/images/subagent-auto.png)
+
+**Che cosa rende una delega.** Misurata su un caso vero (mappare le variabili `DASH_*` lette in
+`dashboard.mjs` e `media/*.mjs`): 88 righe di `grep`, 9.178 caratteri, **2.549 token** che
+resterebbero nel contesto per tutti i turni successivi — contro **570 token** di sintesi.
+
+![2.549 token di contesto, o 570 delegando](docs/images/contesto-delega.svg)
+
+Ma il subagent non è gratis: il turno del figlio è un turno di un altro agente, **$0,0051** e 13,4 s
+nel caso misurato. Il conto completo, a parità di lavoro e su 20 turni di sessione:
+
+![Costo in denaro del fai da te e del subagent, con il punto di pareggio](docs/images/contesto-breakeven.svg)
+
+La conclusione è il motivo per cui il gate è «auto» e non «sempre acceso»: **il subagent è una leva
+di contesto, non di denaro**. In denaro conviene solo su ricognizioni molto grandi (~49.000 token su
+20 turni, ~16.000 su 60); in contesto conviene quasi sempre (−78% di materiale permanente). Con il
+gate automatico si prende il vantaggio e si paga lo svantaggio solo nei turni in cui serve.
+
+**Il tetto agli esiti dei tool** è sceso da 25.000 a 10.000 caratteri, con testa e coda conservate e
+la nota per rileggere. Su tre sessioni reali il risparmio è del 5-6% dei token di risultato: modesto,
+perché qui i risultati sono tanti e medi (~1.900 caratteri l'uno) — il tetto protegge dalla coda (un
+`cat` da 200 KB), non dalla routine. Le prove stanno in `media/test-tool-result-limite.mjs`: 15 casi,
+compreso quello in cui un tetto piccolo, senza il *clamp* di testa e coda, avrebbe prodotto un
+risultato **più lungo** del massimo consentito.
+
+---
 
 Il bilancio completo, con lo spreco di cache e le classi di errore, è verificato da
 `media/test-contesto.mjs`.
@@ -309,15 +401,15 @@ La parte che di solito non finisce in un README, e che spiega il resto.
 
 | | Valore | Come si conta |
 |---|---|---|
-| Codice dell'applicazione | **20.055 righe** in tre file | `dashboard.mjs` 6.691 · `dashboard.html` 13.121 · `harness.mjs` 243 |
-| Rotte API | **78** | percorsi `/api/*` distinti |
+| Codice dell'applicazione | **21.277 righe** in tre file | `dashboard.mjs` 7.209 · `dashboard.html` 13.825 · `harness.mjs` 243 |
+| Rotte API | **83** | percorsi `/api/*` distinti |
 | Comandi in chat | **27** in 5 gruppi | `/help` li elenca tutti |
 | Capacità dichiarate da `/api/health` | **27** | così la dashboard e i test sanno che cosa aspettarsi |
-| Skill incluse | **32** | una cartella con `SKILL.md` ciascuna |
-| Tool visibili al modello (default) | **14** | misurati, non stimati: due sono spenti di default |
-| Test automatici | **oltre 850 controlli** in **54 file** e **24 blocchi** di suite | vedi [Qualità](#qualità-come-si-verifica) |
+| Skill incluse | **35** | una cartella con `SKILL.md` ciascuna (34 nel repo + le skill globali dell'istanza) |
+| Tool visibili al modello | **15** di base, **17** nei turni di ricognizione | misurati: il gate dei tool decide per turno (sotto) |
+| Test automatici | **oltre 1.600 punti di verifica** in **50 file** | conteggio delle chiamate nei sorgenti di test; vedi [Qualità](#qualità-come-si-verifica) |
 | Dipendenze runtime | **1** (l'SDK dell'agente) | `node_modules/` contiene una sola cartella |
-| Contesto a riposo | **13.184 token** (mediana storica 6.367) | `usage` del provider, 41 sessioni |
+| Contesto a riposo | **17.773 token**, 23.458 nei turni di ricognizione | turno minimo su istanza isolata, conteggio del provider (22/11/2026) |
 
 ---
 
@@ -359,8 +451,8 @@ Le regole stanno in `scripts/riservati.pattern` e `scripts/segreti.pattern` e so
 
 ## Qualità: come si verifica
 
-La suite principale attraversa 24 blocchi; ogni blocco è un file di test che parla con **un'istanza
-isolata** (porta, cartella sessioni e segreto propri), non con la produzione.
+La suite principale attraversa i blocchi elencati sotto; ogni blocco è un file di test che parla con
+**un'istanza isolata** (porta, cartella sessioni e segreto propri), non con la produzione.
 
 | Blocco | Che cosa verifica |
 |---|---|
@@ -448,6 +540,7 @@ Dettagli su porte, utenti e limiti per più istanze sullo stesso server in
 |---|---|
 | [`docs/MANUALE.md`](docs/MANUALE.md) | guida operativa completa: chat, file manager, viste, comandi, API, sicurezza, backup, test |
 | [`docs/MEMORIA.md`](docs/MEMORIA.md) | episodi, grafo, wiki, ricerca e che cosa non viene mai pubblicato |
+| [`docs/MISURE-CONTESTO.md`](docs/MISURE-CONTESTO.md) | come si misura il contesto di un agente: protocollo, cifre, punto di pareggio, limiti |
 | [`docs/TIMESTRAL.md`](docs/TIMESTRAL.md) | previsioni su serie temporali: metodo, backtest, limiti |
 | [`docs/ISTANZE.md`](docs/ISTANZE.md) | più istanze sullo stesso server: porte, utenti, limiti, isolamento |
 | [`docs/RICOSTRUZIONE.md`](docs/RICOSTRUZIONE.md) | ripristino da zero: prerequisiti, servizi, quote, sandbox |
@@ -490,10 +583,13 @@ e preview e un elenco lungo non è una scelta. La lista bianca sta in `media/pro
 
 Gli screenshot sono presi da un'**istanza di esempio** su una cartella di prova (`aurora/`), con dati
 inventati: nessun file, cliente o conversazione reale compare in questo README. Le cifre nelle
-tavole (token, costi, durate) sono quelle di quei turni; i due turni della chat sono stati eseguiti
+tavole (token, costi, durate) sono quelle di quei turni; i turni della chat sono stati eseguiti
 davvero con il modello, non simulati. Gli schemi sono SVG scritti a mano, con la stessa palette
-dell'interfaccia; il grafico del contesto legge i dati misurati in
-[`media/overhead-contesto-harness.json`](media/overhead-contesto-harness.json).
+dell'interfaccia; il confronto con altri harness legge
+[`media/overhead-contesto-harness.json`](media/overhead-contesto-harness.json), mentre i grafici delle
+misure del 22/11/2026 (prefisso, delega, punto di pareggio, gate) si rifanno con il protocollo
+descritto in [`docs/MISURE-CONTESTO.md`](docs/MISURE-CONTESTO.md): turno minimo su istanza isolata e
+conteggio del provider, non stime.
 
 ---
 

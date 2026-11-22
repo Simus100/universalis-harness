@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400" width="1000" height="400" role="img" aria-label="Prefisso di contesto: 17.773 token, 23.458 nei turni di ricognizione">
+  <title>Prefisso di contesto: 17.773 token, 23.458 nei turni di ricognizione</title>
+  <desc>Barre impilate orizzontali con la composizione del prefisso inviato al provider a ogni richiesta. Base: istruzioni 2394, indice delle skill 2780, schemi dei tool 12599, totale 17773. Con i subagent accesi per il turno: piu 5685 token di schemi, totale 23458. Valori misurati con un turno minimo su istanza isolata, conteggio del provider, scala lineare da zero a 24.000.</desc>
+
+  <rect x="4" y="4" width="992" height="392" rx="18" fill="#0d1420" stroke="#1e2a3d" stroke-width="2"/>
+  <text x="32" y="46" font-family="system-ui,Segoe UI,sans-serif" font-size="19" fill="#eef2f9" font-weight="700">Il prefisso costa 17.773 token; nei turni di ricognizione 23.458</text>
+  <text x="32" y="70" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#8b97ac">system prompt + indice delle skill + schemi dei tool: quello che si paga prima di scrivere la prima parola</text>
+  <line x1="300" y1="96" x2="300" y2="272" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="300" y="290" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">0k</text>
+  <line x1="455" y1="96" x2="455" y2="272" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="455" y="290" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">6k</text>
+  <line x1="610" y1="96" x2="610" y2="272" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="610" y="290" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">12k</text>
+  <line x1="765" y1="96" x2="765" y2="272" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="765" y="290" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">18k</text>
+  <line x1="920" y1="96" x2="920" y2="272" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="920" y="290" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">24k</text>
+  <text x="32" y="134" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#c6cfdd">base (subagent spenti)</text>
+  <rect x="300.0" y="104" width="61.8" height="46" fill="#8b5cff"/>
+  <rect x="361.8" y="104" width="71.8" height="46" fill="#5b9dff"/>
+  <text x="397.8" y="133" text-anchor="middle" font-family="ui-monospace.Menlo.monospace" font-size="12" fill="#0a0e15" font-weight="700">2.780</text>
+  <rect x="433.7" y="104" width="325.5" height="46" fill="#38bdf8"/>
+  <text x="596.4" y="133" text-anchor="middle" font-family="ui-monospace.Menlo.monospace" font-size="12" fill="#0a0e15" font-weight="700">12.599</text>
+  <text x="769" y="133" font-family="ui-monospace.Menlo.monospace" font-size="14" fill="#eef2f9" font-weight="700">17.773</text>
+  <text x="32" y="226" font-family="system-ui,Segoe UI,sans-serif" font-size="13" fill="#c6cfdd">turno di ricognizione (auto)</text>
+  <rect x="300.0" y="196" width="61.8" height="46" fill="#8b5cff"/>
+  <rect x="361.8" y="196" width="71.8" height="46" fill="#5b9dff"/>
+  <text x="397.8" y="225" text-anchor="middle" font-family="ui-monospace.Menlo.monospace" font-size="12" fill="#0a0e15" font-weight="700">2.780</text>
+  <rect x="433.7" y="196" width="325.5" height="46" fill="#38bdf8"/>
+  <text x="596.4" y="225" text-anchor="middle" font-family="ui-monospace.Menlo.monospace" font-size="12" fill="#0a0e15" font-weight="700">12.599</text>
+  <rect x="759.1" y="196" width="146.9" height="46" fill="#fbbf24"/>
+  <text x="832.6" y="225" text-anchor="middle" font-family="ui-monospace.Menlo.monospace" font-size="12" fill="#0a0e15" font-weight="700">5.685</text>
+  <text x="916" y="225" font-family="ui-monospace.Menlo.monospace" font-size="14" fill="#eef2f9" font-weight="700">23.458</text>
+  <rect x="32" y="330" width="12" height="12" rx="3" fill="#8b5cff"/>
+  <text x="50" y="341" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c6cfdd">istruzioni 2.394</text>
+  <rect x="190" y="330" width="12" height="12" rx="3" fill="#5b9dff"/>
+  <text x="208" y="341" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c6cfdd">indice skill 2.780</text>
+  <rect x="362" y="330" width="12" height="12" rx="3" fill="#38bdf8"/>
+  <text x="380" y="341" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c6cfdd">schemi tool 12.599</text>
+  <rect x="534" y="330" width="12" height="12" rx="3" fill="#fbbf24"/>
+  <text x="552" y="341" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#c6cfdd">subagent 5.685</text>
+  <text x="32" y="372" font-family="system-ui,Segoe UI,sans-serif" font-size="11" fill="#6f7d92">Misura del 22/11/2026 su istanza isolata: turno minimo («rispondi OK»), conteggio del provider. In cache il prefisso costa circa 1/10.</text>
+</svg>

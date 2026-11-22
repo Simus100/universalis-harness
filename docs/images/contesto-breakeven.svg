@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520" role="img" aria-label="Costo in denaro del fai da te e del subagent">
+  <title>In denaro il subagent conviene solo oltre circa 49.000 token di ricognizione</title>
+  <desc>Due linee su 20 turni di sessione: il fai da te cresce con i token letti (input 0,3 e cache read 0,006 dollari per milione), il subagent ha un costo fisso di 0,0056 dollari e cresce piu' piano. Le linee si incrociano intorno a 49.000 token di ricognizione. Assi lineari da zero.</desc>
+
+  <rect x="4" y="4" width="992" height="512" rx="18" fill="#0d1420" stroke="#1e2a3d" stroke-width="2"/>
+  <text x="32" y="46" font-family="system-ui,Segoe UI,sans-serif" font-size="19" fill="#eef2f9" font-weight="700">In denaro conviene solo su ricognizioni grandi: pareggio a ~49.000 token</text>
+  <text x="32" y="70" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#8b97ac">costo su 20 turni di sessione, al variare di quanto materiale la ricognizione avrebbe letto</text>
+  <rect x="640" y="96" width="12" height="12" rx="3" fill="#fbbf24"/>
+  <text x="658" y="107" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#fbbf24">fai da te: tutto nel contesto del padre</text>
+  <rect x="640" y="116" width="12" height="12" rx="3" fill="#34d399"/>
+  <text x="658" y="127" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#34d399">subagent: un turno separato, al padre la sintesi</text>
+  <line x1="110" y1="430" x2="870" y2="430" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="100" y="434" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">0 $</text>
+  <line x1="110" y1="323" x2="870" y2="323" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="100" y="327" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">0,01 $</text>
+  <line x1="110" y1="217" x2="870" y2="217" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="100" y="221" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">0,02 $</text>
+  <line x1="110" y1="110" x2="870" y2="110" stroke="#1e2a3d" stroke-width="1"/>
+  <text x="100" y="114" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">0,03 $</text>
+  <line x1="110" y1="430" x2="110" y2="436" stroke="#2a3a52" stroke-width="1"/>
+  <text x="110" y="452" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">0.000</text>
+  <line x1="300" y1="430" x2="300" y2="436" stroke="#2a3a52" stroke-width="1"/>
+  <text x="300" y="452" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">15.000</text>
+  <line x1="490" y1="430" x2="490" y2="436" stroke="#2a3a52" stroke-width="1"/>
+  <text x="490" y="452" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">30.000</text>
+  <line x1="680" y1="430" x2="680" y2="436" stroke="#2a3a52" stroke-width="1"/>
+  <text x="680" y="452" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">45.000</text>
+  <line x1="870" y1="430" x2="870" y2="436" stroke="#2a3a52" stroke-width="1"/>
+  <text x="870" y="452" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#8b97ac">60.000</text>
+  <line x1="110" y1="430" x2="870" y2="430" stroke="#3d4a5f" stroke-width="1.5"/>
+  <line x1="110" y1="430" x2="110" y2="96" stroke="#3d4a5f" stroke-width="1.5"/>
+  <line x1="110" y1="430" x2="870" y2="165" stroke="#fbbf24" stroke-width="3.5"/>
+  <line x1="110" y1="370" x2="870" y2="178" stroke="#34d399" stroke-width="3.5"/>
+  <line x1="732" y1="213" x2="732" y2="430" stroke="#fb7185" stroke-width="1" stroke-dasharray="4 4"/>
+  <circle cx="732" cy="213" r="6" fill="#fb7185"/>
+  <text x="718" y="201" text-anchor="end" font-family="system-ui,Segoe UI,sans-serif" font-size="12" fill="#fb7185" font-weight="700">pareggio: ~49.000 token</text>
+  <text x="32" y="486" font-family="system-ui,Segoe UI,sans-serif" font-size="11" fill="#6f7d92">Prezzi ricavati dall'uso reale dell'istanza: input 0,3 $/Mtok, cache read 0,006 $/Mtok, output 1,2 $/Mtok.</text>
+  <text x="32" y="504" font-family="system-ui,Segoe UI,sans-serif" font-size="11" fill="#6f7d92">Su 60 turni il pareggio scende a ~16.000 token: più la sessione è lunga, prima conviene delegare.</text>
+</svg>
