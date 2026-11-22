@@ -650,6 +650,19 @@ button { font-family: inherit; }
 .chip button { all: unset; cursor: pointer; color: var(--faint); padding: 0 5px; font-size: var(--fs-md); border-radius: 50%; transition: .15s; }
 .chip button:hover { color: var(--red); }
 .chip img { width: 22px; height: 22px; object-fit: cover; border-radius: 50%; }
+/* chip di servizio: dice che l'upload è in corso (un file grande non deve sembrare ignorato) */
+.chip.carico { color: var(--dim); border-style: dashed; }
+/* Rilascio di file nella finestra: un velo con l'istruzione, così si capisce che il gesto è
+   accettato PRIMA di mollare il file. `pointer-events: none` è obbligatorio: un overlay che
+   intercetta il drag fa partire dragleave/dragenter a raffica e il velo lampeggia. */
+.drop-velo {
+  position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center;
+  background: color-mix(in srgb, #070b12 78%, transparent); pointer-events: none;
+  border: 2px dashed color-mix(in srgb, var(--accent) 70%, transparent); border-radius: var(--radius-lg);
+  margin: 10px; color: var(--text); font-size: var(--fs-lg, 16px); font-weight: 600; letter-spacing: .2px;
+  text-shadow: 0 2px 12px rgba(0,0,0,.6);
+}
+body.dragging-files .drop-velo { display: flex; }
 .status { font-size: var(--fs-sm); color: var(--dim); max-width: 920px; margin: 6px auto 0; min-height: 16px; }
 #err { color: var(--red); }
 
@@ -2299,6 +2312,7 @@ footer {
   <div class="stat"><span class="stat-ico"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg></span><div class="stat-main"><span class="label">durata</span><span class="value" id="s-time">–</span></div></div>
 </section>
 
+<div class="drop-velo" id="dropVelo" aria-hidden="true">Rilascia qui per allegare alla chat</div>
 <main id="chatView"><div class="empty"><div class="empty-ico" aria-hidden="true"></div>Scrivi un messaggio per iniziare…</div></main>
 
 <main id="filesView" hidden>
@@ -5853,6 +5867,12 @@ input.addEventListener("input", autosize);
 
 function renderChips() {
   const el = $("attachChips"); el.innerHTML = "";
+  if (uploadInCorso > 0) {
+    const c = document.createElement("span");
+    c.className = "chip carico";
+    c.textContent = uploadInCorso === 1 ? "⏳ carico il file…" : `⏳ carico ${uploadInCorso} file…`;
+    el.appendChild(c);
+  }
   attachments.forEach((a, i) => {
     const chip = document.createElement("span"); chip.className = "chip";
     if (a.previewUrl) { const img = document.createElement("img"); img.src = a.previewUrl; chip.appendChild(img); }
@@ -5865,21 +5885,124 @@ function renderChips() {
   });
 }
 $("attachBtn").onclick = () => $("attachInput").click();
-$("attachInput").onchange = async (e) => {
-  const files = [...e.target.files]; e.target.value = "";
-  for (const f of files) {
-    if (f.size > 32 * 1024 * 1024) { alert(f.name + ": troppo grande (max 32 MB)"); continue; }
-    try {
-      const r = await fetch("/api/chat/upload?name=" + encodeURIComponent(f.name), { method: "POST", body: f });
-      const j = await r.json();
-      if (!r.ok) { alert(j.error || "upload fallito"); continue; }
-      const item = { path: j.path, name: j.name, mime: j.mime, image: j.image };
-      if (j.image && f.size < 4_000_000) item.previewUrl = URL.createObjectURL(f);
-      attachments.push(item);
-    } catch { alert("errore di rete durante l'upload"); }
-  }
+
+/* ---- un solo percorso per allegare, qualunque sia il gesto ----
+   File scelto dal disco, immagine incollata dalla clipboard, file trascinato nella finestra:
+   sono lo stesso lavoro (carica, leggi il mime vero, metti in `attachments`) e devono passare
+   dalla stessa funzione. Tre copie divergono, e quella usata meno si rompe prima. */
+let uploadInCorso = 0;
+const TETTO_ALLEGATO = 32 * 1024 * 1024;
+
+/** Estensione dal mime della clipboard (che a volte è vuoto o generico). */
+function estensioneDaMime(mime) {
+  const m = String(mime || "").toLowerCase();
+  if (m.includes("jpeg") || m.includes("jpg")) return "jpg";
+  if (m.includes("webp")) return "webp";
+  if (m.includes("gif")) return "gif";
+  if (m.includes("avif")) return "avif";
+  if (m.includes("png")) return "png";
+  return "png";
+}
+
+/** Nome leggibile per ciò che arriva senza nome (uno screenshot incollato). */
+function nomeDaClipboard(file, i = 0) {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  const quando = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  return `screenshot-${quando}${i ? `-${i + 1}` : ""}.${estensioneDaMime(file.type)}`;
+}
+
+async function allegaFiles(elenco) {
+  const files = [...(elenco || [])].filter(Boolean);
+  if (!files.length) return;
+  // se il gesto arriva da un'altra vista, si torna in chat: è lì che finiranno gli allegati
+  if (document.body.dataset.tab !== "chat" && typeof showTab === "function") showTab("chat");
+  uploadInCorso += files.length;
   renderChips();
+  try {
+    for (const [i, f] of files.entries()) {
+      if (f.size > TETTO_ALLEGATO) {
+        alert(`${f.name || "file"}: troppo grande (max ${TETTO_ALLEGATO / 1048576} MB)`);
+        continue;
+      }
+      const nome = f.name && f.name !== "image.png" && !/^blob:?/.test(f.name) ? f.name : nomeDaClipboard(f, i);
+      try {
+        const r = await fetch(`/api/chat/upload?name=${encodeURIComponent(nome)}`, { method: "POST", body: f });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) {
+          alert(j.error || "upload fallito");
+          continue;
+        }
+        const item = { path: j.path, name: j.name, mime: j.mime, image: j.image };
+        if (j.image && f.size < 4_000_000) item.previewUrl = URL.createObjectURL(f);
+        attachments.push(item);
+      } catch {
+        alert("errore di rete durante l'upload");
+      } finally {
+        uploadInCorso = Math.max(0, uploadInCorso - 1);
+        renderChips();
+      }
+    }
+  } finally {
+    uploadInCorso = 0;
+    renderChips();
+  }
+}
+
+$("attachInput").onchange = (e) => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  void allegaFiles(files);
 };
+
+/* ---- incolla: uno screenshot negli appunti diventa un allegato ----
+   Il caso d'uso è «catturo lo schermo (⌘/Ctrl+Shift+4) e incollo qui». Gli appunti possono
+   contenere PIÙ immagini e anche testo: si allegano le immagini e, se c'è del testo, lo si
+   lascia incollare normalmente nel campo (per questo il preventDefault scatta solo con file). */
+document.addEventListener("paste", (e) => {
+  const items = [...(e.clipboardData?.items || [])];
+  const files = items
+    .filter((it) => it.kind === "file" && String(it.type).startsWith("image/"))
+    .map((it) => it.getAsFile())
+    .filter(Boolean);
+  if (!files.length) return;
+  e.preventDefault();
+  void allegaFiles(files);
+});
+
+/* ---- trascina e rilascia nella finestra ----
+   Il contatore serve perché dragenter/dragleave arrivano anche passando sopra i figli: senza,
+   il velo lampeggia a ogni elemento attraversato. Si accetta solo un trascinamento di FILE. */
+let dragProfondita = 0;
+const trascinaFile = (e) => [...(e.dataTransfer?.types || [])].includes("Files");
+const spegniVelo = () => {
+  dragProfondita = 0;
+  document.body.classList.remove("dragging-files");
+};
+document.addEventListener("dragenter", (e) => {
+  if (!trascinaFile(e)) return;
+  e.preventDefault();
+  dragProfondita += 1;
+  document.body.classList.add("dragging-files");
+});
+document.addEventListener("dragover", (e) => {
+  if (!trascinaFile(e)) return;
+  e.preventDefault();
+  if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+});
+document.addEventListener("dragleave", (e) => {
+  if (!trascinaFile(e)) return;
+  dragProfondita = Math.max(0, dragProfondita - 1);
+  if (!dragProfondita) document.body.classList.remove("dragging-files");
+});
+document.addEventListener("drop", (e) => {
+  const files = e.dataTransfer?.files;
+  if (!files || !files.length) return;
+  e.preventDefault();
+  spegniVelo();
+  void allegaFiles(files);
+});
+window.addEventListener("blur", spegniVelo);
 
 async function send() {
   const text = input.value.trim();

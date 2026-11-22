@@ -72,11 +72,61 @@ export function stimaCostoImmagine(id, quante = 1) {
 const NON_CHAT = /(?:^|[-_.])(image|tts|live|transcribe|embedding|computer-use|deep-research|robotics|lyria|genie|omni|aqa)(?:$|[-_.])/i;
 /** Varianti che esistono ma non hanno senso nel selettore: rumore, non scelta. */
 const NASCOSTI = new Set(["gemini-3.1-pro-preview-customtools"]);
+
+/**
+ * I modelli Google che si vedono nel selettore, e basta.
+ *
+ * Perché una lista bianca invece di «tutti quelli disponibili»: Google ne pubblica più di
+ * venti (2.5 legacy, preview, varianti, gemma), e un selettore con venti voci non è una scelta —
+ * è un elenco in cui si sbaglia. Qui ci sono i due Gemini 4 (hydrogen: equilibrato; neon:
+ * il più capace dei due) e i due Flash-Lite (il più economico della generazione 3.5 e della 3.1),
+ * più Gemma 4 che sul piano gratuito costa zero. Per usarne un altro basta aggiungerlo a questa
+ * lista: è codice, non configurazione nascosta.
+ */
+export const GOOGLE_CHAT_VISIBILI = [
+  "gemini-4-hydrogen",
+  "gemini-4-neon",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemma-4-31b-it",
+];
+
+/**
+ * Modelli che il catalogo del runtime installato non conosce ancora e che vanno dichiarati in
+ * `~/.pi/agent/models.json` (li scrive `scripts/onboarding-provider.mjs --google`).
+ * Prezzi: listino Google, novembre 2026, per milione di token (input/output; cacheRead = 10%).
+ * Sono dati pubblici, non misure: nel file la provenienza è dichiarata.
+ */
+export const GOOGLE_CHAT_EXTRA = [
+  {
+    id: "gemini-4-hydrogen",
+    name: "Gemini 4 Hydrogen",
+    reasoning: true,
+    input: ["text", "image"],
+    contextWindow: 1048576,
+    maxTokens: 65536,
+    cost: { input: 1.5, output: 7.5, cacheRead: 0.15, cacheWrite: 0 },
+    thinkingLevelMap: { low: "LOW", medium: "MEDIUM", high: "HIGH" },
+  },
+  {
+    id: "gemini-4-neon",
+    name: "Gemini 4 Neon",
+    reasoning: true,
+    input: ["text", "image"],
+    contextWindow: 1048576,
+    maxTokens: 65536,
+    cost: { input: 3, output: 15, cacheRead: 0.15, cacheWrite: 0 },
+    thinkingLevelMap: { low: "LOW", medium: "MEDIUM", high: "HIGH" },
+  },
+];
 export function isChatModel(m) {
   const id = String(m?.id || "");
   if (!id) return false;
   if (m?.type && m.type !== "chat") return false;
   if (NASCOSTI.has(id)) return false;
+  // Per Google decide la lista bianca: è più stretta del filtro per nome, e un modello nuovo
+  // di Google non entra nel selettore da solo (lo si sceglie qui).
+  if (m?.provider === "google") return GOOGLE_CHAT_VISIBILI.includes(id);
   return !NON_CHAT.test(id);
 }
 
@@ -86,18 +136,7 @@ export function isChatModel(m) {
  * provider i modelli «consigliati» prima dei legacy.
  */
 const PROVIDER_ORDINE = ["deepseek", "google"];
-const CONSIGLIATI = [
-  "deepseek-flash",
-  "gemini-3.8-flash",
-  "gemini-3.7-flash",
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
-  "gemini-3.1-pro-preview",
-  "gemini-3.1-flash-lite",
-  "gemini-3.5-flash-lite",
-  "gemma-4-31b-it",
-  "gemma-4-26b-a4b-it",
-];
+const CONSIGLIATI = ["deepseek-flash", ...GOOGLE_CHAT_VISIBILI];
 
 function rango(m) {
   const i = CONSIGLIATI.indexOf(m.id);
@@ -137,6 +176,8 @@ export function configGoogle() {
     apiKey: "$GEMINI_API_KEY",
     api: "google-generative-ai",
     baseUrl: GEMINI_BASE,
+    // solo i modelli che il catalogo del runtime non ha: quelli built-in non si duplicano
+    models: GOOGLE_CHAT_EXTRA.map((m) => ({ ...m })),
   };
 }
 

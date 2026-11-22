@@ -256,6 +256,39 @@ const chiavi = await ui(`const v = document.getElementById("chiaviView"); return
 check("la vista chiavi elenca i provider con il campo chiave", chiavi.visibile && chiavi.card >= 2 && chiavi.campi >= 2, JSON.stringify(chiavi).slice(0, 240));
 scatta("18-chiavi.png");
 
+console.log("\n== 9c. allegati: trascinare e incollare ==");
+await apri("chat");
+const PNG_1PX =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+// helper nel browser: un vero File PNG dentro un vero DataTransfer
+await ui(`window.__filePng = (nome) => {
+  const bin = atob(${JSON.stringify(PNG_1PX)}); const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new File([arr], nome, { type: "image/png" });
+}; return 1;`);
+
+const drop = await ui(`const dt = new DataTransfer(); dt.items.add(window.__filePng("image.png"));
+  document.dispatchEvent(new DragEvent("dragenter", { dataTransfer: dt, bubbles: true, cancelable: true }));
+  const velo = document.body.classList.contains("dragging-files");
+  document.dispatchEvent(new DragEvent("drop", { dataTransfer: dt, bubbles: true, cancelable: true }));
+  return { velo };`);
+check("il rilascio di un file mostra il velo", drop.velo === true);
+await wait(2200);
+const dopoDrop = await ui(`return { chips: [...document.querySelectorAll("#attachChips .chip")].map((c) => c.textContent), velo: document.body.classList.contains("dragging-files") };`);
+check("il file rilasciato diventa un allegato", dopoDrop.chips.some((c) => /screenshot-.*\.png/.test(c)) || dopoDrop.chips.some((c) => /image\.png/.test(c)), JSON.stringify(dopoDrop).slice(0, 240));
+check("il velo sparisce dopo il rilascio", dopoDrop.velo === false);
+scatta("19-drop-allegato.png");
+
+const incolla = await ui(`const dt = new DataTransfer(); dt.items.add(window.__filePng("image.png"));
+  const ev = new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true });
+  document.dispatchEvent(ev);
+  return { annullato: ev.defaultPrevented };`);
+await wait(2200);
+const dopoPaste = await ui(`return { chips: [...document.querySelectorAll("#attachChips .chip")].map((c) => c.textContent) };`);
+check("l'immagine incollata diventa un allegato", dopoPaste.chips.length >= 2, JSON.stringify(dopoPaste).slice(0, 240));
+// pulizia: gli allegati non devono restare appesi al prossimo test
+await ui(`document.querySelectorAll("#attachChips .chip button").forEach((b) => b.click()); return 1;`);
+
 console.log("\n== 10. pannelli risorse/servizi ==");
 await apri("chat");
 const pannello = await ui(`document.getElementById("featBtn").click(); return { aperto: !document.getElementById("featPanel").hidden };`);

@@ -470,6 +470,10 @@ node scripts/onboarding-provider.mjs --verifica # la chiave risponde?
 
 Nel codice e in `models.json` non c'è nessuna chiave: solo il *riferimento* `$GEMINI_API_KEY`.
 
+Nel selettore Google compaiono **cinque** modelli scelti — Gemini 4 **Hydrogen** e **Neon**, i
+Flash-Lite 3.5 e 3.1 (il più economico), Gemma 4 — perché Google ne pubblica più di venti fra legacy
+e preview e un elenco lungo non è una scelta. La lista bianca sta in `media/providers.mjs`.
+
 ### Che cosa c'è in questo repository
 
 | percorso | contenuto |

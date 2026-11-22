@@ -5762,9 +5762,14 @@ const server = http.createServer(async (req, res) => {
         chunks.push(chunk);
       }
       if (tooBig) return json(res, 413, { error: "file troppo grande" });
-      await fs.writeFile(target, Buffer.concat(chunks));
+      const buf = Buffer.concat(chunks);
+      await fs.writeFile(target, buf);
       const rel = relative(ROOT, target);
-      const mime = mimeOf(name);
+      // Il mime si ricava dai BYTE, non dal nome: uno screenshot incollato dalla clipboard
+      // arriva spesso come «image.png» ma anche come «blob» senza estensione, e un `mimeOf(name)`
+      // lo classificherebbe come binario (niente anteprima, niente visione del modello).
+      const dalNome = mimeOf(name);
+      const mime = sniffImageMime(buf) || dalNome;
       return json(res, 200, { ok: true, path: rel, name, mime, size, image: isImageMime(mime) });
     }
 

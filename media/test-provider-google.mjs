@@ -14,6 +14,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   FORMATI_IMMAGINE,
+  GOOGLE_CHAT_VISIBILI,
+  GOOGLE_CHAT_EXTRA,
   MODELLI_IMMAGINE,
   MODELLO_IMMAGINE_DEFAULT,
   etichettaModello,
@@ -25,6 +27,30 @@ import {
 } from "./providers.mjs";
 import { perGoogle, costruisciInput } from "./gemini-decision-tool.mjs";
 import { estensionePer, mimeImmagine, slug } from "./immagini.mjs";
+
+test("per Google decide la lista bianca: pochi modelli, scelti", () => {
+  // quello che l'utente vede: hydrogen e neon, i due Flash-Lite, Gemma 4 — e nient'altro
+  assert.deepEqual(GOOGLE_CHAT_VISIBILI, [
+    "gemini-4-hydrogen",
+    "gemini-4-neon",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemma-4-31b-it",
+  ]);
+  for (const id of GOOGLE_CHAT_VISIBILI) assert.equal(isChatModel({ id, provider: "google" }), true, id);
+  for (const id of ["gemini-2.5-pro", "gemini-3.8-flash", "gemini-flash-latest", "gemini-3.1-pro-preview"]) {
+    assert.equal(isChatModel({ id, provider: "google" }), false, `fuori lista: ${id}`);
+  }
+  // la lista bianca vale SOLO per Google: DeepSeek non viene filtrato per nome
+  assert.equal(isChatModel({ id: "deepseek-v4-pro", provider: "deepseek" }), true);
+  // hydrogen e neon hanno una definizione completa per models.json (prezzi compresi)
+  const ids = GOOGLE_CHAT_EXTRA.map((m) => m.id);
+  assert.deepEqual(ids, ["gemini-4-hydrogen", "gemini-4-neon"]);
+  for (const m of GOOGLE_CHAT_EXTRA) {
+    assert.ok(m.cost && m.cost.input > 0 && m.cost.output > 0, m.id);
+    assert.deepEqual(Object.keys(m.thinkingLevelMap).sort(), ["high", "low", "medium"]);
+  }
+});
 
 test("il selettore di chat esclude i modelli che non conversano", () => {
   assert.equal(isChatModel({ id: "gemini-3.8-flash" }), true);
@@ -43,14 +69,13 @@ test("il selettore di chat esclude i modelli che non conversano", () => {
 
 test("il provider attivo viene per primo, poi i consigliati", () => {
   const lista = [
-    { id: "gemini-2.5-pro", provider: "google" },
+    { id: "gemini-4-neon", provider: "google" },
     { id: "deepseek-flash", provider: "deepseek" },
-    { id: "gemini-3.8-flash", provider: "google" },
+    { id: "gemini-4-hydrogen", provider: "google" },
   ];
-  const google = ordinaModelli(lista, "google").map((m) => m.id);
-  assert.deepEqual(google, ["gemini-3.8-flash", "gemini-2.5-pro", "deepseek-flash"]);
-  const deep = ordinaModelli(lista, "deepseek").map((m) => m.id);
-  assert.deepEqual(deep, ["deepseek-flash", "gemini-3.8-flash", "gemini-2.5-pro"]);
+  // il provider attivo prima, ma i suoi modelli restano UN gruppo (non spezzato dall'altro)
+  assert.deepEqual(ordinaModelli(lista, "google").map((m) => m.id), ["gemini-4-hydrogen", "gemini-4-neon", "deepseek-flash"]);
+  assert.deepEqual(ordinaModelli(lista, "deepseek").map((m) => m.id), ["deepseek-flash", "gemini-4-hydrogen", "gemini-4-neon"]);
 });
 
 test("l'etichetta è il nome commerciale, non l'id", () => {

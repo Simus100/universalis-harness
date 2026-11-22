@@ -11,7 +11,7 @@ da GitHub e deve mettere le proprie chiavi**.
 
 | Capacità | Modello | Come si usa | Costo |
 |---|---|---|---|
-| Chat | Gemini 3.8 Flash, 3.1 Pro, Flash-Lite, Gemma 4… | selettore in alto, come DeepSeek | per token (listino Google) |
+| Chat | Gemini 4 Hydrogen / Neon, 3.5 e 3.1 Flash-Lite, Gemma 4 | selettore in alto, come DeepSeek | per token (listino Google) |
 | Classificatore | `gemini-decision-1` | tool `gemini_decision` in chat | solo token di input (~200 token per uno stato breve), **0 token di output** |
 | Immagini | `gemini-3.1-flash-lite-image` (default), `gemini-3.1-flash-image`, `gemini-3-pro-image` | tool `genera_immagine` e vista «🎨 immagini» | per immagine: ~$0,034 / ~$0,067 / ~$0,134 |
 
@@ -90,9 +90,25 @@ due tool (`gemini_decision`, `genera_immagine`) non vengono inviati al modello.
 
 ## 4. Modelli nel selettore
 
-Il selettore in alto elenca i modelli **conversazionali** con credenziali configurate, con il nome
-commerciale (l'id resta nel `title`). Sono esclusi i modelli che non sono da chat — immagini, TTS,
-live, embedding, computer-use — perché sceglierli romperebbe la sessione.
+Il selettore in alto elenca **pochi** modelli, scelti: cinque Google (lista bianca in
+`media/providers.mjs`, `GOOGLE_CHAT_VISIBILI`) e quelli DeepSeek del catalogo. Google ne pubblica
+più di venti fra legacy, preview e varianti: un elenco di venti voci non è una scelta, è un posto
+dove si sbaglia. Per aggiungerne uno si cambia quella lista (è codice, versionato).
+
+| Modello | Prezzo per 1M token (input/output) | A cosa serve |
+|---|---|---|
+| `gemini-4-hydrogen` | $1,50 / $7,50 | il Gemini 4 equilibrato: coding e flussi agentici |
+| `gemini-4-neon` | $3,00 / $15,00 | il più capace dei due, per lavoro complesso |
+| `gemini-3.5-flash-lite` | $0,30 / $2,50 (dal catalogo del runtime) | economico e veloce |
+| `gemini-3.1-flash-lite` | $0,25 / $1,50 | **il più economico** a pagamento |
+| `gemma-4-31b-it` | $0 (piano gratuito) | quando non serve un Gemini |
+
+Hydrogen e Neon non sono nel catalogo del runtime installato: la loro definizione (contesto 1M,
+thinking `low`/`medium`/`high`, prezzi) sta in `GOOGLE_CHAT_EXTRA` e `onboarding-provider.mjs`
+la scrive in `models.json`. Prezzi: listino Google di novembre 2026.
+
+Restano esclusi i modelli che non sono da chat — immagini, TTS, live, embedding, computer-use —
+perché sceglierli romperebbe la sessione.
 
 L'ordine mette prima il provider che sta lavorando, poi i modelli consigliati
 (`media/providers.mjs`, `CONSIGLIATI`). Per aggiungerne o nasconderne uno si cambia quella lista:
