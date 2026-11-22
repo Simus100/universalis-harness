@@ -970,6 +970,18 @@ const SYSTEM_MEDIA_NOTE =
   `## Cartella dei file generati\n` +
   `Salva SEMPRE i file che generi o produci per l'utente in ${MEDIA_DIR}. ` +
   `Non crearli altrove. Puoi invece modificare file esistenti dove si trovano.\n\n` +
+  `## Contesto: risultati dei tool compatti\n` +
+  `Quello che un tool restituisce entra nel contesto e si ripaga a OGNI turno successivo, quindi ` +
+  `tieni l'output piccolo e mirato: \`grep -n\`, \`sed -n '12,40p'\`, \`wc -l\`, \`head\` invece di ` +
+  `\`cat\`; con \`read\` usa \`offset\`/\`limit\`; non rileggere un file già letto in questa ` +
+  `conversazione. Oltre 10.000 caratteri il risultato viene ridotto (restano l'inizio e la fine, ` +
+  `con una nota su come rileggere): se ti serve la parte omessa richiedila con un filtro più ` +
+  `stretto, non con un \`cat\` intero.\n\n` +
+  `## Esplorazione: usa il subagent\n` +
+  `Quando devi leggere molti file, cercare in un repository grande o fare una ricognizione (5+ ` +
+  `letture), usa il tool \`subagent\`: lavora in un contesto isolato e ti restituisce solo la ` +
+  `sintesi, quindi il tuo contesto resta corto e la risposta è più precisa. Non serve per un ` +
+  `singolo file o per un comando: lì il costo di avvio è maggiore del risparmio.\n\n` +
   `## Fine di una sessione di lavoro: pubblica il codice\n` +
   `Il repository GitHub di questo harness e' PUBBLICO (dal 2026-09-27) e NON si aggiorna da solo ` +
   `(il timer di sincronizzazione e' spento): la pubblicazione e' manuale e va fatta a FINE lavoro, ` +
@@ -1623,8 +1635,10 @@ const browserLive = createBrowserLive({
 
 /*
  * CONTROLLO DEL TURNO (audit 2026-11-01, C2 e C4).
- * - limite ai risultati dei tool: taglia ALL'INGRESSO quello che supera i 25.000 caratteri, così
- *   i token nuovi (input non in cache, 0,3 $/Mtok) non arrivano nemmeno a essere contati;
+ * - limite ai risultati dei tool: taglia ALL'INGRESSO quello che supera il tetto (10.000 caratteri
+ *   dal 2026-11-22, era 25.000: i risultati dei tool sono la voce che pesa di più a ogni turno
+ *   successivo, perché restano nella storia). Restano la testa e la coda, con la nota su come
+ *   rileggere. Così i token nuovi (input non in cache) non arrivano a essere contati;
  * - guardia anti-loop: se il turno ripete le stesse azioni senza scrivere niente, si ferma e lo
  *   dichiara. Non è un tetto secco di passi: un audit di sola lettura non viene toccato.
  * Le soglie sono tarate sul turno reale del 30/10 (20 tool call, 770 s). Si spengono con
@@ -1638,7 +1652,7 @@ const CONTROLLO_TURNO = createControlloTurnoExtension({
     maxRipetizioni: Number(process.env.DASH_GUARDIA_RIPETIZIONI || 3),
     maxPassiAssoluti: Number(process.env.DASH_GUARDIA_MAX || 120),
   },
-  limite: { maxChar: Number(process.env.DASH_LIMITE_RISULTATO || 25000) },
+  limite: { maxChar: Number(process.env.DASH_LIMITE_RISULTATO || 10000) },
   onFerma: ({ motivo, stato }) => {
     /*
      * Il turno è fermato per una ragione che l'utente deve LEGGERE: non si esce in silenzio e non
@@ -1729,7 +1743,14 @@ let turnActive = false;
  *  la superficie abilitando per errore tool che pi tiene spenti (powershell, grep, ls…). */
 let DEFAULT_TOOL_NAMES = [];
 let hasSubagentExt = false;
-let subagentsEnabled = false;
+/**
+ * Sub-agent ACCESI di default (2026-11-22). Motivo misurato: una ricognizione da 5+ letture
+ * costa 15-20k token che restano nella storia e si ripagano a ogni turno successivo; lo stesso
+ * lavoro dentro un sub-agent torna come sintesi da poche centinaia di token. Non è una spesa in
+ * più, è la leva che tiene corto il contesto del padre (che è quello che si paga).
+ * Si spengono con DASH_SUBAGENT=off in .env, o a runtime con `/subagent off`.
+ */
+let subagentsEnabled = String(process.env.DASH_SUBAGENT ?? "on").trim().toLowerCase() !== "off";
 // Tool browser: spento di default (naviga il web e consuma ~1,7 GB di RAM per sessione).
 // Si accende con /browser on o POST /api/browser; quando è OFF i tool vengono rimossi
 // dalla lista inviata al modello, quindi il modello non può nemmeno tentare di usarli.
@@ -7017,7 +7038,7 @@ server.listen(PORT, HOST, () => {
   console.log(`sessioni: ${SESSION_DIR}`);
   console.log(`fuso orario (pianificazioni): ${TZ_NAME} — ora locale: ${new Date().toLocaleString("it-IT")}`);
   console.log(
-    `subagent: ${hasSubagentExt ? `disponibile (OFF di default, max ${maxSubagentSpawns} per richiesta)` : "non disponibile"}`,
+    `subagent: ${hasSubagentExt ? `disponibile (ON di default dal 2026-11-22, max ${maxSubagentSpawns} per richiesta; DASH_SUBAGENT=off per spegnerlo)` : "non disponibile"}`,
   );
   console.log(`auth -> utente: ${AUTH_USER}  password: ${AUTH_PASS ? "***" : "(assente!)"}`);
   console.log(

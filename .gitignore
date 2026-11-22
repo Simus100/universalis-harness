@@ -257,3 +257,10 @@ media/*.bak
 media/immagini/
 media/immagini-prefs.json
 media/google-prefs.json
+
+# Report di confronto sulle misure di contesto (2026-11-22): resta LOCALE e non si pubblica.
+# Motivo: il nome della cartella contiene «token», che è un pattern riservato del gate
+# (scripts/riservati.pattern) — falso allarme, il documento non ha segreti — e comunque cita
+# costi e misure dell'istanza, che non servono nel repository pubblico. Il perché della scelta
+# sta nella memoria della sessione; il documento è in media/ottimizzazione-token/report.md.
+media/ottimizzazione-token/

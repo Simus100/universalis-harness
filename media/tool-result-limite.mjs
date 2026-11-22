@@ -28,8 +28,18 @@ export const CODA_DEFAULT = 5000;
  */
 export function limitaContenuto(content, opts = {}) {
   const maxChar = Number.isFinite(opts.maxChar) ? opts.maxChar : MAX_CHAR_DEFAULT;
-  const testa = Number.isFinite(opts.testa) ? opts.testa : TESTA_DEFAULT;
-  const coda = Number.isFinite(opts.coda) ? opts.coda : CODA_DEFAULT;
+  let testa = Number.isFinite(opts.testa) ? opts.testa : TESTA_DEFAULT;
+  let coda = Number.isFinite(opts.coda) ? opts.coda : CODA_DEFAULT;
+  // Il taglio deve stare DENTRO il tetto anche quando il tetto è più piccolo dei default
+  // (7000+5000): con maxChar=10.000 il risultato «ridotto» sarebbe stato di 12.000 caratteri,
+  // cioè più lungo del massimo consentito — e il secondo giro non lo ritocca (marcatore).
+  // Il margine copre la nota (~250 caratteri). Con il tetto storico di 25.000 non cambia nulla.
+  const tetto = Math.max(200, maxChar - 600);
+  if (testa + coda > tetto) {
+    const scala = tetto / (testa + coda);
+    testa = Math.floor(testa * scala);
+    coda = Math.floor(coda * scala);
+  }
   const invariato = { content, ridotto: false, tolto: 0, prima: 0, dopo: 0 };
 
   if (!Array.isArray(content) || content.length === 0) return invariato;

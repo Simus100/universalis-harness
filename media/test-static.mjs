@@ -95,8 +95,17 @@ check("le icone PWA sono servite dal server", /iconMatch/.test(mjs));
 // --- 5. tool browser: aggancio e vincoli di sicurezza --------------------
 check("dashboard.mjs importa l'estensione del tool browser", /from "\.\/media\/browser-tool\.mjs"/.test(mjs));
 // La regex non può fermarsi alla prima `]`: la riga contiene spread con array inline
-// (`[...(CONTROLLO_OFF ? [] : [CONTROLLO_TURNO]), …`). Si guarda la riga che dichiara le estensioni.
-const rigaEstensioni = mjs.split("\n").find((l) => /extensionFactories:/.test(l)) || "";
+// (`[...(CONTROLLO_OFF ? [] : [CONTROLLO_TURNO]), …`). Si guarda il BLOCCO che dichiara le
+// estensioni, dalla riga di apertura alla parentesi di chiusura: prima si leggeva la sola riga
+// `extensionFactories: [`, che ovviamente non contiene nessun nome, e le due prove qui sotto
+// fallivano sempre (verificato: fallivano già su HEAD, non era una regressione).
+const rigaEstensioni = (() => {
+  const righe = mjs.split("\n");
+  const inizio = righe.findIndex((l) => /extensionFactories:\s*\[/.test(l));
+  if (inizio < 0) return "";
+  const fineRel = righe.slice(inizio + 1).findIndex((l) => /^\s{2}\],?\s*$/.test(l));
+  return righe.slice(inizio, fineRel < 0 ? inizio + 15 : inizio + fineRel + 2).join("\n");
+})();
 check("BROWSER_EXT è registrata in extensionFactories", /BROWSER_EXT/.test(rigaEstensioni));
 check("il tool browser è OFF di default", /let browserEnabled = false;/.test(mjs));
 check(

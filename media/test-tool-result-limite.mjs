@@ -91,6 +91,41 @@ prova("più blocchi di testo vengono fusi e tagliati insieme", () => {
   assert.ok(r.content[0].text.length <= MAX_CHAR_DEFAULT);
 });
 
+console.log("\ntool-result-limite — tetto piccolo (10.000, default dal 2026-11-22)");
+prova("con tetto 10.000 il testo ridotto sta DENTRO il tetto (nota compresa)", () => {
+  const r = limitaContenuto(testo(80000), { maxChar: 10000 });
+  assert.equal(r.ridotto, true);
+  assert.ok(
+    r.content[0].text.length <= 10000,
+    `il risultato ridotto non deve superare il tetto: ${r.content[0].text.length}`,
+  );
+});
+prova("con tetto 10.000 conserva inizio, fine e la via per rileggere", () => {
+  const r = limitaContenuto([{ type: "text", text: "INIZIO" + "m".repeat(80000) + "FINE" }], { maxChar: 10000 });
+  const t = r.content[0].text;
+  assert.ok(t.startsWith("INIZIO"));
+  assert.ok(t.endsWith("FINE"));
+  assert.ok(t.includes(MARCATORE));
+  assert.match(t, /read/);
+});
+prova("sotto i 10.000 caratteri non si taglia niente", () => {
+  const c = testo(9500);
+  const r = limitaContenuto(c, { maxChar: 10000 });
+  assert.equal(r.ridotto, false);
+  assert.equal(r.content, c);
+});
+prova("con tetto 25.000 il comportamento storico è identico (testa 7000 + coda 5000)", () => {
+  const r = limitaContenuto([{ type: "text", text: "A".repeat(10000) + "C".repeat(70000) + "B".repeat(10000) }], { maxChar: 25000 });
+  const t = r.content[0].text;
+  assert.ok(t.slice(0, 7000).startsWith("A"), "la testa resta 7000");
+  assert.ok(t.endsWith("B".repeat(5000)), "la coda resta 5000");
+});
+prova("parametri espliciti rispettati quando ci stanno nel tetto", () => {
+  const r = limitaContenuto(testo(80000), { maxChar: 25000, testa: 8000, coda: 6000 });
+  assert.ok(r.content[0].text.length <= 25000);
+  assert.ok(r.content[0].text.startsWith("a".repeat(100)), "la testa richiesta è rispettata");
+});
+
 console.log("\n────────────────────────────────────────");
 console.log(`  ${passati} prove superate, ${falliti.length} fallite`);
 if (falliti.length) {

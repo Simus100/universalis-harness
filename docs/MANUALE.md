@@ -1210,14 +1210,15 @@ Oltre ai pacchetti, la dashboard registra **estensioni inline** dal codice (`ext
 
 ## Interruttore dei tool opzionali (controllo costi)
 
-In alto nella dashboard c'è un interruttore **spento di default**:
+In alto nella dashboard c'è un interruttore per i subagent, **acceso di default dal 2026-11-22**:
 **🤖 subagent** (con campo **max**).
 
 | Interruttore | OFF | ON |
 |--------------|-----|-----|
 | 🤖 subagent | tool `subagent`/`bg_wait` rimossi → niente delega | abilita i subagent (max 3 per richiesta, regolabile 1–64) |
 
-Al riavvio torna **OFF**. API: `POST /api/subagents`.
+Al riavvio torna al valore di `DASH_SUBAGENT` (default `on`; `DASH_SUBAGENT=off` in `.env` per
+lasciarlo spento). API: `POST /api/subagents`, oppure `/subagent off` a runtime.
 
 Nel menu **features** c'è anche l'interruttore **Decision_M** (decisore tipizzato locale): a differenza
 del subagent la scelta è **persistita** (`media/decision-m-prefs.json`), perché è un servizio che si
@@ -1242,16 +1243,18 @@ ma solo dalla dashboard, via `additionalExtensionPaths` (`DASH_SUBAGENT_EXT`).
 
 In alto nella dashboard c'è il tasto **🤖 subagent: OFF/ON** e il campo **max**:
 
-- **OFF (default)** → i tool `subagent` e `bg_wait` vengono **rimossi** dalla sessione:
-  non vengono inviati all'API, quindi il modello **non può** delegare (costo zero garantito).
+- **ON (default dal 2026-11-22)** → i tool `subagent` e `bg_wait` sono disponibili: il modello può
+  delegare una ricognizione (5+ letture) e riceve solo la sintesi, quindi il contesto del padre
+  resta corto. Costa gli schemi dei due tool nel prefisso (in cache, quindi poco);
+- **OFF** (spento a runtime, o `DASH_SUBAGENT=off` in `.env`) → i tool vengono **rimossi** dalla
+  sessione: non vengono inviati all'API, quindi il modello **non può** delegare;
 - **ON** → i tool vengono aggiunti; il modello può usare subagent (⚠️ aumenta i token).
 - **max** (default **3**) → numero **massimo di agenti per richiesta**. Modificabile dalla
   dashboard (1–64). Viene passato all'estensione via `PI_SUBAGENT_MAX_SPAWNS_PER_RUN`,
   che `pi-subagents` rilegge ad ogni run.
 
-Il gate è verificato a livello di richiesta API: da OFF i tool inviati sono solo
-`read, bash, edit, write, web_search, source_check, fetch_content, get_search_content`.
-Al riavvio la dashboard torna **OFF** e **max 3**.
+Il gate è verificato a livello di richiesta API. Al riavvio lo stato è quello di `DASH_SUBAGENT`
+(default **on**) e **max 3**.
 
 API: `POST /api/subagents { "enabled": true|false, "maxSpawns": 1..64 }`.
 
