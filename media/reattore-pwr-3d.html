@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<title>Reattore PWR · vista 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { --ink:#e8eff5; --muted:#8ea3b4; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:#060a0e; color:var(--ink); overflow:hidden;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #c { position:fixed; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+  #c:active { cursor:grabbing; }
+  .panel { position:fixed; top:18px; left:18px; max-width:330px; padding:14px 16px;
+    background:rgba(10,16,22,.72); border:1px solid rgba(120,160,190,.18); border-radius:12px;
+    font-size:12.5px; line-height:1.45; pointer-events:none; }
+  .panel h1 { margin:0 0 4px; font-size:13px; letter-spacing:.08em; text-transform:uppercase; }
+  .panel p { margin:0; color:var(--muted); }
+  .legend { margin-top:10px; display:grid; gap:4px; font-size:11.5px; color:var(--muted); }
+  .legend span { display:flex; align-items:center; gap:7px; }
+  .dot { width:9px; height:9px; border-radius:2px; display:inline-block; }
+  .controls { position:fixed; bottom:18px; left:18px; display:flex; gap:8px; }
+  button { font:inherit; font-size:12px; color:var(--ink); background:rgba(22,32,42,.85);
+    border:1px solid rgba(120,160,190,.25); border-radius:9px; padding:7px 12px; cursor:pointer; }
+  button[aria-pressed="true"] { background:rgba(70,140,190,.35); border-color:rgba(120,190,235,.5); }
+  .hint { position:fixed; bottom:22px; right:18px; font-size:11.5px; color:var(--muted); text-align:right; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="panel">
+  <h1>PWR · sezione 3D</h1>
+  <p>Reattore ad acqua in pressione: vessel sezionato (settore frontale asportato) con nocciolo in vista.</p>
+  <div class="legend">
+    <span><i class="dot" style="background:#d6a53e"></i>barre di combustibile</span>
+    <span><i class="dot" style="background:#46607a"></i>barre di controllo</span>
+    <span><i class="dot" style="background:#7e8a95"></i>vessel in pressione</span>
+    <span><i class="dot" style="background:#8a98a2"></i>circuito primario</span>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="bAuto" aria-pressed="true">rotazione auto</button>
+  <button id="bLab" aria-pressed="true">etichette</button>
+</div>
+<div class="hint">trascina per ruotare · rotella per zoom</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var cvs = document.getElementById('c');
+  var ctx = cvs.getContext('2d');
+  var W = 1, H = 1, DPR = 1;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = cvs.clientWidth || window.innerWidth;
+    H = cvs.clientHeight || window.innerHeight;
+    cvs.width = Math.max(1, Math.round(W * DPR));
+    cvs.height = Math.max(1, Math.round(H * DPR));
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+
+  /* ---------------- algebra minima ---------------- */
+  function add(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
+  function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+  function cross(a, b) {
+    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  }
+  function norm(a) {
+    var L = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]) || 1;
+    return [a[0] / L, a[1] / L, a[2] / L];
+  }
+  function mv(M, p) {
+    return [
+      M[0][0] * p[0] + M[0][1] * p[1] + M[0][2] * p[2],
+      M[1][0] * p[0] + M[1][1] * p[1] + M[1][2] * p[2],
+      M[2][0] * p[0] + M[2][1] * p[1] + M[2][2] * p[2]
+    ];
+  }
+  function mmul(A, B) {
+    var R = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (var i = 0; i < 3; i++) {
+      for (var j = 0; j < 3; j++) {
+        var s = 0;
+        for (var k = 0; k < 3; k++) s += A[i][k] * B[k][j];
+        R[i][j] = s;
+      }
+    }
+    return R;
+  }
+  function rotX(a) { var c = Math.cos(a), s = Math.sin(a); return [[1, 0, 0], [0, c, -s], [0, s, c]]; }
+  function rotY(a) { var c = Math.cos(a), s = Math.sin(a); return [[c, 0, s], [0, 1, 0], [-s, 0, c]]; }
+  function rotZ(a) { var c = Math.cos(a), s = Math.sin(a); return [[c, -s, 0], [s, c, 0], [0, 0, 1]]; }
+  function TF(R, t) { return { R: R, t: t || [0, 0, 0] }; }
+  function comp(A, B) { return TF(mmul(A.R, B.R), add(A.t, mv(A.R, B.t))); }
+  function applyT(tf, p) { return add(mv(tf.R, p), tf.t); }
+
+  /* ---------------- palette ---------------- */
+  var C = {
+    steel:   [126, 138, 149],
+    steelIn: [96, 110, 122],
+    cut:     [178, 190, 199],
+    lid:     [140, 152, 162],
+    plate:   [58, 66, 74],
+    base:    [64, 70, 78],
+    baseTop: [82, 90, 99],
+    fuel:    [214, 165, 62],
+    fuel2:   [188, 142, 50],
+    ctrl:    [70, 96, 122],
+    pipe:    [138, 152, 162],
+    mech:    [92, 104, 116],
+    pres:    [124, 138, 149]
+  };
+
+  /* ---------------- costruzione geometria ---------------- */
+  var scene = [];
+  var CUR = null;
+
+  function face(pts, col, a) {
+    var v = [], i;
+    for (i = 0; i < pts.length; i++) v.push(CUR ? applyT(CUR, pts[i]) : pts[i]);
+    scene.push({ p: v, c: col, a: (a === undefined ? 1 : a) });
+  }
+
+  function cyl(o) {
+    var cx = o.cx || 0, cz = o.cz || 0;
+    var y0 = o.y0, y1 = o.y1, r = o.r;
+    var seg = o.seg || 20;
+    var t0 = (o.t0 === undefined) ? 0 : o.t0;
+    var t1 = (o.t1 === undefined) ? Math.PI * 2 : o.t1;
+    var col = o.col, al = o.a;
+    for (var i = 0; i < seg; i++) {
+      var a0 = t0 + (t1 - t0) * i / seg;
+      var a1 = t0 + (t1 - t0) * (i + 1) / seg;
+      var c0 = Math.cos(a0), s0 = Math.sin(a0), c1 = Math.cos(a1), s1 = Math.sin(a1);
+      face([
+        [cx + r * c0, y0, cz + r * s0],
+        [cx + r * c1, y0, cz + r * s1],
+        [cx + r * c1, y1, cz + r * s1],
+        [cx + r * c0, y1, cz + r * s0]
+      ], col, al);
+    }
+    if (o.capTop) {
+      ring({ y: y1, rOut: r, rIn: 0, seg: seg, col: o.capCol || col, cx: cx, cz: cz, t0: t0, t1: t1, a: al });
+    }
+    if (o.capBottom) {
+      ring({ y: y0, rOut: r, rIn: 0, seg: seg, col: o.capCol || col, cx: cx, cz: cz, t0: t0, t1: t1, a: al });
+    }
+  }
+
+  function ring(o) {
+    var seg = o.seg || 24, y = o.y, rO = o.rOut;
+    var rI = (o.rIn === undefined) ? 0 : o.rIn;
+    var cx = o.cx || 0, cz = o.cz || 0;
+    var t0 = (o.t0 === undefined) ? 0 : o.t0;
+    var t1 = (o.t1 === undefined) ? Math.PI * 2 : o.t1;
+    for (var i = 0; i < seg; i++) {
+      var a0 = t0 + (t1 - t0) * i / seg;
+      var a1 = t0 + (t1 - t0) * (i + 1) / seg;
+      var c0 = Math.cos(a0), s0 = Math.sin(a0), c1 = Math.cos(a1), s1 = Math.sin(a1);
+      if (rI <= 0.0001) {
+        face([[cx, y, cz], [cx + rO * c0, y, cz + rO * s0], [cx + rO * c1, y, cz + rO * s1]], o.col, o.a);
+      } else {
+        face([
+          [cx + rI * c0, y, cz + rI * s0],
+          [cx + rO * c0, y, cz + rO * s0],
+          [cx + rO * c1, y, cz + rO * s1],
+          [cx + rI * c1, y, cz + rI * s1]
+        ], o.col, o.a);
+      }
+    }
+  }
+
+  function box(o) {
+    var x0 = o.cx - o.sx, x1 = o.cx + o.sx;
+    var y0 = o.cy - o.sy, y1 = o.cy + o.sy;
+    var z0 = o.cz - o.sz, z1 = o.cz + o.sz;
+    var V = [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0],
+             [x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]];
+    var F = [[0, 1, 2, 3], [5, 4, 7, 6], [4, 0, 3, 7], [1, 5, 6, 2], [3, 2, 6, 7], [4, 5, 1, 0]];
+    for (var i = 0; i < F.length; i++) {
+      face([V[F[i][0]], V[F[i][1]], V[F[i][2]], V[F[i][3]]], o.col, o.a);
+    }
+  }
+
+  function pipeX(x0, y, z, len, r, col) {
+    var prev = CUR;
+    CUR = comp(prev || TF([[1, 0, 0], [0, 1, 0], [0, 0, 1]]), TF(rotZ(-Math.PI / 2), [x0, y, z]));
+    cyl({ y0: 0, y1: len, r: r, seg: 16, col: col, capTop: true });
+    CUR = prev;
+  }
+
+  function build() {
+    /* basamento */
+    cyl({ y0: 0, y1: 54, r: 128, seg: 44, col: C.base });
+    ring({ y: 54, rOut: 128, rIn: 0, seg: 44, col: C.baseTop });
+
+    var R = 96, RI = 88, Y0 = 58, Y1 = 364;
+    /* settore frontale (verso -z) asportato: si vede dentro */
+    var T0 = Math.PI * 1.75, T1 = Math.PI * 3.25;
+
+    cyl({ y0: Y0, y1: Y1, r: R, seg: 48, t0: T0, t1: T1, col: C.steel, a: 0.50 });
+    cyl({ y0: Y0, y1: Y1, r: RI, seg: 48, t0: T0, t1: T1, col: C.steelIn, a: 0.26 });
+
+    /* facce di taglio: lo spessore della parete */
+    var cuts = [T0, T1];
+    for (var ci = 0; ci < cuts.length; ci++) {
+      var th = cuts[ci], cc = Math.cos(th), ss = Math.sin(th);
+      face([
+        [R * cc, Y0, R * ss],
+        [RI * cc, Y0, RI * ss],
+        [RI * cc, Y1, RI * ss],
+        [R * cc, Y1, R * ss]
+      ], C.cut, 1);
+    }
+
+    /* fondo e coperchio */
+    ring({ y: Y0, rOut: R, rIn: 0, seg: 48, col: C.plate });
+    ring({ y: Y1, rOut: R, rIn: 42, seg: 48, col: C.lid });
+
+    /* nocciolo: 4x4 barre di combustibile */
+    var n = 4, step = 26, br = 10;
+    for (var i = 0; i < n; i++) {
+      for (var j = 0; j < n; j++) {
+        var x = (i - (n - 1) / 2) * step;
+        var z = (j - (n - 1) / 2) * step;
+        cyl({
+          cx: x, cz: z, y0: 110, y1: 226, r: br, seg: 10,
+          col: ((i + j) % 2 === 0 ? C.fuel : C.fuel2),
+          capTop: true
+        });
+      }
+    }
+    ring({ y: 106, rOut: 64, rIn: 0, seg: 32, col: C.plate, a: 0.92 });
+
+    /* barre di controllo: scendono dal meccanismo dentro il nocciolo */
+    var cp = [[-26, -26], [26, -26], [-26, 26], [26, 26]];
+    for (var q = 0; q < cp.length; q++) {
+      cyl({ cx: cp[q][0], cz: cp[q][1], y0: 150, y1: 442, r: 7, seg: 8, col: C.ctrl, capTop: true });
+    }
+
+    /* meccanismo di comando in testa */
+    box({ cx: 0, cy: 470, cz: 0, sx: 54, sy: 28, sz: 54, col: C.mech });
+    box({ cx: 0, cy: 505, cz: 0, sx: 26, sy: 8, sz: 26, col: C.lid });
+
+    /* circuito primario */
+    pipeX(30, 330, 0, 210, 15, C.pipe);   /* uscita calda */
+    pipeX(30, 132, 0, 210, 15, C.pipe);   /* ingresso freddo */
+
+    /* pressurizzatore e sua linea */
+    cyl({ cx: 205, cz: -70, y0: 58, y1: 214, r: 27, seg: 22, col: C.pres, capTop: true });
+    ring({ y: 214, cx: 205, cz: -70, rOut: 27, rIn: 0, seg: 22, col: C.lid });
+    pipeX(58, 190, -70, 148, 8, C.pipe);
+  }
+
+  /* ---------------- camera ---------------- */
+  var cam = { yaw: -0.62, pitch: 0.30, dist: 1150, ty: 236, fov: 40 };
+
+  function toCam(p) {
+    var x = p[0], y = p[1] - cam.ty, z = p[2];
+    var cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw);
+    var x1 = x * cy + z * sy;
+    var z1 = -x * sy + z * cy;
+    var cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    var y1 = y * cp + z1 * sp;
+    var z2 = -y * sp + z1 * cp;
+    return [x1, y1, z2 + cam.dist];
+  }
+
+  function focal() { return (H / 2) / Math.tan((cam.fov * Math.PI / 180) / 2); }
+
+  function projP(pc) {
+    var k = focal() / pc[2];
+    return [W / 2 + pc[0] * k, H / 2 - pc[1] * k];
+  }
+
+  var LIGHT = norm([-0.42, 0.72, -0.55]);
+
+  /* ---------------- disegno ---------------- */
+  function line3(a, b) {
+    var A = toCam(a), B = toCam(b);
+    if (A[2] < 45 || B[2] < 45) return;
+    var p = projP(A), q = projP(B);
+    ctx.beginPath();
+    ctx.moveTo(p[0], p[1]);
+    ctx.lineTo(q[0], q[1]);
+    ctx.stroke();
+  }
+
+  function drawFloor() {
+    var N = 7, step = 95, i;
+    ctx.strokeStyle = 'rgba(96,140,175,0.15)';
+    ctx.lineWidth = 1;
+    for (i = -N; i <= N; i++) {
+      line3([i * step, -1, -N * step], [i * step, -1, N * step]);
+      line3([-N * step, -1, i * step], [N * step, -1, i * step]);
+    }
+  }
+
+  var LABELS = [
+    { p: [0, 478, 0], t: 'Meccanismo barre di controllo' },
+    { p: [0, 300, -60], t: 'Vessel in pressione (sezione)' },
+    { p: [0, 168, 0], t: 'Nocciolo · 16 barre di combustibile' },
+    { p: [205, 150, -70], t: 'Pressurizzatore' },
+    { p: [150, 132, 0], t: 'Ugello ingresso freddo' },
+    { p: [150, 330, 0], t: 'Ugello uscita calda' },
+    { p: [-128, 27, 60], t: 'Basamento' }
+  ];
+
+  function drawLabels() {
+    ctx.font = '12px ui-sans-serif, system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+    for (var i = 0; i < LABELS.length; i++) {
+      var L = LABELS[i];
+      var pc = toCam(L.p);
+      if (pc[2] < 60) continue;
+      var s = projP(pc);
+      var left = (s[0] > W - 230);
+      var tx = left ? s[0] - 16 : s[0] + 16;
+      var ty = s[1] - 14;
+      ctx.strokeStyle = 'rgba(150,190,220,0.45)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(s[0], s[1]);
+      ctx.lineTo(left ? tx + 5 : tx - 5, ty);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(190,215,235,0.95)';
+      ctx.beginPath();
+      ctx.arc(s[0], s[1], 2.2, 0, 6.2832);
+      ctx.fill();
+      ctx.textAlign = left ? 'right' : 'left';
+      ctx.fillStyle = 'rgba(0,0,0,0.65)';
+      ctx.fillText(L.t, tx + 1, ty + 1);
+      ctx.fillStyle = 'rgba(232,239,245,0.95)';
+      ctx.fillText(L.t, tx, ty);
+    }
+  }
+
+  function render() {
+    var g = ctx.createRadialGradient(W * 0.5, H * 0.42, 30, W * 0.5, H * 0.5, Math.max(W, H) * 0.85);
+    g.addColorStop(0, '#15202b');
+    g.addColorStop(1, '#05080b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    drawFloor();
+
+    var buf = [], i, k;
+    for (i = 0; i < scene.length; i++) {
+      var fc = scene[i], pts = fc.p, camPts = [], zs = 0, behind = false;
+      for (k = 0; k < pts.length; k++) {
+        var q = toCam(pts[k]);
+        if (q[2] < 40) { behind = true; break; }
+        camPts.push(q);
+        zs += q[2];
+      }
+      if (behind) continue;
+      var u = sub(camPts[1], camPts[0]);
+      var v = sub(camPts[2], camPts[0]);
+      var nr = norm(cross(u, v));
+      if (nr[2] > 0) { nr = [-nr[0], -nr[1], -nr[2]]; }
+      var d = nr[0] * LIGHT[0] + nr[1] * LIGHT[1] + nr[2] * LIGHT[2];
+      if (d < 0) d = 0;
+      var sh = 0.34 + 0.66 * d;
+      var spec = Math.pow(d, 28) * 0.28;
+      var c = fc.c;
+      buf.push({
+        z: zs / pts.length,
+        scr: camPts.map(projP),
+        fill: 'rgba(' + Math.min(255, Math.round(c[0] * sh + 255 * spec)) + ',' +
+                        Math.min(255, Math.round(c[1] * sh + 255 * spec)) + ',' +
+                        Math.min(255, Math.round(c[2] * sh + 255 * spec)) + ',' + fc.a + ')',
+        solid: fc.a >= 0.99
+      });
+    }
+    buf.sort(function (A, B) { return B.z - A.z; });
+
+    for (i = 0; i < buf.length; i++) {
+      var o = buf[i], s = o.scr, t;
+      ctx.beginPath();
+      ctx.moveTo(s[0][0], s[0][1]);
+      for (t = 1; t < s.length; t++) ctx.lineTo(s[t][0], s[t][1]);
+      ctx.closePath();
+      ctx.fillStyle = o.fill;
+      ctx.fill();
+      if (o.solid) {
+        ctx.strokeStyle = 'rgba(6,10,14,0.5)';
+        ctx.lineWidth = 0.7;
+        ctx.stroke();
+      }
+    }
+
+    if (showLabels) drawLabels();
+  }
+
+  /* ---------------- interazione ---------------- */
+  var auto = true, showLabels = true, dragging = null;
+
+  cvs.addEventListener('pointerdown', function (e) {
+    dragging = { x: e.clientX, y: e.clientY };
+    if (cvs.setPointerCapture) { try { cvs.setPointerCapture(e.pointerId); } catch (err) {} }
+  });
+  cvs.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    cam.yaw += (e.clientX - dragging.x) * 0.0065;
+    cam.pitch = Math.max(-0.10, Math.min(1.25, cam.pitch + (e.clientY - dragging.y) * 0.0055));
+    dragging = { x: e.clientX, y: e.clientY };
+  });
+  window.addEventListener('pointerup', function () { dragging = null; });
+  cvs.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    cam.dist = Math.max(520, Math.min(2400, cam.dist * (e.deltaY > 0 ? 1.08 : 0.926)));
+  }, { passive: false });
+
+  var bAuto = document.getElementById('bAuto');
+  var bLab = document.getElementById('bLab');
+  bAuto.addEventListener('click', function () {
+    auto = !auto;
+    bAuto.setAttribute('aria-pressed', String(auto));
+  });
+  bLab.addEventListener('click', function () {
+    showLabels = !showLabels;
+    bLab.setAttribute('aria-pressed', String(showLabels));
+  });
+
+  function frame() {
+    if (auto && !dragging) cam.yaw += 0.0026;
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  build();
+  frame();
+})();
+</script>
+</body>
+</html>

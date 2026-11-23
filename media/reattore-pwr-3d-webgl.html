@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<title>Reattore PWR · sezione 3D</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root {
+    --bg: #070b10;
+    --ink: #e7eef5;
+    --dim: #98abbd;
+    --line: rgba(140, 170, 195, .22);
+    --surface: #0c141c;
+    --accent: #5fb4e8;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: radial-gradient(120% 90% at 62% 30%, #101c27 0%, #070b10 58%, #04070a 100%);
+    color: var(--ink);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  #leaders { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  #tags { position: fixed; inset: 0; pointer-events: none; }
+
+  .tag {
+    position: absolute; top: 0; left: 0;
+    transform: translate(-50%, -50%);
+    padding: 4px 9px; border-radius: 7px;
+    background: rgba(8, 13, 18, .88);
+    border: 1px solid var(--line);
+    font-size: 11.5px; line-height: 1.25; white-space: nowrap;
+    color: var(--ink); letter-spacing: .01em;
+    transition: opacity .35s ease;
+  }
+  .tag.is-dim { opacity: 0; }
+
+  .hud {
+    position: fixed; top: 20px; left: 20px; width: 300px;
+    padding: 16px 18px 15px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+  }
+  .hud h1 {
+    margin: 0 0 6px; font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .hud p { margin: 0; font-size: 12px; line-height: 1.5; color: var(--dim); }
+  .key { margin: 14px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); display: grid; gap: 7px; }
+  .key div { display: flex; align-items: center; gap: 9px; font-size: 11.5px; color: var(--dim); }
+  .sw { width: 10px; height: 10px; border-radius: 2px; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.14) inset; }
+  .meta { margin: 14px 0 0; font-size: 11px; color: #74889a; line-height: 1.45; }
+
+  .bar {
+    position: fixed; bottom: 20px; left: 20px;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+  button {
+    font: inherit; font-size: 12.5px; color: var(--dim);
+    background: transparent; border: 0; padding: 9px 14px; cursor: pointer;
+    transition: color .18s ease, background-color .18s ease;
+  }
+  .seg button + button { border-left: 1px solid var(--line); }
+  button:hover { color: var(--ink); background: rgba(95, 180, 232, .10); }
+  button[aria-pressed="true"] { color: #dff0fb; background: rgba(95, 180, 232, .17); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .flat { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  .hint { position: fixed; bottom: 24px; right: 22px; font-size: 11.5px; color: #74889a; text-align: right; }
+  ::selection { background: rgba(95, 180, 232, .32); }
+
+  @media (max-width: 720px) {
+    .hud { width: auto; right: 20px; padding: 13px 14px; }
+    .hud h1 { font-size: 13.5px; }
+    .key, .meta { display: none; }
+    .hint { display: none; }
+    .tag { font-size: 10.5px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<svg id="leaders" aria-hidden="true"></svg>
+<div id="tags" aria-hidden="true"></div>
+
+<header class="hud">
+  <h1>Reattore ad acqua in pressione</h1>
+  <p id="lead">Vessel sezionato: la parete è asportata su un settore di 104° per mostrare nocciolo e barre di comando.</p>
+  <div class="key">
+    <div><span class="sw" style="background:#d8a341"></span>barre di combustibile</div>
+    <div><span class="sw" style="background:#3d5f80"></span>barre di controllo</div>
+    <div><span class="sw" style="background:#b9c6d0"></span>vessel e penetrazioni</div>
+    <div><span class="sw" style="background:#8fa2b0"></span>circuito primario</div>
+  </div>
+  <p class="meta">Modello schematico, non in scala: mancano generatore di vapore, pompe e contenimento.</p>
+</header>
+
+<div class="bar">
+  <div class="seg" role="group" aria-label="Vista del vessel">
+    <button id="btnSection" aria-pressed="true">Sezione</button>
+    <button id="btnShell" aria-pressed="false">Guscio</button>
+  </div>
+  <button id="btnLabels" class="flat" aria-pressed="true">Etichette</button>
+  <button id="btnReset" class="flat">Ripristina vista</button>
+</div>
+<p class="hint">trascina per orbitare · rotella per zoom</p>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------------- renderer, scena, camera ---------------- */
+const canvas = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setSize(window.innerWidth, window.innerHeight, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.06;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.setClearColor(0x000000, 0);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x080d13, 14, 34);
+
+const camera = new THREE.PerspectiveCamera(34, window.innerWidth / window.innerHeight, 0.1, 140);
+const HOME = new THREE.Vector3(5.86, 3.74, 7.55);
+const TARGET = new THREE.Vector3(-0.52, 2.68, 0.05);
+camera.position.copy(HOME).multiplyScalar(1.22);
+
+/* ambiente PBR per i riflessi sull'acciaio */
+const pmrem = new THREE.PMREMGenerator(renderer);
+const room = new RoomEnvironment();
+scene.environment = pmrem.fromScene(room, 0.04).texture;
+scene.environmentIntensity = 0.42;
+room.dispose();
+pmrem.dispose();
+
+/* ---------------- luci ---------------- */
+const hemi = new THREE.HemisphereLight(0xa8ccf0, 0x0a0f14, 0.5);
+scene.add(hemi);
+
+const key = new THREE.DirectionalLight(0xfff3e2, 3.1);
+key.position.set(5.5, 8.5, 6.5);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.left = -4.6;
+key.shadow.camera.right = 4.6;
+key.shadow.camera.top = 5.2;
+key.shadow.camera.bottom = -1.4;
+key.shadow.camera.near = 2;
+key.shadow.camera.far = 26;
+key.shadow.camera.updateProjectionMatrix();
+key.shadow.normalBias = 0.02;
+key.shadow.bias = -0.0004;
+key.shadow.intensity = 0.82;
+scene.add(key);
+
+const fill = new THREE.DirectionalLight(0x93bce4, 0.85);
+fill.position.set(-7.5, 4.5, 2.5);
+scene.add(fill);
+
+const rim = new THREE.DirectionalLight(0x4f92d6, 1.5);
+rim.position.set(-2.5, 3.2, -8);
+scene.add(rim);
+
+const coreGlow = new THREE.PointLight(0xff8a3e, 2.1, 4.5, 2);
+coreGlow.position.set(0, 2.86, 0);
+scene.add(coreGlow);
+
+/* ---------------- materiali ---------------- */
+const M = {
+  steel: new THREE.MeshStandardMaterial({ color: 0x9aadbd, metalness: 0.78, roughness: 0.48, side: THREE.DoubleSide }),
+  steelIn: new THREE.MeshStandardMaterial({ color: 0x39454f, metalness: 0.7, roughness: 0.7, side: THREE.DoubleSide }),
+  cut: new THREE.MeshStandardMaterial({ color: 0xcfdae2, metalness: 0.35, roughness: 0.62, side: THREE.DoubleSide }),
+  glass: new THREE.MeshPhysicalMaterial({
+    color: 0xa9c3d6, metalness: 0.35, roughness: 0.12,
+    transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false
+  }),
+  fuel: new THREE.MeshStandardMaterial({
+    color: 0xb08a52, metalness: 0.78, roughness: 0.38
+  }),
+  ctrl: new THREE.MeshStandardMaterial({ color: 0x3d5f80, metalness: 0.9, roughness: 0.32 }),
+  plate: new THREE.MeshStandardMaterial({ color: 0x59697a, metalness: 0.8, roughness: 0.5, side: THREE.DoubleSide }),
+  pipe: new THREE.MeshStandardMaterial({ color: 0x8fa2b0, metalness: 0.95, roughness: 0.3 }),
+  mech: new THREE.MeshStandardMaterial({ color: 0x4a5a68, metalness: 0.7, roughness: 0.52 }),
+  base: new THREE.MeshStandardMaterial({ color: 0x2a323a, metalness: 0.35, roughness: 0.82 }),
+  ground: new THREE.MeshStandardMaterial({ color: 0x0d1319, metalness: 0.12, roughness: 0.94 })
+};
+
+/* ---------------- helper ---------------- */
+const model = new THREE.Group();
+scene.add(model);
+
+function add(geo, mat, parent, opts) {
+  opts = opts || {};
+  const m = new THREE.Mesh(geo, mat);
+  if (opts.pos) m.position.set(opts.pos[0], opts.pos[1], opts.pos[2]);
+  if (opts.rot) m.rotation.set(opts.rot[0], opts.rot[1], opts.rot[2]);
+  if (opts.scale) m.scale.set(opts.scale[0], opts.scale[1], opts.scale[2]);
+  m.castShadow = opts.cast !== false;
+  m.receiveShadow = opts.receive !== false;
+  (parent || model).add(m);
+  return m;
+}
+
+/* ---------------- pavimento e basamento ---------------- */
+add(new THREE.PlaneGeometry(60, 60), M.ground, scene, { rot: [-Math.PI / 2, 0, 0], cast: false });
+add(new THREE.CircleGeometry(2.45, 72), M.base, scene, { pos: [0, 0.012, 0], rot: [-Math.PI / 2, 0, 0], cast: false });
+add(new THREE.TorusGeometry(2.42, 0.018, 8, 96), new THREE.MeshStandardMaterial({ color: 0x3f4d59, metalness: 0.8, roughness: 0.4 }),
+  scene, { pos: [0, 0.014, 0], rot: [Math.PI / 2, 0, 0], cast: false });
+
+/* basamento del vessel */
+const Y_BASE = 0.72;
+add(new THREE.CylinderGeometry(1.18, 1.24, Y_BASE, 64), M.base, model, { pos: [0, Y_BASE / 2, 0] });
+add(new THREE.TorusGeometry(1.19, 0.03, 10, 72), M.plate, model, { pos: [0, Y_BASE, 0], rot: [Math.PI / 2, 0, 0] });
+
+/* ---------------- vessel ---------------- */
+const R = 1.0, WALL = 0.1, RI = R - WALL;
+const Y_BOT = 1.34, Y_TOP = 4.09;
+const H_CYL = Y_TOP - Y_BOT;
+const CAL_Y = 0.64;                                // calotte ellittiche, non emisferiche
+const GAP = THREE.MathUtils.degToRad(36);          // azimut del centro del settore asportato
+const OPEN = THREE.MathUtils.degToRad(104);        // ampiezza del settore asportato
+const TH_LEN = Math.PI * 2 - OPEN;
+const TH_START = GAP + OPEN / 2;
+const PHI_C = Math.PI / 2 + GAP;
+const PHI_START = PHI_C + OPEN / 2;
+
+const section = new THREE.Group();
+const shell = new THREE.Group();
+model.add(section, shell);
+
+/* parete cilindrica */
+add(new THREE.CylinderGeometry(R, R, H_CYL, 72, 1, true, TH_START, TH_LEN), M.steel, section, { pos: [0, (Y_BOT + Y_TOP) / 2, 0] });
+add(new THREE.CylinderGeometry(RI, RI, H_CYL, 72, 1, true, TH_START, TH_LEN), M.steelIn, section, { pos: [0, (Y_BOT + Y_TOP) / 2, 0] });
+
+/* calotte emisferiche */
+add(new THREE.SphereGeometry(R, 84, 40, PHI_START, TH_LEN, 0, Math.PI / 2), M.steel, section, { pos: [0, Y_TOP, 0], scale: [1, CAL_Y, 1] });
+add(new THREE.SphereGeometry(RI, 84, 40, PHI_START, TH_LEN, 0, Math.PI / 2), M.steelIn, section, { pos: [0, Y_TOP, 0], scale: [1, CAL_Y, 1] });
+add(new THREE.SphereGeometry(R, 84, 40, PHI_START, TH_LEN, Math.PI / 2, Math.PI / 2), M.steel, section, { pos: [0, Y_BOT, 0], scale: [1, CAL_Y, 1] });
+add(new THREE.SphereGeometry(RI, 84, 40, PHI_START, TH_LEN, Math.PI / 2, Math.PI / 2), M.steelIn, section, { pos: [0, Y_BOT, 0], scale: [1, CAL_Y, 1] });
+
+/* facce di taglio: spessore visibile della parete */
+[TH_START, TH_START + TH_LEN].forEach(function (th) {
+  const rx = Math.sin(th), rz = Math.cos(th);
+  add(new THREE.PlaneGeometry(WALL, H_CYL), M.cut, section, {
+    pos: [rx * (R - WALL / 2), (Y_BOT + Y_TOP) / 2, rz * (R - WALL / 2)],
+    rot: [0, Math.atan2(-rz, rx), 0]
+  });
+  [1, -1].forEach(function (side) {
+    const phi = PHI_C + side * OPEN / 2;
+    const px = -Math.cos(phi), pz = Math.sin(phi);
+    add(new THREE.RingGeometry(RI, R, 40, 1, side > 0 ? 0 : Math.PI, Math.PI), M.cut, section, {
+      pos: [0, side > 0 ? Y_TOP : Y_BOT, 0],
+      rot: [0, Math.atan2(-pz, px), 0],
+      scale: [1, CAL_Y, 1]
+    });
+  });
+});
+
+/* bordi di sezione: rendono leggibile il taglio */
+const edgeMat = new THREE.MeshStandardMaterial({ color: 0x74c6f2, metalness: 0.2, roughness: 0.45, emissive: 0x1d6d9c, emissiveIntensity: 0.9 });
+[TH_START, TH_START + TH_LEN].forEach(function (th) {
+  const rx = Math.sin(th), rz = Math.cos(th);
+  const pts = [];
+  const rb = R * 1.006;
+  for (let i = 0; i <= 24; i++) {              // arco calotta inferiore
+    const a = -Math.PI / 2 + (Math.PI / 2) * (i / 24);
+    pts.push(new THREE.Vector3(rx * Math.cos(a) * rb, Y_BOT + Math.sin(a) * rb * CAL_Y, rz * Math.cos(a) * rb));
+  }
+  pts.push(new THREE.Vector3(rb * rx, (Y_BOT + Y_TOP) / 2, rb * rz));
+  for (let i = 0; i <= 24; i++) {              // arco calotta superiore
+    const a = (Math.PI / 2) * (i / 24);
+    pts.push(new THREE.Vector3(Math.cos(a) * rb * rx, Y_TOP + Math.sin(a) * rb * CAL_Y, Math.cos(a) * rb * rz));
+  }
+  const curve = new THREE.CatmullRomCurve3(pts);
+  add(new THREE.TubeGeometry(curve, 120, 0.02, 8, false), edgeMat, section, { cast: false });
+});
+
+/* guscio continuo (vista alternativa) */
+add(new THREE.CylinderGeometry(R, R, H_CYL, 72, 1, false), M.glass, shell, { pos: [0, (Y_BOT + Y_TOP) / 2, 0] });
+add(new THREE.SphereGeometry(R, 72, 36, 0, Math.PI * 2, 0, Math.PI / 2), M.glass, shell, { pos: [0, Y_TOP, 0] });
+add(new THREE.SphereGeometry(R, 72, 36, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), M.glass, shell, { pos: [0, Y_BOT, 0] });
+shell.visible = false;
+
+/* ---------------- nocciolo ---------------- */
+const N = 6, PITCH = 0.27, FUEL_R = 0.055, FUEL_H = 1.06, Y_CORE = 2.02;
+const fuelGeo = new THREE.CylinderGeometry(FUEL_R, FUEL_R, FUEL_H, 14);
+for (let i = 0; i < N; i++) {
+  for (let j = 0; j < N; j++) {
+    add(fuelGeo, M.fuel, model, {
+      pos: [(i - (N - 1) / 2) * PITCH, Y_CORE + FUEL_H / 2, (j - (N - 1) / 2) * PITCH]
+    });
+  }
+}
+add(new THREE.CylinderGeometry(0.67, 0.67, 0.035, 56), M.plate, model, { pos: [0, Y_CORE - 0.04, 0] });
+add(new THREE.CylinderGeometry(0.67, 0.67, 0.035, 56), M.plate, model, { pos: [0, Y_CORE + FUEL_H + 0.04, 0] });
+
+add(new THREE.CylinderGeometry(0.78, 0.78, 0.06, 64), new THREE.MeshStandardMaterial({ color: 0x2b343d, metalness: 0.6, roughness: 0.7, side: THREE.DoubleSide }), model, { pos: [0, 1.6, 0] });
+
+/* core barrel: la camicia che circonda il nocciolo, sezionata come il vessel */
+add(new THREE.CylinderGeometry(0.79, 0.79, 1.72, 72, 1, true, TH_START, TH_LEN), M.steelIn, model, { pos: [0, 2.56, 0] });
+add(new THREE.CylinderGeometry(0.795, 0.795, 0.05, 72, 1, true, TH_START, TH_LEN), M.plate, model, { pos: [0, 3.42, 0] });
+
+/* barre di controllo */
+const CTRL = 0.215, CTRL_R = 0.045;
+const ctrlSpots = [[CTRL, CTRL], [-CTRL, CTRL], [CTRL, -CTRL], [-CTRL, -CTRL]];
+const ctrlGeo = new THREE.CylinderGeometry(CTRL_R, CTRL_R, 2.05, 12);
+ctrlSpots.forEach(function (s) {
+  add(ctrlGeo, M.ctrl, model, { pos: [s[0], 3.9, s[1]] });
+  add(new THREE.CylinderGeometry(0.085, 0.085, 0.42, 16), M.steel, model, { pos: [s[0], 5.02, s[1]] });
+});
+
+/* meccanismo di comando sopra la testa del vessel */
+add(new THREE.BoxGeometry(0.82, 0.26, 0.82), M.mech, model, { pos: [0, 5.2, 0] });
+add(new THREE.CylinderGeometry(0.16, 0.16, 0.22, 28), M.mech, model, { pos: [0, 5.43, 0] });
+[[0.3, 0.3], [-0.3, 0.3], [0.3, -0.3], [-0.3, -0.3]].forEach(function (o) {
+  add(new THREE.CylinderGeometry(0.06, 0.06, 0.26, 14), M.pipe, model, { pos: [o[0], 5.44, o[1]] });
+});
+
+/* ---------------- circuito primario ---------------- */
+const HOT = 3.42, COLD = 2.16, NOZZLE_R = 0.135;
+
+function nozzle(y) {
+  add(new THREE.CylinderGeometry(NOZZLE_R, NOZZLE_R, 0.72, 24), M.pipe, model, {
+    pos: [1.22, y, 0], rot: [0, 0, Math.PI / 2]
+  });
+  add(new THREE.CylinderGeometry(0.2, 0.2, 0.06, 28), M.plate, model, {
+    pos: [1.56, y, 0], rot: [0, 0, Math.PI / 2]
+  });
+}
+nozzle(HOT);
+nozzle(COLD);
+
+function tube(points, r) {
+  const curve = new THREE.CatmullRomCurve3(points.map(function (p) { return new THREE.Vector3(p[0], p[1], p[2]); }));
+  add(new THREE.TubeGeometry(curve, 64, r, 14, false), M.pipe, model);
+}
+/* uscita calda: gomito verso l'osservatore, poi scende (verso il generatore di vapore) */
+tube([[1.62, HOT, 0], [2.0, HOT, 0.04], [2.28, 3.3, 0.34], [2.44, 2.92, 0.6], [2.44, 2.4, 0.7]], 0.076);
+add(new THREE.CylinderGeometry(0.115, 0.115, 0.05, 24), M.plate, model, { pos: [2.44, 2.39, 0.7] });
+/* ritorno freddo */
+tube([[1.62, COLD, 0], [2.05, COLD, 0.02], [2.34, 1.92, 0.34], [2.46, 1.3, 0.5], [2.46, 0.84, 0.56]], 0.076);
+add(new THREE.CylinderGeometry(0.115, 0.115, 0.05, 24), M.plate, model, { pos: [2.46, 0.83, 0.56] });
+
+/* ---------------- pressurizzatore ---------------- */
+const PX = 3.02, PZ = -1.3;
+add(new THREE.CylinderGeometry(0.2, 0.2, 1.34, 32), M.steel, model, { pos: [PX, 1.17, PZ] });
+add(new THREE.SphereGeometry(0.2, 32, 18, 0, Math.PI * 2, 0, Math.PI / 2), M.steel, model, { pos: [PX, 1.84, PZ] });
+add(new THREE.SphereGeometry(0.2, 32, 18, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), M.steel, model, { pos: [PX, 0.5, PZ] });
+add(new THREE.TorusGeometry(0.21, 0.022, 8, 40), M.plate, model, { pos: [PX, 1.46, PZ], rot: [Math.PI / 2, 0, 0] });
+add(new THREE.TorusGeometry(0.21, 0.022, 8, 40), M.plate, model, { pos: [PX, 0.62, PZ], rot: [Math.PI / 2, 0, 0] });
+add(new THREE.CylinderGeometry(0.3, 0.34, 0.5, 28), M.base, model, { pos: [PX, 0.25, PZ] });
+/* linea di collegamento al vessel */
+tube([[1.02, 3.02, -0.5], [1.85, 2.6, -1.0], [2.55, 2.2, -1.22], [PX, 1.94, PZ]], 0.05);
+
+/* ---------------- etichette 3D ---------------- */
+const LABELS = [
+  { t: 'Meccanismo barre di controllo', p: [0, 5.34, 0], off: [186, -112] },
+  { t: 'Vessel in pressione · taglio a 104°', p: [0.62, 4.28, 0.62], off: [176, -66] },
+  { t: 'Barre di controllo', p: [-CTRL, 4.28, CTRL], off: [-172, -126] },
+  { t: 'Nocciolo · 36 barre di combustibile', p: [-0.58, 2.58, 0.58], off: [-166, 92] },
+  { t: 'Pressurizzatore', p: [3.02, 1.9, -1.3], off: [86, 26] },
+  { t: 'Uscita calda', p: [2.44, 2.94, 0.6], off: [158, 6] },
+  { t: 'Ritorno freddo', p: [2.46, 1.34, 0.5], off: [72, 128] }
+];
+
+const svg = document.getElementById('leaders');
+const tagHost = document.getElementById('tags');
+const NS = 'http://www.w3.org/2000/svg';
+const labelNodes = LABELS.map(function (L) {
+  const line = document.createElementNS(NS, 'line');
+  line.setAttribute('stroke', 'rgba(150, 190, 220, .5)');
+  line.setAttribute('stroke-width', '1');
+  svg.appendChild(line);
+  const dot = document.createElementNS(NS, 'circle');
+  dot.setAttribute('r', '2.4');
+  dot.setAttribute('fill', '#9cc9e8');
+  svg.appendChild(dot);
+  const tag = document.createElement('div');
+  tag.className = 'tag';
+  tag.textContent = L.t;
+  tagHost.appendChild(tag);
+  return { line: line, dot: dot, tag: tag, label: L };
+});
+
+const proj = new THREE.Vector3();
+function updateLabels() {
+  const w = window.innerWidth, h = window.innerHeight;
+  labelNodes.forEach(function (node) {
+    const L = node.label;
+    proj.set(L.p[0], L.p[1], L.p[2]).project(camera);
+    const behind = proj.z > 1;
+    const x = (proj.x * 0.5 + 0.5) * w;
+    const y = (-proj.y * 0.5 + 0.5) * h;
+    if (behind || !labelsOn) {
+      node.line.setAttribute('opacity', '0');
+      node.dot.setAttribute('opacity', '0');
+      node.tag.classList.add('is-dim');
+      return;
+    }
+    const tx = Math.min(w - 120, Math.max(120, x + L.off[0]));
+    const ty = Math.min(h - 40, Math.max(30, y + L.off[1]));
+    node.line.setAttribute('x1', x.toFixed(1));
+    node.line.setAttribute('y1', y.toFixed(1));
+    node.line.setAttribute('x2', tx.toFixed(1));
+    node.line.setAttribute('y2', ty.toFixed(1));
+    node.line.setAttribute('opacity', '1');
+    node.dot.setAttribute('cx', x.toFixed(1));
+    node.dot.setAttribute('cy', y.toFixed(1));
+    node.dot.setAttribute('opacity', '1');
+    node.tag.style.transform = 'translate(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px) translate(-50%,-50%)';
+    node.tag.classList.remove('is-dim');
+  });
+}
+
+/* ---------------- controlli ---------------- */
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.target.copy(TARGET);
+controls.minDistance = 3.6;
+controls.maxDistance = 15;
+controls.minPolarAngle = 0.25;
+controls.maxPolarAngle = Math.PI / 2 - 0.045;
+controls.enablePan = false;
+controls.zoomToCursor = true;
+controls.minAzimuthAngle = -0.3;
+controls.maxAzimuthAngle = 1.55;
+
+let labelsOn = true;
+let sway = !reduceMotion, swayT = 0;
+const AZ0 = THREE.MathUtils.degToRad(38), AMP = 0.34;
+const off = new THREE.Vector3();
+
+function autoSway(dt) {
+  off.copy(camera.position).sub(controls.target);
+  const r = off.length();
+  const phi = Math.acos(Math.max(-1, Math.min(1, off.y / r)));
+  swayT += dt;
+  const th = AZ0 + AMP * Math.sin(swayT * 0.45);
+  camera.position.set(
+    controls.target.x + r * Math.sin(phi) * Math.sin(th),
+    controls.target.y + r * Math.cos(phi),
+    controls.target.z + r * Math.sin(phi) * Math.cos(th)
+  );
+}
+
+const btnSection = document.getElementById('btnSection');
+const btnShell = document.getElementById('btnShell');
+const btnLabels = document.getElementById('btnLabels');
+
+function setView(isSection) {
+  section.visible = isSection;
+  shell.visible = !isSection;
+  btnSection.setAttribute('aria-pressed', String(isSection));
+  btnShell.setAttribute('aria-pressed', String(!isSection));
+  document.getElementById('lead').textContent = isSection
+    ? 'Vessel sezionato: la parete è asportata su un settore di 104° per mostrare nocciolo e barre di comando.'
+    : 'Guscio continuo: la parete è trasparente, così il nocciolo resta visibile e si legge la forma del vessel.';
+  LABELS[1].t = isSection ? 'Vessel in pressione · taglio a 104°' : 'Vessel in pressione';
+  labelNodes[1].tag.textContent = LABELS[1].t;
+  if (isSection) {
+    controls.minAzimuthAngle = -0.3;
+    controls.maxAzimuthAngle = 1.55;
+  } else {
+    controls.minAzimuthAngle = -Infinity;
+    controls.maxAzimuthAngle = Infinity;
+  }
+}
+btnSection.addEventListener('click', function () { setView(true); });
+btnShell.addEventListener('click', function () { setView(false); });
+btnLabels.addEventListener('click', function () {
+  labelsOn = !labelsOn;
+  btnLabels.setAttribute('aria-pressed', String(labelsOn));
+});
+document.getElementById('btnReset').addEventListener('click', function () {
+  camera.position.copy(HOME);
+  controls.target.copy(TARGET);
+  controls.update();
+  sway = !reduceMotion;
+  swayT = 0;
+});
+
+controls.addEventListener('start', function () { sway = false; });
+
+/* ---------------- loop ---------------- */
+const timer = new THREE.Timer();
+timer.connect(document);
+
+function tick() {
+  timer.update();
+  const dt = timer.getDelta();
+  if (sway) autoSway(dt);
+  controls.update(dt);
+  renderer.render(scene, camera);
+  updateLabels();
+}
+renderer.setAnimationLoop(tick);
+
+window.__pwr = { camera: camera, controls: controls, renderer: renderer, scene: scene, setView: setView };
+
+window.addEventListener('resize', function () {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+});
+</script>
+</body>
+</html>
