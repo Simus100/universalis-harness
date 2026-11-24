@@ -491,12 +491,14 @@ function loginPageHtml({ error = "", blockedSec = 0, next = "/", note = "" } = {
              letter-spacing: 1.1px; text-transform: uppercase; }
   .copy { margin: 20px 0 0; text-align: center; color: #64748b; font-size: 12px; line-height: 1.6; }
   .copy strong { color: #8b9bb4; font-weight: 600; }
+  .copy a { color: #8b9bb4; text-decoration: none; border-bottom: 1px solid #2a3a4f; }
+  .copy a:hover { color: #c6cfdd; }
 </style>
 </head><body><main>
   <h1>Universalis Harness<span class="beta">beta</span></h1>
   <p class="sub">Accesso riservato</p>
   ${msg}${form}${wait}
-  <p class="copy">© ${new Date().getFullYear()} <strong>Universalis Produzioni</strong><br />tutti i diritti riservati</p>
+  <p class="copy">© ${new Date().getFullYear()} <strong>Universalis Produzioni</strong> · Universalis Harness<br />licenza d'uso personale e dimostrativo, con attribuzione<br /><a href="https://github.com/Simus100/universalis-harness" rel="noopener">github.com/Simus100/universalis-harness</a></p>
 </main></body></html>`;
 }
 

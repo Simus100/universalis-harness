@@ -11,7 +11,7 @@ locali che si accendono a richiesta — un solo processo Node, nessun database, 
   <img alt="self-hosted" src="docs/images/badges/deploy.svg" height="22"> &nbsp;
   <img alt="oltre 850 controlli automatici" src="docs/images/badges/test.svg" height="22"> &nbsp;
   <img alt="una sola dipendenza runtime" src="docs/images/badges/runtime.svg" height="22"> &nbsp;
-  <img alt="licenza proprietaria" src="docs/images/badges/licenza.svg" height="22">
+  <img alt="licenza: uso personale, con attribuzione" src="docs/images/badges/licenza.svg" height="22">
 </p>
 
 ![Un turno nella dashboard: richiesta, esecuzione dei tool, disegno SVG prodotto dal modello e barra con token, cache, costo e durata](docs/images/chat-disegno.png)
@@ -653,7 +653,19 @@ all'affermazione, e tenere un test che se ne accorga se il numero cambia.
 
 ## Licenza
 
-**Software proprietario — tutti i diritti riservati.** Il codice è pubblicato per trasparenza e
-valutazione; non è concesso in uso, copia, modifica o ridistribuzione senza un accordo scritto con il
-titolare dei diritti. Vedi [`LICENSE`](LICENSE). Licenze d'uso commerciale, istanze ospitate e
-installazioni on-premise sono disponibili su richiesta.
+**Universalis Harness License 1.1 — uso personale, dimostrativo e di valutazione, con attribuzione.**
+Non è open source. Il codice è pubblicato per trasparenza e valutazione, e la licenza concede **gratis, senza
+accordi**, due cose sole: l'**uso personale e individuale** (studio, prove, valutazione, progetti propri) e la
+**dimostrazione pubblica** del software che gira. A due condizioni: **citare sempre questo repository** (nome
+*Universalis Harness* + link, in ogni uso pubblico, demo, video, post o opera prodotta, e nell'interfaccia) e
+**non trarne alcun vantaggio economico**.
+
+Non sono consentiti, senza un accordo scritto con il titolare: vendita, noleggio e sublicenza; ridistribuzione
+anche gratuita di copie modificate o parziali; offrire il software come servizio a terzi (hosting, SaaS,
+abbonamento); pubblicare modifiche o opere derivate; presentarlo come proprio o rimuoverne gli avvisi di
+titolarità; usarlo in un'attività d'impresa, professionale o retribuita; usarne nome e logo.
+
+Testo completo e vincolante: [`LICENSE`](LICENSE) — termini aggiuntivi di Universalis Produzioni sopra la
+*PolyForm Strict License 1.0.0*, in italiano e in inglese (in caso di divergenza prevale l'italiano).
+Licenze commerciali, istanze ospitate, installazioni on-premise e personalizzazioni:
+`harness@universalisproduzioni.it`. Contributi e segnalazioni: [`CONTRIBUTING.md`](CONTRIBUTING.md).

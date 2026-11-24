@@ -1,27 +1,289 @@
-Universalis Harness — software proprietario
+# Universalis Harness License 1.1
+## Uso personale, dimostrativo e di valutazione, con attribuzione — non commerciale, non redistribuibile
+
 Copyright (c) 2026 Universalis Produzioni. Tutti i diritti riservati.
 
-QUESTO SOFTWARE NON È OPEN SOURCE.
+Required Notice: Copyright (c) 2026 Universalis Produzioni — https://github.com/Simus100/universalis-harness
 
-Il codice sorgente è pubblicato per trasparenza e per consentire la valutazione del prodotto.
-Nessuna licenza, esplicita o implicita, è concessa per usarlo, copiarlo, modificarlo,
-distribuirlo, pubblicarlo, sublicenziarlo o venderlo, in tutto o in parte, senza un accordo
-scritto con il titolare dei diritti.
+---
 
-In particolare, e senza che l'elenco sia esaustivo, NON è consentito:
+## Struttura
 
-  1. usare il software in produzione, per sé o per terzi, senza licenza;
-  2. offrirlo come servizio, ospitato o in abbonamento, a terzi;
-  3. ridistribuirlo, anche gratuitamente, o includerlo in un altro prodotto;
-  4. pubblicare versioni modificate o derivate;
-  5. rimuovere questo avviso o le indicazioni di titolarità.
+Questa licenza è composta da due parti, che si leggono insieme:
 
-Le licenze d'uso commerciale — istanze ospitate, installazione on-premise, personalizzazioni e
-assistenza — sono disponibili su richiesta presso il titolare dei diritti.
+- **Parte A — Termini aggiuntivi di Universalis Produzioni** (prevalgono in caso di conflitto con la Parte B)
+- **Parte B — PolyForm Strict License 1.0.0**, testo integrale e invariato di <https://polyformproject.org/licenses/strict/1.0.0>
 
-Il software è fornito "così com'è", senza garanzie di alcun tipo, esplicite o implicite, incluse
-le garanzie di commerciabilità, idoneità a uno scopo particolare e non violazione. In nessun caso
-il titolare dei diritti sarà responsabile per reclami, danni o altre responsabilità derivanti
-dall'uso del software o in connessione con esso.
+Sintesi in linguaggio comune, **non vincolante** (serve solo a capirsi; in caso di dubbio valgono le Parti A e B):
+puoi scaricare il software e provarlo per te, gratis, per studiare, sperimentare, valutare e mostrarlo in
+dimostrazioni pubbliche, purché tu non ci guadagni, non lo passi ad altri, non lo spacci per tuo e **citi sempre
+questo repository**. Per tutto il resto serve un accordo scritto con Universalis Produzioni.
 
-I marchi e i nomi di terzi eventualmente citati appartengono ai rispettivi titolari.
+---
+
+# PARTE A — Termini aggiuntivi (italiano)
+
+## A.1 Che cos'è il "Software"
+"Il Software" è l'insieme dei contenuti di questo repository: codice sorgente, interfacce, testi, skill, prompt,
+documentazione, configurazioni, immagini e schemi, di titolarità di Universalis Produzioni. **Non** sono
+"Il Software" i componenti di terzi incorporati o dipendenti (librerie, modelli, font, icone), che restano
+soggetti alle rispettive licenze (vedi A.8).
+
+## A.2 Usi consentiti senza alcun accordo scritto
+A ogni persona fisica è concesso, gratuitamente e senza necessità di contattare il titolare:
+
+1. **uso personale e individuale** del Software, senza alcun fine commerciale: studio, sperimentazione,
+   apprendimento, valutazione, prove tecniche, progetti personali e hobbistici;
+2. **dimostrazione pubblica** del Software che gira (eventi, video, presentazioni, articoli, post, lezioni),
+   purché gratuita, senza corrispettivo e senza che l'accesso alla dimostrazione sia venduto o incluso in
+   un'offerta a pagamento;
+3. **configurazione** del Software per il proprio uso: modificare i file di impostazione, i prompt, le skill e
+   i dati propri, e usare le interfacce e le API del Software, **non** costituisce "modifica" ai sensi della
+   Parte B.
+
+## A.3 Attribuzione obbligatoria (condizione della licenza)
+Ogni volta che il Software:
+
+- viene **usato in pubblico**, mostrato, dimostrato o citato in qualunque materiale (video, slide, post,
+  articolo, sito, repository, lezione, messaggio promozionale), oppure
+- **produce un'opera o un contenuto** che viene pubblicato o distribuito,
+
+deve riportare, in posizione visibile e in forma leggibile, **entrambi**:
+
+- il nome **"Universalis Harness"**, e
+- il link **https://github.com/Simus100/universalis-harness**
+
+Nell'interfaccia del Software (o dell'opera che lo incorpora) il credito di titolarità deve restare **visibile
+e non occultabile**. Sono vietati la rimozione, l'oscuramento o la sostituzione degli avvisi di titolarità.
+
+L'uso **strettamente privato** (nessuna pubblicazione, nessun pubblico) non richiede l'esposizione del credito
+pubblico, ma resta soggetto a tutti gli altri termini.
+
+## A.4 Divieti
+Senza un accordo scritto con Universalis Produzioni **non** è consentito:
+
+1. **vendere**, noleggiare, licenziare, sublicenziare il Software o concederne l'uso a terzi, né a titolo
+   oneroso né a titolo gratuito;
+2. **distribuire** copie del Software, anche gratuite, anche modificate, anche parziali, e anche come parte di
+   un altro prodotto, pacchetto, immagine, repository o distribuzione;
+3. **offrire il Software come servizio** a terzi: hosting, SaaS, abbonamento, accesso a distanza, assistenza
+   basata sul Software;
+4. usare il Software **in un'attività d'impresa, professionale o retribuita**, o per conto di terzi dietro
+   compenso, o in modo da trarne un vantaggio economico diretto o indiretto (pubblicità, raccolta fondi,
+   addestramento di modelli destinati a un prodotto, ecc.);
+5. **presentare il Software come proprio** o attribuirlo a soggetti diversi dal titolare ("darlo per suo"),
+   dichiarare una titolarità che non si ha, o rimuovere/alterare gli avvisi di copyright e di licenza;
+6. usare i nomi **"Universalis"** e **"Universalis Harness"**, il logo e l'identità visiva (vedi A.7);
+7. aggirare i divieti di cui sopra tramite intermediari, prestanome, fork, riscritture parziali o
+   riorganizzazione del codice.
+
+## A.5 Istanze di prova e tester
+Se il titolare ti ha dato accesso a un'**istanza ospitata** del Software (per esempio come tester o
+dimostratore), quell'accesso è regolato dall'accordo separato che hai accettato con il titolare e non da questa
+licenza. Questa licenza riguarda il **codice**, non il servizio. Le credenziali e gli accessi ricevuti sono
+personali, non cedibili, e non consentono di far usare l'istanza a terzi.
+
+## A.6 Modifiche
+Le modifiche al codice, la creazione di opere derivate e la loro pubblicazione o distribuzione non sono
+concesse da questa licenza (Parte B). Il titolare può concederle per iscritto. Le modifiche eventualmente
+proposte al titolare tramite pull request si intendono offerte alle condizioni indicate nel file
+`CONTRIBUTING` del repository.
+
+## A.7 Marchi
+Questa licenza concede diritti di **copyright**, non diritti di **marchio**. "Universalis" e
+"Universalis Harness" e i relativi segni grafici appartengono al titolare. Non si può usarli per nomeare,
+promuovere o etichettare prodotti, servizi o fork, né in modo da creare confusione sull'origine o da
+suggerire un'affiliazione che non esiste.
+
+## A.8 Componenti di terzi
+Librerie, modelli, font, icone e altri componenti di terzi mantengono le proprie licenze e i propri avvisi,
+anche se presenti in questo repository: questa licenza **non** li riguarda e **non** li relicenzia. In caso di
+conflitto, per il componente di terzo prevale la sua licenza.
+
+## A.9 Nessuna garanzia e limitazione di responsabilità
+Il Software è fornito **"così com'è"** ("as is"), senza garanzie di alcun tipo, esplicite o implicite, incluse
+commerciabilità, idoneità a uno scopo particolare, assenza di difetti e non violazione di diritti di terzi. Il
+titolare non è responsabile di danni diretti o indiretti, perdita di dati, di profitto o di opportunità
+derivanti dall'uso o dall'impossibilità di usare il Software. L'uso avviene a rischio di chi lo usa.
+
+## A.10 Violazione e rimedi
+Qualunque uso non coperto da questa licenza è **senza titolo** e costituisce violazione del diritto d'autore.
+Alla violazione il titolare può revocare ogni concessione con effetto immediato. Se ricevi dal titolare un
+avviso scritto di violazione, le tue concessioni possono proseguire **solo** se entro **32 giorni** dal
+ricevimento elimini la violazione, rimuovi le copie non autorizzate e la correggi in modo verificabile.
+Restano ferme le azioni di risarcimento e gli altri rimedi previsti dalla legge.
+
+## A.11 Legge applicabile e foro
+Questa licenza è regolata dalla **legge italiana**. Per le controversie è competente il tribunale del luogo in cui il titolare dei
+diritti ha la propria sede legale, fatti salvi i diritti inderogabili del consumatore.
+
+## A.12 Licenze commerciali
+Licenze d'uso commerciale, istanze ospitate, installazioni on-premise, personalizzazioni, assistenza e
+rilasci su misura sono disponibili scrivendo a **harness@universalisproduzioni.it** oppure dal sito
+<https://universalisproduzioni.it>.
+
+## A.13 Prevalenza della versione italiana
+Questa licenza è redatta in italiano e in inglese. In caso di divergenza tra le due versioni prevale quella
+**italiana**. Se una clausola è nulla o inapplicabile, le altre restano valide e la clausola nulla si
+interpreta nel modo più vicino possibile all'intento espresso.
+
+---
+
+# PART B — PolyForm Strict License 1.0.0
+
+In vigore come testo integrale, invariato. Le Parti A precedenti aggiungono condizioni e prevalgono su
+qualsiasi disposizione contraria della Parte B.
+
+# PolyForm Strict License 1.0.0
+
+<https://polyformproject.org/licenses/strict/1.0.0>
+
+## Acceptance
+
+In order to get any license under these terms, you must agree to them as both strict obligations and conditions to all your licenses.
+
+## Copyright License
+
+The licensor grants you a copyright license for the software to do everything you might do with the software that would otherwise infringe the licensor's copyright in it for any permitted purpose, other than distributing the software or making changes or new works based on the software.
+
+## Patent License
+
+The licensor grants you a patent license for the software that covers patent claims the licensor can license, or becomes able to license, that you would infringe by using the software.
+
+## Noncommercial Purposes
+
+Any noncommercial purpose is a permitted purpose.
+
+## Personal Uses
+
+Personal use for research, experiment, and testing for the benefit of public knowledge, personal study, private entertainment, hobby projects, amateur pursuits, or religious observance, without any anticipated commercial application, is use for a permitted purpose.
+
+## Noncommercial Organizations
+
+Use by any charitable organization, educational institution, public research organization, public safety or health organization, environmental protection organization, or government institution is use for a permitted purpose regardless of the source of funding or obligations resulting from the funding.
+
+## Fair Use
+
+You may have "fair use" rights for the software under the law. These terms do not limit them.
+
+## No Other Rights
+
+These terms do not allow you to sublicense or transfer any of your licenses to anyone else, or prevent the licensor from granting licenses to anyone else.  These terms do not imply any other licenses.
+
+## Patent Defense
+
+If you make any written claim that the software infringes or contributes to infringement of any patent, your patent license for the software granted under these terms ends immediately. If your company makes such a claim, your patent license ends immediately for work on behalf of your company.
+
+## Violations
+
+The first time you are notified in writing that you have violated any of these terms, or done anything with the software not covered by your licenses, your licenses can nonetheless continue if you come into full compliance with these terms, and take practical steps to correct past violations, within 32 days of receiving notice.  Otherwise, all your licenses end immediately.
+
+## No Liability
+
+***As far as the law allows, the software comes as is, without any warranty or condition, and the licensor will not be liable to you for any damages arising out of these terms or the use or nature of the software, under any kind of legal claim.***
+
+## Definitions
+
+The **licensor** is the individual or entity offering these terms, and the **software** is the software the licensor makes available under these terms.
+
+**You** refers to the individual or entity agreeing to these terms.
+
+**Your company** is any legal entity, sole proprietorship, or other kind of organization that you work for, plus all organizations that have control over, are under the control of, or are under common control with that organization. **Control** means ownership of substantially all the assets of an entity, or the power to direct its management and policies by vote, contract, or otherwise. Control can be direct or indirect.
+
+**Your licenses** are all the licenses granted to you for the software under these terms.
+
+**Use** means anything you do with the software requiring one of your licenses.
+
+---
+
+# PARTE A (English version)
+
+## A.1 What "the Software" is
+"the Software" means the contents of this repository: source code, interfaces, texts, skills, prompts,
+documentation, configurations, images and diagrams owned by Universalis Produzioni. Third-party components
+included in or depended upon by the Software (libraries, models, fonts, icons) are **not** part of the
+Software and remain under their own licenses (see A.8).
+
+## A.2 Permitted uses with no written agreement
+Every natural person is granted, free of charge and without contacting the licensor:
+
+1. **personal, individual use** of the Software with no commercial purpose: study, experimentation, learning,
+   evaluation, technical testing, personal and hobby projects;
+2. **public demonstration** of the Software running (events, videos, presentations, articles, posts, lessons),
+   provided it is free of charge and access to it is not sold or bundled into a paid offering;
+3. **configuration** for one's own use: editing settings, prompts, skills and your own data, and using the
+   Software's interfaces and APIs, does **not** constitute "making changes" under Part B.
+
+## A.3 Mandatory attribution (condition of the license)
+Whenever the Software is **used in public**, shown, demonstrated or mentioned in any material (video, slides,
+posts, articles, websites, repositories, lessons, promotional messages), or **produces a work or content**
+that is published or distributed, it must display, visibly and legibly, **both** the name
+**"Universalis Harness"** and the link **https://github.com/Simus100/universalis-harness**.
+
+In the Software's (or derived work's) interface the ownership notice must remain **visible and not
+removable**. Removing, obscuring or replacing ownership notices is prohibited. **Strictly private** use (no
+publication, no audience) does not require public display of the credit but remains subject to all other terms.
+
+## A.4 Prohibited uses
+Without a written agreement with Universalis Produzioni you may **not**:
+
+1. **sell**, rent, license or sublicense the Software, or grant its use to third parties, for payment or free
+   of charge;
+2. **distribute** copies of the Software, even free of charge, even modified, even in part, including as part
+   of another product, package, image, repository or distribution;
+3. **offer the Software as a service** to third parties: hosting, SaaS, subscription, remote access, support
+   based on the Software;
+4. use the Software **in a business, professional or paid activity**, or on behalf of third parties for
+   consideration, or in any way that yields a direct or indirect economic advantage (advertising, fundraising,
+   training models intended for a product, etc.);
+5. **present the Software as your own** or attribute it to anyone other than the licensor, claim ownership you
+   do not have, or remove/alter copyright and license notices;
+6. use the names **"Universalis"** and **"Universalis Harness"**, the logo and the visual identity (see A.7);
+7. circumvent the above through intermediaries, nominees, forks, partial rewrites or code reorganization.
+
+## A.5 Trial instances and testers
+If the licensor granted you access to a **hosted instance** of the Software (for example as a tester or
+demonstrator), that access is governed by the separate agreement you accepted with the licensor, not by this
+license. This license covers the **code**, not the service. Credentials and accesses you receive are personal,
+non-transferable, and do not allow you to let third parties use the instance.
+
+## A.6 Changes
+Changes to the code, the creation of derivative works, and their publication or distribution are not granted
+by this license (Part B). The licensor may grant them in writing. Changes offered to the licensor via pull
+requests are deemed offered on the terms stated in the repository's `CONTRIBUTING` file.
+
+## A.7 Trademarks
+This license grants **copyright** rights, not **trademark** rights. "Universalis" and "Universalis Harness" and
+their graphic marks belong to the licensor. They may not be used to name, promote or label products, services
+or forks, nor in any way that creates confusion about origin or suggests a non-existent affiliation.
+
+## A.8 Third-party components
+Third-party libraries, models, fonts, icons and other components keep their own licenses and notices even when
+present in this repository: this license does **not** cover them and does **not** relicense them. In case of
+conflict, the third party's license prevails for that component.
+
+## A.9 No warranty and limitation of liability
+The Software is provided **"as is"**, without warranties of any kind, express or implied, including
+merchantability, fitness for a particular purpose, freedom from defects and non-infringement. The licensor is
+not liable for direct or indirect damages, loss of data, profit or opportunity arising from the use of, or
+inability to use, the Software. Use is at your own risk.
+
+## A.10 Breach and remedies
+Any use not covered by this license is **unauthorized** and infringes copyright. Upon breach the licensor may
+revoke all grants with immediate effect. If you receive a written notice of breach, your grants may continue
+**only** if within **32 days** of receipt you cure the breach, remove unauthorized copies and correct it in a
+verifiable way. Damages and other legal remedies remain available.
+
+## A.11 Governing law and venue
+This license is governed by **Italian law**. The courts of the place where the licensor has its
+registered office have jurisdiction, without prejudice to mandatory consumer rights.
+
+## A.12 Commercial licenses
+Commercial use licenses, hosted instances, on-premise installations, customizations, support and tailored
+releases are available from the licensor by writing to **harness@universalisproduzioni.it**
+or via <https://universalisproduzioni.it>.
+
+## A.13 Italian version prevails
+This license is drafted in Italian and English. In case of divergence, the **Italian** version prevails. If any
+provision is void or unenforceable, the others remain valid and that provision is construed as closely as
+possible to the expressed intent.

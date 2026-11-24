@@ -282,6 +282,6 @@ media/ricerca-web/
 media/harness-audit/
 media/domain-switch/
 
-# Bozza di licenza proposta (non in vigore): non va pubblicata finche il titolare non la approva,
-# altrimenti il repo mostrerebbe due licenze in contrasto tra loro.
+# Bozza della licenza (conservata come storia). In vigore e' il file LICENSE nella radice:
+# pubblicare anche la bozza farebbe comparire due licenze diverse nello stesso repository.
 media/licenza-proposta/
