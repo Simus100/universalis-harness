@@ -57,6 +57,10 @@ node skills/social-publish/publish.mjs --dry-run post --text "..." --image media
 node skills/social-publish/publish.mjs post --text "..." [--image media/foto.png]
 node skills/social-publish/publish.mjs post --text "..." --video media/reel.mp4
 
+# 3b. commenta un post (per tenere i link fuori dal corpo: un post pieno di link perde reach)
+node skills/social-publish/publish.mjs commento --post 1444686848724804_122113889763518432 --text "..."
+# serve pages_manage_engagement; accetta anche l'URL del post, prende l'ultimo numero
+
 # il video si carica su /{page-id}/videos in multipart: un verticale 9:16 diventa un REEL
 # (permalink /reel/<id>/). Il limite di peso è 1024 MB, verificato prima di inviare.
 

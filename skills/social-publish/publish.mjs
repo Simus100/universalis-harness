@@ -151,6 +151,7 @@ const HELP = `publish.mjs — pubblica su una Pagina Facebook (Pages API ufficia
   post --text "..." [--image file.png]   pubblica un post
        [--video file.mp4]                pubblica un video (un verticale diventa un reel)
        [--unpublished]                   crea il post senza mostrarlo nel feed (prova)
+  commento --post <id> --text "..."      commenta un post (per tenere i link fuori dal corpo)
   accounts                               elenca le Pagine del token utente (token mascherati)
   perms                                  quali permessi ha DAVVERO il token (diagnosi)
   nuovo <nome>                           crea social/<nome>.env (un profilo per persona)
@@ -163,7 +164,7 @@ const HELP = `publish.mjs — pubblica su una Pagina Facebook (Pages API ufficia
 Credenziali in ${ENV_FILE}: FB_PAGE_TOKEN (obbligatorio), FB_PAGE_ID (facoltativo:
 si ricava dal token), FB_API_VERSION, FB_USER_TOKEN (solo per accounts/use)`;
 
-if (!cmd || !["check", "post", "accounts", "use", "perms", "nuovo", "profili", "help"].includes(cmd)) {
+if (!cmd || !["check", "post", "commento", "accounts", "use", "perms", "nuovo", "profili", "help"].includes(cmd)) {
   console.log(HELP);
   process.exit(cmd ? 2 : 0);
 }
@@ -359,6 +360,36 @@ if (cmd === "check") {
   const data = await callApi(`${API}/${PAGE_ID}?fields=id,name,fan_count&access_token=${encodeURIComponent(TOKEN)}`);
   console.log(`autenticato come Pagina: «${data.name}» (id ${data.id}, follower ${data.fan_count ?? "?"})`);
   console.log("il token di Pagina funziona: si può pubblicare.");
+  process.exit(0);
+}
+
+if (cmd === "commento") {
+  // Serve pages_manage_engagement. A cosa serve: tenere i link fuori dal corpo del post
+  // (un post con link esterni perde reach) e metterli nel primo commento.
+  const post = get("--post");
+  const message = get("--text");
+  if (!post || !message) { console.error("servono --post <id o url del post> e --text"); process.exit(2); }
+  const postId =
+    String(post).match(/\d{6,}_\d{6,}/)?.[0] || // id completo «pagina_post»: è quello che l'API vuole
+    String(post).match(/(\d{6,})/g)?.pop();
+  if (!postId) { console.error(`id del post non riconosciuto: ${post}`); process.exit(2); }
+  if (dryRun) {
+    console.log("[dry-run] nessuna richiesta inviata a Meta.");
+    console.log(`  destinazione : ${API}/${postId}/comments`);
+    console.log(`  token        : ${mask(TOKEN)}`);
+    console.log(`  testo        : ${message.length} caratteri`);
+    process.exit(0);
+  }
+  if (!needConfig()) process.exit(1);
+  const body = new URLSearchParams();
+  body.set("access_token", TOKEN);
+  body.set("message", message);
+  const res = await callApi(`${API}/${postId}/comments`, {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  console.log(`commento pubblicato. id: ${res.id}`);
   process.exit(0);
 }
 
