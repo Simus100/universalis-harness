@@ -281,3 +281,7 @@ media/meteo/
 media/ricerca-web/
 media/harness-audit/
 media/domain-switch/
+
+# Bozza di licenza proposta (non in vigore): non va pubblicata finche il titolare non la approva,
+# altrimenti il repo mostrerebbe due licenze in contrasto tra loro.
+media/licenza-proposta/
