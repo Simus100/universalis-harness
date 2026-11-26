@@ -761,6 +761,28 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
  i link simbolici non vengono seguiti (prima un link verso l'esterno faceva finire nell'archivio
  file fuori dalla root, o faceva sfondare il tetto dei 3000 file su una cartella normale).
 
+**Confine allargato (`DASH_FS_ROOT`).** Il file manager (scheda File e viste collegate: immagini,
+PDF, TTS, progetto, ricerca, upload) ha un confine suo, separato da quello dell'agente:
+`DASH_FS_ROOT=/` (o `--fs-root /`) lo fa partire dalla radice del disco e rende esplorabile tutto
+il server, comprese `/opt/n8n` e `/srv`. Il default è la root dell'istanza, cioè il comportamento
+storico: la variabile va messa **solo** nel `.env` dell'istanza che deve vedere tutto, mai nei
+cloni dei tester (che non l'hanno e restano confinati ognuno nella propria cartella).
+
+Restano accese anche con `DASH_FS_ROOT=/`:
+
+- `/proc`, `/sys`, `/dev` non sono elencati né esplorabili (contengono file che bloccano la lettura);
+- le cartelle di primo livello (`/etc`, `/usr`, `/var`, `/root`, …) non si cancellano e non si
+  rinominano — i file dentro sì: un clic sbagliato sulla cartella di sistema non si recupera;
+- l'editor legge al massimo 2 MB e su un file più grande il **salvataggio è disabilitato**, perché
+  riscriverlo lo avrebbe troncato (difetto presente da prima, ora bloccato);
+- i percorsi fuori dalla root si mostrano **assoluti** (`/srv/n8n-files`), quelli dentro restano
+  relativi come prima (`media/x.png`), così i percorsi esistenti non cambiano significato.
+
+La ricerca nella scheda File ha un flag: **contenuto dei file** (storico), **nome dei file**,
+**nome delle cartelle**. Visita l'albero a strati (con la radice a `/` una visita in profondità si
+esauriva dentro `/usr` e tornava vuota) e non scende in `/var/lib/docker`, `/var/lib/containerd`,
+`/snap`, `/var/cache`.
+
 ### API
 | Metodo | Endpoint | Descrizione |
 |--------|----------|-------------|

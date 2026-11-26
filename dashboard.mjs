@@ -663,6 +663,27 @@ try {
 } catch {
   /* root non esistente: resta il path risolto */
 }
+/**
+ * Confine MASSIMO del file manager (scheda File e viste collegate: immagini, PDF, TTS,
+ * progetto, ricerca, upload). Di default è la root dell'istanza, cioè il comportamento
+ * storico: chi non imposta niente non guadagna nessun permesso in più.
+ *
+ * `DASH_FS_ROOT=/` (o `--fs-root /`) allarga l'esplorazione a tutto il filesystem: è una
+ * scelta di SICUREZZA, quindi va messa SOLO sull'istanza del titolare — i cloni dei tester
+ * non hanno la variabile e restano confinati alla propria cartella.
+ *
+ * Nota: ROOT resta la base dei percorsi relativi e dell'isolamento dell'agente
+ * (redirect dei `> /path`, cartelle dell'istanza); FS_ROOT governa solo il file manager.
+ */
+const FS_ROOT = (() => {
+  const raw = String(arg("fs-root", process.env.DASH_FS_ROOT || "")).trim();
+  if (!raw) return ROOT;
+  try {
+    return resolve(raw);
+  } catch {
+    return ROOT;
+  }
+})();
 const MAX_READ = 2 * 1024 * 1024; // 2 MB per la lettura nell'editor
 const MAX_UPLOAD = 64 * 1024 * 1024; // 64 MB per l'upload
 // Tetti per lo scarico di una CARTELLA: l'archivio si costruisce in memoria.
@@ -809,17 +830,75 @@ function withinRoot(abs) {
   return abs === ROOT || abs.startsWith(ROOT + sep);
 }
 
+/** Prefisso di una radice, con `/` gestito: `"/" + sep` darebbe `//` e non contarebbe niente. */
+const prefisso = (radice) => (radice.endsWith(sep) ? radice : radice + sep);
+
+/**
+ * Sottoalberi che il file manager non attraversa MAI, nemmeno con `DASH_FS_ROOT=/`.
+ * Sono filesystem virtuali: non contengono file veri e possono bloccare il processo
+ * (/proc/kcore dichiara 128 TB, /dev/zero non finisce mai di leggere).
+ */
+const FS_BLOCCATI = ["/proc", "/sys", "/dev"];
+const fsBloccato = (abs) => FS_BLOCCATI.some((b) => abs === b || abs.startsWith(b + sep));
+
+/**
+ * Sottoalberi che la RICERCA non visita (la navigazione a mano sì): contengono decine di
+ * migliaia di file generati da altri programmi (immagini Docker, snap) e bruciano il budget
+ * della ricerca senza che ci sia niente da cercare.
+ */
+const FS_PESANTI = ["/var/lib/docker", "/var/lib/containerd", "/snap", "/var/cache"];
+const fsPesante = (abs) => FS_PESANTI.some((b) => abs === b || abs.startsWith(b + sep));
+
+/**
+ * Cartelle di primo livello che il file manager non rinomina e non cancella, nemmeno con
+ * `DASH_FS_ROOT=/`: un clic sbagliato qui (o un `rm -rf` partito da qui) non si recupera.
+ * I file DENTRO restano gestibili: il divieto riguarda la cartella di sistema in sé.
+ */
+const FS_INTANGIBILI = new Set([
+  "/", "/etc", "/usr", "/var", "/bin", "/sbin", "/lib", "/lib64", "/boot",
+  "/home", "/root", "/opt", "/srv", "/run", "/tmp",
+]);
+
+/** Vero se il percorso sta nel confine del file manager (default: la root dell'istanza). */
+function withinFs(abs) {
+  return abs === FS_ROOT || abs.startsWith(prefisso(FS_ROOT));
+}
+
+/**
+ * Percorso da mostrare alla UI: relativo alla root quando ci sta dentro (com'è sempre stato),
+ * assoluto quando sta fuori. Serve perché con `DASH_FS_ROOT=/` un file in /srv non può essere
+ * espresso come relativo a /root senza riempire l'interfaccia di `../../`.
+ */
+function pathForUi(abs) {
+  // radice del file manager: si esprime come stringa vuota (è la base dei percorsi)
+  if (abs === FS_ROOT) return "";
+  // confine invariato (default, e cloni dei tester): comportamento storico, tutto relativo a ROOT
+  if (FS_ROOT === ROOT) return withinRoot(abs) ? relative(ROOT, abs) : abs;
+  // confine allargato: percorsi ASSOLUTI. Relativi a /root non sarebbero coerenti, perché i
+  // relativi si risolvono sulla radice del file manager (il disco) e /root diventerebbe /root → "/root".
+  return abs;
+}
+
 /** Risolve un path relativo alla root e blocca escape via `..` o symlink. */
-async function safeResolve(rel, { allowMissing = false } = {}) {
-  const abs = resolve(ROOT, rel || ".");
-  if (!withinRoot(abs)) throw new HttpError(403, "percorso fuori dalla root");
+async function safeResolve(rel, { allowMissing = false, ampio = false } = {}) {
+  // `ampio: true` = richiesta del file manager: il confine è FS_ROOT invece della root
+  const dentro = ampio ? withinFs : withinRoot;
+  // Un percorso RELATIVO resta relativo alla root dell'istanza: è così che lo intendono la
+  // scheda Progetto, `mediaRel` e i percorsi citati dall'agente. Con il confine allargato si
+  // risolve su FS_ROOT solo ciò che è scritto in forma assoluta.
+  const relativo = !String(rel || "").startsWith("/");
+  const base = ampio && relativo ? ROOT : ampio ? FS_ROOT : ROOT;
+  const abs = resolve(base, rel || ".");
+  if (!dentro(abs)) throw new HttpError(403, "percorso fuori dalla root");
+  if (fsBloccato(abs)) throw new HttpError(403, "cartella di sistema: non esplorabile dal file manager");
   // risolve i symlink sulla porzione esistente
   let existing = abs;
   const tail = [];
   for (;;) {
     try {
       const rp = await fs.realpath(existing);
-      if (!withinRoot(rp)) throw new HttpError(403, "percorso fuori dalla root (symlink)");
+      if (!dentro(rp)) throw new HttpError(403, "percorso fuori dalla root (symlink)");
+      if (fsBloccato(rp)) throw new HttpError(403, "cartella di sistema: non esplorabile dal file manager");
       return tail.length ? join(rp, ...tail.reverse()) : rp;
     } catch (err) {
       if (err instanceof HttpError) throw err;
@@ -845,8 +924,10 @@ async function resolveCitedPath(input) {
   const rel = String(input || "").trim();
   if (!rel || /[*?{}]/.test(rel)) return null; // glob o segnaposto: non è un file
   const candidates = [];
+  // il confine qui è quello del file manager (FS_ROOT): di default è identico alla root
+  // dell'istanza, quindi nessun percorso nuovo diventa citabile senza DASH_FS_ROOT
   const add = (abs) => {
-    if (abs && withinRoot(abs) && !candidates.includes(abs)) candidates.push(abs);
+    if (abs && withinFs(abs) && !candidates.includes(abs)) candidates.push(abs);
   };
   if (rel.startsWith("/") || rel.startsWith("~")) {
     add(resolve(rel));
@@ -854,7 +935,7 @@ async function resolveCitedPath(input) {
     // ordine = come scrive l'agente: prima la cartella di lavoro (dove cita `media/x`,
     // `skills/…`), poi la cartella dei file generati (dove cita `x.md`), infine la root
     const workdir = cwd();
-    if (withinRoot(workdir)) add(resolve(workdir, rel));
+    if (withinFs(workdir)) add(resolve(workdir, rel));
     add(resolve(MEDIA_DIR, rel));
     add(resolve(MEDIA_DIR, basename(rel)));
     add(resolve(ROOT, rel));
@@ -863,13 +944,13 @@ async function resolveCitedPath(input) {
     let st;
     try {
       const rp = await fs.realpath(abs);
-      if (!withinRoot(rp)) continue;
+      if (!withinFs(rp)) continue;
       st = await fs.stat(abs);
     } catch {
       continue;
     }
     return {
-      path: relative(ROOT, abs),
+      path: pathForUi(abs),
       name: basename(abs),
       type: st.isDirectory() ? "dir" : "file",
       size: st.size,
@@ -880,7 +961,7 @@ async function resolveCitedPath(input) {
 }
 
 async function listDir(rel) {
-  const abs = await safeResolve(rel);
+  const abs = await safeResolve(rel, { ampio: true });
   const st = await fs.stat(abs);
   if (!st.isDirectory()) throw new HttpError(400, "non è una cartella");
   const dirents = await fs.readdir(abs, { withFileTypes: true });
@@ -892,6 +973,8 @@ async function listDir(rel) {
     } catch {
       continue;
     }
+    // /proc, /sys, /dev non si mostrano: non contengono file veri e alcuni bloccano la lettura
+    if (fsBloccato(join(abs, d.name))) continue;
     entries.push({
       name: d.name,
       type: s.isDirectory() ? "dir" : s.isSymbolicLink() ? "link" : "file",
@@ -905,26 +988,43 @@ async function listDir(rel) {
       (b.type === "dir") - (a.type === "dir") ||
       a.name.localeCompare(b.name, "it", { numeric: true }),
   );
-  const relPath = relative(ROOT, abs);
+  const relPath = pathForUi(abs);
+  // con il confine allargato (`DASH_FS_ROOT=/`) si risale fino a `/`; a root invariata
+  // il comportamento è identico a prima (la root dell'istanza non ha padre)
+  let parent;
+  if (abs === FS_ROOT) parent = null;
+  else if (FS_ROOT === ROOT) parent = relPath ? dirname(relPath) : null;
+  else parent = pathForUi(dirname(abs));
   return {
-    root: ROOT,
+    root: FS_ROOT,
     path: relPath,
-    parent: relPath ? dirname(relPath) : null,
+    parent,
     entries,
   };
 }
 
 async function readFileSafe(rel) {
-  const abs = await safeResolve(rel);
+  const abs = await safeResolve(rel, { ampio: true });
   const st = await fs.stat(abs);
   if (!st.isFile()) throw new HttpError(400, "non è un file");
-  const buf = await fs.readFile(abs);
-  const truncated = buf.length > MAX_READ;
-  const slice = truncated ? buf.subarray(0, MAX_READ) : buf;
+  // Lettura LIMITATA al tetto dell'editor: con il confine allargato (`DASH_FS_ROOT=/`)
+  // `fs.readFile` su un file enorme caricherebbe tutto in memoria. Si legge al massimo
+  // MAX_READ+1 byte, che è quanto serve per sapere se il file è stato troncato.
+  const quanti = Math.min(st.size > 0 ? st.size + 1 : MAX_READ + 1, MAX_READ + 1);
+  const buf = Buffer.alloc(quanti);
+  const fh = await fs.open(abs, "r");
+  let letti = 0;
+  try {
+    letti = (await fh.read(buf, 0, quanti, 0)).bytesRead;
+  } finally {
+    await fh.close();
+  }
+  const truncated = st.size > MAX_READ || letti > MAX_READ;
+  const slice = buf.subarray(0, Math.min(letti, MAX_READ));
   const sample = slice.subarray(0, Math.min(8000, slice.length));
   const binary = sample.includes(0);
   return {
-    path: relative(ROOT, abs),
+    path: pathForUi(abs),
     size: st.size,
     mtime: st.mtimeMs,
     truncated,
@@ -934,10 +1034,10 @@ async function readFileSafe(rel) {
 }
 
 async function writeFileSafe(rel, content) {
-  const abs = await safeResolve(rel, { allowMissing: true });
+  const abs = await safeResolve(rel, { allowMissing: true, ampio: true });
   await fs.mkdir(dirname(abs), { recursive: true });
   await fs.writeFile(abs, content, "utf8");
-  return { path: relative(ROOT, abs), size: Buffer.byteLength(content) };
+  return { path: pathForUi(abs), size: Buffer.byteLength(content) };
 }
 
 // ---- runtime & sessione -------------------------------------------------
@@ -1523,7 +1623,7 @@ async function saveProgetto() {
  *  dentro la root. */
 async function schedaCartella(rel, { maxFile = PROGETTO_FILE_VISTA } = {}) {
   try {
-    const abs = await safeResolve(rel);
+    const abs = await safeResolve(rel, { ampio: true });
     const st = await fs.stat(abs);
     if (!st.isDirectory()) return { path: rel, esiste: false, motivo: "non è una cartella" };
     const dirents = await fs.readdir(abs, { withFileTypes: true });
@@ -4251,7 +4351,10 @@ function startSkillsPoll() {
 // ---- ricerca, export, file statici --------------------------------------
 const SEARCH_LIMIT = Number(process.env.DASH_SEARCH_LIMIT) || 200; // righe trovate nei file
 const SEARCH_MAX_FILE = 2 * 1024 * 1024; // file piu' grandi di cosi' non vengono scansionati
-const SEARCH_MAX_FILES = 4000; // tetto di file scansionati per ricerca
+const SEARCH_MAX_FILES = 4000; // tetto di file scansionati per ricerca nel contenuto
+// La ricerca per NOME legge solo i nomi (nessun contenuto): può visitare molti più elementi
+// in pochi secondi, e su un disco intero le 4000 voci della ricerca nel contenuto non bastano.
+const SEARCH_MAX_NODES = Number(process.env.DASH_SEARCH_MAX_NODES) || 60000;
 const SEARCH_TIME_MS = 8000; // budget di tempo per ricerca
 const SKIP_DIRS = new Set([
   "node_modules", ".git", ".cache", ".npm", ".venv", "venv", "__pycache__",
@@ -4624,10 +4727,68 @@ async function searchSessions(q) {
     .slice(0, 40);
 }
 
+/**
+ * Ricerca per NOME — le due modalità del flag nella scheda File:
+ * `tipo: "file"` elenca i file il cui nome contiene la stringa, `tipo: "cartelle"` le cartelle.
+ * Gli stessi tetti della ricerca nel contenuto (risultati, elementi visitati, tempo) valgono
+ * qui: con `DASH_FS_ROOT=/` l'albero di partenza può essere un disco intero, non una cartella.
+ */
+async function searchByName(q, startRel, tipo) {
+  const needle = q.toLowerCase();
+  const voglioCartelle = tipo === "cartelle";
+  const startAbs = await safeResolve(startRel || "", { ampio: true });
+  const results = [];
+  const t0 = Date.now();
+  let scanned = 0;
+  let truncated = false;
+  // Visita A STRATI (breadth-first): con la radice a `/` una visita in profondità si
+  // esaurisce dentro /usr o /var prima di arrivare a /opt, e la ricerca tornava vuota
+  // dopo pochi decimi di secondo dicendo «troncato». Così i livelli alti si vedono subito.
+  const coda = [startAbs];
+  for (let c = 0; c < coda.length; c++) {
+    if (results.length >= SEARCH_LIMIT || scanned >= SEARCH_MAX_NODES || Date.now() - t0 > SEARCH_TIME_MS) {
+      truncated = true;
+      break;
+    }
+    const dir = coda[c];
+    let ents;
+    try {
+      ents = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    ents.sort((x, y) => x.name.localeCompare(y.name, "it", { numeric: true }));
+    for (const d of ents) {
+      if (results.length >= SEARCH_LIMIT) {
+        truncated = true;
+        break;
+      }
+      const abs = join(dir, d.name);
+      if (d.isSymbolicLink() || fsBloccato(abs)) continue;
+      scanned += 1;
+      const trovato = d.name.toLowerCase().includes(needle);
+      if (d.isDirectory()) {
+        if (trovato && voglioCartelle) results.push({ path: pathForUi(abs), name: d.name, type: "dir" });
+        // si scende comunque (la cartella che corrisponde può contenerne altre), tranne nei
+        // sottoalberi che non si cercano mai
+        if (!SKIP_DIRS.has(d.name) && !d.name.startsWith(".") && !fsPesante(abs)) coda.push(abs);
+        continue;
+      }
+      if (!voglioCartelle && d.isFile() && trovato) {
+        results.push({ path: pathForUi(abs), name: d.name, type: "file" });
+      }
+    }
+  }
+  results.sort(
+    (x, y) => (y.type === "dir") - (x.type === "dir") || x.name.localeCompare(y.name, "it", { numeric: true }),
+  );
+  return { results, truncated, scanned };
+}
+
 /** Cerca una stringa nei file sotto la root (esclusi node_modules, .git, binari…). */
 async function searchFiles(q, startRel) {
   const needle = q.toLowerCase();
-  const startAbs = await safeResolve(startRel || "");
+  const startAbs = await safeResolve(startRel || "", { ampio: true });
   const results = [];
   const t0 = Date.now();
   let scanned = 0;
@@ -4651,9 +4812,9 @@ async function searchFiles(q, startRel) {
         break;
       }
       const abs = join(dir, d.name);
-      if (d.isSymbolicLink()) continue;
+      if (d.isSymbolicLink() || fsBloccato(abs)) continue;
       if (d.isDirectory()) {
-        if (!SKIP_DIRS.has(d.name) && !d.name.startsWith(".")) stack.push(abs);
+        if (!SKIP_DIRS.has(d.name) && !d.name.startsWith(".") && !fsPesante(abs)) stack.push(abs);
         continue;
       }
       if (!d.isFile()) continue;
@@ -4679,7 +4840,7 @@ async function searchFiles(q, startRel) {
         const col = lines[i].toLowerCase().indexOf(needle);
         if (col < 0) continue;
         results.push({
-          path: relative(ROOT, abs),
+          path: pathForUi(abs),
           line: i + 1,
           col,
           text: lines[i].trim().slice(0, 240),
@@ -4818,7 +4979,7 @@ async function buildPromptPayload(text, atts) {
   for (const a of atts || []) {
     let abs;
     try {
-      abs = await safeResolve(String(a?.path || ""));
+      abs = await safeResolve(String(a?.path || ""), { ampio: true });
     } catch {
       continue;
     }
@@ -5948,9 +6109,14 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && url.pathname === "/api/search/files") {
       const q = (url.searchParams.get("q") || "").trim();
-      if (q.length < 2) return json(res, 200, { q, results: [], truncated: false });
-      const out = await searchFiles(q, url.searchParams.get("path") || "");
-      return json(res, 200, { q, ...out });
+      // `cosa` = flag della scheda File: contenuto dei file (storico), nome dei file, nome delle cartelle
+      const cosa = ["file", "cartelle"].includes(url.searchParams.get("cosa")) ? url.searchParams.get("cosa") : "contenuto";
+      if (q.length < 2) return json(res, 200, { q, cosa, results: [], truncated: false });
+      const out =
+        cosa === "contenuto"
+          ? await searchFiles(q, url.searchParams.get("path") || "")
+          : await searchByName(q, url.searchParams.get("path") || "", cosa);
+      return json(res, 200, { q, cosa, ...out });
     }
 
     // ---------------- export markdown ----------------
@@ -6134,7 +6300,7 @@ const server = http.createServer(async (req, res) => {
         if (!richiesto) return json(res, 400, { error: "path mancante" });
         let abs;
         try {
-          abs = await safeResolve(richiesto);
+          abs = await safeResolve(richiesto, { ampio: true });
         } catch (e) {
           const msg = String(e?.message || e);
           return json(res, e?.code === 403 ? 403 : 404, {
@@ -6533,7 +6699,7 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req, 8 * 1024 * 1024);
       const p = String(body.path || "");
       if (!p) return json(res, 400, { error: "path mancante" });
-      const abs = await safeResolve(p, { allowMissing: true });
+      const abs = await safeResolve(p, { allowMissing: true, ampio: true });
       const out = await writeFileSafe(p, String(body.content ?? ""));
       // modificare un SKILL.md via editor deve rendere la skill subito attiva
       if (abs === SKILLS_DIR || abs.startsWith(SKILLS_DIR + sep)) {
@@ -6550,17 +6716,19 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req);
       const p = String(body.path || "").trim();
       if (!p) return json(res, 400, { error: "path mancante" });
-      const abs = await safeResolve(p, { allowMissing: true });
+      const abs = await safeResolve(p, { allowMissing: true, ampio: true });
       await fs.mkdir(abs, { recursive: true });
-      return json(res, 200, { ok: true, path: relative(ROOT, abs) });
+      return json(res, 200, { ok: true, path: pathForUi(abs) });
     }
 
     if (req.method === "POST" && url.pathname === "/api/file/rename") {
       const body = await readBody(req);
-      const from = await safeResolve(String(body.from || ""));
-      const to = await safeResolve(String(body.to || ""), { allowMissing: true });
-      if (from === ROOT) return json(res, 400, { error: "non puoi rinominare la root" });
-      if (to === ROOT) return json(res, 400, { error: "destinazione non valida" });
+      const from = await safeResolve(String(body.from || ""), { ampio: true });
+      const to = await safeResolve(String(body.to || ""), { allowMissing: true, ampio: true });
+      if (from === FS_ROOT) return json(res, 400, { error: "non puoi rinominare la root" });
+      if (FS_INTANGIBILI.has(from))
+        return json(res, 400, { error: `«${from}» è una cartella di sistema: non si rinomina` });
+      if (to === FS_ROOT) return json(res, 400, { error: "destinazione non valida" });
       // `fs.rename` SOVRASCRIVE in silenzio: un refuso nel nome di destinazione cancellava un
       // file esistente senza avviso (e la risposta era comunque `ok: true`). La sovrascrittura
       // ora si fa solo se richiesta esplicitamente (`overwrite: true`), altrimenti 409.
@@ -6574,20 +6742,22 @@ const server = http.createServer(async (req, res) => {
         }
         if (occupied) {
           return json(res, 409, {
-            error: `esiste già «${relative(ROOT, to)}»: conferma la sovrascrittura`,
+            error: `esiste già «${pathForUi(to)}»: conferma la sovrascrittura`,
             exists: true,
-            path: relative(ROOT, to),
+            path: pathForUi(to),
           });
         }
       }
       await fs.rename(from, to);
-      return json(res, 200, { ok: true, path: relative(ROOT, to) });
+      return json(res, 200, { ok: true, path: pathForUi(to) });
     }
 
     if (req.method === "POST" && url.pathname === "/api/file/delete") {
       const body = await readBody(req);
-      const abs = await safeResolve(String(body.path || ""));
-      if (abs === ROOT) return json(res, 400, { error: "non puoi cancellare la root" });
+      const abs = await safeResolve(String(body.path || ""), { ampio: true });
+      if (abs === FS_ROOT) return json(res, 400, { error: "non puoi cancellare la root" });
+      if (FS_INTANGIBILI.has(abs))
+        return json(res, 400, { error: `«${abs}» è una cartella di sistema: non si cancella (i file dentro, sì)` });
       await fs.rm(abs, { recursive: true, force: true });
       return json(res, 200, { ok: true });
     }
@@ -6613,7 +6783,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/api/download") {
-      const abs = await safeResolve(url.searchParams.get("path") || "");
+      const abs = await safeResolve(url.searchParams.get("path") || "", { ampio: true });
       const st = await fs.stat(abs);
       // Una cartella si scarica come .zip: prima il tasto «scarica» su una cartella
       // restituiva un JSON d'errore, cioè un file inutile chiamato «media».
@@ -6861,7 +7031,7 @@ const server = http.createServer(async (req, res) => {
       const soloMeta = url.searchParams.get("meta") === "1";
       let abs;
       try {
-        abs = await safeResolve(richiesto);
+        abs = await safeResolve(richiesto, { ampio: true });
       } catch (e) {
         return json(res, e?.code === 403 ? 403 : 404, {
           error: e?.code === 403 ? "percorso fuori dalla root" : `file non trovato: «${richiesto}»`,
@@ -7060,7 +7230,7 @@ const server = http.createServer(async (req, res) => {
       if (!testo && body.path) {
         let abs;
         try {
-          abs = await safeResolve(String(body.path));
+          abs = await safeResolve(String(body.path), { ampio: true });
         } catch (e) {
           return json(res, e?.code === 403 ? 403 : 404, { error: `percorso non leggibile: «${body.path}»` });
         }
@@ -7145,9 +7315,9 @@ const server = http.createServer(async (req, res) => {
       await assicuraSpazio();
       const dir = url.searchParams.get("dir") || "";
       const name = basename(url.searchParams.get("name") || "upload.bin");
-      const absDir = await safeResolve(dir);
+      const absDir = await safeResolve(dir, { ampio: true });
       const target = join(absDir, name);
-      if (!withinRoot(target)) return json(res, 403, { error: "percorso non valido" });
+      if (!withinFs(target)) return json(res, 403, { error: "percorso non valido" });
       const chunks = [];
       let size = 0;
       let tooBig = false;
@@ -7161,7 +7331,7 @@ const server = http.createServer(async (req, res) => {
       }
       if (tooBig) return json(res, 413, { error: "file troppo grande" });
       await fs.writeFile(target, Buffer.concat(chunks));
-      return json(res, 200, { ok: true, path: relative(ROOT, target), size });
+      return json(res, 200, { ok: true, path: pathForUi(target), size });
     }
 
     res.writeHead(404, { "Content-Type": "text/plain" });

@@ -2346,6 +2346,11 @@ footer {
   </div>
   <div class="fsearchbar" id="fSearchPanel" hidden>
     <input id="fSearchInput" class="sinput" type="search" placeholder="🔍 cerca nel contenuto dei file sotto la root…" autocomplete="off" spellcheck="false" />
+    <select id="fSearchCosa" class="sinput" title="Cosa cercare: dentro i file, oppure per nome di file o di cartelle" style="max-width:200px">
+      <option value="contenuto">nel contenuto dei file</option>
+      <option value="file">nome dei file</option>
+      <option value="cartelle">nome delle cartelle</option>
+    </select>
     <button class="ghost" id="fSearchClose" type="button" title="Chiudi ricerca">✕</button>
   </div>
   <div class="flist" id="fileList"></div>
@@ -9259,16 +9264,21 @@ function fmtSize(n) {
   if (n < 1073741824) return (n/1048576).toFixed(1) + " MB";
   return (n/1073741824).toFixed(2) + " GB";
 }
-const jr = (dir, name) => (dir ? dir + "/" + name : name);
+// join di un percorso mostrato dalla UI: con `DASH_FS_ROOT=/` la cartella corrente può essere
+// assoluta e finire per `/` (la radice del disco), e `"/" + "/" + nome` darebbe `//nome`
+const jr = (dir, name) => (!dir ? name : dir.endsWith("/") ? dir + name : dir + "/" + name);
 
 function renderCrumbs(rel) {
   const el = $("crumbs"); el.innerHTML = "";
   const root = document.createElement("button"); root.type = "button"; root.className = "crumb"; root.textContent = "⌂ root";
   root.onclick = () => loadDir(""); el.appendChild(root);
   if (!rel) return;
+  // i percorsi fuori dalla root dell'istanza si mostrano assoluti: il primo segmento
+  // deve conservare la `/` iniziale, altrimenti il breadcrumb punterebbe dentro la root
+  const assoluto = rel.startsWith("/");
   let acc = "";
   for (const p of rel.split("/").filter(Boolean)) {
-    acc = acc ? acc + "/" + p : p;
+    acc = assoluto ? acc + "/" + p : acc ? acc + "/" + p : p;
     const s = document.createElement("span"); s.className = "csep"; s.textContent = "/"; el.appendChild(s);
     const b = document.createElement("button"); b.type = "button"; b.className = "crumb"; b.textContent = p;
     const target = acc; b.onclick = () => loadDir(target); el.appendChild(b);
@@ -9371,8 +9381,12 @@ async function openFile(rel, line) {
       ta.value = ""; ta.disabled = true; $("eSave").disabled = true;
       $("eInfo").textContent = `File binario (${fmtSize(j.size)}) — non modificabile qui. Usa “scarica”.`;
     } else {
-      ta.disabled = false; $("eSave").disabled = false; ta.value = j.content || "";
-      $("eInfo").textContent = fmtSize(j.size) + (j.truncated ? " (troncato a 2 MB)" : "") + " · " + new Date(j.mtime).toLocaleString();
+      ta.disabled = false;
+      // Un file oltre il tetto di lettura si vede solo in parte: salvarlo dall'editor lo
+      // RISCRIVEREBBE troncato, perdendo il resto. Si vieta il salvataggio e lo si dice.
+      $("eSave").disabled = !!j.truncated;
+      ta.value = j.content || "";
+      $("eInfo").textContent = fmtSize(j.size) + (j.truncated ? " (troncato a 2 MB — salvataggio disabilitato: usa “scarica”)" : "") + " · " + new Date(j.mtime).toLocaleString();
     }
     $("editor").hidden = false;
     if (line) jumpToLine(line);
@@ -12663,18 +12677,72 @@ $("fSearch").onclick = () => {
   else { $("fResults").hidden = true; $("fResults").innerHTML = ""; $("fileList").hidden = false; }
 };
 $("fSearchClose").onclick = () => { $("fSearchPanel").hidden = true; $("fResults").hidden = true; $("fileList").hidden = false; };
-$("fSearchInput").addEventListener("input", (e) => {
-  const q = e.target.value.trim();
+$("fSearchInput").addEventListener("input", cercaNeiFile);
+// il flag cambia l'oggetto della ricerca: si riesegue subito, senza aspettare che si riscriva
+$("fSearchCosa").addEventListener("change", () => {
+  const cosa = $("fSearchCosa").value;
+  $("fSearchInput").placeholder = cosa === "contenuto"
+    ? "🔍 cerca nel contenuto dei file sotto la root…"
+    : cosa === "file"
+      ? "🔍 cerca per nome di file sotto la root…"
+      : "🔍 cerca per nome di cartelle sotto la root…";
+  cercaNeiFile();
+});
+function cercaNeiFile() {
+  const q = $("fSearchInput").value.trim();
+  const cosa = $("fSearchCosa")?.value || "contenuto";
   clearTimeout(fileSearchTimer);
   if (q.length < 2) { $("fResults").hidden = true; $("fileList").hidden = false; return; }
   fileSearchTimer = setTimeout(async () => {
     try {
-      const r = await fetch("/api/search/files?q=" + encodeURIComponent(q) + "&path=" + encodeURIComponent(currentDir || ""));
+      const r = await fetch(
+        "/api/search/files?q=" + encodeURIComponent(q) +
+        "&cosa=" + encodeURIComponent(cosa) +
+        "&path=" + encodeURIComponent(currentDir || ""),
+      );
       const j = await r.json();
-      renderFileSearch(j, q);
+      if (j.cosa === "file" || j.cosa === "cartelle") renderNomeSearch(j, q);
+      else renderFileSearch(j, q);
     } catch { /* ignore */ }
   }, 260);
-});
+}
+/** Risultati della ricerca PER NOME (flag «file» / «cartelle»): si clicca e si apre. */
+function renderNomeSearch(j, q) {
+  const el = $("fResults");
+  el.innerHTML = "";
+  el.hidden = false;
+  $("fileList").hidden = true;
+  const results = j.results || [];
+  const cartelle = j.cosa === "cartelle";
+  const info = document.createElement("div");
+  info.className = "lbl";
+  info.style.color = "var(--faint)";
+  info.style.fontSize = "12px";
+  info.textContent = results.length
+    ? `${results.length} ${cartelle ? "cartelle trovate" : "file trovati"}${j.truncated ? " (troncato)" : ""} · ${j.scanned} elementi controllati`
+    : `Nessun${cartelle ? "a cartella" : " file"} con “${q}” nel nome`;
+  el.appendChild(info);
+  for (const r of results) {
+    const card = document.createElement("div");
+    card.className = "sres";
+    card.style.cursor = "pointer";
+    card.title = r.path;
+    const h = document.createElement("div");
+    h.className = "sres-h";
+    const nm = document.createElement("div");
+    nm.className = "nm";
+    nm.textContent = (r.type === "dir" ? "📁 " : "📄 ") + r.name;
+    h.appendChild(nm);
+    card.appendChild(h);
+    card.onclick = () => {
+      $("fResults").hidden = true;
+      $("fileList").hidden = false;
+      if (r.type === "dir") loadDir(r.path);
+      else openFile(r.path);
+    };
+    el.appendChild(card);
+  }
+}
 function renderFileSearch(j, q) {
   const el = $("fResults");
   el.innerHTML = "";
