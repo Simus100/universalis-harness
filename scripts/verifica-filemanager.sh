@@ -99,7 +99,7 @@ chk "elenco di default (radice del file manager)" 200 "$BASE/api/files" "d['path
 chk "  indica dov'è la cartella dell'istanza" 200 "$BASE/api/files" "d['istanza']=='${ISTANZA}'"
 PYQ=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$ISTANZA" 2>/dev/null || echo "$ISTANZA")
 chk "tasto «istanza» (cartella della dashboard)" 200 "$BASE/api/files?path=$PYQ" "d['path']=='${ISTANZA}'"
-chk "radice del disco" 200 "$BASE/api/files?path=%2F" "d['path']=='' and d['parent'] is None"
+chk "radice del disco" 200 "$BASE/api/files?path=%2F" "d['path']=='/' and d['parent'] is None"
 chk "  e niente /proc nell'elenco" 200 "$BASE/api/files?path=%2F" "not any(e['name']=='proc' for e in d['entries'])"
 chk "/root/pi-harness" 200 "$BASE/api/files?path=%2Froot%2Fpi-harness" "d['path']=='/root/pi-harness' and len(d['entries'])>0"
 chk "/opt/n8n" 200 "$BASE/api/files?path=%2Fopt%2Fn8n" "len(d['entries'])>0"
