@@ -95,7 +95,7 @@ chk "GET /api/progetto" 200 "$BASE/api/progetto"
 
 echo
 echo "2. navigazione (radice dell'istanza e radice del disco)"
-chk "elenco di default (radice del file manager)" 200 "$BASE/api/files" "d['path']=='' and any(e['name']=='srv' for e in d['entries'])"
+chk "elenco di default (radice del file manager)" 200 "$BASE/api/files" "d['path']=='/' and any(e['name']=='srv' for e in d['entries'])"
 chk "  indica dov'è la cartella dell'istanza" 200 "$BASE/api/files" "d['istanza']=='${ISTANZA}'"
 PYQ=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$ISTANZA" 2>/dev/null || echo "$ISTANZA")
 chk "tasto «istanza» (cartella della dashboard)" 200 "$BASE/api/files?path=$PYQ" "d['path']=='${ISTANZA}'"
@@ -107,6 +107,29 @@ chk "/srv/n8n-files" 200 "$BASE/api/files?path=%2Fsrv%2Fn8n-files" "len(d['entri
 chk "/etc" 200 "$BASE/api/files?path=%2Fetc" "len(d['entries'])>0"
 chk "/var/log" 200 "$BASE/api/files?path=%2Fvar%2Flog" "len(d['entries'])>0"
 chk "percorso relativo (media) resta relativo alla root dell'istanza" 200 "$BASE/api/files?path=media" "d['path'].startswith(d['istanza'])"
+
+echo
+echo "2b. clic sui figli della radice (come li compone la UI: radice + \"/\" + nome)"
+FIGLI=$(curl -sS -u "${UTENTE}:${PW}" "$BASE/api/files?path=" --max-time 30 | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+rad=d.get('path','')
+def comp(n): return (rad.rstrip('/')+'/'+n) if rad else n
+print('\n'.join(comp(e['name']) for e in d.get('entries',[]) if e.get('type')=='dir'))
+" 2>/dev/null)
+aprono=0; nonaprono=0
+while IFS= read -r p; do
+  [ -z "$p" ] && continue
+  code=$(curl -sS -u "${UTENTE}:${PW}" -o "$BODY" -w '%{http_code}' --max-time 30 \
+        "$BASE/api/files?path=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$p")")
+  if [ "$code" = "200" ]; then
+    aprono=$((aprono+1))
+  else
+    nonaprono=$((nonaprono+1))
+    fallisce "figlio della radice «$p»" "HTTP $code: $(head -c 90 "$BODY" 2>/dev/null)"
+  fi
+done <<<"$FIGLI"
+[ "$nonaprono" -eq 0 ] && passa "tutti i $aprono figli della radice si aprono"
 
 echo
 echo "3. lettura file"

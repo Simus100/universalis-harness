@@ -875,12 +875,14 @@ function withinFs(abs) {
  * espresso come relativo a /root senza riempire l'interfaccia di `../../`.
  */
 function pathForUi(abs) {
-  // radice del file manager: si esprime come stringa vuota (è la base dei percorsi)
-  if (abs === FS_ROOT) return "";
   // confine invariato (default, e cloni dei tester): comportamento storico, tutto relativo a ROOT
-  if (FS_ROOT === ROOT) return withinRoot(abs) ? relative(ROOT, abs) : abs;
-  // confine allargato: percorsi ASSOLUTI. Relativi a /root non sarebbero coerenti, perché i
-  // relativi si risolvono sulla radice del file manager (il disco) e /root diventerebbe /root → "/root".
+  // e la radice è la stringa vuota.
+  if (FS_ROOT === ROOT) return abs === ROOT ? "" : withinRoot(abs) ? relative(ROOT, abs) : abs;
+  // Confine allargato: percorsi SEMPRE assoluti, radice compresa ("/", non ""). Non è un
+  // dettaglio estetico: la UI compone il figlio come `dir + "/" + nome`, e con `dir` vuoto
+  // otteneva "etc" — che il server risolve dentro /root e risponde 404 («non trovato»).
+  // Con "/" il figlio diventa "/etc"; con il codice vecchio diventa "//etc", che `path.resolve`
+  // normalizza in "/etc": la pagina già aperta funziona senza ricaricarla.
   return abs;
 }
 
