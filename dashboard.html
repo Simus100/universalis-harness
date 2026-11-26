@@ -2346,6 +2346,10 @@ footer {
   </div>
   <div class="fsearchbar" id="fSearchPanel" hidden>
     <input id="fSearchInput" class="sinput" type="search" placeholder="🔍 cerca nel contenuto dei file sotto la root…" autocomplete="off" spellcheck="false" />
+    <select id="fSearchAmbito" class="sinput" title="Dove cercare: in tutto il server oppure solo nella cartella aperta" style="max-width:170px">
+      <option value="tutto">in tutto il server</option>
+      <option value="qui">in questa cartella</option>
+    </select>
     <select id="fSearchCosa" class="sinput" title="Cosa cercare: dentro i file, oppure per nome di file o di cartelle" style="max-width:200px">
       <option value="contenuto">nel contenuto dei file</option>
       <option value="file">nome dei file</option>
@@ -11011,7 +11015,7 @@ function renderProgetto() {
       fileRighe.push('<div style="font-size:var(--fs-md);opacity:.7">nessun file nella cartella</div>');
     } else {
       for (const f of c.elenco) {
-        const p = `${c.path}/${f.name}`;
+        const p = jr(c.path, f.name);
         fileRighe.push(`<div class="projfile"><button class="projopen" data-open="${escAttr(p)}" title="Apri ${escAttr(f.name)}">${escHtml(f.name)}</button><span class="gcount">${fmtSize(f.size)} · ${fmtAgo(f.mtime)}</span><button class="ghost" data-dl="${escAttr(p)}" title="Scarica">⬇</button></div>`);
       }
       if (c.troncato) fileRighe.push(`<div style="font-size:var(--fs-sm);opacity:.7">…e altri ${c.troncato} file (apri la cartella per vederli)</div>`);
@@ -12670,6 +12674,7 @@ $("exportChat").onclick = () => {
 
 /* ================= RICERCA NEI FILE ================= */
 let fileSearchTimer = null;
+let fileSearchCtl = null;
 $("fSearch").onclick = () => {
   const p = $("fSearchPanel");
   p.hidden = !p.hidden;
@@ -12679,7 +12684,7 @@ $("fSearch").onclick = () => {
 $("fSearchClose").onclick = () => { $("fSearchPanel").hidden = true; $("fResults").hidden = true; $("fileList").hidden = false; };
 $("fSearchInput").addEventListener("input", cercaNeiFile);
 // il flag cambia l'oggetto della ricerca: si riesegue subito, senza aspettare che si riscriva
-$("fSearchCosa").addEventListener("change", () => {
+$("fSearchCosa")?.addEventListener("change", () => {
   const cosa = $("fSearchCosa").value;
   $("fSearchInput").placeholder = cosa === "contenuto"
     ? "🔍 cerca nel contenuto dei file sotto la root…"
@@ -12688,23 +12693,38 @@ $("fSearchCosa").addEventListener("change", () => {
       : "🔍 cerca per nome di cartelle sotto la root…";
   cercaNeiFile();
 });
+$("fSearchAmbito")?.addEventListener("change", () => {
+  $("fSearchInput").placeholder = $("fSearchAmbito").value === "tutto"
+    ? "🔍 cerca in tutto il server…"
+    : $("fSearchInput").placeholder.replace("in tutto il server", "in questa cartella");
+  cercaNeiFile();
+});
 function cercaNeiFile() {
   const q = $("fSearchInput").value.trim();
   const cosa = $("fSearchCosa")?.value || "contenuto";
+  const ambito = $("fSearchAmbito")?.value || "tutto";
   clearTimeout(fileSearchTimer);
   if (q.length < 2) { $("fResults").hidden = true; $("fileList").hidden = false; return; }
   fileSearchTimer = setTimeout(async () => {
+    // una digitazione nuova annulla la ricerca precedente: senza questo, digitando in fretta
+    // partivano più scansioni del disco in parallelo e vinceva l'ultima arrivata
+    fileSearchCtl?.abort();
+    fileSearchCtl = new AbortController();
+    const mio = fileSearchCtl;
     try {
       const r = await fetch(
         "/api/search/files?q=" + encodeURIComponent(q) +
         "&cosa=" + encodeURIComponent(cosa) +
+        "&ambito=" + encodeURIComponent(ambito) +
         "&path=" + encodeURIComponent(currentDir || ""),
+        { signal: mio.signal },
       );
       const j = await r.json();
+      if (mio.signal.aborted) return;
       if (j.cosa === "file" || j.cosa === "cartelle") renderNomeSearch(j, q);
       else renderFileSearch(j, q);
-    } catch { /* ignore */ }
-  }, 260);
+    } catch (e) { /* annullata o rete: non è un errore da mostrare */ }
+  }, 400);
 }
 /** Risultati della ricerca PER NOME (flag «file» / «cartelle»): si clicca e si apre. */
 function renderNomeSearch(j, q) {
@@ -12719,7 +12739,7 @@ function renderNomeSearch(j, q) {
   info.style.color = "var(--faint)";
   info.style.fontSize = "12px";
   info.textContent = results.length
-    ? `${results.length} ${cartelle ? "cartelle trovate" : "file trovati"}${j.truncated ? " (troncato)" : ""} · ${j.scanned} elementi controllati`
+    ? `${results.length} ${cartelle ? "cartelle trovate" : "file trovati"}${j.truncated ? " (troncato: alza il tempo o restringi l'ambito)" : ""} · ${j.scanned} elementi controllati · in ${escHtml(j.da || "?")}`
     : `Nessun${cartelle ? "a cartella" : " file"} con “${q}” nel nome`;
   el.appendChild(info);
   for (const r of results) {
@@ -12754,7 +12774,7 @@ function renderFileSearch(j, q) {
   info.style.color = "var(--faint)";
   info.style.fontSize = "12px";
   info.textContent = results.length
-    ? `${results.length} riscontri in ${new Set(results.map(r => r.path)).size} file${j.truncated ? " (troncato)" : ""} · ${j.scanned} file scansionati`
+    ? `${results.length} riscontri in ${new Set(results.map(r => r.path)).size} file${j.truncated ? " (troncato: restringi l'ambito)" : ""} · ${j.scanned} file scansionati · in ${escHtml(j.da || "?")}`
     : `Nessun risultato per “${q}”`;
   el.appendChild(info);
   for (const r of results) {

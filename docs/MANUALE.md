@@ -778,10 +778,21 @@ Restano accese anche con `DASH_FS_ROOT=/`:
 - i percorsi fuori dalla root si mostrano **assoluti** (`/srv/n8n-files`), quelli dentro restano
   relativi come prima (`media/x.png`), così i percorsi esistenti non cambiano significato.
 
-La ricerca nella scheda File ha un flag: **contenuto dei file** (storico), **nome dei file**,
-**nome delle cartelle**. Visita l'albero a strati (con la radice a `/` una visita in profondità si
-esauriva dentro `/usr` e tornava vuota) e non scende in `/var/lib/docker`, `/var/lib/containerd`,
-`/snap`, `/var/cache`.
+La ricerca nella scheda File ha due flag: **cosa** cercare (**contenuto dei file**, **nome dei
+file**, **nome delle cartelle**) e **dove** (**in tutto il server**, dalla radice del file manager,
+oppure **in questa cartella**, la cartella aperta). L'ambito è un parametro dell'API
+(`ambito=tutto|qui`), non un percorso: così il client non deve indovinare se la radice si chiama
+`""` o `/`. Visita l'albero a strati — con la radice a `/` una visita in profondità si esauriva
+dentro `/usr` e la ricerca tornava vuota dopo 0,17 s — non scende in `/var/lib/docker`,
+`/var/lib/containerd`, `/snap`, `/var/cache`, `/var/lib`, `/usr/lib`, `/usr/share`, `/usr/include`,
+`/usr/src`, e si ferma a 150.000 elementi o 12 s dichiarando «troncato» quando li raggiunge.
+
+Il controllo di funzionamento di tutto questo è uno script ripetibile:
+
+```bash
+bash scripts/verifica-filemanager.sh        # 41 controlli, esce 1 se qualcuno fallisce
+bash scripts/verifica-filemanager.sh 8422   # contro un'istanza dei tester
+```
 
 ### API
 | Metodo | Endpoint | Descrizione |

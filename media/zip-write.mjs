@@ -49,7 +49,7 @@ function dosDateTime(date) {
  * usa la ricerca nei file: nessun symlink, da nessuna parte. `.git` si salta: non è materiale
  * da scaricare.
  */
-async function collectFiles(absDir, { maxFiles, maxTotal, root }) {
+async function collectFiles(absDir, { maxFiles, maxTotal, root, escludi }) {
   const out = [];
   let total = 0;
   const walk = async (dir, prefix) => {
@@ -64,6 +64,9 @@ async function collectFiles(absDir, { maxFiles, maxTotal, root }) {
       if (d.name === ".git") continue;
       if (d.isSymbolicLink()) continue; // mai seguire: è la via d'uscita dall'albero
       const abs = path.join(dir, d.name);
+      // `escludi` serve al chiamante per non entrare in sottoalberi da non toccare
+      // (/proc, /sys, /dev: filesystem virtuali che possono bloccare la lettura)
+      if (escludi && escludi(abs)) continue;
       const rel = prefix ? `${prefix}/${d.name}` : d.name;
       let st;
       try {
@@ -102,7 +105,7 @@ async function collectFiles(absDir, { maxFiles, maxTotal, root }) {
  * @param {{maxFiles?:number, maxTotal?:number, maxDeflate?:number}} limiti
  * @returns {Promise<{buffer:Buffer, files:number, bytes:number}>}
  */
-export async function zipDirectory(absDir, { maxFiles = 3000, maxTotal = 128 * 1024 * 1024, maxDeflate = 8 * 1024 * 1024 } = {}) {
+export async function zipDirectory(absDir, { maxFiles = 3000, maxTotal = 128 * 1024 * 1024, maxDeflate = 8 * 1024 * 1024, escludi } = {}) {
   // il confronto sul confine si fa sul percorso REALE della cartella richiesta (il chiamante lo
   // ha già validato con safeResolve, questo copre anche gli usi diretti del modulo)
   let realDir = absDir;
@@ -112,7 +115,7 @@ export async function zipDirectory(absDir, { maxFiles = 3000, maxTotal = 128 * 1
     /* cartella sparita: collectFiles restituirà zero file */
   }
   const root = realDir.endsWith(path.sep) ? realDir : realDir + path.sep;
-  const entries = await collectFiles(realDir, { maxFiles, maxTotal, root });
+  const entries = await collectFiles(realDir, { maxFiles, maxTotal, root, escludi });
   if (!entries.length) return { buffer: Buffer.alloc(0), files: 0, bytes: 0 };
 
   const locals = [];

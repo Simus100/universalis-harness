@@ -846,7 +846,12 @@ const fsBloccato = (abs) => FS_BLOCCATI.some((b) => abs === b || abs.startsWith(
  * migliaia di file generati da altri programmi (immagini Docker, snap) e bruciano il budget
  * della ricerca senza che ci sia niente da cercare.
  */
-const FS_PESANTI = ["/var/lib/docker", "/var/lib/containerd", "/snap", "/var/cache"];
+const FS_PESANTI = [
+  "/var/lib/docker", "/var/lib/containerd", "/snap", "/var/cache",
+  // parti di sistema: migliaia di file che nessuno cerca e che brucerebbero il budget
+  // (solo per la RICERCA: dalla scheda File ci si può sempre navigare)
+  "/var/lib", "/usr/lib", "/usr/share", "/usr/include", "/usr/src",
+];
 const fsPesante = (abs) => FS_PESANTI.some((b) => abs === b || abs.startsWith(b + sep));
 
 /**
@@ -944,7 +949,7 @@ async function resolveCitedPath(input) {
     let st;
     try {
       const rp = await fs.realpath(abs);
-      if (!withinFs(rp)) continue;
+      if (!withinFs(rp) || fsBloccato(rp)) continue;
       st = await fs.stat(abs);
     } catch {
       continue;
@@ -4354,7 +4359,8 @@ const SEARCH_MAX_FILE = 2 * 1024 * 1024; // file piu' grandi di cosi' non vengon
 const SEARCH_MAX_FILES = 4000; // tetto di file scansionati per ricerca nel contenuto
 // La ricerca per NOME legge solo i nomi (nessun contenuto): può visitare molti più elementi
 // in pochi secondi, e su un disco intero le 4000 voci della ricerca nel contenuto non bastano.
-const SEARCH_MAX_NODES = Number(process.env.DASH_SEARCH_MAX_NODES) || 60000;
+const SEARCH_MAX_NODES = Number(process.env.DASH_SEARCH_MAX_NODES) || 150000;
+const SEARCH_TIME_NAME_MS = Number(process.env.DASH_SEARCH_TIME_NAME_MS) || 12000;
 const SEARCH_TIME_MS = 8000; // budget di tempo per ricerca
 const SKIP_DIRS = new Set([
   "node_modules", ".git", ".cache", ".npm", ".venv", "venv", "__pycache__",
@@ -4733,7 +4739,7 @@ async function searchSessions(q) {
  * Gli stessi tetti della ricerca nel contenuto (risultati, elementi visitati, tempo) valgono
  * qui: con `DASH_FS_ROOT=/` l'albero di partenza può essere un disco intero, non una cartella.
  */
-async function searchByName(q, startRel, tipo) {
+async function searchByName(q, startRel, tipo, annullato) {
   const needle = q.toLowerCase();
   const voglioCartelle = tipo === "cartelle";
   const startAbs = await safeResolve(startRel || "", { ampio: true });
@@ -4746,7 +4752,12 @@ async function searchByName(q, startRel, tipo) {
   // dopo pochi decimi di secondo dicendo «troncato». Così i livelli alti si vedono subito.
   const coda = [startAbs];
   for (let c = 0; c < coda.length; c++) {
-    if (results.length >= SEARCH_LIMIT || scanned >= SEARCH_MAX_NODES || Date.now() - t0 > SEARCH_TIME_MS) {
+    if (results.length >= SEARCH_LIMIT || scanned >= SEARCH_MAX_NODES || Date.now() - t0 > SEARCH_TIME_NAME_MS) {
+      truncated = true;
+      break;
+    }
+    // il client ha annullato (ha già chiesto un'altra ricerca): si smette di leggere il disco
+    if (annullato && annullato()) {
       truncated = true;
       break;
     }
@@ -4786,7 +4797,7 @@ async function searchByName(q, startRel, tipo) {
 }
 
 /** Cerca una stringa nei file sotto la root (esclusi node_modules, .git, binari…). */
-async function searchFiles(q, startRel) {
+async function searchFiles(q, startRel, annullato) {
   const needle = q.toLowerCase();
   const startAbs = await safeResolve(startRel || "", { ampio: true });
   const results = [];
@@ -4796,6 +4807,10 @@ async function searchFiles(q, startRel) {
   const stack = [startAbs];
   while (stack.length) {
     if (results.length >= SEARCH_LIMIT || scanned >= SEARCH_MAX_FILES || Date.now() - t0 > SEARCH_TIME_MS) {
+      truncated = true;
+      break;
+    }
+    if (annullato && annullato()) {
       truncated = true;
       break;
     }
@@ -5005,7 +5020,7 @@ async function buildPromptPayload(text, atts) {
           const info = await runTool("pdfinfo", [abs]);
           if (info.ok) pagine = parsePdfInfo(info.out.toString("utf8")).pagine;
         }
-        const rel = relative(ROOT, abs);
+        const rel = pathForUi(abs);
         const come = tools.ok
           ? `leggilo con GET /api/pdf?path=${encodeURIComponent(rel)}&testo=N (una pagina), &testo=N-M (una fascia) oppure &cerca=termine`
           : `lettura del testo non disponibile su questo server (${tools.perche})`;
@@ -6086,7 +6101,7 @@ const server = http.createServer(async (req, res) => {
       if (tooBig) return json(res, 413, { error: "file troppo grande" });
       const buf = Buffer.concat(chunks);
       await fs.writeFile(target, buf);
-      const rel = relative(ROOT, target);
+      const rel = pathForUi(target);
       // Il mime si ricava dai BYTE, non dal nome: uno screenshot incollato dalla clipboard
       // arriva spesso come «image.png» ma anche come «blob» senza estensione, e un `mimeOf(name)`
       // lo classificherebbe come binario (niente anteprima, niente visione del modello).
@@ -6111,12 +6126,20 @@ const server = http.createServer(async (req, res) => {
       const q = (url.searchParams.get("q") || "").trim();
       // `cosa` = flag della scheda File: contenuto dei file (storico), nome dei file, nome delle cartelle
       const cosa = ["file", "cartelle"].includes(url.searchParams.get("cosa")) ? url.searchParams.get("cosa") : "contenuto";
-      if (q.length < 2) return json(res, 200, { q, cosa, results: [], truncated: false });
+      // `ambito=tutto` = dalla radice del file manager (tutto il server su questa istanza,
+      // la sola cartella dell'istanza sui tester): così il client non deve indovinare il
+      // percorso della radice, che è "" o "/" a seconda di DASH_FS_ROOT.
+      const ambito = url.searchParams.get("ambito") === "tutto" ? "tutto" : "qui";
+      const da = ambito === "tutto" ? FS_ROOT : url.searchParams.get("path") || "";
+      const annullato = () => res.destroyed || res.writableEnded;
+      if (q.length < 2) return json(res, 200, { q, cosa, ambito, results: [], truncated: false });
       const out =
         cosa === "contenuto"
-          ? await searchFiles(q, url.searchParams.get("path") || "")
-          : await searchByName(q, url.searchParams.get("path") || "", cosa);
-      return json(res, 200, { q, cosa, ...out });
+          ? await searchFiles(q, da, annullato)
+          : await searchByName(q, da, cosa, annullato);
+      // etichetta di dove si è cercato: la radice del file manager si chiama "/", non ""
+      const etichetta = pathForUi(await safeResolve(da, { ampio: true })) || FS_ROOT;
+      return json(res, 200, { q, cosa, ambito, da: etichetta, ...out });
     }
 
     // ---------------- export markdown ----------------
@@ -6790,7 +6813,7 @@ const server = http.createServer(async (req, res) => {
       if (st.isDirectory()) {
         let zipped;
         try {
-          zipped = await zipDirectory(abs, { maxFiles: MAX_ZIP_FILES, maxTotal: MAX_ZIP_BYTES });
+          zipped = await zipDirectory(abs, { maxFiles: MAX_ZIP_FILES, maxTotal: MAX_ZIP_BYTES, escludi: fsBloccato });
         } catch (err) {
           return json(res, 413, { error: String(err?.message || err) });
         }
@@ -6852,7 +6875,7 @@ const server = http.createServer(async (req, res) => {
         return json(res, 500, { error: `lettura non riuscita: ${e?.message || e}` });
       }
       const mime = sniffImageMime(testa);
-      const rel = relative(ROOT, abs);
+      const rel = pathForUi(abs);
       if (!mime) {
         const perche = looksLikeSvg(testa)
           ? "è un disegno SVG: per mostrarlo usa il blocco ```svg della chat (passa dal sanitizzatore)"
@@ -6935,7 +6958,7 @@ const server = http.createServer(async (req, res) => {
         return json(res, 500, { error: `lettura non riuscita: ${e?.message || e}` });
       }
       const mime = sniffVideoMime(testa);
-      const rel = relative(ROOT, abs);
+      const rel = pathForUi(abs);
       if (!mime) {
         return json(res, 415, {
           ok: false,
@@ -7058,7 +7081,7 @@ const server = http.createServer(async (req, res) => {
       } catch (e) {
         return json(res, 500, { error: `lettura non riuscita: ${e?.message || e}` });
       }
-      const rel = relative(ROOT, abs);
+      const rel = pathForUi(abs);
       if (!sniffPdf(testa)) {
         return json(res, 415, {
           ok: false,
@@ -7261,7 +7284,7 @@ const server = http.createServer(async (req, res) => {
       const body = await readBody(req, 8 * 1024);
       try {
         const dest = await ttsEsporta(String(body.id || ""), body.nome ? String(body.nome) : "");
-        const rel = relative(ROOT, dest);
+        const rel = pathForUi(dest);
         return json(res, 200, { ok: true, path: rel, name: basename(dest), size: statSync(dest).size, url: `/api/download?path=${encodeURIComponent(rel)}` });
       } catch (e) {
         return json(res, 404, { error: e?.message || String(e) });
