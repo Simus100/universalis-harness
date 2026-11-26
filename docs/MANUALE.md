@@ -762,7 +762,12 @@ Protezione contro `..` e symlink che escono dalla root — anche nello **zip di 
  file fuori dalla root, o faceva sfondare il tetto dei 3000 file su una cartella normale).
 
 **Confine allargato (`DASH_FS_ROOT`).** Il file manager (scheda File e viste collegate: immagini,
-PDF, TTS, progetto, ricerca, upload) ha un confine suo, separato da quello dell'agente:
+PDF, TTS, progetto, ricerca, upload) ha un confine suo, separato da quello dell'agente. Con il
+confine allargato la scheda File **si apre sulla radice del disco** (non sulla cartella
+dell'istanza) e il breadcrumb offre due tasti: «🖥 server» (la radice) e «🏠 istanza» (la cartella
+della dashboard). `path=""` significa **radice del file manager**; un percorso relativo non vuoto
+(`media`, `pi-harness/media`) resta invece relativo alla root dell'istanza, così i riferimenti che
+esistono già non cambiano significato. Il confine vero e proprio:
 `DASH_FS_ROOT=/` (o `--fs-root /`) lo fa partire dalla radice del disco e rende esplorabile tutto
 il server, comprese `/opt/n8n` e `/srv`. Il default è la root dell'istanza, cioè il comportamento
 storico: la variabile va messa **solo** nel `.env` dell'istanza che deve vedere tutto, mai nei
@@ -790,7 +795,7 @@ dentro `/usr` e la ricerca tornava vuota dopo 0,17 s — non scende in `/var/lib
 Il controllo di funzionamento di tutto questo è uno script ripetibile:
 
 ```bash
-bash scripts/verifica-filemanager.sh        # 41 controlli, esce 1 se qualcuno fallisce
+bash scripts/verifica-filemanager.sh        # 43 controlli, esce 1 se qualcuno fallisce
 bash scripts/verifica-filemanager.sh 8422   # contro un'istanza dei tester
 ```
 

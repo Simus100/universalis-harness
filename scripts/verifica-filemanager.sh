@@ -13,14 +13,16 @@ cd "$(dirname "$0")/.." || exit 1
 
 PORT="${1:-8420}"
 BASE="http://127.0.0.1:${PORT}"
-UTENTE=$(grep -m1 '^DASH_USER=' .env 2>/dev/null | cut -d= -f2-)
-PW=$(grep -m1 '^DASH_PASSWORD=' .env 2>/dev/null | cut -d= -f2-)
+UTENTE="${DASH_USER:-$(grep -m1 '^DASH_USER=' .env 2>/dev/null | cut -d= -f2-)}"
+PW="${DASH_PASSWORD:-$(grep -m1 '^DASH_PASSWORD=' .env 2>/dev/null | cut -d= -f2-)}"
 if [ -z "${UTENTE:-}" ] || [ -z "${PW:-}" ]; then
   echo "credenziali non trovate in .env (DASH_USER / DASH_PASSWORD)" >&2
   exit 2
 fi
 CURL=(curl -sS -u "${UTENTE}:${PW}" --max-time 60)
 BODY=/tmp/verifica-fm-body.json
+# cartella dell'istanza attesa (per provare una copia su un'altra porta si sovrascrive)
+ISTANZA="${DASH_ISTANZA:-/root}"
 
 ok=0
 ko=0
@@ -93,7 +95,10 @@ chk "GET /api/progetto" 200 "$BASE/api/progetto"
 
 echo
 echo "2. navigazione (radice dell'istanza e radice del disco)"
-chk "elenco di default (radice istanza)" 200 "$BASE/api/files" "d['path']=='/root'"
+chk "elenco di default (radice del file manager)" 200 "$BASE/api/files" "d['path']=='' and any(e['name']=='srv' for e in d['entries'])"
+chk "  indica dov'è la cartella dell'istanza" 200 "$BASE/api/files" "d['istanza']=='${ISTANZA}'"
+PYQ=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$ISTANZA" 2>/dev/null || echo "$ISTANZA")
+chk "tasto «istanza» (cartella della dashboard)" 200 "$BASE/api/files?path=$PYQ" "d['path']=='${ISTANZA}'"
 chk "radice del disco" 200 "$BASE/api/files?path=%2F" "d['path']=='' and d['parent'] is None"
 chk "  e niente /proc nell'elenco" 200 "$BASE/api/files?path=%2F" "not any(e['name']=='proc' for e in d['entries'])"
 chk "/root/pi-harness" 200 "$BASE/api/files?path=%2Froot%2Fpi-harness" "d['path']=='/root/pi-harness' and len(d['entries'])>0"
@@ -101,7 +106,7 @@ chk "/opt/n8n" 200 "$BASE/api/files?path=%2Fopt%2Fn8n" "len(d['entries'])>0"
 chk "/srv/n8n-files" 200 "$BASE/api/files?path=%2Fsrv%2Fn8n-files" "len(d['entries'])>=2"
 chk "/etc" 200 "$BASE/api/files?path=%2Fetc" "len(d['entries'])>0"
 chk "/var/log" 200 "$BASE/api/files?path=%2Fvar%2Flog" "len(d['entries'])>0"
-chk "percorso relativo (media) resta relativo alla root" 200 "$BASE/api/files?path=media" "d['path'].startswith('/root')"
+chk "percorso relativo (media) resta relativo alla root dell'istanza" 200 "$BASE/api/files?path=media" "d['path'].startswith(d['istanza'])"
 
 echo
 echo "3. lettura file"

@@ -9274,8 +9274,22 @@ const jr = (dir, name) => (!dir ? name : dir.endsWith("/") ? dir + name : dir + 
 
 function renderCrumbs(rel) {
   const el = $("crumbs"); el.innerHTML = "";
-  const root = document.createElement("button"); root.type = "button"; root.className = "crumb"; root.textContent = "⌂ root";
-  root.onclick = () => loadDir(""); el.appendChild(root);
+  // con il confine allargato (DASH_FS_ROOT=/) la radice del file manager è il disco:
+  // «server» ci porta, «istanza» torna alla cartella della dashboard (es. /root)
+  const radice = document.createElement("button");
+  radice.type = "button"; radice.className = "crumb";
+  radice.textContent = istanzaDir && istanzaDir !== "" ? "🖥 server" : "⌂ root";
+  radice.title = "Radice del file manager";
+  radice.onclick = () => loadDir("");
+  el.appendChild(radice);
+  if (istanzaDir && istanzaDir !== currentDir && !rel.startsWith(istanzaDir)) {
+    const sep0 = document.createElement("span"); sep0.className = "csep"; sep0.textContent = "·"; el.appendChild(sep0);
+    const casa = document.createElement("button");
+    casa.type = "button"; casa.className = "crumb"; casa.textContent = "🏠 istanza";
+    casa.title = "Cartella dell'istanza: " + istanzaDir;
+    casa.onclick = () => loadDir(istanzaDir);
+    el.appendChild(casa);
+  }
   if (!rel) return;
   // i percorsi fuori dalla root dell'istanza si mostrano assoluti: il primo segmento
   // deve conservare la `/` iniziale, altrimenti il breadcrumb punterebbe dentro la root
@@ -9351,6 +9365,7 @@ async function loadDir(rel) {
     const data = await r.json();
     if (!r.ok) { $("fileList").innerHTML = ""; return alert(data.error || "errore"); }
     currentDir = data.path || "";
+    istanzaDir = data.istanza ?? istanzaDir;
     renderCrumbs(currentDir);
     const el = $("fileList"); el.innerHTML = "";
     if (data.parent !== null) el.appendChild(frow("↩", "..", "dir", () => loadDir(data.parent)));
@@ -12675,6 +12690,8 @@ $("exportChat").onclick = () => {
 /* ================= RICERCA NEI FILE ================= */
 let fileSearchTimer = null;
 let fileSearchCtl = null;
+// percorso della cartella dell'istanza (data.istanza): serve al tasto «istanza» nel breadcrumb
+let istanzaDir = "";
 $("fSearch").onclick = () => {
   const p = $("fSearchPanel");
   p.hidden = !p.hidden;

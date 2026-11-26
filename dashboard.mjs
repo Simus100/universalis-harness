@@ -891,9 +891,12 @@ async function safeResolve(rel, { allowMissing = false, ampio = false } = {}) {
   // Un percorso RELATIVO resta relativo alla root dell'istanza: è così che lo intendono la
   // scheda Progetto, `mediaRel` e i percorsi citati dall'agente. Con il confine allargato si
   // risolve su FS_ROOT solo ciò che è scritto in forma assoluta.
-  const relativo = !String(rel || "").startsWith("/");
-  const base = ampio && relativo ? ROOT : ampio ? FS_ROOT : ROOT;
-  const abs = resolve(base, rel || ".");
+  const testo = String(rel || "");
+  // Con il confine allargato: "" è la radice del file manager (il disco), i percorsi assoluti
+  // sono assoluti, e i percorsi relativi NON vuoti restano relativi alla root dell'istanza
+  // (`media`, `pi-harness/media`: è così che li intendono la scheda Progetto e `mediaRel`).
+  const base = !ampio ? ROOT : testo === "" || testo.startsWith("/") ? FS_ROOT : ROOT;
+  const abs = resolve(base, testo || ".");
   if (!dentro(abs)) throw new HttpError(403, "percorso fuori dalla root");
   if (fsBloccato(abs)) throw new HttpError(403, "cartella di sistema: non esplorabile dal file manager");
   // risolve i symlink sulla porzione esistente
@@ -1004,6 +1007,8 @@ async function listDir(rel) {
     root: FS_ROOT,
     path: relPath,
     parent,
+    // dove sta la root dell'istanza, vista dal file manager: la UI ci mette il tasto «istanza»
+    istanza: pathForUi(ROOT),
     entries,
   };
 }
